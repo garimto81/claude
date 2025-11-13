@@ -2,6 +2,8 @@
 actiontracker/
 ai-production/
 broadcast-qc/
+classic-isekai/
+claude-code-config/
 commercial/
 config/
 contents-factory/
@@ -10,8 +12,10 @@ keyplayer_manager/
 pd-note/
 softsender/
 sso-system/
+table_analysis/
 table_tracker/
 VTC_Logger/
+wsop_plus_story_hub/
 
 # 개발 환경
 .venv/
