@@ -363,11 +363,19 @@ Agent: {failure['agent_type']}
         if not failures:
             return
 
-        print("\n⚠️  Agent execution failures detected!")
+        try:
+            print("\n\u26a0\ufe0f  Agent execution failures detected!")
+        except UnicodeEncodeError:
+            print("\n[!] Agent execution failures detected!")
+
         for failure in failures:
             print(f"  - Agent: {failure['agent_type']}")
             print(f"    Error: {failure['error']}")
-        print(f"\n💡 See improvement suggestions: .claude/improvement-suggestions.md\n")
+
+        try:
+            print("\n💡 See improvement suggestions: .claude/improvement-suggestions.md\n")
+        except UnicodeEncodeError:
+            print("\n[i] See improvement suggestions: .claude/improvement-suggestions.md\n")
 
     def run(self):
         """Main execution"""
