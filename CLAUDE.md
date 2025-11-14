@@ -3,7 +3,7 @@
 This file provides guidance to Claude Code (claude.ai/code) when working with code in this repository.
 
 **Repository Purpose**: Global workflow templates and automation for Claude Code development
-**Version**: 4.12.0 | **Updated**: 2025-01-14
+**Version**: 4.13.0 | **Updated**: 2025-01-14
 
 ---
 
@@ -42,13 +42,31 @@ bash scripts/validate-phase-0.sh NNNN
 ```
 
 ### Phase 0.5: Task Generation
-- **Auto-generate**: `python scripts/generate_tasks.py tasks/prds/NNNN-*.md`
+
+**AI-Powered Auto-generation** (권장):
+```bash
+# 1. API 키 설정 (최초 1회)
+export ANTHROPIC_API_KEY=your_key_here  # Unix/macOS
+set ANTHROPIC_API_KEY=your_key_here     # Windows
+
+# 2. 의존성 설치 (최초 1회)
+pip install anthropic
+
+# 3. Task List 자동 생성 (30초)
+python scripts/generate_tasks_ai.py tasks/prds/NNNN-prd-feature.md
+
+# Preview 모드 (저장 안 함)
+python scripts/generate_tasks_ai.py tasks/prds/NNNN-prd-feature.md --preview
+```
+
 - **Output**: `tasks/NNNN-tasks-feature-name.md`
+- **효과**: 8시간 → 30분 (94% 시간 단축)
+- **가이드**: `docs/AI_TASK_GENERATION_GUIDE.md`
 - **Two-Phase Process**:
   1. Generate Parent Tasks → user reviews → user says "Go"
   2. Generate Sub-Tasks with **mandatory 1:1 test file pairing**
 
-**Critical Rules**:
+**Critical Rules** (자동 적용):
 - Task 0.0 MUST create feature branch
 - Every implementation file MUST have corresponding test file
 - Update checkboxes immediately: `[ ]` → `[x]` upon completion
@@ -486,6 +504,7 @@ git push  # → Auto PR/merge
 ---
 
 **Version History**:
+- v4.13.0 (2025-01-14) - Integrated PhaseFlow AI task generation system, Phase 0.5 automation (8h → 30min, 94% time savings)
 - v4.12.0 (2025-01-14) - Expanded plugin system to 15 agents (5 → 15), 16.8K baseline, 60-80% token savings per Phase
 - v4.11.0 (2025-01-14) - Integrated wshobson/agents plugin system, Phase/keyword-based agent loading, 40-70% token savings
 - v4.10.0 (2025-01-14) - Integrated cc-sdd validation gate system, added Phase 0/0.5/1 validation scripts, auto PR validation
