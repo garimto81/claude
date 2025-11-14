@@ -1,0 +1,64 @@
+# Langfuse Self-Hosted Setup
+# Agent Evolution System - Performance Tracking & Feedback Loop
+
+version: '3.8'
+
+services:
+  langfuse-server:
+    image: langfuse/langfuse:latest
+    depends_on:
+      - langfuse-db
+    ports:
+      - "3000:3000"
+    environment:
+      # Database
+      DATABASE_URL: postgresql://langfuse:langfuse@langfuse-db:5432/langfuse
+
+      # Auth
+      NEXTAUTH_URL: http://localhost:3000
+      NEXTAUTH_SECRET: ${NEXTAUTH_SECRET:-changeme-generate-a-secure-secret}
+      SALT: ${SALT:-changeme-generate-a-secure-salt}
+
+      # Telemetry (optional, disable if needed)
+      TELEMETRY_ENABLED: ${TELEMETRY_ENABLED:-true}
+
+      # Admin user (first-time setup)
+      LANGFUSE_INIT_USER_EMAIL: ${LANGFUSE_ADMIN_EMAIL:-admin@localhost}
+      LANGFUSE_INIT_USER_PASSWORD: ${LANGFUSE_ADMIN_PASSWORD:-changeme}
+      LANGFUSE_INIT_ORG_NAME: ${LANGFUSE_ORG_NAME:-claude01}
+      LANGFUSE_INIT_PROJECT_NAME: ${LANGFUSE_PROJECT_NAME:-agent-evolution}
+    restart: unless-stopped
+
+  langfuse-db:
+    image: postgres:15
+    environment:
+      POSTGRES_USER: langfuse
+      POSTGRES_PASSWORD: langfuse
+      POSTGRES_DB: langfuse
+    ports:
+      - "5432:5432"
+    volumes:
+      - langfuse-db-data:/var/lib/postgresql/data
+    restart: unless-stopped
+
+volumes:
+  langfuse-db-data:
+    driver: local
+
+# Usage:
+# 1. Create .env file:
+#    cp .env.example .env
+#    vim .env  # Set NEXTAUTH_SECRET, SALT, admin credentials
+#
+# 2. Start services:
+#    docker-compose up -d
+#
+# 3. Access dashboard:
+#    http://localhost:3000
+#
+# 4. Get API keys:
+#    Login → Settings → API Keys → Create new key
+#
+# 5. Set in environment:
+#    export LANGFUSE_PUBLIC_KEY=pk-lf-...
+#    export LANGFUSE_SECRET_KEY=sk-lf-...

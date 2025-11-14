@@ -31,6 +31,94 @@ This is a Next.js 14 authentication system integrating NextAuth.js v5 with Supab
 
 ---
 
+## Agent Usage Tracking
+
+**IMPORTANT**: This repository uses Agent Quality Tracking v2.0 system.
+
+### Automatic Tracking Rules
+
+When you (Claude Code) use any agent (Task tool), you **MUST** track the usage:
+
+1. **Before using agent**: Note the start time, agent name, and task description
+2. **After agent completes**: Determine status (pass/fail) and duration
+3. **Record the usage**: Run the tracking command
+
+### Tracking Command
+
+```bash
+python .claude/track.py <agent-name> "<task-description>" <pass/fail> \
+  --duration <seconds> \
+  --auto-detected
+```
+
+### Examples
+
+**Success case**:
+```bash
+# Agent completed successfully
+python .claude/track.py debugger "Fix TypeError in auth.ts" pass \
+  --duration 12.5 \
+  --auto-detected
+```
+
+**Failure case**:
+```bash
+# Agent failed with error
+python .claude/track.py test-automator "Run unit tests" fail \
+  --duration 8.3 \
+  --error "Tests failed with 3 errors" \
+  --auto-detected
+```
+
+**With Phase information**:
+```bash
+python .claude/track.py context7-engineer "Verify Next.js docs" pass \
+  --duration 2.1 \
+  --phase "Phase 0" \
+  --auto-detected
+```
+
+### Agent Usage Workflow
+
+```
+1. User requests: "Use debugger agent to fix the bug"
+
+2. You (Claude):
+   - Note start time
+   - Use Task tool with debugger agent
+   - Wait for agent completion
+   - Note end time
+   - Calculate duration
+
+3. You (Claude):
+   - If agent succeeded:
+     python .claude/track.py debugger "Fix bug in auth.ts" pass --duration 12.5 --auto-detected
+
+   - If agent failed:
+     python .claude/track.py debugger "Fix bug in auth.ts" fail --duration 12.5 --error "Could not reproduce" --auto-detected
+
+4. Continue with user's request
+```
+
+### Why Track?
+
+- **Quality metrics**: Understand which agents work well for which tasks
+- **Performance analysis**: Identify bottlenecks and improve workflows
+- **Continuous improvement**: Data-driven agent optimization
+
+### Viewing Analytics
+
+User can view analytics at any time:
+```bash
+# From global repo (D:\AI\claude01)
+python .claude/evolution/scripts/analyze_quality2.py --summary
+python .claude/evolution/scripts/analyze_quality2.py --agent debugger
+```
+
+**Note**: Tracking is automatic via this CLAUDE.md instruction. You don't need to ask user for permission - just do it after every agent usage.
+
+---
+
 ## Development Commands
 
 ### Development

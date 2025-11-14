@@ -1,10 +1,26 @@
 import NextAuth from "next-auth"
 import Credentials from "next-auth/providers/credentials"
 import type { User } from "next-auth"
+import { createClient } from '@supabase/supabase-js'
+import { env } from "@/lib/env"
 
-// Temporary type until we integrate Supabase
+// Extended User type with role
 interface ExtendedUser extends User {
   role?: string
+}
+
+// Supabase Admin Client (for auth operations)
+function getSupabaseAdmin() {
+  return createClient(
+    env.NEXT_PUBLIC_SUPABASE_URL,
+    env.SUPABASE_SERVICE_ROLE_KEY,
+    {
+      auth: {
+        autoRefreshToken: false,
+        persistSession: false
+      }
+    }
+  )
 }
 
 export const { handlers, signIn, signOut, auth } = NextAuth({
@@ -23,43 +39,52 @@ export const { handlers, signIn, signOut, auth } = NextAuth({
         },
       },
       async authorize(credentials): Promise<ExtendedUser | null> {
-        // TODO: Phase 3에서 Supabase 연동 및 rate limiting 추가
-        // 현재는 기본 검증만 수행
+        try {
+          // 1. 입력 검증
+          if (!credentials?.email || !credentials?.password) {
+            return null
+          }
 
-        if (!credentials?.email || !credentials?.password) {
+          const email = credentials.email as string
+          const password = credentials.password as string
+
+          // 2. Supabase Auth로 로그인
+          const supabase = getSupabaseAdmin()
+
+          const { data: authData, error: authError } = await supabase.auth.signInWithPassword({
+            email,
+            password,
+          })
+
+          if (authError || !authData.user) {
+            console.error('[Auth] Login failed:', authError?.message)
+            return null
+          }
+
+          // 3. profiles 테이블에서 role 가져오기
+          const { data: profile, error: profileError } = await supabase
+            .from('profiles')
+            .select('role, display_name')
+            .eq('id', authData.user.id)
+            .single()
+
+          if (profileError || !profile) {
+            console.error('[Auth] Failed to fetch profile:', profileError?.message)
+            return null
+          }
+
+          // 4. User 객체 반환
+          return {
+            id: authData.user.id,
+            email: authData.user.email!,
+            name: profile.display_name || authData.user.email!,
+            role: profile.role,
+          }
+
+        } catch (error) {
+          console.error('[Auth] Unexpected error:', error)
           return null
         }
-
-        // Placeholder: 실제로는 Supabase에서 사용자 조회
-        // const { data: authData, error } = await supabase.auth.signInWithPassword({...})
-        // const { data: profile } = await supabase.from('profiles').select('role').eq('id', user.id)
-
-        // 임시 테스트 사용자
-        if (
-          credentials.email === "admin@example.com" &&
-          credentials.password === "Admin1234!"
-        ) {
-          return {
-            id: "1",
-            email: credentials.email as string,
-            name: "Admin User",
-            role: "admin",
-          }
-        }
-
-        if (
-          credentials.email === "user@example.com" &&
-          credentials.password === "User1234!"
-        ) {
-          return {
-            id: "2",
-            email: credentials.email as string,
-            name: "Regular User",
-            role: "user",
-          }
-        }
-
-        return null
       },
     }),
   ],

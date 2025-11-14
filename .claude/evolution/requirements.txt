@@ -1,0 +1,17 @@
+# Langfuse Agent Evolution System - Python Dependencies
+
+# Core tracking
+langfuse>=2.0.0
+
+# Async support
+httpx>=0.24.0
+
+# Data handling
+python-dotenv>=1.0.0
+
+# Optional: Analysis tools
+pandas>=2.0.0
+numpy>=1.24.0
+
+# Optional: Visualization
+matplotlib>=3.7.0

@@ -42,6 +42,10 @@ nul
 !.claude/hooks/
 !.claude/plugins/
 !.claude/optimizer-config.json
+!.claude/evolution/
+.claude/evolution/.env
+.claude/evolution/data/
+.claude/evolution/feedback/*.jsonl
 .claude/improvement-suggestions.md
 .claude/optimizer-error.log
 .claude-global/
