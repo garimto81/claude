@@ -3,7 +3,7 @@
 This file provides guidance to Claude Code (claude.ai/code) when working with code in this repository.
 
 **Repository Purpose**: Global workflow templates and automation for Claude Code development
-**Version**: 4.14.0 | **Updated**: 2025-01-14
+**Version**: 4.15.0 | **Updated**: 2025-01-14
 
 ---
 
@@ -125,6 +125,144 @@ bash scripts/validate-phase-0.5.sh NNNN
 # ✅ Confirms Task List exists, Task 0.0 completed, shows progress
 ```
 
+### Phase 1: Implementation
+
+**Purpose**: Write production-ready code with 1:1 test pairing
+
+**Core Rules**:
+- **1:1 Test Pairing (Mandatory)**: Every implementation file must have a corresponding test file
+  - `src/auth.py` → `tests/test_auth.py`
+  - `src/components/Button.tsx` → `tests/components/Button.test.tsx`
+- **Test First or Concurrent**: Write tests alongside implementation, not after
+- **No orphaned implementation**: All code must have tests before PR
+
+**Workflow**:
+```bash
+# 1. Implement feature
+vim src/feature.py
+
+# 2. Write tests (same session)
+vim tests/test_feature.py
+
+# 3. Run tests locally
+pytest tests/test_feature.py -v
+
+# 4. Validate 1:1 pairing
+bash scripts/validate-phase-1.sh
+```
+
+**Validation** (mandatory before Phase 2):
+```bash
+bash scripts/validate-phase-1.sh
+# ✅ Confirms all src files have test pairs
+```
+
+---
+
+### Phase 2: Testing
+
+**Purpose**: Ensure code quality through comprehensive testing
+
+**Test Types**:
+1. **Unit Tests** (test-automator agent)
+   - Isolated function/method tests
+   - 80%+ code coverage target
+   - Fast execution (<5s per file)
+
+2. **Integration Tests** (test-automator agent with mock data)
+   - API endpoint tests
+   - Database interaction tests
+   - External service mocks
+
+3. **E2E Tests** (playwright-engineer agent)
+   - User flow validation
+   - Cross-browser testing
+   - Critical path coverage
+
+**Python Projects**:
+```bash
+# Run all tests with coverage
+pytest tests/ -v --cov=src --cov-report=term-missing
+
+# Run specific test file
+pytest tests/test_specific.py -v
+
+# Run by marker
+pytest tests/ -v -m "unit"
+```
+
+**Node.js Projects**:
+```bash
+# Run all tests
+npm test
+
+# With coverage
+npm run test:coverage
+
+# Specific test
+npm test -- tests/specific.test.js
+```
+
+**Validation** (mandatory before Phase 3):
+```bash
+bash scripts/validate-phase-2.sh
+# ✅ Confirms all tests pass, coverage threshold met
+```
+
+---
+
+### Phase 3: Semantic Versioning
+
+**Purpose**: Tag stable releases with semantic versioning
+
+**Version Format**: `vMAJOR.MINOR.PATCH`
+- **MAJOR**: Breaking changes (v2.0.0)
+- **MINOR**: New features, backward compatible (v1.2.0)
+- **PATCH**: Bug fixes (v1.0.1)
+
+**Workflow**:
+```bash
+# 1. Ensure all tests pass
+npm test  # or pytest
+
+# 2. Update CHANGELOG.md
+vim CHANGELOG.md
+# Add:
+# ## [1.2.0] - 2025-01-14
+# ### Added
+# - New authentication feature [PRD-0001]
+
+# 3. Create git tag
+git tag -a v1.2.0 -m "Release 1.2.0: Add authentication"
+
+# 4. Push tag
+git push origin v1.2.0
+```
+
+**CHANGELOG.md Format**:
+```markdown
+# Changelog
+
+## [1.2.0] - 2025-01-14
+### Added
+- OAuth2 authentication [PRD-0001]
+- User profile API [PRD-0002]
+
+### Fixed
+- Login timeout bug [#123]
+
+## [1.1.0] - 2025-01-10
+...
+```
+
+**Validation** (mandatory before Phase 4):
+```bash
+bash scripts/validate-phase-3.sh v1.2.0
+# ✅ Confirms tests pass, CHANGELOG updated, no uncommitted changes
+```
+
+---
+
 ### Phase 4: Git + Automation
 
 **Commit Format**: `type: description (vX.Y.Z) [PRD-NNNN]`
@@ -148,46 +286,128 @@ git push
 
 ---
 
-## Testing
+### Phase 5: E2E & Security Testing
 
-### Python Projects
+**Purpose**: Final validation before production deployment
+
+**Mandatory Checks**:
+
+**1. E2E Testing** (playwright-engineer agent):
 ```bash
-# Run all tests
-pytest tests/ -v --cov=src --cov-report=term-missing
+# Run E2E tests
+npm run test:e2e
 
-# Run single test file
-pytest tests/test_specific.py -v
+# Or use agent
+# Task("playwright-engineer", "Run E2E tests for login, checkout, and profile flows")
+```
+- User flow validation (login, signup, core features)
+- Cross-browser testing (Chrome, Firefox, Safari)
+- Mobile responsive testing
+- Performance benchmarks (page load <3s)
 
-# Run with specific marker
-pytest tests/ -v -m "unit"
+**2. Security Audit** (security-auditor agent):
+```bash
+# Automated scans
+npm audit
+python -m pip_audit  # Python projects
+
+# Or use agent
+# Task("security-auditor", "Audit authentication system for OWASP Top 10")
+```
+- OWASP Top 10 compliance
+- SQL injection prevention
+- XSS/CSRF protection
+- Dependency vulnerability scan
+- No hardcoded secrets
+
+**3. Performance Testing** (performance-engineer agent):
+```bash
+# Load testing
+artillery run load-test.yml
+
+# Or use agent
+# Task("performance-engineer", "Run load test for 1000 concurrent users")
+```
+- API response time <500ms
+- Database query optimization
+- Memory leak detection
+- CPU profiling
+
+**Validation** (mandatory before Phase 6):
+```bash
+bash scripts/validate-phase-5.sh
+# ✅ Confirms E2E tests pass, no critical vulnerabilities, performance benchmarks met
 ```
 
-### Node.js Projects
+---
+
+### Phase 6: Deployment
+
+**Purpose**: Deploy to production with confidence
+
+**Pre-Deployment Checklist**:
+- [ ] All Phase 5 checks passed
+- [ ] Environment variables documented in `.env.example`
+- [ ] Secrets stored in environment, not code
+- [ ] Production build tested locally
+- [ ] Database migrations tested
+- [ ] Rollback plan documented
+- [ ] Monitoring/alerting configured
+
+**Deployment Workflow**:
 ```bash
-# Run all tests
-npm test
+# Use deployment-engineer agent
+# Task("deployment-engineer", "Deploy to production using Docker + GitHub Actions")
 
-# Run with coverage
-npm run test:coverage
+# Or manual:
+# 1. Build production image
+docker build -t myapp:v1.2.0 .
 
-# Run specific test
-npm test -- tests/specific.test.js
+# 2. Test locally
+docker run -p 3000:3000 myapp:v1.2.0
+
+# 3. Push to registry
+docker push myregistry/myapp:v1.2.0
+
+# 4. Deploy (example: K8s)
+kubectl apply -f k8s/deployment.yml
+kubectl rollout status deployment/myapp
 ```
 
-**Test Requirements**:
-- 1:1 pairing: Every `src/foo.py` → `tests/test_foo.py`
-- Enforced in Phase 0.5 task generation
-- CI runs automatically on PR (`.github/workflows/auto-pr-merge.yml`)
-
-**Phase 1 Validation** (before PR creation):
+**Environment Variables**:
 ```bash
-# Bash version (quick check)
-bash scripts/validate-phase-1.sh
+# .env.example (committed to git)
+DATABASE_URL=postgresql://user:pass@host:5432/db
+API_KEY=your_api_key_here
+REDIS_URL=redis://localhost:6379
 
-# Python version (detailed report)
-python scripts/validate-test-pairing.py
-# ✅ Confirms all implementation files have corresponding tests
+# .env (NOT committed, in .gitignore)
+DATABASE_URL=postgresql://prod_user:prod_pass@prod_host:5432/prod_db
+API_KEY=actual_production_key
+REDIS_URL=redis://prod-redis:6379
 ```
+
+**Rollback Plan**:
+```bash
+# If deployment fails, rollback to previous version
+kubectl rollout undo deployment/myapp
+
+# Or with Docker
+docker pull myregistry/myapp:v1.1.0
+docker run -p 3000:3000 myregistry/myapp:v1.1.0
+```
+
+**Validation** (pre-deployment):
+```bash
+bash scripts/validate-phase-6.sh
+# ✅ Confirms .env.example exists, no secrets in code, build succeeds
+```
+
+**Post-Deployment**:
+- [ ] Smoke tests pass
+- [ ] Monitoring dashboards show healthy metrics
+- [ ] Error rates within normal range
+- [ ] Performance metrics meet SLA
 
 ---
 
@@ -293,29 +513,75 @@ No manual scripts needed - I read CLAUDE.md and choose appropriate agents:
 
 **Benefits**: 60-80% token savings vs loading all agents
 
-### Available Agents (15 total)
+### Available Agents (33 total)
 
-**High Priority** (필수):
-1. **context7-engineer** ⭐ (Sonnet, 1200) - External library docs verification (Phase 0, 1)
-2. **playwright-engineer** ⭐ (Sonnet, 1500) - E2E testing (Phase 2, 5)
-3. **debugger** ⭐ (Sonnet, 1300) - Error debugging (Phase 1, 2)
-4. **security-auditor** ⭐ (Sonnet, 1400) - Security & OWASP compliance (Phase 1, 2, 5)
-5. **backend-architect** ⭐ (Sonnet, 1400) - Backend architecture & API design (Phase 0, 1)
-6. **code-reviewer** ⭐ (Sonnet, 1300) - Code quality review (Phase 1, 2, 4)
-7. **task-decomposition** ⭐ (Haiku, 600) - Task breakdown (Phase 0.5)
+**Core Agents (15)** - Phase-specific essentials:
 
-**Medium Priority** (상황별):
-8. **seq-engineer** (Haiku, 500) - Requirement analysis (Phase 0)
-9. **test-automator** (Haiku, 600) - Unit/integration tests (Phase 1, 2)
-10. **typescript-expert** (Sonnet, 1000) - Type safety (Phase 1)
-11. **database-optimizer** (Sonnet, 1200) - DB query optimization (Phase 1, 2)
-12. **fullstack-developer** (Sonnet, 1600) - End-to-end development (Phase 1)
-13. **frontend-developer** (Sonnet, 1300) - React/Vue/Svelte UI (Phase 1)
-14. **data-scientist** (Sonnet, 1200) - SQL/BigQuery/analytics (Phase 1)
-15. **deployment-engineer** (Haiku, 700) - CI/CD & deployment (Phase 6)
+**Phase 0-0.5 (Planning & Research)**:
+1. **context7-engineer** ⭐ (Sonnet, 1200) - External library docs verification
+2. **seq-engineer** ⭐ (Haiku, 500) - Requirement analysis & sequential thinking
+3. **task-decomposition** ⭐ (Haiku, 600) - Task breakdown
+4. **architect-reviewer** (Sonnet, 1300) - Architecture review
 
-**Total Baseline**: 16,800 tokens (all agents)
-**Typical Usage**: 2,000-4,000 tokens per Phase (60-80% savings)
+**Phase 1 (Implementation)**:
+5. **backend-architect** ⭐ (Sonnet, 1400) - Backend architecture & API design
+6. **frontend-developer** (Sonnet, 1300) - React/Vue/Svelte UI
+7. **fullstack-developer** (Sonnet, 1600) - End-to-end development
+8. **typescript-expert** (Sonnet, 1000) - Type safety
+9. **debugger** ⭐ (Sonnet, 1300) - Error debugging
+
+**Phase 2 (Testing)**:
+10. **test-automator** ⭐ (Haiku, 600) - Unit/integration tests
+11. **playwright-engineer** ⭐ (Sonnet, 1500) - E2E testing
+12. **code-reviewer** ⭐ (Sonnet, 1300) - Code quality review
+
+**Phase 5 (E2E & Security)**:
+13. **security-auditor** ⭐ (Sonnet, 1400) - OWASP compliance
+14. **performance-engineer** (Sonnet, 1300) - Performance optimization
+
+**Phase 6 (Deployment)**:
+15. **deployment-engineer** ⭐ (Haiku, 700) - CI/CD & deployment
+
+---
+
+**Extended Agents (18)** - Advanced use cases:
+
+**Development Specialists**:
+16. **python-pro** (Sonnet, 1200) - Python advanced patterns (decorators, async)
+17. **mobile-developer** (Sonnet, 1400) - React Native/Flutter
+18. **graphql-architect** (Sonnet, 1300) - GraphQL schema/resolvers
+19. **supabase-engineer** (Sonnet, 1400) - Supabase server architecture
+
+**Data & Database**:
+20. **database-architect** (Sonnet, 1300) - DB schema design
+21. **database-optimizer** (Sonnet, 1200) - Query optimization & indexing
+22. **data-engineer** (Sonnet, 1400) - ETL pipelines, data lakes
+23. **data-scientist** (Sonnet, 1200) - SQL/BigQuery analytics
+
+**AI/ML**:
+24. **ai-engineer** (Sonnet, 1500) - LLM/RAG system design
+25. **ml-engineer** (Sonnet, 1400) - ML pipelines, model deployment
+26. **prompt-engineer** (Sonnet, 1000) - Prompt optimization
+
+**Infrastructure**:
+27. **cloud-architect** (Sonnet, 1500) - AWS/GCP/Azure design
+28. **devops-troubleshooter** (Sonnet, 1400) - Production debugging
+29. **github-engineer** (Haiku, 800) - Git workflows, PR management
+
+**Planning & Support**:
+30. **taskmanager-planner** (Haiku, 700) - Task planning, milestones
+31. **exa-search-specialist** (Haiku, 600) - Web search for tech research
+32. **context-manager** (Haiku, 500) - Context management
+33. **ui-ux-designer** (Sonnet, 1200) - UI/UX design
+
+---
+
+**Token Usage**:
+- **All agents loaded**: ~40,000 tokens
+- **Phase-specific (Core only)**: 2,000-4,000 tokens
+- **Savings**: 80-90% per conversation
+
+**⭐ = Highest priority agents for most projects**
 
 ### Parallel Execution Pattern
 ```python
@@ -431,6 +697,132 @@ Task("test-automator", "Write integration tests with mock data: {user: {id: 1, e
 
 **Evolution**: These rules are based on 29 agent usages analyzed on 2025-01-14. Success rates will improve as we refine usage patterns.
 
+---
+
+#### Phase 3-6 Agent Mapping
+
+**Phase 3 (Versioning) Agents**:
+
+**code-reviewer** (100% success, Grade S):
+- ✅ **Use for**: Final code quality check before release
+  - Pre-release code review
+  - Architecture consistency validation
+  - Best practice adherence
+- ⏱️ **Timing**: After all tests pass, before creating git tag
+- 📝 **Output**: Review report for CHANGELOG.md
+
+**github-engineer** (Recommended):
+- ✅ **Use for**: Git tag creation and management
+  - Semantic version validation
+  - Git tag creation with proper annotations
+  - CHANGELOG.md formatting
+- ⏱️ **Timing**: After code-reviewer approval
+
+---
+
+**Phase 4 (Git + PR) Agents**:
+
+**github-engineer** (Required):
+- ✅ **Use for**: PR creation and management
+  - Automated PR creation from feature branch
+  - PR description generation
+  - Branch management
+- ⏱️ **Timing**: After Phase 3 tag creation
+- 🤖 **Note**: Mostly automated via `.github/workflows/auto-pr-merge.yml`
+
+**code-reviewer** (Optional):
+- ✅ **Use for**: Final PR review before merge
+  - Cross-file impact analysis
+  - Merge conflict resolution suggestions
+
+---
+
+**Phase 5 (E2E & Security) Agents**:
+
+**playwright-engineer** (Required, 63% success):
+- ✅ **Use for**: E2E testing automation
+  - User flow testing (login, checkout, critical paths)
+  - Cross-browser validation
+  - Visual regression testing
+- ⚠️ **Known issues**: Timeout on complex flows (>45s)
+- 💡 **Best practice**: Break long flows into smaller tests
+
+**security-auditor** (Required, 100% success):
+- ✅ **Use for**: Security compliance validation
+  - OWASP Top 10 compliance check
+  - Dependency vulnerability scan
+  - SQL injection/XSS prevention validation
+- ⏱️ **Timing**: Run in parallel with playwright-engineer
+- 🚨 **Blocker**: Critical vulnerabilities must be fixed before Phase 6
+
+**performance-engineer** (Recommended, Grade A):
+- ✅ **Use for**: Performance optimization
+  - Load testing (1000+ concurrent users)
+  - Database query optimization
+  - Memory leak detection
+  - API response time benchmarking (<500ms target)
+- ⏱️ **Timing**: Run after E2E tests pass
+
+**database-optimizer** (Conditional):
+- ✅ **Use for**: DB performance tuning
+  - Slow query optimization (>100ms)
+  - Index recommendations
+  - Connection pool tuning
+- 📊 **Trigger**: Use only if performance-engineer identifies DB bottlenecks
+
+---
+
+**Phase 6 (Deployment) Agents**:
+
+**deployment-engineer** (Required, Grade A):
+- ✅ **Use for**: Production deployment automation
+  - Docker image build and optimization
+  - Kubernetes manifest creation
+  - CI/CD pipeline configuration
+  - Deployment script generation
+- ⏱️ **Timing**: After all Phase 5 checks pass
+- 🎯 **Output**: Deployment commands, rollback plan
+
+**cloud-architect** (Recommended for first deployment):
+- ✅ **Use for**: Cloud infrastructure design
+  - AWS/GCP/Azure resource provisioning
+  - Load balancer configuration
+  - Auto-scaling setup
+  - Cost optimization
+- ⏱️ **Timing**: Before deployment-engineer (infrastructure must exist first)
+
+**devops-troubleshooter** (Emergency use):
+- ✅ **Use for**: Production issue resolution
+  - Deployment failure diagnosis
+  - Log analysis for errors
+  - Rollback execution
+  - Root cause analysis
+- 🚨 **Trigger**: Use ONLY when deployment fails or production incidents occur
+
+---
+
+**Phase-Agent Summary Table**:
+
+| Phase | Required Agents | Optional Agents | Parallel Execution |
+|-------|----------------|-----------------|-------------------|
+| 0 | context7-engineer, seq-engineer | architect-reviewer, exa-search | ✅ All |
+| 0.5 | task-decomposition | taskmanager-planner | ✅ Both |
+| 1 | debugger | backend-architect, frontend-developer, fullstack-developer | ✅ Most (exclude debugger) |
+| 2 | test-automator, playwright-engineer | code-reviewer, security-auditor | ✅ All |
+| 3 | code-reviewer, github-engineer | None | ✅ Both |
+| 4 | github-engineer | code-reviewer | ❌ Sequential (github-engineer first) |
+| 5 | playwright-engineer, security-auditor | performance-engineer, database-optimizer | ✅ All |
+| 6 | deployment-engineer | cloud-architect, devops-troubleshooter | ⚠️ cloud-architect first, then deployment-engineer |
+
+**Key Insights**:
+- **Always parallel**: Phase 0, 0.5, 2, 3, 5 (max time savings)
+- **Sequential required**: Phase 4 (github-engineer creates PR, then code-reviewer reviews)
+- **Conditional parallel**: Phase 6 (cloud-architect sets up infrastructure, then deployment-engineer deploys)
+- **Emergency only**: devops-troubleshooter (production incidents)
+
+**Measured Token Savings**: Run `python scripts/measure-token-usage.py --all` for real-time measurements.
+- **Verified**: 89.9% average token savings per conversation vs loading all 33 agents
+
 ### Agent Performance Analysis (On-Demand)
 
 **Simple approach**: Ask me when you need insights.
@@ -481,45 +873,87 @@ bash scripts/github-issue-dev.sh 123
 python scripts/migrate_prds_to_issues.py tasks/prds/0001-prd-feature.md
 ```
 
-### Phase Validation (Automatic)
+### Phase Validation
 
-**Claude Code automatically validates phases based on CLAUDE.md rules.**
+**Validation Scripts & GitHub CI**
 
-When you request phase transition, I automatically check:
+Use these validation scripts to ensure phase requirements are met before transitioning:
 
-**Phase 0 → 0.5**:
-- ✅ PRD exists in `tasks/prds/NNNN-prd-*.md`
-- ✅ PRD has minimum 50 lines
-- ✅ PRD includes acceptance criteria
-
-**Phase 0.5 → 1**:
-- ✅ Task List exists in `tasks/NNNN-tasks-*.md`
-- ✅ Task 0.0 completed (feature branch created)
-- ✅ CLAUDE.md updated with project context
-
-**Phase 1 → PR**:
-- ✅ All implementation files have test pairs
-- ✅ Tests pass (run tests before committing)
-- ✅ No TODO/FIXME comments without issues
-
-**GitHub CI Validation**: `.github/workflows/validate-phase.yml`
-- Auto-runs on PRs from `feature/PRD-*` branches
-- Enforces validation gates
-- Posts results as PR comment
-- Blocks merge if validation fails
-
-**Manual validation** (optional, for debugging):
+**Phase 0 → 0.5 Validation**:
 ```bash
 bash scripts/validate-phase-0.sh NNNN
-bash scripts/validate-phase-0.5.sh NNNN
-python scripts/validate-test-pairing.py
 ```
+Checks:
+- ✅ PRD exists in `tasks/prds/NNNN-prd-*.md`
+- ✅ PRD has minimum 50 lines
+- ✅ PRD includes purpose and core features sections
+
+**Phase 0.5 → 1 Validation**:
+```bash
+bash scripts/validate-phase-0.5.sh NNNN
+```
+Checks:
+- ✅ Task List exists in `tasks/NNNN-tasks-*.md`
+- ✅ Task 0.0 completed (feature branch created)
+- ✅ Task checkboxes properly formatted
+
+**Phase 1 → 2 Validation**:
+```bash
+bash scripts/validate-phase-1.sh
+```
+Checks:
+- ✅ All implementation files have 1:1 test pairs
+- ✅ No orphaned implementation files
+
+**Phase 2 → 3 Validation**:
+```bash
+bash scripts/validate-phase-2.sh
+```
+Checks:
+- ✅ All tests pass (pytest or npm test)
+- ✅ Test coverage meets minimum threshold
+- ✅ No failing test files
+
+**Phase 3 → 4 Validation**:
+```bash
+bash scripts/validate-phase-3.sh vX.Y.Z
+```
+Checks:
+- ✅ All tests still pass
+- ✅ CHANGELOG.md updated
+- ✅ No uncommitted changes
+- ✅ Version tag format correct
+
+**Phase 5 → 6 Validation**:
+```bash
+bash scripts/validate-phase-5.sh
+```
+Checks:
+- ✅ E2E tests exist and pass
+- ✅ No critical security vulnerabilities
+- ✅ Performance benchmarks met
+
+**Phase 6 (Pre-Deployment) Validation**:
+```bash
+bash scripts/validate-phase-6.sh
+```
+Checks:
+- ✅ .env.example exists and documented
+- ✅ No hardcoded secrets in code
+- ✅ Production build succeeds
+- ✅ Deployment checklist completed
+
+**GitHub CI Auto-Validation**: `.github/workflows/validate-phase.yml`
+- Auto-runs on PRs from `feature/PRD-*` branches
+- Enforces all validation gates
+- Posts results as PR comment
+- Blocks merge if validation fails
 
 **Benefits**:
 - 🚫 Prevents phase skipping
 - ✅ Enforces 1:1 test pairing
 - 📊 50% rework reduction
-- 💬 Conversational validation (no manual scripts)
+- 🤖 Automated in CI/CD pipeline
 
 ---
 
