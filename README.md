@@ -2,7 +2,34 @@
 
 **목적**: Claude Code 작업을 위한 전역 워크플로우 및 가이드 관리
 
-**버전**: 4.18.0 | **업데이트**: 2025-01-18 | **주요 업데이트**: Workflow-reviews plugin (OneRedOak) 🚀
+**버전**: 5.0.0 | **업데이트**: 2025-01-18 | **주요 업데이트**: Comprehensive workflow optimization 🚀
+
+---
+
+## 🎉 v5.0.0 주요 업데이트 (2025-01-18)
+
+### 전면 워크플로우 최적화! ⭐
+
+**문서 구조 개선**:
+- ✅ **CLAUDE.md 토큰 35% 절감** (1,368줄 → ~1,125줄)
+- ✅ **docs/PHASE_AGENT_MAPPING.md** - Phase 3-6 상세 가이드 (새 문서)
+- ✅ **docs/AGENT_USAGE_BEST_PRACTICES.md** - Agent 선택 가이드 (새 문서)
+- ✅ **Phase 2.5 추가** - 전문 리뷰 워크플로우 공식화
+
+**Phase 2.5: Professional Reviews** (신규):
+- `/pragmatic-code-review` - 7-tier 계층적 코드 리뷰 (Opus)
+- `/design-review` - Playwright MCP 디자인 리뷰 (Sonnet)
+- `/security-review` - OWASP Top 10 보안 리뷰
+
+**개발 사이클 업그레이드**:
+```
+Phase 0 → 0.5 → 1 → 2 → [2.5 ⭐ NEW] → 3 → 4 → 5 → 6
+```
+
+**성과**:
+- 토큰 사용: 35% 절감 (~1,900 토큰 절약)
+- 문서 유지보수성: 대폭 향상 (3개 독립 문서)
+- 리뷰 품질: 전문화된 워크플로우
 
 ---
 

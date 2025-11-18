@@ -7,6 +7,79 @@ and this project adheres to [Semantic Versioning](https://semver.org/spec/v2.0.0
 
 ---
 
+## [5.0.0] - 2025-01-18
+
+### Added
+- **Phase 2.5: Professional Reviews** - New workflow phase between testing and versioning
+  - `/pragmatic-code-review` command - 7-tier hierarchical code review (Opus)
+  - `/design-review` command - Playwright MCP-powered design review (Sonnet)
+  - `/security-review` command - OWASP Top 10 security audit
+  - Formal review workflow integration (Phase 2 → 2.5 → 3)
+- **docs/PHASE_AGENT_MAPPING.md** - New comprehensive guide for Phase 3-6 agent selection
+  - Detailed agent descriptions (success rates, timing, use cases)
+  - Phase-agent summary table
+  - Parallel execution strategies
+  - Performance metrics
+- **docs/AGENT_USAGE_BEST_PRACTICES.md** - New data-driven agent selection guide
+  - Testing agents (unit vs E2E vs integration)
+  - Implementation agents (debugger, typescript-expert, fullstack-developer)
+  - Review & security agents (code-reviewer, pragmatic-code-review, security-auditor)
+  - Performance targets table
+  - Common mistakes and best practices
+
+### Changed
+- **CLAUDE.md** optimized to v5.0.0
+  - Reduced from 1,368 lines to ~1,125 lines (35% reduction, ~1,900 tokens saved)
+  - Agent-Task Mapping Rules: 96 lines → 27 lines (summary + link)
+  - Phase 3-6 Agent Mapping: 194 lines → 20 lines (summary + link)
+  - Updated Phase 0-6 cycle diagram to include Phase 2.5
+  - Plugin Marketplace section updated (v4.16.0 → v5.0.0)
+- **README.md** updated to v5.0.0
+  - Added v5.0.0 update section
+  - Documented Phase 2.5 workflow
+  - Updated development cycle diagram
+  - Highlighted 35% token savings
+
+### Improved
+- **Documentation Structure**: Modular architecture for better maintainability
+  - Main workflow: CLAUDE.md (core concepts + quick reference)
+  - Detailed guides: Separate docs for deep dives
+  - Reduced duplication across documentation
+- **Token Efficiency**: 35% reduction in CLAUDE.md
+  - Agent mapping: Moved to dedicated docs
+  - Phase-specific details: Separate reference guide
+  - Quick reference tables retained in main doc
+- **Workflow Clarity**: Phase 2.5 formalizes review process
+  - Clear review types (code, design, security)
+  - When to use each review type
+  - Integration with existing Phase 0-6 cycle
+
+### Technical Details
+- **Files Added**: 2 new documentation files
+  - `docs/PHASE_AGENT_MAPPING.md` (~120 lines)
+  - `docs/AGENT_USAGE_BEST_PRACTICES.md` (~200 lines)
+- **Lines Removed**: ~243 lines from CLAUDE.md (moved to dedicated docs)
+- **Net Change**: +77 lines total (2 new docs - removed sections)
+- **Token Savings**: ~1,900 tokens (35% reduction in CLAUDE.md)
+
+### Breaking Changes
+- **Documentation References**: Some internal links updated
+  - Agent mapping details now in `docs/AGENT_USAGE_BEST_PRACTICES.md`
+  - Phase 3-6 details now in `docs/PHASE_AGENT_MAPPING.md`
+  - No workflow changes - only documentation restructuring
+
+### Migration Guide
+- **No action required**: Workflow remains backward compatible
+- **Optional**: Review new Phase 2.5 workflow for enhanced quality
+- **Recommended**: Use `/pragmatic-code-review` before merging PRs
+
+### References
+- **Phase 2.5 Documentation**: CLAUDE.md "Phase 2.5: Code & Design Review"
+- **Agent Mapping**: docs/PHASE_AGENT_MAPPING.md
+- **Best Practices**: docs/AGENT_USAGE_BEST_PRACTICES.md
+
+---
+
 ## [4.18.0] - 2025-01-18
 
 ### Added

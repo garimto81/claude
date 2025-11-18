@@ -3,7 +3,7 @@
 This file provides guidance to Claude Code (claude.ai/code) when working with code in this repository.
 
 **Repository Purpose**: Global workflow templates and automation for Claude Code development
-**Version**: 4.18.0 | **Updated**: 2025-01-18 | **Major Update**: Meta-development plugin (davila7)
+**Version**: 5.0.0 | **Updated**: 2025-01-18 | **Major Update**: Comprehensive workflow optimization
 
 ---
 
@@ -24,8 +24,11 @@ This repository is a **meta-workflow system** - not a typical application codeba
 
 ```
 Phase 0: PRD → Phase 0.5: Task List → Phase 1: Code → Phase 2: Test
-→ Phase 3: Version → Phase 4: Git + Auto PR → Phase 5: E2E → Phase 6: Deploy
+→ Phase 2.5: Review ⭐ → Phase 3: Version → Phase 4: Git + Auto PR
+→ Phase 5: E2E + Security → Phase 6: Deploy
 ```
+
+**NEW in v5.0.0**: Phase 2.5 (Professional Reviews) - Pragmatic code review, design review, security review
 
 ### Phase 0: Requirements (PRD)
 - **Location**: `tasks/prds/NNNN-prd-feature-name.md`
@@ -207,6 +210,69 @@ npm test -- tests/specific.test.js
 ```bash
 bash scripts/validate-phase-2.sh
 # ✅ Confirms all tests pass, coverage threshold met
+```
+
+---
+
+### Phase 2.5: Code & Design Review (NEW v5.0.0)
+
+**Purpose**: Professional review before versioning
+
+**Review Types**:
+
+**1. Pragmatic Code Review** (Recommended ⭐ - Opus):
+```bash
+/pragmatic-code-review
+```
+**Features**:
+- 7-tier hierarchical analysis (Architecture → Dependencies)
+- Pragmatic Quality framework
+- Opus model for deep analysis
+
+**When to use**:
+- ✅ Before merging to main
+- ✅ Critical feature PRs
+- ✅ Pre-production releases
+
+**2. Design Review** (UI changes):
+```bash
+/design-review
+```
+**Features**:
+- Playwright MCP integration (live environment testing)
+- 7-phase process (Interaction → Console)
+- WCAG 2.1 AA accessibility compliance
+- Desktop/Tablet/Mobile screenshots
+
+**When to use**:
+- ✅ UI/UX component changes
+- ✅ Responsive design updates
+- ✅ Accessibility improvements
+
+**3. Security Review** (Security-critical code):
+```bash
+/security-review
+```
+**Features**:
+- OWASP Top 10 focused
+- High-confidence detection (>80%)
+- Minimizes false positives
+
+**When to use**:
+- ✅ Authentication/authorization code
+- ✅ Payment processing
+- ✅ User data handling
+
+**Validation** (recommended before Phase 3):
+```bash
+# Check review completion
+git log -1 --grep="review"
+# OR manually verify PR has review comments
+```
+
+**Workflow Integration**:
+```
+Phase 2 (Tests pass) → Phase 2.5 (Reviews complete) → Phase 3 (Version tag)
 ```
 
 ---
@@ -499,13 +565,16 @@ python .claude/evolution/scripts/analyze_quality2.py --alerts
 
 ## Agent Usage & Optimization
 
-### 🚀 Plugin Marketplace System (NEW v4.16.0)
+### 🚀 Plugin Marketplace System (Updated v5.0.0)
 
-**통합 완료**: wshobson/agents 플러그인 시스템 통합 완료 (2025-01-18)
+**통합 완료**: 3개 주요 소스 통합 완료 (2025-01-18)
+- wshobson/agents (v4.16.0)
+- davila7/claude-code-templates (v4.17.0)
+- OneRedOak/claude-code-workflows (v4.18.0)
 
-**새로운 아키텍처**:
-- **23개 플러그인** (15개 wshobson + 8개 Phase별 legacy)
-- **120+ 에이전트** (87개 wshobson + 33개 기존 + 통합)
+**현재 아키텍처**:
+- **25개 플러그인** (17개 wshobson + 8개 Phase별 legacy)
+- **122+ 에이전트** (89개 wshobson + 33개 기존 + 통합)
 - **27개 스킬** (Progressive Disclosure 방식)
 - **마켓플레이스 시스템** (.claude-plugin/marketplace.json)
 
@@ -708,230 +777,56 @@ Task("test-automator", "integration tests")
 
 **Time Savings**: Average 64% reduction with parallel execution
 
-### Agent-Task Mapping Rules (Data-Driven)
+### Agent-Task Mapping Rules (Summary)
 
-**IMPORTANT**: Use the right agent for the right task type. Based on performance data:
+**IMPORTANT**: Use the right agent for the right task type.
 
-#### Testing Agents
+#### Quick Reference
 
-**test-automator** (100% success on unit tests):
-- ✅ **Use for**: Unit tests only
-  - Simple, isolated function tests
-  - Mock-free or simple mock tests
-  - Fast execution (<5s typical)
-- ❌ **Don't use for**: Integration tests, E2E tests
-  - Success rate drops to 25% for integration
-  - Timeouts common on E2E (31s+)
+| Task Type | ✅ Use This Agent | ❌ Don't Use |
+|-----------|------------------|-------------|
+| Unit Tests | test-automator (100% success) | playwright-engineer (overkill) |
+| E2E Tests | playwright-engineer (63% success) | test-automator (will timeout) |
+| Bug Fixes | debugger (81% success) | typescript-expert (slower) |
+| Code Review | code-reviewer (100% success) | Manual review |
+| Security Scan | security-auditor (100% success) | Manual audit |
+| Doc Verification | context7-engineer (100% success) | Skip (risky) |
 
-**playwright-engineer** (63% success on E2E, improving):
-- ✅ **Use for**: E2E tests and browser automation
-  - Full browser interaction tests
-  - User flow validation
-  - Cross-browser testing
-- ❌ **Don't use for**: Unit tests
-  - Overkill for simple functions
-  - Slower than test-automator
+#### Integration Tests Pro Tip
 
-**Correct Pattern**:
+**Always provide explicit mock data** (25% → 75% success rate):
 ```python
 # ✅ Good
-Task("test-automator", "Write unit tests for calculateTotal()")
-Task("playwright-engineer", "Write E2E test for login flow")
+Task("test-automator", "Write integration tests with mock: {user: {id: 1, ...}}")
 
-# ❌ Bad
-Task("test-automator", "Write E2E tests")  # Will timeout
-Task("playwright-engineer", "Write unit tests")  # Overkill
-```
-
-#### Integration Tests Best Practice
-
-When using test-automator for integration tests, **provide explicit mock data**:
-
-**Before** (25% success rate):
-```python
+# ❌ Bad (will fail)
 Task("test-automator", "Write integration tests")
 ```
 
-**After** (75% success rate):
-```python
-Task("test-automator", "Write integration tests with mock data: {user: {id: 1, email: 'test@example.com', role: 'admin'}, session: {token: 'mock-token'}}")
-```
-
-**Why**: Mock data mismatch is the #1 cause of integration test failures.
-
-#### Implementation Agents
-
-**debugger** (81% success, Grade A):
-- ✅ Fast error resolution (<15s typical)
-- ✅ Works well with TypeScript/JavaScript
-- ✅ Good for runtime errors
-
-**typescript-expert** (50% success, Grade D):
-- ⚠️ Use sparingly - only for complex type inference
-- ✅ Good for: Generic constraints, conditional types
-- ❌ Avoid for: Simple interface definitions (use debugger instead)
-
-**fullstack-developer** (100% success, Grade S):
-- ✅ End-to-end feature implementation
-- ✅ API + UI + database integration
-- ✅ Reliable for large tasks
-
-#### Review & Security Agents
-
-**code-reviewer** (100% success, Grade S):
-- ✅ Excellent for architecture review
-- ✅ Fast execution (<15s)
-- ✅ High quality feedback
-
-**security-auditor** (100% success, Grade S):
-- ✅ OWASP compliance checks
-- ✅ SQL injection, XSS detection
-- ✅ Fast and reliable
-
-**context7-engineer** (100% success, Grade S):
-- ✅ External library documentation verification
-- ✅ Always use before implementing new libraries
-- ✅ Prevents outdated API usage
-
-#### Performance Targets
-
-| Agent | Use For | Expected Success | Avg Duration |
-|-------|---------|------------------|--------------|
-| test-automator | Unit tests | 100% | 2-3s |
-| test-automator | Integration (with mocks) | 75%+ | 20-25s |
-| playwright-engineer | E2E tests | 60-70% | 30-45s |
-| debugger | Bug fixes | 80%+ | 10-15s |
-| code-reviewer | Code quality | 100% | 10-15s |
-| security-auditor | Security scan | 100% | 10-15s |
-| context7-engineer | Doc verification | 100% | 2-5s |
-
-**Evolution**: These rules are based on 29 agent usages analyzed on 2025-01-14. Success rates will improve as we refine usage patterns.
+**Detailed Guide**: See [docs/AGENT_USAGE_BEST_PRACTICES.md](docs/AGENT_USAGE_BEST_PRACTICES.md)
 
 ---
 
-#### Phase 3-6 Agent Mapping
+### Phase-Specific Agent Selection (Summary)
 
-**Phase 3 (Versioning) Agents**:
+**Quick Phase Reference**:
 
-**code-reviewer** (100% success, Grade S):
-- ✅ **Use for**: Final code quality check before release
-  - Pre-release code review
-  - Architecture consistency validation
-  - Best practice adherence
-- ⏱️ **Timing**: After all tests pass, before creating git tag
-- 📝 **Output**: Review report for CHANGELOG.md
+| Phase | Primary Agents | Notes |
+|-------|---------------|-------|
+| **Phase 0-2** | See main workflow above | Planning → Implementation → Testing |
+| **Phase 3** | code-reviewer, github-engineer | Version tagging, CHANGELOG |
+| **Phase 4** | github-engineer | Auto PR/merge (mostly automated) |
+| **Phase 5** | playwright-engineer, security-auditor | E2E + Security (parallel) |
+| **Phase 6** | deployment-engineer | Production deployment |
 
-**github-engineer** (Recommended):
-- ✅ **Use for**: Git tag creation and management
-  - Semantic version validation
-  - Git tag creation with proper annotations
-  - CHANGELOG.md formatting
-- ⏱️ **Timing**: After code-reviewer approval
+**Detailed Mapping**: See [docs/PHASE_AGENT_MAPPING.md](docs/PHASE_AGENT_MAPPING.md)
 
----
+**Key Execution Strategies**:
+- **Parallel**: Phase 0, 0.5, 2, 3, 5 (max time savings)
+- **Sequential**: Phase 4 (github-engineer → code-reviewer)
+- **Conditional**: Phase 6 (cloud-architect first if needed)
 
-**Phase 4 (Git + PR) Agents**:
-
-**github-engineer** (Required):
-- ✅ **Use for**: PR creation and management
-  - Automated PR creation from feature branch
-  - PR description generation
-  - Branch management
-- ⏱️ **Timing**: After Phase 3 tag creation
-- 🤖 **Note**: Mostly automated via `.github/workflows/auto-pr-merge.yml`
-
-**code-reviewer** (Optional):
-- ✅ **Use for**: Final PR review before merge
-  - Cross-file impact analysis
-  - Merge conflict resolution suggestions
-
----
-
-**Phase 5 (E2E & Security) Agents**:
-
-**playwright-engineer** (Required, 63% success):
-- ✅ **Use for**: E2E testing automation
-  - User flow testing (login, checkout, critical paths)
-  - Cross-browser validation
-  - Visual regression testing
-- ⚠️ **Known issues**: Timeout on complex flows (>45s)
-- 💡 **Best practice**: Break long flows into smaller tests
-
-**security-auditor** (Required, 100% success):
-- ✅ **Use for**: Security compliance validation
-  - OWASP Top 10 compliance check
-  - Dependency vulnerability scan
-  - SQL injection/XSS prevention validation
-- ⏱️ **Timing**: Run in parallel with playwright-engineer
-- 🚨 **Blocker**: Critical vulnerabilities must be fixed before Phase 6
-
-**performance-engineer** (Recommended, Grade A):
-- ✅ **Use for**: Performance optimization
-  - Load testing (1000+ concurrent users)
-  - Database query optimization
-  - Memory leak detection
-  - API response time benchmarking (<500ms target)
-- ⏱️ **Timing**: Run after E2E tests pass
-
-**database-optimizer** (Conditional):
-- ✅ **Use for**: DB performance tuning
-  - Slow query optimization (>100ms)
-  - Index recommendations
-  - Connection pool tuning
-- 📊 **Trigger**: Use only if performance-engineer identifies DB bottlenecks
-
----
-
-**Phase 6 (Deployment) Agents**:
-
-**deployment-engineer** (Required, Grade A):
-- ✅ **Use for**: Production deployment automation
-  - Docker image build and optimization
-  - Kubernetes manifest creation
-  - CI/CD pipeline configuration
-  - Deployment script generation
-- ⏱️ **Timing**: After all Phase 5 checks pass
-- 🎯 **Output**: Deployment commands, rollback plan
-
-**cloud-architect** (Recommended for first deployment):
-- ✅ **Use for**: Cloud infrastructure design
-  - AWS/GCP/Azure resource provisioning
-  - Load balancer configuration
-  - Auto-scaling setup
-  - Cost optimization
-- ⏱️ **Timing**: Before deployment-engineer (infrastructure must exist first)
-
-**devops-troubleshooter** (Emergency use):
-- ✅ **Use for**: Production issue resolution
-  - Deployment failure diagnosis
-  - Log analysis for errors
-  - Rollback execution
-  - Root cause analysis
-- 🚨 **Trigger**: Use ONLY when deployment fails or production incidents occur
-
----
-
-**Phase-Agent Summary Table**:
-
-| Phase | Required Agents | Optional Agents | Parallel Execution |
-|-------|----------------|-----------------|-------------------|
-| 0 | context7-engineer, seq-engineer | architect-reviewer, exa-search | ✅ All |
-| 0.5 | task-decomposition | taskmanager-planner | ✅ Both |
-| 1 | debugger | backend-architect, frontend-developer, fullstack-developer | ✅ Most (exclude debugger) |
-| 2 | test-automator, playwright-engineer | code-reviewer, security-auditor | ✅ All |
-| 3 | code-reviewer, github-engineer | None | ✅ Both |
-| 4 | github-engineer | code-reviewer | ❌ Sequential (github-engineer first) |
-| 5 | playwright-engineer, security-auditor | performance-engineer, database-optimizer | ✅ All |
-| 6 | deployment-engineer | cloud-architect, devops-troubleshooter | ⚠️ cloud-architect first, then deployment-engineer |
-
-**Key Insights**:
-- **Always parallel**: Phase 0, 0.5, 2, 3, 5 (max time savings)
-- **Sequential required**: Phase 4 (github-engineer creates PR, then code-reviewer reviews)
-- **Conditional parallel**: Phase 6 (cloud-architect sets up infrastructure, then deployment-engineer deploys)
-- **Emergency only**: devops-troubleshooter (production incidents)
-
-**Measured Token Savings**: Run `python scripts/measure-token-usage.py --all` for real-time measurements.
-- **Verified**: 89.9% average token savings per conversation vs loading all 33 agents
+**Token Savings**: 89.9% average vs loading all agents
 
 ### Agent Performance Analysis (On-Demand)
 
