@@ -2025,6 +2025,112 @@
         "./skills/debugging-strategies",
         "./skills/monorepo-management"
       ]
+    },
+    {
+      "name": "meta-development",
+      "source": "davila7/claude-code-templates",
+      "description": "Meta agents for developing Claude Code components (agents, commands, MCPs). Includes agent-expert, command-expert, mcp-expert, cli-ui-designer, docusaurus-expert.",
+      "version": "1.0.0",
+      "author": "davila7 + garimto81",
+      "homepage": "https://github.com/davila7/claude-code-templates",
+      "repository": "https://github.com/davila7/claude-code-templates",
+      "license": "MIT",
+      "keywords": [
+        "meta",
+        "agent-development",
+        "command-development",
+        "mcp",
+        "cli",
+        "documentation"
+      ],
+      "category": "Meta Development",
+      "strict": true,
+      "commands": [],
+      "agents": [
+        {
+          "name": "agent-expert",
+          "description": "Agent development meta expert. Specializes in creating Claude Code agents.",
+          "path": ".claude/plugins/meta-development/agents/agent-expert.md"
+        },
+        {
+          "name": "command-expert",
+          "description": "Command development expert. Specializes in creating slash commands.",
+          "path": ".claude/plugins/meta-development/agents/command-expert.md"
+        },
+        {
+          "name": "mcp-expert",
+          "description": "MCP integration expert. Specializes in Model Context Protocol integrations.",
+          "path": ".claude/plugins/meta-development/agents/mcp-expert.md"
+        },
+        {
+          "name": "cli-ui-designer",
+          "description": "CLI UI design expert. Specializes in command-line interface design.",
+          "path": ".claude/plugins/meta-development/agents/cli-ui-designer.md"
+        },
+        {
+          "name": "docusaurus-expert",
+          "description": "Documentation expert. Specializes in Docusaurus and documentation systems.",
+          "path": ".claude/plugins/meta-development/agents/docusaurus-expert.md"
+        },
+        {
+          "name": "frontend-developer",
+          "description": "Frontend development specialist (davila7 version).",
+          "path": ".claude/plugins/meta-development/agents/frontend-developer.md"
+        }
+      ]
+    },
+    {
+      "name": "meta-development",
+      "source": "davila7/claude-code-templates",
+      "description": "Meta agents for developing Claude Code components (agents, commands, MCPs). Includes agent-expert, command-expert, mcp-expert, cli-ui-designer, docusaurus-expert.",
+      "version": "1.0.0",
+      "author": "davila7 + garimto81",
+      "homepage": "https://github.com/davila7/claude-code-templates",
+      "repository": "https://github.com/davila7/claude-code-templates",
+      "license": "MIT",
+      "keywords": [
+        "meta",
+        "agent-development",
+        "command-development",
+        "mcp",
+        "cli",
+        "documentation"
+      ],
+      "category": "Meta Development",
+      "strict": true,
+      "commands": [],
+      "agents": [
+        {
+          "name": "agent-expert",
+          "description": "Agent development meta expert. Specializes in creating Claude Code agents.",
+          "path": ".claude/plugins/meta-development/agents/agent-expert.md"
+        },
+        {
+          "name": "command-expert",
+          "description": "Command development expert. Specializes in creating slash commands.",
+          "path": ".claude/plugins/meta-development/agents/command-expert.md"
+        },
+        {
+          "name": "mcp-expert",
+          "description": "MCP integration expert. Specializes in Model Context Protocol integrations.",
+          "path": ".claude/plugins/meta-development/agents/mcp-expert.md"
+        },
+        {
+          "name": "cli-ui-designer",
+          "description": "CLI UI design expert. Specializes in command-line interface design.",
+          "path": ".claude/plugins/meta-development/agents/cli-ui-designer.md"
+        },
+        {
+          "name": "docusaurus-expert",
+          "description": "Documentation expert. Specializes in Docusaurus and documentation systems.",
+          "path": ".claude/plugins/meta-development/agents/docusaurus-expert.md"
+        },
+        {
+          "name": "frontend-developer",
+          "description": "Frontend development specialist (davila7 version).",
+          "path": ".claude/plugins/meta-development/agents/frontend-developer.md"
+        }
+      ]
     }
   ]
 }

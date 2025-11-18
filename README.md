@@ -2,7 +2,26 @@
 
 **목적**: Claude Code 작업을 위한 전역 워크플로우 및 가이드 관리
 
-**버전**: 4.16.0 | **업데이트**: 2025-01-18 | **주요 업데이트**: wshobson/agents 플러그인 시스템 통합 🚀
+**버전**: 4.17.0 | **업데이트**: 2025-01-18 | **주요 업데이트**: Meta-development plugin (davila7) 🚀
+
+---
+
+## 🎉 v4.17.0 주요 업데이트 (2025-01-18)
+
+### Meta-Development Plugin 추가!
+
+- ✅ **davila7/claude-code-templates 통합** (6개 메타 에이전트)
+- ✅ **agent-expert** - 에이전트 개발 메타 가이드 (476줄)
+- ✅ **command-expert** - 슬래시 커맨드 개발 가이드 (420줄)
+- ✅ **mcp-expert** - MCP 통합 개발 가이드 (257줄)
+- ✅ **cli-ui-designer** - CLI UI 디자인 전문가 (404줄)
+- ✅ **docusaurus-expert** - 문서화 전문가 (173줄)
+- ✅ **marketplace.json** 68개 플러그인으로 업데이트
+
+**사용 사례**: Claude Code 시스템 자체를 개발하거나 확장할 때
+- 새로운 에이전트 만들기 → agent-expert
+- 슬래시 커맨드 추가 → command-expert
+- MCP 서버 통합 → mcp-expert
 
 ---
 

@@ -3,7 +3,7 @@
 This file provides guidance to Claude Code (claude.ai/code) when working with code in this repository.
 
 **Repository Purpose**: Global workflow templates and automation for Claude Code development
-**Version**: 4.16.0 | **Updated**: 2025-01-18 | **Major Update**: wshobson/agents plugin system integration
+**Version**: 4.17.0 | **Updated**: 2025-01-18 | **Major Update**: Meta-development plugin (davila7)
 
 ---
 
@@ -532,9 +532,9 @@ No manual scripts needed - I read CLAUDE.md and choose appropriate agents:
 
 **Benefits**: 60-80% token savings vs loading all agents
 
-### Available Plugins (23 total)
+### Available Plugins (24 total)
 
-**wshobson Plugins (15개)** - Production-ready workflows:
+**wshobson Plugins (16개)** - Production-ready workflows + Meta-development:
 
 1. **full-stack-orchestration** ⭐ - Multi-agent coordination for complete features
    - Agents: 7+ agents (backend, frontend, database, test, security, deploy, observability)
@@ -605,6 +605,12 @@ No manual scripts needed - I read CLAUDE.md and choose appropriate agents:
 
 15. **agent-orchestration** - Multi-agent coordination
     - Use: Complex multi-agent tasks
+
+16. **meta-development** ⭐ - Claude Code component development (NEW v4.17.0)
+    - Source: davila7/claude-code-templates
+    - Agents: agent-expert, command-expert, mcp-expert, cli-ui-designer, docusaurus-expert, frontend-developer
+    - Use: Creating agents, commands, MCPs, and documentation for Claude Code itself
+    - **When to use**: Building Claude Code extensions, custom agents, slash commands, or MCP integrations
 
 ---
 

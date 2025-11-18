@@ -7,6 +7,59 @@ and this project adheres to [Semantic Versioning](https://semver.org/spec/v2.0.0
 
 ---
 
+## [4.17.0] - 2025-01-18
+
+### Added
+- **Meta-Development Plugin** - Integrated davila7/claude-code-templates
+  - 6 meta agents for building Claude Code components
+  - `agent-expert` (476 lines) - Agent development meta guide
+  - `command-expert` (420 lines) - Slash command development guide
+  - `mcp-expert` (257 lines) - MCP integration development guide
+  - `cli-ui-designer` (404 lines) - CLI UI design specialist
+  - `docusaurus-expert` (173 lines) - Documentation site specialist
+  - `frontend-developer` (32 lines) - Frontend development specialist
+- **Plugin Count**: 24 total (23 → 24)
+  - 16 wshobson plugins (15 → 16)
+  - 8 Phase-based legacy plugins
+- **Use Cases**: Claude Code system development and extension
+  - Creating new agents for Claude Code
+  - Developing custom slash commands
+  - Integrating MCP servers
+  - Building CLI interfaces
+  - Documentation site management
+
+### Changed
+- **CLAUDE.md** updated to v4.17.0
+  - Added meta-development plugin documentation
+  - Updated plugin count (23 → 24)
+- **README.md** updated with v4.17.0 highlights
+  - Added v4.17.0 update section
+  - Documented 6 meta agents
+  - Updated version references
+- **marketplace.json** expanded
+  - 66 plugins → 68 plugins
+  - Added meta-development plugin definition
+
+### Improved
+- **Meta-Development Capabilities**: Can now develop Claude Code extensions
+  - Agent creation with proper YAML frontmatter
+  - Command creation with Markdown templates
+  - MCP integration with best practices
+  - CLI UI design with terminal aesthetics
+
+### Technical Details
+- **Files Added**: 6 agent files in `.claude/plugins/meta-development/agents/`
+- **Total Lines Added**: ~1,762 lines (agent definitions)
+- **Source**: davila7/claude-code-templates
+- **Plugin Type**: Meta-development (tools for building tools)
+
+### References
+- **Source Repository**: https://github.com/davila7/claude-code-templates
+- **Documentation**: CLAUDE.md "Available Plugins" section
+- **Installation**: Agents available in `.claude/plugins/meta-development/`
+
+---
+
 ## [4.16.0] - 2025-01-18
 
 ### Added
