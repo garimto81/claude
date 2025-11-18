@@ -7,6 +7,71 @@ and this project adheres to [Semantic Versioning](https://semver.org/spec/v2.0.0
 
 ---
 
+## [4.18.0] - 2025-01-18
+
+### Added
+- **Workflow-Reviews Plugin** - Integrated OneRedOak/claude-code-workflows
+  - 2 specialized agents for professional code and design reviews
+  - `pragmatic-code-review` (Opus, 99 lines) - 7-tier hierarchical review framework
+    - Architecture, Functionality, Security, Maintainability, Testing, Performance, Dependencies
+    - Principal Engineer reviewer with Pragmatic Quality methodology
+  - `design-review` (Sonnet, 107 lines) - Playwright MCP-powered design review
+    - 7-phase process: Interaction, Responsiveness, Visual Polish, Accessibility, Robustness, Code Health, Console
+    - WCAG 2.1 AA accessibility compliance
+  - 3 slash commands for instant reviews
+    - `/pragmatic-code-review` (42 lines) - Comprehensive PR code review
+    - `/design-review` (38 lines) - UI/UX consistency validation
+    - `/security-review` (191 lines) - OWASP Top 10 security audit
+- **Plugin Count**: 25 total (24 → 25)
+  - 17 wshobson plugins (16 → 17)
+  - 8 Phase-based legacy plugins
+- **Use Cases**: Professional reviews inspired by Anthropic's own process
+  - Automated PR reviews with dual-loop architecture
+  - Live environment testing with Playwright MCP
+  - High-confidence vulnerability detection (>80% certainty)
+  - World-class design standards (Stripe, Airbnb, Linear)
+
+### Changed
+- **CLAUDE.md** updated to v4.18.0
+  - Added workflow-reviews plugin documentation
+  - Updated plugin count (24 → 25)
+- **README.md** updated with v4.18.0 highlights
+  - Added v4.18.0 update section
+  - Documented 2 agents + 3 commands
+  - Updated version references and plugin counts
+- **marketplace.json** expanded
+  - 68 plugins → 69 plugins
+  - Added workflow-reviews plugin definition
+
+### Improved
+- **Review Automation**: Comprehensive review capabilities
+  - 7-tier hierarchical code review (Architecture → Dependencies)
+  - 7-phase design review (Interaction → Console)
+  - OWASP Top 10 security scanning
+  - Playwright MCP integration for live testing
+- **Quality Standards**: Industry-leading review methodologies
+  - Pragmatic Quality framework (balance speed with standards)
+  - WCAG 2.1 AA accessibility compliance
+  - High-confidence vulnerability detection
+  - Evidence-based feedback with screenshots
+
+### Technical Details
+- **Files Added**: 5 files in `.claude/plugins/workflow-reviews/`
+  - 2 agents (206 lines total)
+  - 3 commands (271 lines total)
+- **Total Lines Added**: ~477 lines (review workflow definitions)
+- **Source**: OneRedOak/claude-code-workflows
+- **Plugin Type**: Professional review workflows
+- **Models**: Opus (code review), Sonnet (design review)
+
+### References
+- **Source Repository**: https://github.com/OneRedOak/claude-code-workflows
+- **Video Tutorials**: Patrick Ellis' YouTube channel
+- **Documentation**: CLAUDE.md "Available Plugins" section
+- **Installation**: Agents and commands in `.claude/plugins/workflow-reviews/`
+
+---
+
 ## [4.17.0] - 2025-01-18
 
 ### Added

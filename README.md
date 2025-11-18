@@ -2,7 +2,29 @@
 
 **목적**: Claude Code 작업을 위한 전역 워크플로우 및 가이드 관리
 
-**버전**: 4.17.0 | **업데이트**: 2025-01-18 | **주요 업데이트**: Meta-development plugin (davila7) 🚀
+**버전**: 4.18.0 | **업데이트**: 2025-01-18 | **주요 업데이트**: Workflow-reviews plugin (OneRedOak) 🚀
+
+---
+
+## 🎉 v4.18.0 주요 업데이트 (2025-01-18)
+
+### Workflow-Reviews Plugin 추가!
+
+- ✅ **OneRedOak/claude-code-workflows 통합** (2개 에이전트 + 3개 커맨드)
+- ✅ **pragmatic-code-review 에이전트** (Opus) - 7단계 계층적 리뷰 프레임워크
+- ✅ **design-review 에이전트** (Sonnet) - Playwright MCP 활용 디자인 리뷰
+- ✅ **/pragmatic-code-review** - PR 종합 코드 리뷰 커맨드
+- ✅ **/design-review** - UI/UX 일관성 검증 커맨드
+- ✅ **/security-review** - OWASP Top 10 기반 보안 리뷰 커맨드
+
+**사용 사례**: Anthropic 자체 개발 프로세스 기반 전문 리뷰
+- PR 코드 리뷰 → `/pragmatic-code-review`
+- UI 변경사항 검증 → `/design-review`
+- 보안 취약점 탐지 → `/security-review`
+
+**성과**:
+- 플러그인 개수: 24 → 25 (+4%)
+- 리뷰 자동화 (7-tier 계층적 분석, WCAG 2.1 AA 준수)
 
 ---
 
@@ -29,20 +51,20 @@
 
 ### 플러그인 시스템 통합 완료!
 
-- ✅ **23개 플러그인** (15개 wshobson + 8개 Phase별)
-- ✅ **120+ 에이전트** (87개 wshobson + 33개 기존)
+- ✅ **25개 플러그인** (17개 wshobson + 8개 Phase별)
+- ✅ **122+ 에이전트** (89개 wshobson + 33개 기존)
 - ✅ **27개 스킬** (Progressive Disclosure)
 - ✅ **토큰 효율 85-95%** (기존 80-90% 대비 개선)
 - ✅ **마켓플레이스 시스템** (.claude-plugin/marketplace.json)
 
-**성과**: 에이전트 +264%, 토큰 사용 -62%, 무한 확장 가능
+**성과**: 에이전트 +270%, 토큰 사용 -62%, 무한 확장 가능
 
 ---
 
 ## 📚 핵심 문서
 
 ### 워크플로우 (필수)
-- **[CLAUDE.md](CLAUDE.md)** - Phase 0-6 개발 사이클, 23개 플러그인 시스템
+- **[CLAUDE.md](CLAUDE.md)** - Phase 0-6 개발 사이클, 25개 플러그인 시스템
 - **[Quick Start Guide](docs/QUICK_START_GUIDE.md)** ⭐ - v4.16.0 빠른 시작 (5분 완성)
 
 ### GitHub 네이티브
@@ -122,7 +144,7 @@ claude01/
 ├── 깃허브_빠른시작.md           # 30분 설정 가이드
 │
 ├── .claude-plugin/              # 🆕 플러그인 마켓플레이스
-│   └── marketplace.json         # 23개 플러그인 메타데이터
+│   └── marketplace.json         # 25개 플러그인 메타데이터
 │
 ├── .claude/plugins/             # 🆕 플러그인 시스템
 │   ├── python-development/      # Python 3.12+ (3 agents, 5 skills)
@@ -130,7 +152,7 @@ claude01/
 │   ├── full-stack-orchestration/# 멀티 에이전트 조율
 │   ├── security-scanning/       # 보안 스캔
 │   ├── kubernetes-operations/   # K8s 배포
-│   └── ... (23개 플러그인)
+│   └── ... (25개 플러그인)
 │
 ├── docs/                        # 상세 가이드
 │   ├── AGENTS_REFERENCE.md      # 120+ 에이전트 문서
@@ -234,7 +256,7 @@ sso-system/
 ## 📖 최신 기능
 
 ### v4.16.0 (2025-01-18) - wshobson/agents 플러그인 시스템 통합
-- ✅ 23개 플러그인 시스템 (15 wshobson + 8 Phase별)
+- ✅ 25개 플러그인 시스템 (17 wshobson + 8 Phase별)
 - ✅ 120+ 에이전트 통합 (에이전트 +264%)
 - ✅ 27개 스킬 시스템 (Progressive Disclosure)
 - ✅ 마켓플레이스 아키텍처 (.claude-plugin/)

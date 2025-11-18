@@ -2131,6 +2131,66 @@
           "path": ".claude/plugins/meta-development/agents/frontend-developer.md"
         }
       ]
+    },
+    {
+      "name": "workflow-reviews",
+      "source": "OneRedOak/claude-code-workflows",
+      "description": "Specialized review workflows for code, design, and security. Inspired by Anthropic's Claude Code development process and top Silicon Valley companies.",
+      "version": "1.0.0",
+      "author": "Patrick Ellis (OneRedOak)",
+      "tags": [
+        "review",
+        "code-quality",
+        "security",
+        "design",
+        "workflow"
+      ],
+      "agents": [
+        {
+          "name": "pragmatic-code-review",
+          "path": ".claude/plugins/workflow-reviews/agents/pragmatic-code-review.md",
+          "description": "Principal Engineer reviewer with 7-tier hierarchical review framework (Architecture, Functionality, Security, Maintainability, Testing, Performance, Dependencies)",
+          "model": "opus"
+        },
+        {
+          "name": "design-review",
+          "path": ".claude/plugins/workflow-reviews/agents/design-review.md",
+          "description": "Elite design review specialist using Playwright MCP for live environment testing (7 phases: Interaction, Responsiveness, Visual Polish, Accessibility, Robustness, Code Health, Console)",
+          "model": "sonnet"
+        }
+      ],
+      "commands": [
+        {
+          "name": "pragmatic-code-review",
+          "path": ".claude/plugins/workflow-reviews/commands/pragmatic-code-review.md",
+          "description": "Conduct comprehensive code review of pending changes using Pragmatic Quality framework"
+        },
+        {
+          "name": "design-review",
+          "path": ".claude/plugins/workflow-reviews/commands/design-review.md",
+          "description": "Perform world-class design review on UI changes with Playwright automated testing"
+        },
+        {
+          "name": "security-review",
+          "path": ".claude/plugins/workflow-reviews/commands/security-review.md",
+          "description": "Execute focused security review based on OWASP Top 10 with high-confidence vulnerability detection"
+        }
+      ],
+      "features": [
+        "Dual-loop architecture (slash commands + GitHub Actions)",
+        "Live environment testing with Playwright MCP",
+        "OWASP Top 10 security scanning",
+        "WCAG 2.1 AA accessibility compliance",
+        "Hierarchical review framework (7 tiers)",
+        "Pragmatic Quality methodology"
+      ],
+      "use_cases": [
+        "Automated PR code review",
+        "UI/UX consistency validation",
+        "Security vulnerability detection",
+        "Accessibility compliance checking",
+        "Design system adherence"
+      ]
     }
   ]
 }
