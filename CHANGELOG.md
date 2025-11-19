@@ -7,6 +7,46 @@ and this project adheres to [Semantic Versioning](https://semver.org/spec/v2.0.0
 
 ---
 
+## [5.1.0] - 2025-01-19
+
+### Changed
+- **Repository cleanup**: Removed actual project code to clarify repository identity
+- **Documentation structure**: Added "What this repo is NOT" section to README.md
+- **`.gitignore` update**: Added warning message to prevent project code pollution
+- **CLAUDE.md streamlined**: Reduced from 1,368 lines to 427 lines (68% reduction)
+
+### Removed
+- **Project directories** (1.9MB): VTC_Logger, contents-factory, sso-nextjs, repo-analyzer, wsop_plus_story_hub, broadcast-qc
+- **Development history** (138KB): tasks/ directory (PRD-0001 through PRD-0006)
+  - Refer to this CHANGELOG and Git log for historical development records
+- **Duplicate/outdated documentation**: CLAUDE.v6.md, IMPROVEMENT_REPORT.md, BYPASS_SETUP_COMPLETE.md, CLAUDE_CLI_QUICKSTART.md, UNRELATED_FILES_REPORT.md
+- **Unused directories**: templates/, .speckit/, .claude-global/
+
+### Added
+- **CLEANUP_REPORT.md**: Comprehensive report on repository cleanup
+- **IMPROVEMENT_REPORT_v6.md**: awesome-claude-code analysis and improvement proposals
+- **Universal validator**: `scripts/validate_phase_universal.py` (cross-platform Phase 0-6 validation)
+- **Plugin manager**: `scripts/plugin_manager.py` (install, update, list plugins)
+
+### Fixed
+- Removed embedded git repository (awesome-claude-code/.git) to prevent submodule conflicts
+
+### Breaking Changes
+- **tasks/ directory removed**: Development history for this repository is no longer in tasks/
+  - Historical context available in CHANGELOG.md and Git commit log
+  - This does NOT affect user projects - they should maintain their own tasks/ directories
+
+**Migration Guide**:
+- If you referenced tasks/ for examples, use docs/phases/ instead
+- For PRD templates, see docs/guides/PRD_GUIDE_*.md
+- Repository now focuses purely on meta-workflow templates
+
+**Purpose**: Clarify repository identity as **meta-workflow system** (templates, agents, automation) rather than mixed-use repository
+
+---
+
+---
+
 ## [5.0.0] - 2025-01-18
 
 ### Added
