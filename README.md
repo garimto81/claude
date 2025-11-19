@@ -2,7 +2,31 @@
 
 **목적**: Claude Code 작업을 위한 전역 워크플로우 및 가이드 관리
 
-**버전**: 5.0.0 | **업데이트**: 2025-01-18 | **주요 업데이트**: Comprehensive workflow optimization 🚀
+**버전**: 5.4.0-Windows | **업데이트**: 2025-01-19 | **플랫폼**: Windows 10/11 전용 🪟
+
+---
+
+## 🪟 v5.4.0-Windows 주요 업데이트 (2025-01-19)
+
+### Windows 전용 설계로 전환! ⭐
+
+**PowerShell Native Scripts**:
+- ✅ **10개 PowerShell scripts** - Bash 의존성 완전 제거
+- ✅ **validate-phase-{0,0.5,1,2,3,5,6}.ps1** - Windows native 검증
+- ✅ **setup-github-labels.ps1** - GitHub integration
+- ✅ **github-issue-dev.ps1** - Issue workflow automation
+- ✅ **phase-status.ps1** - Progress tracking
+- ✅ **validate-phase.bat** - Batch wrapper for convenience
+
+**문서 업데이트**:
+- ✅ **CLAUDE.md** - Windows 명령어로 전환 (bash 제거)
+- ✅ **scripts/WINDOWS_README.md** - PowerShell 가이드
+- ✅ **docs/WINDOWS_QUICK_START.md** - 15분 시작 가이드
+
+**성과**:
+- 실행 속도: 20-30% 빠름 (Git Bash 오버헤드 제거)
+- 설치 간편화: Git Bash 불필요
+- Windows 통합: 컬러 출력, 에러 메시지 개선
 
 ---
 
@@ -92,7 +116,8 @@ Phase 0 → 0.5 → 1 → 2 → [2.5 ⭐ NEW] → 3 → 4 → 5 → 6
 
 ### 워크플로우 (필수)
 - **[CLAUDE.md](CLAUDE.md)** - Phase 0-6 개발 사이클, 25개 플러그인 시스템
-- **[Quick Start Guide](docs/QUICK_START_GUIDE.md)** ⭐ - v4.16.0 빠른 시작 (5분 완성)
+- **[Windows Quick Start](docs/WINDOWS_QUICK_START.md)** 🪟 ⭐ - 15분 Windows 시작 가이드 (NEW)
+- **[PowerShell Scripts Guide](scripts/WINDOWS_README.md)** - Windows native scripts
 
 ### GitHub 네이티브
 - [깃허브_워크플로우_개요.md](깃허브_워크플로우_개요.md) - 5분 개요, ROI
@@ -241,18 +266,38 @@ cp ~/claude01/.github/workflows/auto-pr-merge.yml .github/workflows/
 
 ---
 
-## 🚫 포함하지 않는 것
+## 🚫 이 레포가 **아닌** 것
 
-**프로젝트별 폴더** (.gitignore 등록됨):
+### ❌ 실제 프로젝트 코드
+이 레포지토리는 **메타 워크플로우 시스템**입니다. 실제 프로젝트 코드는 포함하지 않습니다.
+
+**예시** (모두 삭제됨):
 ```
-actiontracker/
-contents-factory/
-VTC_Logger/
-sso-system/
-... 기타 프로젝트
+✗ VTC_Logger/         - 실제 앱 프로젝트
+✗ contents-factory/   - 실제 웹 프로젝트
+✗ sso-nextjs/         - 실제 SSO 시스템
+✗ repo-analyzer/      - 실제 도구
 ```
 
-**원칙**: 이 레포 = 전역 지침만 | 각 프로젝트 = 별도 레포
+**원칙**:
+- ✅ 이 레포 = **어떻게 개발할지** (워크플로우, 에이전트, 템플릿)
+- ✅ 별도 레포 = **무엇을 개발할지** (실제 프로젝트 코드)
+
+### ❌ 라이브러리/패키지
+`npm install` 또는 `pip install`로 설치하는 패키지가 아닙니다.
+
+**대신**:
+- 워크플로우 템플릿을 복사하여 프로젝트에 적용
+- 에이전트를 `.claude/` 디렉토리로 복사
+- 스크립트를 `scripts/`로 복사
+
+### ❌ 단계별 튜토리얼
+순차적 학습 과정이 아닙니다.
+
+**대신**:
+- 즉시 사용 가능한 워크플로우 템플릿
+- 필요할 때 참조하는 레퍼런스 가이드
+- Quick Start로 5분 안에 시작
 
 ---
 

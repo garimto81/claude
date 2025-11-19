@@ -1,0 +1,271 @@
+name: Validate All Phases
+
+on:
+  pull_request:
+    branches: [master, main]
+  push:
+    branches: [master, main]
+
+jobs:
+  validate-documentation:
+    name: Validate Documentation
+    runs-on: ubuntu-latest
+    steps:
+      - uses: actions/checkout@v3
+
+      - name: Check Markdown Links
+        uses: gaurav-nelson/github-action-markdown-link-check@v1
+        with:
+          use-quiet-mode: 'yes'
+          config-file: '.github/markdown-link-check-config.json'
+
+      - name: Lint Markdown
+        run: |
+          npm install -g markdownlint-cli
+          markdownlint '**/*.md' --ignore node_modules --ignore .git
+
+  validate-scripts:
+    name: Validate Scripts
+    runs-on: ubuntu-latest
+    steps:
+      - uses: actions/checkout@v3
+
+      - name: Setup Python
+        uses: actions/setup-python@v4
+        with:
+          python-version: '3.11'
+
+      - name: Install Dependencies
+        run: |
+          pip install -r requirements.txt
+          pip install -r requirements-test.txt
+
+      - name: Lint Python Scripts
+        run: |
+          pylint scripts/*.py --disable=all --enable=E,F
+
+      - name: Lint Shell Scripts
+        run: |
+          sudo apt-get install -y shellcheck
+          find scripts -name "*.sh" -exec shellcheck {} \;
+
+      - name: Test Universal Validator
+        run: |
+          # Create test PRD
+          mkdir -p tasks/prds
+          cat > tasks/prds/9999-prd-test.md << 'EOF'
+          # PRD-9999: Test Feature
+
+          ## Purpose
+          Test purpose
+
+          ## Features
+          - Feature 1
+          - Feature 2
+
+          ## Success
+          - Criteria 1
+
+          ## Users
+          Test users
+
+          ## Data
+          Test data
+
+          ## Design
+          Test design
+
+          ## Constraints
+          Test constraints
+
+          # Padding to reach 50 lines
+          EOF
+
+          # Pad to 50+ lines
+          for i in {1..45}; do echo "Line $i" >> tasks/prds/9999-prd-test.md; done
+
+          # Run validator
+          python scripts/validate_phase_universal.py 0 9999 -v
+
+  validate-plugins:
+    name: Validate Plugins
+    runs-on: ubuntu-latest
+    steps:
+      - uses: actions/checkout@v3
+
+      - name: Check Plugin Structure
+        run: |
+          # Check all plugins have required files
+          for plugin in .claude/plugins/*; do
+            if [ -d "$plugin" ]; then
+              echo "Checking $plugin"
+
+              # Check for agents directory or files
+              if [ ! -d "$plugin/agents" ] && [ ! -f "$plugin/agent.md" ]; then
+                echo "❌ Missing agents in $plugin"
+                exit 1
+              fi
+
+              echo "✅ $plugin OK"
+            fi
+          done
+
+      - name: Validate Plugin Registry
+        run: |
+          # Check registry.json is valid JSON
+          if [ -f ".claude-plugin/registry.json" ]; then
+            python -m json.tool .claude-plugin/registry.json > /dev/null
+            echo "✅ Plugin registry is valid JSON"
+          fi
+
+  test-phase-workflow:
+    name: Test Phase Workflow (E2E)
+    runs-on: ubuntu-latest
+    steps:
+      - uses: actions/checkout@v3
+
+      - name: Setup Python
+        uses: actions/setup-python@v4
+        with:
+          python-version: '3.11'
+
+      - name: Install Dependencies
+        run: |
+          pip install -r requirements.txt
+
+      - name: Create Test Project Structure
+        run: |
+          mkdir -p src/auth tests/auth
+          mkdir -p tasks/prds
+
+      - name: Phase 0: Create PRD
+        run: |
+          cat > tasks/prds/9999-prd-test-auth.md << 'EOF'
+          # PRD-9999: Test Authentication
+
+          ## 1. Purpose
+          Add OAuth authentication
+
+          ## 2. Target Users
+          All users
+
+          ## 3. Core Features
+          - Google OAuth
+          - Session management
+
+          ## 4. Out of Scope
+          - Facebook OAuth
+
+          ## 5. Success Criteria
+          - [ ] Login works
+          - [ ] 80% coverage
+
+          ## 6. Data Models
+          User table
+
+          ## 7. UI/UX
+          Login button
+
+          ## 8. Constraints
+          < 2s response time
+          EOF
+
+          # Pad to 50+ lines
+          for i in {1..45}; do echo "# Padding line $i" >> tasks/prds/9999-prd-test-auth.md; done
+
+          # Validate
+          python scripts/validate_phase_universal.py 0 9999
+
+      - name: Phase 0.5: Create Task List
+        run: |
+          cat > tasks/9999-tasks-test-auth.md << 'EOF'
+          # Task List: Test Auth (PRD-9999)
+
+          ## Task 0.0: Setup
+          - [x] Create branch
+          - [x] Update CLAUDE.md
+
+          ## Task 1.0: Implementation
+          - [ ] Task 1.1: Create oauth.py
+          - [ ] Task 1.2: Create test_oauth.py
+          EOF
+
+          python scripts/validate_phase_universal.py 0.5 9999
+
+      - name: Phase 1: Create Implementation + Tests (1:1)
+        run: |
+          # Create implementation
+          cat > src/auth/oauth.py << 'EOF'
+          """OAuth implementation"""
+
+          def get_authorization_url():
+              return "https://accounts.google.com/o/oauth2/auth"
+          EOF
+
+          # Create test (1:1 pair)
+          cat > tests/auth/test_oauth.py << 'EOF'
+          """OAuth tests"""
+          from src.auth.oauth import get_authorization_url
+
+          def test_get_authorization_url():
+              url = get_authorization_url()
+              assert "google.com" in url
+          EOF
+
+          # Validate 1:1 pairing
+          python scripts/validate_phase_universal.py 1
+
+      - name: Phase 2: Run Tests
+        run: |
+          pip install pytest pytest-cov
+          python scripts/validate_phase_universal.py 2 --coverage 50
+
+  check-version-consistency:
+    name: Check Version Consistency
+    runs-on: ubuntu-latest
+    steps:
+      - uses: actions/checkout@v3
+
+      - name: Check Version Files Match
+        run: |
+          # Extract versions
+          CLAUDE_VERSION=$(grep '^**Version**:' CLAUDE.md | grep -oP 'v?\K[\d.]+' || echo "unknown")
+          README_VERSION=$(grep '^**버전**:' README.md | grep -oP 'v?\K[\d.]+' || echo "unknown")
+
+          echo "CLAUDE.md version: $CLAUDE_VERSION"
+          echo "README.md version: $README_VERSION"
+
+          # Check .claude/VERSION exists
+          if [ -f ".claude/VERSION" ]; then
+            echo "✅ .claude/VERSION exists"
+          else
+            echo "❌ .claude/VERSION missing"
+            exit 1
+          fi
+
+  security-scan:
+    name: Security Scan
+    runs-on: ubuntu-latest
+    steps:
+      - uses: actions/checkout@v3
+
+      - name: Scan for Secrets
+        uses: trufflesecurity/trufflehog@main
+        with:
+          path: ./
+          base: ${{ github.event.repository.default_branch }}
+          head: HEAD
+
+      - name: Check for Hardcoded Secrets
+        run: |
+          # Check for common secret patterns
+          if grep -r "sk-[a-zA-Z0-9]\{20,\}" --include="*.py" --include="*.js" --include="*.ts" .; then
+            echo "❌ Potential API key found"
+            exit 1
+          fi
+
+          if grep -r "password.*=.*['\"]" --include="*.py" --include="*.js" .; then
+            echo "⚠️  Potential hardcoded password found"
+          fi
+
+          echo "✅ No obvious secrets detected"

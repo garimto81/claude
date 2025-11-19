@@ -1,0 +1,205 @@
+{
+  "$schema": "./registry-schema.json",
+  "version": "1.0.0",
+  "lastUpdated": "2025-01-19",
+  "plugins": [
+    {
+      "id": "python-development",
+      "version": "1.2.0",
+      "source": {
+        "type": "upstream",
+        "url": "https://github.com/wshobson/agents",
+        "commit": "main",
+        "path": "plugins/python-development"
+      },
+      "localPath": ".claude/plugins/python-development",
+      "upstream": {
+        "repository": "wshobson/agents",
+        "license": "MIT",
+        "author": {
+          "name": "Seth Hobson",
+          "email": "seth@major7apps.com",
+          "url": "https://github.com/wshobson"
+        }
+      },
+      "localChanges": [],
+      "autoUpdate": false,
+      "installed": "2025-01-18",
+      "lastChecked": "2025-01-19",
+      "status": "active"
+    },
+    {
+      "id": "javascript-typescript",
+      "version": "1.2.0",
+      "source": {
+        "type": "upstream",
+        "url": "https://github.com/wshobson/agents",
+        "commit": "main",
+        "path": "plugins/javascript-typescript"
+      },
+      "localPath": ".claude/plugins/javascript-typescript",
+      "upstream": {
+        "repository": "wshobson/agents",
+        "license": "MIT",
+        "author": {
+          "name": "Seth Hobson",
+          "url": "https://github.com/wshobson"
+        }
+      },
+      "localChanges": [],
+      "autoUpdate": false,
+      "installed": "2025-01-18",
+      "lastChecked": "2025-01-19",
+      "status": "active"
+    },
+    {
+      "id": "debugging-toolkit",
+      "version": "1.2.0",
+      "source": {
+        "type": "upstream",
+        "url": "https://github.com/wshobson/agents",
+        "commit": "main",
+        "path": "plugins/debugging-toolkit"
+      },
+      "localPath": ".claude/plugins/debugging-toolkit",
+      "upstream": {
+        "repository": "wshobson/agents",
+        "license": "MIT",
+        "author": {
+          "name": "Seth Hobson",
+          "url": "https://github.com/wshobson"
+        }
+      },
+      "localChanges": [],
+      "autoUpdate": false,
+      "installed": "2025-01-18",
+      "lastChecked": "2025-01-19",
+      "status": "active"
+    },
+    {
+      "id": "meta-development",
+      "version": "1.0.0",
+      "source": {
+        "type": "upstream",
+        "url": "https://github.com/davila7/claude-code-templates",
+        "commit": "main",
+        "path": "agents"
+      },
+      "localPath": ".claude/plugins/meta-development",
+      "upstream": {
+        "repository": "davila7/claude-code-templates",
+        "license": "MIT",
+        "author": {
+          "name": "davila7",
+          "url": "https://github.com/davila7"
+        }
+      },
+      "localChanges": [],
+      "autoUpdate": false,
+      "installed": "2025-01-18",
+      "lastChecked": "2025-01-19",
+      "status": "active"
+    },
+    {
+      "id": "workflow-reviews",
+      "version": "1.0.0",
+      "source": {
+        "type": "upstream",
+        "url": "https://github.com/OneRedOak/claude-code-workflows",
+        "commit": "main",
+        "path": "agents"
+      },
+      "localPath": ".claude/plugins/workflow-reviews",
+      "upstream": {
+        "repository": "OneRedOak/claude-code-workflows",
+        "license": "MIT",
+        "author": {
+          "name": "OneRedOak",
+          "url": "https://github.com/OneRedOak"
+        }
+      },
+      "localChanges": [],
+      "autoUpdate": false,
+      "installed": "2025-01-18",
+      "lastChecked": "2025-01-19",
+      "status": "active"
+    },
+    {
+      "id": "phase-0-planning",
+      "version": "4.0.0",
+      "source": {
+        "type": "local",
+        "description": "Legacy phase-based plugin (planning)"
+      },
+      "localPath": ".claude/plugins/phase-0-planning",
+      "upstream": null,
+      "localChanges": [],
+      "autoUpdate": false,
+      "installed": "2025-01-01",
+      "lastChecked": "2025-01-19",
+      "status": "active",
+      "notes": "Legacy plugin, consider migrating to core/"
+    },
+    {
+      "id": "phase-1-development",
+      "version": "4.0.0",
+      "source": {
+        "type": "local",
+        "description": "Legacy phase-based plugin (development)"
+      },
+      "localPath": ".claude/plugins/phase-1-development",
+      "upstream": null,
+      "localChanges": [],
+      "autoUpdate": false,
+      "installed": "2025-01-01",
+      "lastChecked": "2025-01-19",
+      "status": "active",
+      "notes": "Legacy plugin, consider migrating to core/"
+    },
+    {
+      "id": "phase-2-testing",
+      "version": "4.0.0",
+      "source": {
+        "type": "local",
+        "description": "Legacy phase-based plugin (testing)"
+      },
+      "localPath": ".claude/plugins/phase-2-testing",
+      "upstream": null,
+      "localChanges": [],
+      "autoUpdate": false,
+      "installed": "2025-01-01",
+      "lastChecked": "2025-01-19",
+      "status": "active",
+      "notes": "Legacy plugin, consider migrating to core/"
+    }
+  ],
+  "remoteRepositories": [
+    {
+      "name": "wshobson/agents",
+      "url": "https://github.com/wshobson/agents",
+      "type": "git",
+      "trusted": true,
+      "description": "Production-ready workflow orchestration plugins"
+    },
+    {
+      "name": "davila7/claude-code-templates",
+      "url": "https://github.com/davila7/claude-code-templates",
+      "type": "git",
+      "trusted": true,
+      "description": "Claude Code component development templates"
+    },
+    {
+      "name": "OneRedOak/claude-code-workflows",
+      "url": "https://github.com/OneRedOak/claude-code-workflows",
+      "type": "git",
+      "trusted": true,
+      "description": "Professional review workflows"
+    }
+  ],
+  "settings": {
+    "autoCheckUpdates": false,
+    "updateCheckInterval": "weekly",
+    "allowUntrustedSources": false,
+    "preferLocalChanges": true
+  }
+}
