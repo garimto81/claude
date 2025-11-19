@@ -3,7 +3,7 @@
 This file provides guidance to Claude Code (claude.ai/code) when working with code in this repository.
 
 **Repository Purpose**: Global workflow templates and automation for Claude Code development
-**Version**: 5.3.0 | **Updated**: 2025-01-19
+**Version**: 5.4.0-Windows | **Updated**: 2025-01-19 | **Platform**: Windows 10/11
 
 ---
 
@@ -44,7 +44,7 @@ This repository is a **meta-workflow system** - not a typical application codeba
 
 1. **Workflow Templates**: Phase 0-6 development cycle methodology
 2. **Workflow Recipes** ⭐: Immediately usable patterns for common tasks
-3. **Automation Scripts**: Python/Bash scripts for GitHub integration
+3. **Automation Scripts**: Python/PowerShell scripts for Windows (Bash scripts deprecated)
 4. **Plugin System**: Centralized plugin registry for Claude Code extensions
 5. **Multi-language Documentation**: Korean primary, English reference
 6. **Awesome Resources**: Curated community resources in `awesome-claude-code/`
@@ -70,43 +70,41 @@ python scripts/plugin_manager.py check-updates
 python scripts/plugin_manager.py diff-upstream python-development
 ```
 
-### Phase Validation (Universal Cross-Platform)
-```bash
-# Validate Phase 0 (PRD exists, 50+ lines)
-python scripts/validate_phase_universal.py 0 <PRD_NUMBER>
+### Phase Validation (Windows Native)
+```powershell
+# PowerShell scripts (권장 - Windows native)
+.\scripts\validate-phase-0.ps1 0001
+.\scripts\validate-phase-0.5.ps1 0001
+.\scripts\validate-phase-1.ps1
+.\scripts\validate-phase-2.ps1
+.\scripts\validate-phase-3.ps1 v1.2.0
+.\scripts\validate-phase-5.ps1
+.\scripts\validate-phase-6.ps1
 
-# Validate Phase 0.5 (Task List exists, Task 0.0 complete)
-python scripts/validate_phase_universal.py 0.5 <PRD_NUMBER>
+# Batch wrapper (더 간단)
+.\scripts\validate-phase.bat 0 0001
+.\scripts\validate-phase.bat 1
+.\scripts\validate-phase.bat 2
 
-# Validate Phase 1 (1:1 test pairing)
-python scripts/validate_phase_universal.py 1
-
-# Validate Phase 2 (tests pass, coverage threshold)
-python scripts/validate_phase_universal.py 2 --coverage 80
-
-# Validate Phase 3 (version tag, CHANGELOG, tests pass)
-python scripts/validate_phase_universal.py 3 <VERSION_TAG>
-
-# Validate Phase 5 (E2E, security, performance)
-python scripts/validate_phase_universal.py 5
-
-# Validate Phase 6 (deployment readiness)
-python scripts/validate_phase_universal.py 6
+# Python universal validator (크로스 플랫폼 호환 필요 시)
+python scripts\validate_phase_universal.py 0 0001
+python scripts\validate_phase_universal.py 1
+python scripts\validate_phase_universal.py 2 --coverage 80
 ```
 
-### GitHub Workflow Scripts
-```bash
+### GitHub Workflow Scripts (Windows)
+```powershell
 # Setup GitHub labels for Phase workflow (one-time)
-bash scripts/setup-github-labels.sh
+.\scripts\setup-github-labels.ps1
 
 # Start development from GitHub issue
-bash scripts/github-issue-dev.sh <ISSUE_NUMBER>
+.\scripts\github-issue-dev.ps1 123
 
 # Check phase completion status
-python scripts/check-phase-completion.py
+python scripts\check-phase-completion.py
 
 # View phase status summary
-bash scripts/phase-status.sh
+.\scripts\phase-status.ps1
 ```
 
 ### Testing
@@ -138,12 +136,15 @@ pytest awesome-claude-code/tests/ -v
 
 ### Automation Scripts (`scripts/`)
 - **Plugin Management**: `plugin_manager.py` - install, update, list, diff plugins
-- **Universal Validator**: `validate_phase_universal.py` - cross-platform Phase 0-6 validation
-- **GitHub Integration**:
-  - `setup-github-labels.sh` - one-time label setup
-  - `github-issue-dev.sh` - start work from issue
-  - `migrate_prds_to_issues.py` - PRD to GitHub issue migration
-- **Legacy Phase Validators** (Bash): `validate-phase-{0,0.5,1,2,3,5,6}.sh`
+- **Universal Validator**: `validate_phase_universal.py` - Python-based cross-platform validation
+- **Windows Native Validators** ⭐ (PowerShell): `validate-phase-{0,0.5,1,2,3,5,6}.ps1`
+- **GitHub Integration** (PowerShell):
+  - `setup-github-labels.ps1` - one-time label setup
+  - `github-issue-dev.ps1` - start work from issue
+  - `phase-status.ps1` - progress tracking
+  - `validate-phase.bat` - Batch wrapper for convenience
+- **Migration Scripts**: `migrate_prds_to_issues.py` - PRD to GitHub issue migration
+- **Legacy Bash Scripts** ⚠️ (Deprecated): `validate-phase-*.sh` - Use PowerShell versions instead
 - **Utilities**:
   - `check-phase-completion.py` - progress tracking
   - `setup_subrepo_tracking.py` - agent tracking in sub-repos
@@ -332,16 +333,16 @@ Available via `.claude/commands/`:
   - `test_add_resource.py`, `test_generate_readme.py`
   - `test_badge_notification_validation.py`
 
-### Running Tests
-```bash
+### Running Tests (Windows)
+```powershell
 # All tests with coverage
-pytest tests/ -v --cov=scripts --cov-report=html
+pytest tests\ -v --cov=scripts --cov-report=html
 
 # Specific test module
-pytest tests/test_phase_detection.py -v
+pytest tests\test_phase_detection.py -v
 
 # Awesome Claude Code tests
-pytest awesome-claude-code/tests/ -v
+pytest awesome-claude-code\tests\ -v
 
 # GitHub Actions CI test
 # Runs automatically on PR to master/main
@@ -369,7 +370,7 @@ For Windows users who need to bypass Claude Code permissions:
    - `Ctrl+Shift+P` → "Tasks: Run Task" → "Claude CLI (Auto Bypass)"
 
 4. **Direct Flag**:
-   ```bash
+   ```powershell
    claude --dangerously-skip-permissions
    ```
 
