@@ -5,12 +5,17 @@
 ### 1.1 배경 (Background)
 GGP NAS 아카이브(`\\GGPWSOP\docker\GGPNAs\ARCHIVE`)에 저장된 미디어 파일들을 분석하여 B2C OTT 솔루션에 활용 가능한 형태로 정보를 정리해야 함.
 
-### 1.2 목적 (Purpose)
+### 1.2 아카이브 규모
+- **파일 수**: 1,869개
+- **총 용량**: 18TB
+- **로컬 복사 불가** → 네트워크 직접 접근 필수
+
+### 1.3 목적 (Purpose)
 - 아카이브 내 모든 미디어 파일 및 메타데이터 파일 스캔
 - OTT 서비스용 콘텐츠 카탈로그 생성
 - 스트리밍에 필요한 기술 정보 추출
 
-### 1.3 범위 (Scope)
+### 1.4 범위 (Scope)
 | 포함 | 제외 |
 |------|------|
 | 비디오 파일 분석 (MP4, MKV, AVI 등) | 실시간 트랜스코딩 구현 |
@@ -115,26 +120,29 @@ GGP NAS 아카이브(`\\GGPWSOP\docker\GGPNAs\ARCHIVE`)에 저장된 미디어 �
 | 구성요소 | 기술 | 이유 |
 |----------|------|------|
 | 언어 | Python 3.11+ | 풍부한 미디어 처리 라이브러리 |
+| **SMB 클라이언트** | **aiosmb / smbprotocol** | **비동기 네트워크 접근, SMB 2/3 지원** |
 | 미디어 분석 | FFprobe / pymediainfo | 산업 표준 도구 |
 | 데이터 저장 | SQLite + JSON export | 로컬 실행, 이식성 |
-| 파일 탐색 | pathlib + asyncio | 비동기 대용량 처리 |
+| 파일 탐색 | aiosmb + asyncio | 비동기 대용량 처리 |
 
 ### 3.2 아키텍처
 ```
-┌─────────────────────────────────────────────────────────────┐
-│                    Archive Analyzer                          │
-├─────────────────────────────────────────────────────────────┤
-│  ┌─────────────┐  ┌─────────────┐  ┌─────────────┐         │
-│  │   Scanner   │──│  Extractor  │──│  Exporter   │         │
-│  │  (파일탐색)  │  │ (메타추출)   │  │ (카탈로그)   │         │
-│  └─────────────┘  └─────────────┘  └─────────────┘         │
-│         │                │                │                  │
-│         ▼                ▼                ▼                  │
-│  ┌─────────────────────────────────────────────────┐        │
-│  │              SQLite Database                     │        │
-│  │  (files, media_info, content_metadata, catalog) │        │
-│  └─────────────────────────────────────────────────┘        │
-└─────────────────────────────────────────────────────────────┘
+┌─────────────────────────────────────────────────────────────────┐
+│                    Archive Analyzer v1.0                         │
+├─────────────────────────────────────────────────────────────────┤
+│  네트워크 계층                                                    │
+│  ├── aiosmb (비동기 SMB 클라이언트) ─ 1차 권장                    │
+│  └── smbprotocol (폴백용)                                        │
+├─────────────────────────────────────────────────────────────────┤
+│  분석 계층                                                        │
+│  ├── FFprobe (비디오 기술 메타데이터)                             │
+│  ├── pymediainfo (추가 미디어 정보)                               │
+│  └── NFO/XML Parser (콘텐츠 메타데이터)                           │
+├─────────────────────────────────────────────────────────────────┤
+│  저장 계층                                                        │
+│  ├── SQLite (로컬 DB)                                            │
+│  └── JSON Export (OTT 백엔드용)                                   │
+└─────────────────────────────────────────────────────────────────┘
 ```
 
 ### 3.3 지원 파일 포맷
@@ -286,8 +294,17 @@ CREATE TABLE content_metadata (
 ### B. 참조 문서
 - FFprobe 공식 문서: https://ffmpeg.org/ffprobe.html
 - MediaInfo 라이브러리: https://mediaarea.net/en/MediaInfo
+- **smbprotocol (GitHub)**: https://github.com/jborean93/smbprotocol
+- **aiosmb (GitHub)**: https://github.com/skelsec/aiosmb
+- **ffprobe-python (GitHub)**: https://github.com/gbstack/ffprobe-python
+- **Video-Metadata-Extractor (GitHub)**: https://github.com/CTinMich/Video-Metadata-Extractor
 
-### C. 용어 정의
+### D. 의존성 패키지
+```bash
+pip install smbprotocol aiosmb pymediainfo ffmpeg-python
+```
+
+### E. 용어 정의
 | 용어 | 정의 |
 |------|------|
 | OTT | Over-The-Top, 인터넷 기반 미디어 스트리밍 서비스 |
@@ -297,5 +314,10 @@ CREATE TABLE content_metadata (
 ---
 
 **작성일**: 2025-11-27
+**수정일**: 2025-11-27
 **작성자**: Claude (AI Assistant)
-**버전**: 1.0.0
+**버전**: 1.1.0
+
+### Changelog
+- **v1.1.0**: 아카이브 규모 추가 (1869개/18TB), SMB 라이브러리 기술 스택 반영, 아키텍처 업데이트
+- **v1.0.0**: 최초 작성
