@@ -14,7 +14,7 @@ Usage:
     python scripts/generate_report.py --format json -o report.json
 
     # 모든 포맷 출력
-    python scripts/generate_report.py --all -o reports/
+    python scripts/generate_report.py --all -o data/output/
 """
 
 import sys
@@ -44,7 +44,7 @@ Examples:
   python scripts/generate_report.py                           # 콘솔 출력
   python scripts/generate_report.py --format markdown         # Markdown 출력
   python scripts/generate_report.py --format json -o data.json # JSON 파일 저장
-  python scripts/generate_report.py --all -o reports/         # 모든 포맷 저장
+  python scripts/generate_report.py --all -o data/output/      # 모든 포맷 저장
         """
     )
 

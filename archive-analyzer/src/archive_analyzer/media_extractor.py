@@ -267,9 +267,9 @@ class SMBMediaExtractor:
     """
 
     # 메타데이터 추출에 필요한 최소 바이트 수
-    # MP4 moov atom이 파일 앞에 있는 경우 약 1MB면 충분
+    # MP4 moov atom이 파일 앞에 있는 경우 약 512KB면 충분
     # 파일 끝에 있는 경우 전체 다운로드 필요
-    HEADER_SIZE = 2 * 1024 * 1024  # 2MB (네트워크 속도 고려하여 축소)
+    HEADER_SIZE = 512 * 1024  # 512KB (속도 최적화)
 
     def __init__(
         self,
