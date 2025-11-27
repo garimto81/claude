@@ -23,7 +23,8 @@ FILE_TYPE_EXTENSIONS: dict[FileType, Set[str]] = {
     FileType.VIDEO: {
         '.mp4', '.mkv', '.avi', '.mov', '.wmv', '.flv', '.webm',
         '.m4v', '.ts', '.mts', '.m2ts', '.vob', '.mpg', '.mpeg',
-        '.3gp', '.ogv', '.rm', '.rmvb', '.divx', '.f4v'
+        '.3gp', '.ogv', '.rm', '.rmvb', '.divx', '.f4v',
+        '.mxf',  # Professional broadcast format (Material eXchange Format)
     },
     FileType.AUDIO: {
         '.mp3', '.aac', '.flac', '.wav', '.m4a', '.ogg', '.wma',

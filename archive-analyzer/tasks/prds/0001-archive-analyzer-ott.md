@@ -5,10 +5,28 @@
 ### 1.1 배경 (Background)
 GGP NAS 아카이브(`\\GGPWSOP\docker\GGPNAs\ARCHIVE`)에 저장된 미디어 파일들을 분석하여 B2C OTT 솔루션에 활용 가능한 형태로 정보를 정리해야 함.
 
-### 1.2 아카이브 규모
-- **파일 수**: 1,869개
-- **총 용량**: 18TB
+### 1.2 아카이브 규모 (2025-11-27 스캔 결과)
+- **총 파일 수**: 1,418개
+- **총 용량**: 18.03 TB
 - **로컬 복사 불가** → 네트워크 직접 접근 필수
+
+#### 파일 유형별 분포
+| 유형 | 파일 수 | 용량 | 비율 |
+|------|---------|------|------|
+| 비디오 (video) | 1,271개 | 15.34 TB | 85.1% |
+| 기타 (other) | 147개 | 2.68 TB | 14.9% |
+
+#### 기타 파일 상세 분석
+| 확장자 | 파일 수 | 용량 | 설명 |
+|--------|---------|------|------|
+| .mxf | 126개 | 2,742 GB | 방송용 비디오 포맷 (→ video로 재분류 필요) |
+| .part | 4개 | 2.95 GB | 미완료 다운로드 파일 |
+| .zip | 1개 | 1.36 GB | 압축 파일 |
+| .db | 13개 | < 1 MB | 데이터베이스 파일 |
+| .pek | 2개 | < 1 MB | 오디오 피크 파일 |
+| .xmp | 1개 | < 1 MB | Adobe 메타데이터 |
+
+> **참고**: MXF (Material eXchange Format)는 프로페셔널 방송용 비디오 포맷으로, video 유형에 포함하면 실제 비디오 파일은 **1,397개 (18.02 TB)**
 
 ### 1.3 목적 (Purpose)
 - 아카이브 내 모든 미디어 파일 및 메타데이터 파일 스캔
@@ -148,11 +166,11 @@ GGP NAS 아카이브(`\\GGPWSOP\docker\GGPNAs\ARCHIVE`)에 저장된 미디어 �
 ### 3.3 지원 파일 포맷
 | 유형 | 확장자 |
 |------|--------|
-| 비디오 | .mp4, .mkv, .avi, .mov, .wmv, .flv, .webm |
-| 오디오 | .mp3, .aac, .flac, .wav, .m4a |
-| 자막 | .srt, .ass, .ssa, .vtt, .sub |
-| 메타데이터 | .nfo, .xml, .json |
-| 이미지 | .jpg, .png, .webp (썸네일/포스터) |
+| 비디오 | .mp4, .mkv, .avi, .mov, .wmv, .flv, .webm, .mxf, .ts, .m2ts, .vob, .mpg |
+| 오디오 | .mp3, .aac, .flac, .wav, .m4a, .ogg, .wma, .opus |
+| 자막 | .srt, .ass, .ssa, .vtt, .sub, .idx, .smi |
+| 메타데이터 | .nfo, .xml, .json, .yaml |
+| 이미지 | .jpg, .png, .webp, .gif, .bmp (썸네일/포스터) |
 
 ---
 
@@ -316,8 +334,35 @@ pip install smbprotocol aiosmb pymediainfo ffmpeg-python
 **작성일**: 2025-11-27
 **수정일**: 2025-11-27
 **작성자**: Claude (AI Assistant)
-**버전**: 1.1.0
+**버전**: 1.2.0
 
 ### Changelog
+- **v1.2.0**: 실제 스캔 결과 반영 (1,418개/18.03TB), 파일 유형별 상세 분석 추가, MXF 포맷 지원 추가
 - **v1.1.0**: 아카이브 규모 추가 (1869개/18TB), SMB 라이브러리 기술 스택 반영, 아키텍처 업데이트
 - **v1.0.0**: 최초 작성
+
+---
+
+## Appendix F. 구현 진행 상황
+
+### 완료된 이슈
+| 이슈 | 설명 | 상태 |
+|------|------|------|
+| Issue #1 | SMB 네트워크 연결 테스트 | ✅ 완료 |
+| Issue #2 | SMB 커넥터 모듈 구현 | ✅ 완료 |
+| Issue #3 | 아카이브 파일 스캐너 구현 | ✅ 완료 |
+| Issue #8 | 미디어 메타데이터 추출기 구현 | ✅ 완료 |
+
+### 구현된 모듈
+| 모듈 | 파일 | 설명 |
+|------|------|------|
+| SMB Connector | `smb_connector.py` | SMB 2/3 네트워크 연결 관리 |
+| File Classifier | `file_classifier.py` | 파일 유형별 분류 |
+| Database | `database.py` | SQLite DB 관리, files/media_info 테이블 |
+| Scanner | `scanner.py` | 재귀적 디렉토리 스캔, 체크포인트 |
+| Media Extractor | `media_extractor.py` | FFprobe 기반 메타데이터 추출 |
+
+### 테스트 현황
+- SMB Connector: 20개 테스트 통과
+- Scanner: 21개 테스트 통과
+- Media Extractor: 27개 테스트 통과
