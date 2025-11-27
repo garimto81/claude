@@ -78,6 +78,37 @@ class FolderStats:
     file_count: int = 0
     total_size: int = 0
     video_count: int = 0
+    depth: int = 0  # 폴더 깊이
+    relative_path: str = ""  # 아카이브 기준 상대 경로
+
+    @property
+    def size_formatted(self) -> str:
+        if self.total_size >= 1024 ** 4:
+            return f"{self.total_size / (1024 ** 4):.2f} TB"
+        elif self.total_size >= 1024 ** 3:
+            return f"{self.total_size / (1024 ** 3):.2f} GB"
+        elif self.total_size >= 1024 ** 2:
+            return f"{self.total_size / (1024 ** 2):.2f} MB"
+        else:
+            return f"{self.total_size / 1024:.2f} KB"
+
+    @property
+    def folder_name(self) -> str:
+        """폴더 이름만 추출"""
+        parts = self.folder.replace("\\", "/").rstrip("/").split("/")
+        return parts[-1] if parts else self.folder
+
+
+@dataclass
+class FolderTreeNode:
+    """폴더 트리 노드"""
+    name: str
+    full_path: str
+    file_count: int = 0
+    total_size: int = 0
+    video_count: int = 0
+    children: Dict[str, "FolderTreeNode"] = field(default_factory=dict)
+    depth: int = 0
 
     @property
     def size_formatted(self) -> str:
@@ -159,6 +190,7 @@ class ArchiveReport:
 
     # 추가 정보
     extension_breakdown: Dict[str, Dict[str, Any]] = field(default_factory=dict)
+    folder_tree: Optional[FolderTreeNode] = None  # 폴더 트리 구조
 
     @property
     def total_size_formatted(self) -> str:
@@ -478,7 +510,7 @@ class ReportGenerator:
         """폴더별 통계 수집"""
         cursor = self._conn.cursor()
 
-        # 최상위 폴더별 통계
+        # 모든 폴더 통계 조회
         cursor.execute("""
             SELECT
                 parent_folder,
@@ -488,19 +520,97 @@ class ReportGenerator:
             FROM files
             GROUP BY parent_folder
             ORDER BY total_size DESC
-            LIMIT 20
         """)
 
         stats_list = []
+        all_folders = []
+
         for row in cursor.fetchall():
-            stats_list.append(FolderStats(
-                folder=row[0] or '(root)',
+            folder_path = row[0] or '(root)'
+            # 상대 경로 추출 (ARCHIVE 이후)
+            relative = self._extract_relative_path(folder_path)
+            depth = relative.count('/') if relative else 0
+
+            stats = FolderStats(
+                folder=folder_path,
                 file_count=row[1],
                 total_size=row[2],
                 video_count=row[3],
-            ))
+                depth=depth,
+                relative_path=relative,
+            )
+            all_folders.append(stats)
 
-        report.folder_stats = stats_list
+        # 상위 50개만 저장 (용량 순)
+        report.folder_stats = all_folders[:50]
+
+        # 폴더 트리 생성
+        report.folder_tree = self._build_folder_tree(all_folders)
+
+    def _extract_relative_path(self, full_path: str) -> str:
+        """전체 경로에서 ARCHIVE 이후 상대 경로 추출"""
+        # 경로 정규화
+        path = full_path.replace("\\", "/")
+
+        # ARCHIVE 이후 경로 추출
+        markers = ["/ARCHIVE/", "/ARCHIVE"]
+        for marker in markers:
+            if marker in path:
+                idx = path.find(marker)
+                return path[idx + len(marker):].strip("/")
+
+        # ARCHIVE 마커가 없으면 마지막 3개 폴더만 반환
+        parts = path.strip("/").split("/")
+        if len(parts) > 3:
+            return "/".join(parts[-3:])
+        return "/".join(parts)
+
+    def _build_folder_tree(self, folder_stats: List[FolderStats]) -> FolderTreeNode:
+        """폴더 통계에서 트리 구조 생성"""
+        root = FolderTreeNode(name="ARCHIVE", full_path="", depth=0)
+
+        for stats in folder_stats:
+            relative = stats.relative_path
+            if not relative:
+                # 루트 레벨
+                root.file_count += stats.file_count
+                root.total_size += stats.total_size
+                root.video_count += stats.video_count
+                continue
+
+            # 경로 분리
+            parts = relative.split("/")
+            current = root
+
+            for i, part in enumerate(parts):
+                if not part:
+                    continue
+
+                if part not in current.children:
+                    current.children[part] = FolderTreeNode(
+                        name=part,
+                        full_path="/".join(parts[:i+1]),
+                        depth=i + 1,
+                    )
+
+                current = current.children[part]
+
+            # 리프 노드에 통계 추가
+            current.file_count = stats.file_count
+            current.total_size = stats.total_size
+            current.video_count = stats.video_count
+
+        # 부모 노드 통계 집계
+        self._aggregate_tree_stats(root)
+
+        return root
+
+    def _aggregate_tree_stats(self, node: FolderTreeNode) -> None:
+        """트리 노드의 자식 통계를 부모로 집계"""
+        for child in node.children.values():
+            self._aggregate_tree_stats(child)
+            # 자식이 리프 노드가 아니면 합계에 포함 안함 (이중 계산 방지)
+            # 리프 노드만 실제 데이터 가짐
 
     def _gather_duration_stats(self, report: ArchiveReport) -> None:
         """재생시간별 통계 수집"""
@@ -848,23 +958,34 @@ class ReportFormatter:
                     lines.append(f"| {stats.range_label} | {stats.count:,}개 | {stats.percentage}% |")
                 lines.append("")
 
-        # 폴더별 통계
+        # 폴더 구조 다이어그램
+        if report.folder_tree:
+            lines.append("## 4. 폴더 구조")
+            lines.append("")
+            lines.append("```")
+            lines.extend(ReportFormatter._render_folder_tree(report.folder_tree))
+            lines.append("```")
+            lines.append("")
+
+        # 폴더별 상세 통계
         if report.folder_stats:
-            lines.append("## 4. 폴더별 통계 (상위 20개)")
+            lines.append("## 5. 폴더별 상세 통계 (용량순 상위 50개)")
             lines.append("")
-            lines.append("| 폴더 | 파일 수 | 비디오 수 | 용량 |")
-            lines.append("|------|---------|-----------|------|")
-            for stats in report.folder_stats:
-                folder_display = stats.folder[:50] + "..." if len(stats.folder) > 50 else stats.folder
-                lines.append(
-                    f"| {folder_display} | {stats.file_count:,}개 | {stats.video_count:,}개 | {stats.size_formatted} |"
-                )
-            lines.append("")
+
+            # 상대 경로 기준으로 표시
+            for i, stats in enumerate(report.folder_stats[:50], 1):
+                lines.append(f"### {i}. {stats.relative_path or '(root)'}")
+                lines.append("")
+                lines.append(f"- **파일 수**: {stats.file_count:,}개")
+                lines.append(f"- **비디오 수**: {stats.video_count:,}개")
+                lines.append(f"- **용량**: {stats.size_formatted}")
+                lines.append(f"- **전체 경로**: `{stats.folder}`")
+                lines.append("")
 
         # 스트리밍 적합성
         if report.streaming_compatibility:
             compat = report.streaming_compatibility
-            lines.append("## 5. 스트리밍 적합성 평가")
+            lines.append("## 6. 스트리밍 적합성 평가")
             lines.append("")
             lines.append("| 항목 | 값 |")
             lines.append("|------|-----|")
@@ -885,7 +1006,7 @@ class ReportFormatter:
         if report.quality_issues:
             issues = report.quality_issues
             if issues.failed_extraction or issues.missing_video or issues.missing_audio:
-                lines.append("## 6. 품질 이슈")
+                lines.append("## 7. 품질 이슈")
                 lines.append("")
 
                 if issues.failed_extraction:
@@ -911,6 +1032,74 @@ class ReportFormatter:
         lines.append(f"*Generated by Archive Analyzer on {report.report_date}*")
 
         return "\n".join(lines)
+
+    @staticmethod
+    def _render_folder_tree(
+        node: FolderTreeNode,
+        prefix: str = "",
+        is_last: bool = True,
+        max_depth: int = 4
+    ) -> List[str]:
+        """폴더 트리를 텍스트로 렌더링
+
+        Args:
+            node: 폴더 트리 노드
+            prefix: 현재 줄 접두사
+            is_last: 마지막 자식 여부
+            max_depth: 최대 표시 깊이
+
+        Returns:
+            렌더링된 라인 목록
+        """
+        lines = []
+
+        # 현재 노드 표시
+        if node.depth == 0:
+            # 루트 노드
+            lines.append(f"ARCHIVE/ ({node.file_count:,}개 파일, {node.size_formatted})")
+        else:
+            connector = "└── " if is_last else "├── "
+            size_info = f" ({node.file_count:,}개, {node.size_formatted})" if node.file_count > 0 else ""
+            lines.append(f"{prefix}{connector}{node.name}/{size_info}")
+
+        # 자식 노드들 (용량순 정렬)
+        if node.depth < max_depth:
+            children = sorted(
+                node.children.values(),
+                key=lambda x: x.total_size,
+                reverse=True
+            )
+
+            # 자식이 많으면 상위 10개만 표시
+            display_children = children[:10]
+            hidden_count = len(children) - 10 if len(children) > 10 else 0
+
+            for i, child in enumerate(display_children):
+                is_child_last = (i == len(display_children) - 1) and hidden_count == 0
+
+                if node.depth == 0:
+                    child_prefix = ""
+                else:
+                    child_prefix = prefix + ("    " if is_last else "│   ")
+
+                lines.extend(
+                    ReportFormatter._render_folder_tree(
+                        child,
+                        prefix=child_prefix,
+                        is_last=is_child_last,
+                        max_depth=max_depth
+                    )
+                )
+
+            # 숨겨진 항목 표시
+            if hidden_count > 0:
+                if node.depth == 0:
+                    hidden_prefix = ""
+                else:
+                    hidden_prefix = prefix + ("    " if is_last else "│   ")
+                lines.append(f"{hidden_prefix}└── ... 외 {hidden_count}개 폴더")
+
+        return lines
 
     @staticmethod
     def to_console(report: ArchiveReport) -> str:
