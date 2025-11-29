@@ -148,6 +148,11 @@ class MetricsCollector:
     def __init__(self):
         self._sessions: dict[str, SessionMetrics] = {}
         self._phase_data: dict[int, list[dict]] = defaultdict(list)
+        # 증분 집계용 (Quick Win: 실시간 집계)
+        self._total_tokens: int = 0
+        self._successful_sessions: int = 0
+        self._failed_sessions: int = 0
+        self._total_duration: float = 0.0
 
     def start_session(self, session_id: str) -> SessionMetrics:
         """
@@ -198,6 +203,14 @@ class MetricsCollector:
             session.duration_seconds = (end - start).total_seconds()
         except Exception:
             session.duration_seconds = 0.0
+
+        # 증분 집계 업데이트 (Quick Win: 실시간 반영)
+        self._total_tokens += token_usage
+        self._total_duration += session.duration_seconds
+        if success:
+            self._successful_sessions += 1
+        else:
+            self._failed_sessions += 1
 
         return session
 
@@ -331,6 +344,11 @@ class MetricsCollector:
         """데이터 초기화"""
         self._sessions.clear()
         self._phase_data.clear()
+        # 증분 집계도 초기화
+        self._total_tokens = 0
+        self._successful_sessions = 0
+        self._failed_sessions = 0
+        self._total_duration = 0.0
 
 
 # 전역 수집기 인스턴스

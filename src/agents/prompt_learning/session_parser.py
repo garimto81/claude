@@ -8,9 +8,10 @@ Claude Code 세션 로그 파서
 import json
 from pathlib import Path
 from dataclasses import dataclass, field
-from typing import Optional, Iterator
+from typing import Optional, Iterator, Generator
 from datetime import datetime
 from enum import Enum
+from functools import lru_cache
 
 
 class EventType(Enum):
@@ -169,6 +170,32 @@ class SessionParser:
         self._events = events
         return events
 
+    def parse_file_streaming(self, log_path: Path | str) -> Generator[SessionEvent, None, None]:
+        """
+        스트리밍 방식 세션 로그 파싱 (메모리 효율적)
+
+        Args:
+            log_path: 세션 로그 파일 경로
+
+        Yields:
+            SessionEvent 객체
+        """
+        log_path = Path(log_path)
+
+        if not log_path.exists():
+            raise FileNotFoundError(f"Session log not found: {log_path}")
+
+        with open(log_path, "r", encoding="utf-8") as f:
+            for line in f:
+                if not line.strip():
+                    continue
+
+                try:
+                    data = json.loads(line)
+                    yield SessionEvent.from_dict(data)
+                except json.JSONDecodeError:
+                    continue
+
     def summarize(self, events: Optional[list[SessionEvent]] = None) -> SessionSummary:
         """
         세션 요약 생성
@@ -243,40 +270,36 @@ class SessionParser:
             end_time=end_time
         )
 
+    # 타임스탬프 파싱 형식 (클래스 레벨 상수)
+    _TIMESTAMP_FORMATS = [
+        "%Y-%m-%dT%H:%M:%S.%fZ",
+        "%Y-%m-%dT%H:%M:%SZ",
+        "%Y-%m-%d %H:%M:%S.%f",
+        "%Y-%m-%d %H:%M:%S"
+    ]
+
+    @staticmethod
+    @lru_cache(maxsize=512)
+    def _parse_timestamp(ts: str) -> Optional[datetime]:
+        """타임스탬프 파싱 (캐싱 적용)"""
+        for fmt in SessionParser._TIMESTAMP_FORMATS:
+            try:
+                return datetime.strptime(ts, fmt)
+            except ValueError:
+                continue
+        return None
+
     def _calculate_duration(self, start: Optional[str], end: Optional[str]) -> float:
         """시작/종료 시간에서 duration 계산"""
         if not start or not end:
             return 0.0
 
         try:
-            # ISO 8601 형식 파싱 시도
-            formats = [
-                "%Y-%m-%dT%H:%M:%S.%fZ",
-                "%Y-%m-%dT%H:%M:%SZ",
-                "%Y-%m-%d %H:%M:%S.%f",
-                "%Y-%m-%d %H:%M:%S"
-            ]
-
-            start_dt = None
-            end_dt = None
-
-            for fmt in formats:
-                try:
-                    start_dt = datetime.strptime(start, fmt)
-                    break
-                except ValueError:
-                    continue
-
-            for fmt in formats:
-                try:
-                    end_dt = datetime.strptime(end, fmt)
-                    break
-                except ValueError:
-                    continue
+            start_dt = self._parse_timestamp(start)
+            end_dt = self._parse_timestamp(end)
 
             if start_dt and end_dt:
                 return (end_dt - start_dt).total_seconds()
-
         except Exception:
             pass
 
