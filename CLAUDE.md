@@ -96,6 +96,8 @@ Available in `.claude/commands/`:
 | `/search` | 웹/GitHub 검색 및 추천 |
 | `/parallel-research` | **[Multi-Agent]** 병렬 리서치 |
 | `/parallel-review` | **[Multi-Agent]** 4-에이전트 코드 리뷰 |
+| `/parallel-dev` | **[Multi-Agent]** 4-에이전트 병렬 개발 (Architect/Coder/Tester/Docs) |
+| `/parallel-test` | **[Multi-Agent]** 4-에이전트 병렬 테스트 (Unit/Integration/E2E/Security) |
 
 ### Aiden Commands (작업 문서화)
 | Command | Purpose |
@@ -165,13 +167,25 @@ D:\AI\claude01\
 from src.agents.parallel_workflow import run_parallel_task
 result = run_parallel_task("프로젝트 분석", num_agents=3)
 
+# 병렬 개발 워크플로우
+from src.agents.dev_workflow import run_dev_workflow
+result = run_dev_workflow("사용자 인증 기능 구현")
+
+# 병렬 테스트 워크플로우
+from src.agents.test_workflow import run_test_workflow
+result = run_test_workflow("src/auth", scope="전체")
+
 # CLI 실행
 python src/agents/parallel_workflow.py "프로젝트 구조 분석"
+python src/agents/dev_workflow.py "새 API 엔드포인트 추가"
+python src/agents/test_workflow.py "src/api" "전체"
 ```
 
 | 모듈 | 설명 |
 | :--- | :--- |
 | `src/agents/parallel_workflow.py` | LangGraph Fan-Out/Fan-In 워크플로우 |
+| `src/agents/dev_workflow.py` | 병렬 개발 워크플로우 (Architect/Coder/Tester/Docs) |
+| `src/agents/test_workflow.py` | 병렬 테스트 워크플로우 (Unit/Integration/E2E/Security) |
 | `src/agents/phase_validator.py` | Phase 병렬 검증기 |
 | `src/agents/config.py` | 모델 티어링 (supervisor/lead/researcher/coder/reviewer/validator) |
 
