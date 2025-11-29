@@ -259,6 +259,74 @@ class Database:
         cursor.execute("CREATE INDEX IF NOT EXISTS idx_media_file_id ON media_info(file_id)")
         cursor.execute("CREATE INDEX IF NOT EXISTS idx_media_status ON media_info(extraction_status)")
 
+        # 클립 메타데이터 테이블 (iconik CSV 임포트용)
+        cursor.execute("""
+            CREATE TABLE IF NOT EXISTS clip_metadata (
+                id INTEGER PRIMARY KEY AUTOINCREMENT,
+                iconik_id TEXT UNIQUE,
+                title TEXT,
+                description TEXT,
+                time_start_ms INTEGER,
+                time_end_ms INTEGER,
+                project_name TEXT,
+                year INTEGER,
+                location TEXT,
+                venue TEXT,
+                episode_event TEXT,
+                source TEXT,
+                game_type TEXT,
+                players_tags TEXT,
+                hand_grade TEXT,
+                hand_tag TEXT,
+                epic_hand TEXT,
+                tournament TEXT,
+                poker_play_tags TEXT,
+                adjective TEXT,
+                emotion TEXT,
+                is_badbeat INTEGER DEFAULT 0,
+                is_bluff INTEGER DEFAULT 0,
+                is_suckout INTEGER DEFAULT 0,
+                is_cooler INTEGER DEFAULT 0,
+                runout_tag TEXT,
+                postflop TEXT,
+                allin_tag TEXT,
+                file_id INTEGER REFERENCES files(id),
+                matched_file_path TEXT,
+                match_confidence REAL,
+                created_at DATETIME DEFAULT CURRENT_TIMESTAMP,
+                updated_at DATETIME DEFAULT CURRENT_TIMESTAMP
+            )
+        """)
+        cursor.execute("CREATE INDEX IF NOT EXISTS idx_clip_iconik_id ON clip_metadata(iconik_id)")
+        cursor.execute("CREATE INDEX IF NOT EXISTS idx_clip_file_id ON clip_metadata(file_id)")
+        cursor.execute("CREATE INDEX IF NOT EXISTS idx_clip_project ON clip_metadata(project_name)")
+        cursor.execute("CREATE INDEX IF NOT EXISTS idx_clip_event ON clip_metadata(episode_event)")
+
+        # 미디어 파일 테이블 (media_metadata.csv Path 기반 매칭용)
+        cursor.execute("""
+            CREATE TABLE IF NOT EXISTS media_files (
+                id INTEGER PRIMARY KEY,
+                filename TEXT,
+                path TEXT UNIQUE,
+                folder TEXT,
+                container TEXT,
+                size_bytes INTEGER,
+                duration_sec REAL,
+                -- Path 파싱 결과
+                category TEXT,
+                sub_category TEXT,
+                location TEXT,
+                year_folder TEXT,
+                archive_path TEXT,
+                normalized_name TEXT,
+                created_at DATETIME DEFAULT CURRENT_TIMESTAMP
+            )
+        """)
+        cursor.execute("CREATE INDEX IF NOT EXISTS idx_media_files_category ON media_files(category)")
+        cursor.execute("CREATE INDEX IF NOT EXISTS idx_media_files_sub_cat ON media_files(sub_category)")
+        cursor.execute("CREATE INDEX IF NOT EXISTS idx_media_files_location ON media_files(location)")
+        cursor.execute("CREATE INDEX IF NOT EXISTS idx_media_files_normalized ON media_files(normalized_name)")
+
         conn.commit()
         logger.info(f"Database schema ensured at {self.db_path}")
 
@@ -757,6 +825,227 @@ class Database:
         stats['total_duration_seconds'] = cursor.fetchone()['total']
 
         return stats
+
+    # === 클립 메타데이터 (iconik CSV) ===
+
+    def insert_clip_metadata(self, clip: dict) -> int:
+        """클립 메타데이터 삽입
+
+        Args:
+            clip: 클립 메타데이터 딕셔너리
+
+        Returns:
+            삽입된 레코드 ID
+        """
+        conn = self._get_connection()
+        cursor = conn.cursor()
+
+        cursor.execute("""
+            INSERT OR REPLACE INTO clip_metadata (
+                iconik_id, title, description, time_start_ms, time_end_ms,
+                project_name, year, location, venue, episode_event, source,
+                game_type, players_tags, hand_grade, hand_tag, epic_hand,
+                tournament, poker_play_tags, adjective, emotion,
+                is_badbeat, is_bluff, is_suckout, is_cooler,
+                runout_tag, postflop, allin_tag,
+                file_id, matched_file_path, match_confidence, updated_at
+            ) VALUES (?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?)
+        """, (
+            clip.get('iconik_id'),
+            clip.get('title'),
+            clip.get('description'),
+            clip.get('time_start_ms'),
+            clip.get('time_end_ms'),
+            clip.get('project_name'),
+            clip.get('year'),
+            clip.get('location'),
+            clip.get('venue'),
+            clip.get('episode_event'),
+            clip.get('source'),
+            clip.get('game_type'),
+            clip.get('players_tags'),
+            clip.get('hand_grade'),
+            clip.get('hand_tag'),
+            clip.get('epic_hand'),
+            clip.get('tournament'),
+            clip.get('poker_play_tags'),
+            clip.get('adjective'),
+            clip.get('emotion'),
+            1 if clip.get('is_badbeat') else 0,
+            1 if clip.get('is_bluff') else 0,
+            1 if clip.get('is_suckout') else 0,
+            1 if clip.get('is_cooler') else 0,
+            clip.get('runout_tag'),
+            clip.get('postflop'),
+            clip.get('allin_tag'),
+            clip.get('file_id'),
+            clip.get('matched_file_path'),
+            clip.get('match_confidence'),
+            datetime.now().isoformat(),
+        ))
+
+        conn.commit()
+        return cursor.lastrowid
+
+    def insert_clip_metadata_batch(self, clips: List[dict]) -> int:
+        """클립 메타데이터 일괄 삽입
+
+        Args:
+            clips: 클립 메타데이터 딕셔너리 목록
+
+        Returns:
+            삽입된 레코드 수
+        """
+        if not clips:
+            return 0
+
+        conn = self._get_connection()
+        cursor = conn.cursor()
+
+        data = [
+            (
+                c.get('iconik_id'),
+                c.get('title'),
+                c.get('description'),
+                c.get('time_start_ms'),
+                c.get('time_end_ms'),
+                c.get('project_name'),
+                c.get('year'),
+                c.get('location'),
+                c.get('venue'),
+                c.get('episode_event'),
+                c.get('source'),
+                c.get('game_type'),
+                c.get('players_tags'),
+                c.get('hand_grade'),
+                c.get('hand_tag'),
+                c.get('epic_hand'),
+                c.get('tournament'),
+                c.get('poker_play_tags'),
+                c.get('adjective'),
+                c.get('emotion'),
+                1 if c.get('is_badbeat') else 0,
+                1 if c.get('is_bluff') else 0,
+                1 if c.get('is_suckout') else 0,
+                1 if c.get('is_cooler') else 0,
+                c.get('runout_tag'),
+                c.get('postflop'),
+                c.get('allin_tag'),
+                c.get('file_id'),
+                c.get('matched_file_path'),
+                c.get('match_confidence'),
+                datetime.now().isoformat(),
+            )
+            for c in clips
+        ]
+
+        cursor.executemany("""
+            INSERT OR REPLACE INTO clip_metadata (
+                iconik_id, title, description, time_start_ms, time_end_ms,
+                project_name, year, location, venue, episode_event, source,
+                game_type, players_tags, hand_grade, hand_tag, epic_hand,
+                tournament, poker_play_tags, adjective, emotion,
+                is_badbeat, is_bluff, is_suckout, is_cooler,
+                runout_tag, postflop, allin_tag,
+                file_id, matched_file_path, match_confidence, updated_at
+            ) VALUES (?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?)
+        """, data)
+
+        conn.commit()
+        return len(clips)
+
+    def get_clip_metadata_by_iconik_id(self, iconik_id: str) -> Optional[dict]:
+        """iconik ID로 클립 메타데이터 조회"""
+        conn = self._get_connection()
+        cursor = conn.cursor()
+
+        cursor.execute("SELECT * FROM clip_metadata WHERE iconik_id = ?", (iconik_id,))
+        row = cursor.fetchone()
+
+        if row:
+            return dict(row)
+        return None
+
+    def get_clip_metadata_count(self) -> int:
+        """클립 메타데이터 수 조회"""
+        conn = self._get_connection()
+        cursor = conn.cursor()
+
+        cursor.execute("SELECT COUNT(*) FROM clip_metadata")
+        return cursor.fetchone()[0]
+
+    def get_clip_statistics(self) -> dict:
+        """클립 메타데이터 통계 조회"""
+        conn = self._get_connection()
+        cursor = conn.cursor()
+
+        stats = {
+            'total': 0,
+            'matched': 0,
+            'unmatched': 0,
+            'by_project': {},
+            'by_event': {},
+            'by_hand_grade': {},
+        }
+
+        # 전체 수
+        cursor.execute("SELECT COUNT(*) FROM clip_metadata")
+        stats['total'] = cursor.fetchone()[0]
+
+        # 매칭된 수
+        cursor.execute("SELECT COUNT(*) FROM clip_metadata WHERE file_id IS NOT NULL")
+        stats['matched'] = cursor.fetchone()[0]
+        stats['unmatched'] = stats['total'] - stats['matched']
+
+        # 프로젝트별
+        cursor.execute("""
+            SELECT project_name, COUNT(*) as count
+            FROM clip_metadata
+            WHERE project_name IS NOT NULL AND project_name != ''
+            GROUP BY project_name
+            ORDER BY count DESC
+        """)
+        for row in cursor.fetchall():
+            stats['by_project'][row['project_name']] = row['count']
+
+        # 이벤트별
+        cursor.execute("""
+            SELECT episode_event, COUNT(*) as count
+            FROM clip_metadata
+            WHERE episode_event IS NOT NULL AND episode_event != ''
+            GROUP BY episode_event
+            ORDER BY count DESC
+            LIMIT 20
+        """)
+        for row in cursor.fetchall():
+            stats['by_event'][row['episode_event']] = row['count']
+
+        # 핸드 등급별
+        cursor.execute("""
+            SELECT hand_grade, COUNT(*) as count
+            FROM clip_metadata
+            WHERE hand_grade IS NOT NULL AND hand_grade != ''
+            GROUP BY hand_grade
+            ORDER BY count DESC
+        """)
+        for row in cursor.fetchall():
+            stats['by_hand_grade'][row['hand_grade']] = row['count']
+
+        return stats
+
+    def update_clip_file_match(self, iconik_id: str, file_id: int, file_path: str, confidence: float) -> bool:
+        """클립과 파일 매칭 정보 업데이트"""
+        conn = self._get_connection()
+        cursor = conn.cursor()
+
+        cursor.execute("""
+            UPDATE clip_metadata
+            SET file_id = ?, matched_file_path = ?, match_confidence = ?, updated_at = ?
+            WHERE iconik_id = ?
+        """, (file_id, file_path, confidence, datetime.now().isoformat(), iconik_id))
+
+        conn.commit()
+        return cursor.rowcount > 0
 
     def __enter__(self):
         return self
