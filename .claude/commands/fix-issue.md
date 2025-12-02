@@ -3,9 +3,14 @@ name: fix-issue
 description: Analyze and fix GitHub issues using structured approach
 ---
 
-# /fix-issue - GitHub Issue Resolver
+# /fix-issue - GitHub Issue Resolver (해결 전용)
 
-Automatically fetch, analyze, and fix GitHub issues with structured workflow.
+GitHub 이슈를 **해결**하는 구조화된 워크플로우.
+
+> **역할 구분**:
+> - `/fix-issue` - 이슈 **해결** (브랜치 생성 → 구현 → PR)
+> - `/issues` - 이슈 **조회** (목록 + 상태)
+> - `/issue` - 솔루션 **리서치** (검색 + 비교)
 
 ## Usage
 
@@ -100,8 +105,16 @@ bash scripts/github-issue-dev.sh 123
 
 Both create feature branch and draft PR.
 
+## 연동 에이전트
+
+| 단계 | 에이전트 | 역할 |
+|------|----------|------|
+| 원인 분석 | `debugger` | 근본 원인 파악 |
+| 코드 수정 | `code-reviewer` | 코드 품질 확인 |
+| 테스트 | `test-automator` | 테스트 작성 |
+
 ## Related
 
 - `/create-pr` - Create PR after fix
-- `scripts/github-issue-dev.sh`
-- `.github/ISSUE_TEMPLATE/`
+- `/pre-work` - 사전 조사 (솔루션 검색)
+- `scripts/github-issue-dev.ps1`

@@ -3,9 +3,14 @@ name: issues
 description: List and check status of GitHub issues
 ---
 
-# /issues - GitHub Issue List & Status
+# /issues - GitHub Issue List & Status (조회 전용)
 
-GitHub 이슈 목록 조회 및 상태 확인.
+GitHub 이슈 목록 **조회** 및 상태 확인.
+
+> **역할 구분**:
+> - `/issues` - 이슈 **조회/상태 확인** (Read)
+> - `/fix-issue` - 이슈 **해결** (브랜치 생성 → 구현 → PR)
+> - `/issue` - 이슈 **솔루션 리서치** (Multi-Agent 병렬 검색)
 
 ## Usage
 

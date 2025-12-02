@@ -7,6 +7,14 @@ description: Analyze code performance and identify bottlenecks
 
 Analyze code performance to identify bottlenecks with optimization proposals.
 
+## 연동 에이전트
+
+| 영역 | 에이전트 | 역할 |
+|------|----------|------|
+| 성능 분석 | `performance-engineer` | 병목 식별 |
+| DB 최적화 | `database-optimizer` | 쿼리 개선 |
+| 코드 리뷰 | `code-reviewer` | 최적화 검증 |
+
 ## Usage
 
 ```

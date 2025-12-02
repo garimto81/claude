@@ -352,6 +352,8 @@ Task(agent: database-architect) → Task(agent: backend-architect + frontend-dev
 | 보안 | `security-auditor` |
 | 성능 | `performance-engineer` |
 | 배포 | `deployment-engineer` |
+| API 테스트 | `backend-architect` + `graphql-architect` + `security-auditor` |
+| 로그 분석 | `devops-troubleshooter` + `debugger` + `performance-engineer` |
 
 ---
 
