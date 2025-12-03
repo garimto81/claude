@@ -1,7 +1,7 @@
 # Database Schema Documentation
 
 > **Last Updated**: 2025-12-03
-> **Version**: 2.5.1
+> **Version**: 2.6.0
 
 이 문서는 archive-analyzer와 연동 레포지토리 간 DB 스키마를 정의합니다.
 **스키마 변경 시 반드시 이 문서를 업데이트하고 관련 레포에 공유해야 합니다.**
@@ -10,7 +10,7 @@
 
 | 카테고리 | 테이블 | 설명 |
 |----------|--------|------|
-| **Core** | catalogs, subcatalogs, tournaments, events, files, hands, players, hand_players, hand_tags, id_mapping | 콘텐츠 계층 구조 + 정규화 |
+| **Core** | catalogs, files, players | 콘텐츠 기본 구조 |
 | **V3.0 ✅** | series, contents, content_players, content_tags, tags | Video Card 중심 통합 스키마 |
 | **User** | users, user_sessions, user_preferences, watch_progress, view_events | 사용자 및 시청 기록 |
 | **Recommendation** | recommendation_cache, trending_scores, home_rows, user_home_rows | 추천 시스템 |
@@ -38,57 +38,7 @@
 **경로**: `D:/AI/claude01/shared-data/pokervod.db`
 **관리**: 모든 프로젝트 공유 (WAL 모드)
 
-### 1.1 ERD
-
-```
-┌─────────────┐     ┌──────────────┐     ┌─────────────┐
-│  catalogs   │────<│  subcatalogs │     │   players   │
-│─────────────│     │──────────────│     │─────────────│
-│ id (PK)     │     │ id (PK)      │     │ name (PK)   │
-│ name        │     │ catalog_id   │     │ display_name│
-│ description │     │ name         │     │ country     │
-└─────────────┘     │ display_order│     │ total_hands │
-       │            └──────────────┘     └─────────────┘
-       │                   │                    │
-       ▼                   ▼                    │
-┌─────────────────┐  ┌─────────────┐           │
-│   tournaments   │  │   events    │           │
-│─────────────────│  │─────────────│           │
-│ id (PK)         │  │ id (PK)     │           │
-│ catalog_id (FK) │──│ tournament_ │           │
-│ subcatalog_id   │  │ id (FK)     │           │
-│ name            │  │ name        │           │
-│ year            │  │ day         │           │
-│ location        │  │ session     │           │
-└─────────────────┘  └──────┬──────┘           │
-                            │                  │
-                            ▼                  │
-                     ┌─────────────┐           │
-                     │    files    │           │
-                     │─────────────│           │
-                     │ id (PK)     │           │
-                     │ event_id(FK)│           │
-                     │ nas_path    │◀══════════╪═══ archive-analyzer 동기화
-                     │ filename    │           │
-                     │ analysis_   │           │
-                     │ status      │           │
-                     └──────┬──────┘           │
-                            │                  │
-                            ▼                  │
-                     ┌─────────────┐           │
-                     │    hands    │───────────┘
-                     │─────────────│    (players JSON)
-                     │ id (PK)     │
-                     │ file_id(FK) │
-                     │ start_sec   │
-                     │ end_sec     │
-                     │ winner      │
-                     │ pot_size_bb │
-                     │ is_all_in   │
-                     └─────────────┘
-```
-
-### 1.1.1 V3.0 ERD (Video Card 스키마)
+### 1.1 ERD (V3.0 Video Card 스키마)
 
 ```
 ┌─────────────┐
@@ -142,6 +92,8 @@
 
 **V3.0 데이터 현황**: series 12개, contents 2,938개, content_players 833개, content_tags 828개, tags 5개
 
+> **Legacy 스키마**: `DATABASE_SCHEMA_LEGACY.md` 참조 (subcatalogs, tournaments, events, hands 등)
+
 ### 1.2 테이블 상세
 
 #### catalogs
@@ -159,105 +111,64 @@
 | **title_verified** | BOOLEAN | **수동 검수 완료 여부** |
 | **varchar_id** | VARCHAR(50) | **원본 VARCHAR PK (정수 PK 마이그레이션용)** |
 
-#### subcatalogs
-서브 카탈로그 (다단계 계층 구조): 자기 참조를 통한 무제한 깊이 지원
+#### series
+시리즈: 카탈로그 내 콘텐츠 시리즈 (예: WSOP 2024, HCL Season 1)
 
 | 컬럼 | 타입 | 설명 |
 |------|------|------|
-| id | VARCHAR(100) PK | 고유 식별자 |
-| catalog_id | VARCHAR(50) FK | 최상위 카탈로그 |
-| **parent_id** | VARCHAR(100) FK NULL | **상위 서브카탈로그 (NULL이면 1단계)** |
-| name | VARCHAR(200) | 서브카탈로그명 |
-| description | TEXT | 설명 |
-| **depth** | INTEGER | **계층 깊이 (1, 2, 3...)** |
-| **path** | TEXT | **전체 경로 (예: wsop/wsop-br/wsop-europe)** |
-| **sub1** | VARCHAR(200) | **1단계 서브카탈로그명** |
-| **sub2** | VARCHAR(200) | **2단계 서브카탈로그명** |
-| **sub3** | VARCHAR(200) | **3단계 서브카탈로그명** |
-| **full_path_name** | VARCHAR(500) | **전체 경로명 (예: WSOP > WSOP-BR > Europe)** |
-| display_order | INTEGER | 표시 순서 |
-| tournament_count | INTEGER | 토너먼트 수 |
-| file_count | INTEGER | 파일 수 |
-| created_at | TIMESTAMP | 생성일시 |
-| updated_at | TIMESTAMP | 수정일시 |
-| search_vector | TEXT | 검색용 벡터 |
-| **display_title** | VARCHAR(300) | **시청자용 표시 제목** |
-| **title_source** | VARCHAR(20) | **제목 생성 방식** |
-| **varchar_id** | VARCHAR(100) | **원본 VARCHAR PK (정수 PK 마이그레이션용)** |
-| **title_verified** | BOOLEAN | **수동 검수 완료 여부** |
-
-##### 계층 구조 예시
-
-```
-WSOP (catalog)
-├── WSOP ARCHIVE (subcatalog, depth=1, parent_id=NULL)
-├── WSOP-BR (subcatalog, depth=1, parent_id=NULL)
-│   ├── WSOP-EUROPE (subcatalog, depth=2, parent_id=wsop-br)
-│   ├── WSOP-PARADISE (subcatalog, depth=2, parent_id=wsop-br)
-│   └── WSOP-LAS VEGAS (subcatalog, depth=2, parent_id=wsop-br)
-│       └── 2024 (subcatalog, depth=3, parent_id=wsop-las-vegas)
-├── WSOP-C (subcatalog, depth=1, parent_id=NULL)
-└── WSOP-SC (subcatalog, depth=1, parent_id=NULL)
-```
-
-##### 쿼리 예시
-
-```sql
--- 특정 카탈로그의 모든 하위 항목 (재귀 CTE)
-WITH RECURSIVE subcatalog_tree AS (
-    SELECT id, parent_id, name, depth, path
-    FROM subcatalogs
-    WHERE catalog_id = 'WSOP' AND parent_id IS NULL
-
-    UNION ALL
-
-    SELECT s.id, s.parent_id, s.name, s.depth, s.path
-    FROM subcatalogs s
-    JOIN subcatalog_tree t ON s.parent_id = t.id
-)
-SELECT * FROM subcatalog_tree ORDER BY path;
-
--- 특정 서브카탈로그의 모든 상위 항목
-WITH RECURSIVE parents AS (
-    SELECT id, parent_id, name, depth
-    FROM subcatalogs
-    WHERE id = 'wsop-europe'
-
-    UNION ALL
-
-    SELECT s.id, s.parent_id, s.name, s.depth
-    FROM subcatalogs s
-    JOIN parents p ON s.id = p.parent_id
-)
-SELECT * FROM parents ORDER BY depth;
-```
-
-#### tournaments
-토너먼트: 연도별 대회
-
-| 컬럼 | 타입 | 설명 |
-|------|------|------|
-| id | VARCHAR(100) PK | 고유 식별자 |
+| id | INTEGER PK | 고유 식별자 |
 | catalog_id | VARCHAR(50) FK | 카탈로그 |
-| subcatalog_id | VARCHAR(100) | 서브카탈로그 |
-| name | VARCHAR(200) | 토너먼트명 |
-| year | INTEGER | 개최 연도 |
-| location | VARCHAR(100) | 개최 장소 |
-| start_date | TIMESTAMP | 시작일 |
-| end_date | TIMESTAMP | 종료일 |
-| event_count | INTEGER | 이벤트 수 |
+| title | VARCHAR(300) | 시리즈 제목 |
+| season_num | INTEGER | 시즌 번호 |
+| year | INTEGER | 연도 |
+| description | TEXT | 설명 |
+| episode_count | INTEGER | 에피소드 수 |
+| created_at | TIMESTAMP | 생성일시 |
 
-#### events
-이벤트: 토너먼트 내 개별 이벤트 (Main Event Day 1, Side Event 등)
+#### contents
+콘텐츠: 개별 에피소드/영상
 
 | 컬럼 | 타입 | 설명 |
 |------|------|------|
-| id | VARCHAR(150) PK | 고유 식별자 |
-| tournament_id | VARCHAR(100) FK | 토너먼트 |
-| name | VARCHAR(200) | 이벤트명 |
-| day | INTEGER | 일차 |
-| session | VARCHAR(50) | 세션 |
-| file_count | INTEGER | 파일 수 |
+| id | INTEGER PK | 고유 식별자 |
+| series_id | INTEGER FK | 시리즈 |
+| file_id | VARCHAR(200) FK | 파일 (files.id) |
+| episode_num | INTEGER | 에피소드 번호 |
+| title | VARCHAR(300) | 제목 |
+| duration_sec | FLOAT | 재생 시간 (초) |
+| description | TEXT | 설명 |
+| created_at | TIMESTAMP | 생성일시 |
+
+#### tags
+태그: 콘텐츠 분류용 태그
+
+| 컬럼 | 타입 | 설명 |
+|------|------|------|
+| id | INTEGER PK | 고유 식별자 |
+| name | VARCHAR(100) UNIQUE | 태그명 |
+| type | VARCHAR(50) | 태그 유형 (player, event, action 등) |
+| created_at | TIMESTAMP | 생성일시 |
+
+#### content_players
+콘텐츠-플레이어 관계 (N:N)
+
+| 컬럼 | 타입 | 설명 |
+|------|------|------|
+| id | INTEGER PK | 고유 식별자 |
+| content_id | INTEGER FK | 콘텐츠 ID |
+| player_id | INTEGER FK | 플레이어 ID |
+| role | VARCHAR(50) | 역할 (main, guest 등) |
+| created_at | TIMESTAMP | 생성일시 |
+
+#### content_tags
+콘텐츠-태그 관계 (N:N)
+
+| 컬럼 | 타입 | 설명 |
+|------|------|------|
+| id | INTEGER PK | 고유 식별자 |
+| content_id | INTEGER FK | 콘텐츠 ID |
+| tag_id | INTEGER FK | 태그 ID |
+| created_at | TIMESTAMP | 생성일시 |
 
 #### files
 파일: 실제 미디어 파일
@@ -289,63 +200,6 @@ SELECT * FROM parents ORDER BY depth;
 | **title_verified** | BOOLEAN | **수동 검수 완료 여부** |
 | **varchar_id** | VARCHAR(200) | **원본 VARCHAR PK (정수 PK 마이그레이션용)** |
 
-#### hands
-핸드: 포커 핸드 정보
-
-| 컬럼 | 타입 | 설명 |
-|------|------|------|
-| id | INTEGER PK | 고유 식별자 |
-| file_id | VARCHAR(200) FK | 파일 |
-| phh_hand_id | VARCHAR(200) | PHH 핸드 ID |
-| hand_number | INTEGER | 핸드 번호 |
-| start_sec | FLOAT | 시작 시간 (초) |
-| end_sec | FLOAT | 종료 시간 (초) |
-| winner | VARCHAR(100) | 승자 |
-| pot_size_bb | FLOAT | 팟 크기 (BB) |
-| is_all_in | BOOLEAN | 올인 여부 |
-| is_showdown | BOOLEAN | 쇼다운 여부 |
-| players | JSON | 참가 플레이어 |
-| cards_shown | JSON | 공개된 카드 |
-| board | TEXT | 보드 카드 |
-| highlight_score | FLOAT | 하이라이트 점수 |
-| tags | JSON | 태그 |
-| created_at | TIMESTAMP | 생성일시 |
-| search_vector | TEXT | 검색용 벡터 |
-| **display_title** | VARCHAR(300) | **시청자용 표시 제목** |
-| **title_source** | VARCHAR(20) | **제목 생성 방식 (rule_based/ai_generated/manual)** |
-| **title_verified** | BOOLEAN | **수동 검수 완료 여부** |
-
-> **Note**: `players`, `tags` JSON 컬럼은 하위 호환성을 위해 유지됩니다.
-> 새 데이터는 `hand_players`, `hand_tags` 정규화 테이블과 동시에 업데이트됩니다.
-
-#### hand_players ✨ NEW
-핸드-플레이어 관계 테이블 (hands.players JSON 정규화)
-
-| 컬럼 | 타입 | 설명 |
-|------|------|------|
-| id | INTEGER PK | 고유 식별자 |
-| hand_id | INTEGER FK | 핸드 ID (hands.id) |
-| player_name | VARCHAR(100) | 플레이어 이름 |
-| position | INTEGER | 순서 (1부터 시작) |
-| created_at | TIMESTAMP | 생성일시 |
-
-**인덱스**: `idx_hand_players_hand`, `idx_hand_players_player`
-**FK**: `hand_id` → `hands(id) ON DELETE CASCADE`
-
-#### hand_tags ✨ NEW
-핸드-태그 관계 테이블 (hands.tags JSON 정규화)
-
-| 컬럼 | 타입 | 설명 |
-|------|------|------|
-| id | INTEGER PK | 고유 식별자 |
-| hand_id | INTEGER FK | 핸드 ID (hands.id) |
-| tag | VARCHAR(50) | 태그명 (preflop_allin, bluff 등) |
-| created_at | TIMESTAMP | 생성일시 |
-
-**인덱스**: `idx_hand_tags_hand`, `idx_hand_tags_tag`
-**유니크 제약**: `(hand_id, tag)` 조합 유일
-**FK**: `hand_id` → `hands(id) ON DELETE CASCADE`
-
 #### players
 플레이어: 포커 플레이어 정보
 
@@ -361,21 +215,6 @@ SELECT * FROM parents ORDER BY depth;
 | first_seen_at | TIMESTAMP | 플레이어 첫 등록 시간 |
 | last_seen_at | TIMESTAMP | 마지막 활동 시간 |
 | search_vector | TEXT | 검색용 벡터 |
-
-#### id_mapping ✨ NEW
-ID 매핑 테이블 (VARCHAR → INTEGER PK 마이그레이션 추적)
-
-| 컬럼 | 타입 | 설명 |
-|------|------|------|
-| table_name | VARCHAR(50) PK | 테이블명 (catalogs, subcatalogs, files) |
-| old_id | VARCHAR(200) PK | 원본 VARCHAR ID |
-| new_id | INTEGER | 신규 정수 ID (현재는 해시값) |
-| created_at | TIMESTAMP | 생성일시 |
-
-**인덱스**: `idx_id_mapping_new`
-
-> **Note**: 정수 PK 마이그레이션 1단계. 현재 `varchar_id` 컬럼에 원본 ID를 보존 중.
-> 향후 실제 정수 PK 전환 시 이 테이블을 활용하여 FK 업데이트 수행.
 
 ---
 
@@ -433,6 +272,7 @@ archive-analyzer                              qwen_hand_analysis
 
 | 날짜 | 버전 | 변경 내용 | 영향 범위 |
 |------|------|----------|----------|
+| 2025-12-03 | 2.6.0 | **레거시 스키마 분리**: subcatalogs, tournaments, events, hands, hand_players, hand_tags, id_mapping → `DATABASE_SCHEMA_LEGACY.md` | 문서 정리 |
 | 2025-12-03 | 2.0.0 | **추천 시스템 스키마 설계** (Section 8): recommendation_cache, trending_scores, home_rows, user_home_rows, artwork_variants, artwork_selections, experiments, experiment_assignments, user_embeddings, item_embeddings | Phase 3 구현 예정 |
 | 2025-12-02 | 1.5.0 | **스키마 정리**: display_names 테이블 폐기 (display_title은 각 테이블에 직접 저장), subcatalogs에서 level1/2/3_name 컬럼 제거 (sub1/2/3와 중복) | sheets_sync.py, pokervod.db |
 | 2025-12-02 | 1.4.0 | **Archive Team Google Sheet 동기화** 섹션 추가, 태그 정규화 매핑, 워크시트 자동 처리 문서화 | archive_hands_sync.py |
@@ -2473,6 +2313,7 @@ GROUP BY c.id;
 
 | 날짜 | 버전 | 변경 내용 |
 |------|------|----------|
+| 2025-12-03 | 2.6.0 | **레거시 스키마 분리**: subcatalogs, tournaments, events, hands, hand_players, hand_tags, id_mapping → `DATABASE_SCHEMA_LEGACY.md` |
 | 2025-12-03 | 2.5.1 | **V3.0 스키마 설계 문서 추가** (미구현): 3단계 계층 구조, contents 통합, Headline 생성 규칙 - Section 12 |
 | 2025-12-03 | 2.5.0 | **스키마 통합 업데이트**: #12 JSON 정규화 + #13 정수 PK 문서 통합 |
 | 2025-12-03 | 2.4.0 | **정수 PK 마이그레이션 1단계**: `varchar_id` 컬럼 추가 (catalogs, subcatalogs, files), `id_mapping` 테이블 |
