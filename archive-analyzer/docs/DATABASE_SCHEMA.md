@@ -1,12 +1,12 @@
 # Database Schema Documentation
 
 > **Last Updated**: 2025-12-03
-> **Version**: 2.6.0
+> **Version**: 2.7.0
 
 이 문서는 archive-analyzer와 연동 레포지토리 간 DB 스키마를 정의합니다.
 **스키마 변경 시 반드시 이 문서를 업데이트하고 관련 레포에 공유해야 합니다.**
 
-### 테이블 요약 (총 38개 구현)
+### 테이블 요약 (pokervod.db: 23개)
 
 | 카테고리 | 테이블 | 설명 |
 |----------|--------|------|
@@ -272,6 +272,7 @@ archive-analyzer                              qwen_hand_analysis
 
 | 날짜 | 버전 | 변경 내용 | 영향 범위 |
 |------|------|----------|----------|
+| 2025-12-03 | 2.7.0 | **레거시 테이블 삭제**: pokervod.db에서 subcatalogs, tournaments, events, hands 등 7개 테이블 삭제 (백업: `legacy_backup_*.json`) | pokervod.db |
 | 2025-12-03 | 2.6.0 | **레거시 스키마 분리**: subcatalogs, tournaments, events, hands, hand_players, hand_tags, id_mapping → `DATABASE_SCHEMA_LEGACY.md` | 문서 정리 |
 | 2025-12-03 | 2.0.0 | **추천 시스템 스키마 설계** (Section 8): recommendation_cache, trending_scores, home_rows, user_home_rows, artwork_variants, artwork_selections, experiments, experiment_assignments, user_embeddings, item_embeddings | Phase 3 구현 예정 |
 | 2025-12-02 | 1.5.0 | **스키마 정리**: display_names 테이블 폐기 (display_title은 각 테이블에 직접 저장), subcatalogs에서 level1/2/3_name 컬럼 제거 (sub1/2/3와 중복) | sheets_sync.py, pokervod.db |
@@ -2313,6 +2314,7 @@ GROUP BY c.id;
 
 | 날짜 | 버전 | 변경 내용 |
 |------|------|----------|
+| 2025-12-03 | 2.7.0 | **레거시 테이블 삭제**: pokervod.db에서 7개 레거시 테이블 삭제, DB 크기 5.73MB→4.84MB |
 | 2025-12-03 | 2.6.0 | **레거시 스키마 분리**: subcatalogs, tournaments, events, hands, hand_players, hand_tags, id_mapping → `DATABASE_SCHEMA_LEGACY.md` |
 | 2025-12-03 | 2.5.1 | **V3.0 스키마 설계 문서 추가** (미구현): 3단계 계층 구조, contents 통합, Headline 생성 규칙 - Section 12 |
 | 2025-12-03 | 2.5.0 | **스키마 통합 업데이트**: #12 JSON 정규화 + #13 정수 PK 문서 통합 |
