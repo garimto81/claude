@@ -15,7 +15,7 @@ This file provides guidance to Claude Code (claude.ai/code) when working with co
 
 Archive Analyzer는 OTT 솔루션을 위한 미디어 아카이브 분석 도구입니다. SMB 네트워크를 통해 원격 NAS에 저장된 미디어 파일(18TB+)의 메타데이터를 추출하고 카탈로그를 생성합니다.
 
-**주요 대상**: WSOP, HCL, PAD 등 포커 방송 콘텐츠 아카이브 (1,400+ 파일)
+**주요 대상**: WSOP, HCL, PAD, GGMillions, MPP, GOG 등 포커 방송 콘텐츠 아카이브 (2,100+ 파일)
 
 ## Build & Test Commands
 
@@ -120,6 +120,11 @@ python scripts/migrate_json_normalization.py  # JSON 정규화
 
 # 유틸리티
 python scripts/test_smb.py                    # SMB 연결 테스트
+
+# NAS 유지보수 (Issue #57)
+python scripts/fix_nas_scan_issue.py          # NAS 경로 불일치 해결 (dry-run)
+python scripts/fix_nas_scan_issue.py --execute  # 실제 실행
+python scripts/verify_db_files.py             # DB 파일 존재 여부 검증
 ```
 
 ## Configuration
