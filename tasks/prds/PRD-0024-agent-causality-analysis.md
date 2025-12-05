@@ -1,6 +1,6 @@
 # PRD-0024: 에이전트 인과관계 분석 및 정리
 
-**Version**: 1.1.0 | **Created**: 2025-12-05 | **Status**: In Review
+**Version**: 1.2.0 | **Created**: 2025-12-05 | **Updated**: 2025-12-05 | **Status**: In Progress
 **Issue**: [#24](https://github.com/garimto81/archive-analyzer/issues/24)
 
 ---
@@ -10,18 +10,20 @@
 ### 1.1 목적
 CLAUDE.md 및 워크플로우에 기록된 에이전트와 실제 존재하는 에이전트 간의 **인과관계 분석** 및 **미사용 에이전트 처리 방안** 수립
 
-### 1.2 배경
-| 구분 | 개수 | 위치 |
-|------|------|------|
-| 내장 subagent | 4개 (공식) | Claude Code 시스템 |
-| 로컬 에이전트 | 56개 (유니크) | `.claude/plugins/*/agents/*.md` |
-| CLAUDE.md 언급 | 33개 | `docs/AGENTS_REFERENCE.md` |
-| 워크플로우 참조 | 12개 | `.claude/commands/*.md` |
+### 1.2 배경 (초기 상태)
+| 구분 | 초기 | 현재 | 위치 |
+|------|------|------|------|
+| 내장 subagent | 4개 | 4개 | Claude Code 시스템 |
+| 로컬 에이전트 | 56개 | **49개** ✅ | `.claude/plugins/*/agents/*.md` |
+| 아카이브 | 0개 | **6개** ✅ | `.claude/plugins.archive/` |
+| 워크플로우 참조 | 12개 | **7개** | `.claude/commands/*.md` |
 
-### 1.3 문제점
-1. **혼동**: "내장 subagent 37개"라고 명시했으나 실제 내장은 4개
-2. **미사용**: 56개 로컬 에이전트 중 워크플로우에서 호출되는 것은 12개
-3. **중복**: 동일 에이전트가 여러 플러그인에 중복 정의 (예: `code-reviewer` 3곳)
+### 1.3 문제점 및 진행 상황
+| 문제 | 상태 | 비고 |
+|------|------|------|
+| "내장 37개" 오류 명시 | ⚠️ 대기 | CLAUDE.md 수정 필요 |
+| 중복 에이전트 | ✅ 해결 | 30개 중복 → 제거 완료 |
+| 미사용 에이전트 | ✅ 진행중 | 6개 아카이브 이동 |
 
 ---
 
@@ -38,59 +40,78 @@ CLAUDE.md 및 워크플로우에 기록된 에이전트와 실제 존재하는 �
 
 > **참고**: `claude-code-guide`, `statusline-setup`은 **슬래시 커맨드**이며 subagent가 아님
 
-### 2.2 로컬 에이전트 분류
+### 2.2 로컬 에이전트 분류 (v1.2 업데이트)
 
-#### A. 워크플로우에서 참조되는 에이전트 (12개) - **활성**
+#### A. 워크플로우에서 직접 참조 (7개) - **활성**
 
-| 에이전트 | 참조 위치 | Phase |
-|---------|----------|-------|
-| `frontend-developer` | CLAUDE.md | 1 |
-| `backend-architect` | CLAUDE.md, api-test.md | 1 |
-| `test-automator` | CLAUDE.md, tdd.md, fix-issue.md | 2 |
-| `playwright-engineer` | CLAUDE.md, final-check.md | 2, 5 |
-| `security-auditor` | api-test.md, check.md | 5 |
-| `code-reviewer` | tdd.md, check.md, fix-issue.md, optimize.md | 1 후 |
-| `debugger` | analyze-logs.md, fix-issue.md, final-check.md | 문제 시 |
-| `seq-engineer` | - | 0 |
-| `context7-engineer` | pre-work.md | 0, 1 |
-| `exa-search-specialist` | pre-work.md | 0 |
-| `architect-reviewer` | - | 0, 1 |
-| `deployment-engineer` | - | 6 |
+| 에이전트 | 참조 위치 | Phase | 위치 |
+|---------|----------|-------|------|
+| `debugger` | analyze-logs, fix-issue, final-check, tdd | 문제 시 | phase-1-development |
+| `backend-architect` | api-test.md | 1 | phase-1-development |
+| `code-reviewer` | check, optimize, fix-issue, tdd | 1, 2.5 | phase-2-testing |
+| `test-automator` | fix-issue, tdd | 2 | phase-2-testing |
+| `security-auditor` | check, api-test | 5 | phase-2-testing |
+| `playwright-engineer` | final-check | 2, 5 | phase-2-testing |
+| `context7-engineer` | pre-work | 0, 1 | phase-0-planning |
 
 #### B. CLAUDE.md에만 언급 (21개) - **대기**
 
 문서에 언급되었으나 슬래시 커맨드에서 직접 호출되지 않음:
 ```
-python-pro, fullstack-developer, typescript-expert, mobile-developer,
-graphql-architect, supabase-engineer, performance-engineer,
-devops-troubleshooter, cloud-architect, github-engineer,
-database-architect, database-optimizer, data-engineer, data-scientist,
-ai-engineer, ml-engineer, UI_UX-Designer, prompt-engineer,
-taskmanager-planner, task-decomposition-expert, context-manager
+# Phase 0
+seq-engineer, exa-search-specialist, taskmanager-planner, task-decomposition-expert
+
+# Phase 1
+frontend-developer, fullstack-developer, typescript-expert, mobile-developer
+
+# Phase 2.5-6
+architect-reviewer, deployment-engineer, devops-troubleshooter, cloud-architect
+
+# 전문 분야
+python-pro, graphql-architect, supabase-engineer, performance-engineer,
+github-engineer, database-architect, database-optimizer, context-manager
 ```
 
-#### C. 정의만 존재 (23개) - **미사용**
+#### C. 정의만 존재 (21개) - **미사용 후보**
 
 `.claude/plugins/`에 정의되어 있으나 어디서도 참조되지 않음:
 ```
-agent-expert, api-documenter, cli-ui-designer, command-expert,
-django-pro, docs-architect, docusaurus-expert, dx-optimizer,
-fastapi-pro, hybrid-cloud-architect, javascript-pro,
-kubernetes-architect, legacy-modernizer, mcp-expert, network-engineer,
-observability-engineer, tdd-orchestrator, temporal-python-pro,
-terraform-specialist, tutorial-engineer, typescript-pro,
-design-review, pragmatic-code-review
+# AI/ML
+ai-engineer, ml-engineer, data-engineer, data-scientist, prompt-engineer
+
+# 개발 도구
+javascript-pro, typescript-pro, fastapi-pro
+
+# 인프라
+kubernetes-architect, terraform-specialist, network-engineer
+
+# 메타/문서화
+agent-expert, command-expert, mcp-expert, docs-architect, api-documenter
+
+# 기타
+dx-optimizer, legacy-modernizer, observability-engineer, tdd-orchestrator,
+design-review, pragmatic-code-review, UI_UX-Designer
 ```
 
-### 2.3 중복 에이전트
+#### D. 아카이브 완료 (6개)
 
-| 에이전트 | 중복 위치 |
-|---------|----------|
-| `code-reviewer` | code-documentation, code-refactoring, git-pr-workflows, phase-2-testing |
-| `cloud-architect` | cicd-automation, cloud-infrastructure, phase-6-deployment |
-| `deployment-engineer` | cicd-automation, full-stack-orchestration, phase-6-deployment |
-| `frontend-developer` | application-performance, meta-development, phase-1-development |
-| `security-auditor` | full-stack-orchestration, phase-2-testing, security-scanning |
+`.claude/plugins.archive/`로 이동됨:
+```
+cli-ui-designer, django-pro, docusaurus-expert,
+hybrid-cloud-architect, temporal-python-pro, tutorial-engineer
+```
+
+### 2.3 중복 에이전트 (✅ 해결됨)
+
+| 에이전트 | 이전 중복 | 현재 위치 |
+|---------|----------|----------|
+| `code-reviewer` | 4곳 | ✅ phase-2-testing |
+| `cloud-architect` | 3곳 | ✅ phase-6-deployment |
+| `deployment-engineer` | 3곳 | ✅ phase-6-deployment |
+| `frontend-developer` | 3곳 | ✅ phase-1-development |
+| `security-auditor` | 3곳 | ✅ phase-2-testing |
+
+> **참고**: Git status에서 D (deleted) 상태인 30개 파일이 중복 제거 결과
 
 ### 2.4 MCP 연동 에이전트
 
@@ -253,41 +274,44 @@ mv .claude/plugins/meta-development/agents/agent-expert.md .claude/plugins.archi
 
 ## 5. 작업 항목
 
-### 5.1 Phase 1: YAML Registry 구축
+### 5.1 Phase 1: 중복 제거 및 아카이브 (✅ 완료)
+
+- [x] 중복 에이전트 5개 대표 위치 결정 → 30개 파일 삭제
+- [x] `.claude/plugins.archive/` 디렉토리 생성
+- [x] 미사용 에이전트 6개 이동 완료
+
+### 5.2 Phase 2: 문서 수정 (✅ 완료)
+
+- [x] CLAUDE.md 섹션 4 재구성 (내장/로컬/MCP 분리)
+- [x] "내장 subagent 37개" → "내장 4개 + 로컬 7개(활성) + MCP 3개" 수정
+- [x] `docs/AGENTS_REFERENCE.md` 활성/대기/미사용 분류 추가 (v2.0.0)
+
+### 5.3 Phase 3: YAML Registry 구축 (선택적)
+
+> **결정 필요**: YAML Registry 구현 여부. 현재 로컬 에이전트는 자동 위임으로만 호출 가능.
 
 - [ ] `.claude/agents.yaml` 레지스트리 파일 생성
-- [ ] 내장 4개 + 로컬 12개 + MCP 3개 정의
+- [ ] 내장 4개 + 로컬 활성 7개 + MCP 3개 정의
 - [ ] `src/agents/registry.py` 로더 구현
-
-### 5.2 Phase 2: 문서 수정
-
-- [ ] CLAUDE.md 섹션 4 재구성 (내장/로컬/MCP 분리)
-- [ ] "내장 subagent 37개" → "내장 4개 + 로컬 12개 + MCP 3개" 수정
-- [ ] `docs/AGENTS_REFERENCE.md` 활성/대기/미사용 분류 추가
-
-### 5.3 Phase 3: 중복 제거 및 아카이브
-
-- [ ] 중복 에이전트 5개 대표 위치 결정
-- [ ] `.claude/plugins.archive/` 디렉토리 생성
-- [ ] 미사용 에이전트 23개 이동
 
 ### 5.4 Phase 4: 검증
 
-- [ ] YAML Registry 로딩 테스트
-- [ ] 슬래시 커맨드 동작 테스트
 - [ ] CLAUDE.md 정확성 검증
+- [ ] 슬래시 커맨드 동작 테스트
 - [ ] PR 생성 및 리뷰
+- [ ] Git 변경사항 커밋 (삭제된 30개 파일)
 
 ---
 
 ## 6. 성공 기준
 
-| 기준 | 현재 | 목표 |
-|------|------|------|
-| 내장 에이전트 명시 | "37개" (오류) | "4개" (정확) |
-| 로컬 에이전트 | 56개 (중복 포함) | 33개 (유니크) |
-| 미사용 에이전트 | 혼재 | 아카이브 분리 |
-| 문서 정확성 | ~70% | 100% |
+| 기준 | 초기 | 현재 | 목표 | 상태 |
+|------|------|------|------|------|
+| 내장 에이전트 명시 | "37개" | **"4개"** | "4개" | ✅ |
+| 로컬 에이전트 | 56개 | **49개** | 49개 | ✅ |
+| 중복 에이전트 | 30개 | **0개** | 0개 | ✅ |
+| 미사용 아카이브 | 혼재 | **6개** | 21개 | ⏳ |
+| 문서 정확성 | ~70% | **~95%** | 100% | ✅ |
 
 ---
 

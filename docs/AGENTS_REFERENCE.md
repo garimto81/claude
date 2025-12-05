@@ -1,75 +1,137 @@
 # Agent 완전 참조 가이드
 
-**목적**: 33개 Subagent 활용법 및 병렬 실행 전략
+**목적**: 에이전트 분류 및 활용법
 
-**버전**: 1.0.0 | **업데이트**: 2025-11-11
+**버전**: 2.0.0 | **업데이트**: 2025-12-05
 
 ---
 
-## 📊 전체 Agent 목록 (33개)
+## 📊 에이전트 분류 요약
 
-### 1. 핵심 개발 (8개)
+| 구분 | 개수 | 설명 |
+|------|------|------|
+| 내장 Subagent | 4개 | Claude Code 공식 내장 |
+| 로컬 - 활성 | 7개 | Commands에서 직접 참조 |
+| 로컬 - 대기 | 21개 | CLAUDE.md 언급, 미호출 |
+| 로컬 - 미사용 | 21개 | 정의만 존재 |
+| 아카이브 | 6개 | `.claude/plugins.archive/` |
+
+---
+
+## 🔵 내장 Subagent (4개) - 직접 호출 가능
+
+| Agent | 용도 | 도구 | 호출 |
+|-------|------|------|------|
+| `general-purpose` | 복잡한 다단계 작업 | 모든 도구 | `Task(subagent_type="general-purpose")` |
+| `Explore` | 코드베이스 빠른 탐색 | Glob, Grep, Read | `Task(subagent_type="Explore")` |
+| `Plan` | 구현 계획 설계 | 읽기 도구만 | 자동 (Plan Mode) |
+| `debugger` | 버그 분석/수정 | Read, Edit, Bash, Grep | `Task(subagent_type="debugger")` |
+
+> **참고**: `claude-code-guide`, `statusline-setup`은 슬래시 커맨드이며 subagent 아님
+
+---
+
+## 🟢 로컬 에이전트 - 활성 (7개)
+
+Commands에서 직접 참조되는 에이전트. `.claude/plugins/*/agents/*.md`에 정의.
+
+| Agent | 참조 위치 | Phase | 위치 |
+|-------|----------|-------|------|
+| `debugger` | analyze-logs, fix-issue, tdd | 문제 시 | phase-1-development |
+| `backend-architect` | api-test | 1 | phase-1-development |
+| `code-reviewer` | check, optimize, fix-issue, tdd | 2.5 | phase-2-testing |
+| `test-automator` | fix-issue, tdd | 2 | phase-2-testing |
+| `security-auditor` | check, api-test | 5 | phase-2-testing |
+| `playwright-engineer` | final-check | 2, 5 | phase-2-testing |
+| `context7-engineer` | pre-work | 0, 1 | phase-0-planning |
+
+---
+
+## 🟡 로컬 에이전트 - 대기 (21개)
+
+CLAUDE.md에 언급되었으나 Commands에서 직접 호출되지 않음. 필요 시 활성화.
+
+### 핵심 개발 (6개)
 
 | Agent | 용도 | 병렬 실행 | Phase |
 |-------|------|----------|-------|
-| `python-pro` | Python 고급 구현 (decorators, async) | ✅ | 1 |
+| `python-pro` | Python 고급 구현 | ✅ | 1 |
 | `frontend-developer` | React/Next.js 컴포넌트 | ✅ | 1 |
-| `backend-architect` | API 설계, DB 스키마 | ✅ | 1 |
 | `fullstack-developer` | 풀스택 구현 | ⚠️ | 1 |
 | `typescript-expert` | TypeScript 타입 시스템 | ✅ | 1 |
 | `mobile-developer` | React Native/Flutter | ✅ | 1 |
 | `graphql-architect` | GraphQL 스키마/리졸버 | ✅ | 1 |
-| `supabase-engineer` | Supabase 서버 아키텍처 | ✅ | 1 |
 
-### 2. 품질 보증 (5개)
-
-| Agent | 용도 | 병렬 실행 | Phase |
-|-------|------|----------|-------|
-| `test-automator` | 단위/통합 테스트 작성 | ✅ | 2 |
-| `playwright-engineer` | E2E 테스트 자동화 | ✅ | 2, 5 |
-| `security-auditor` | 보안 취약점 스캔 | ✅ | 5 |
-| `code-reviewer` | 코드 리뷰 (품질, 보안) | ✅ | 1 후 |
-| `performance-engineer` | 성능 최적화, 병목 분석 | ✅ | 5 |
-
-### 3. 인프라/DevOps (4개)
+### 인프라/DevOps (4개)
 
 | Agent | 용도 | 병렬 실행 | Phase |
 |-------|------|----------|-------|
 | `deployment-engineer` | CI/CD, Docker, K8s | ❌ | 6 |
 | `devops-troubleshooter` | 프로덕션 이슈 디버깅 | ❌ | 5 |
 | `cloud-architect` | AWS/GCP/Azure 설계 | ✅ | 0, 1 |
-| `github-engineer` | Git 워크플로우, PR | ✅ | 4 |
+| `architect-reviewer` | 아키텍처 리뷰 | ✅ | 0, 1 |
 
-### 4. 데이터 (4개)
+### 데이터 (3개)
 
 | Agent | 용도 | 병렬 실행 | Phase |
 |-------|------|----------|-------|
 | `database-architect` | DB 스키마 설계 | ✅ | 1 |
 | `database-optimizer` | 쿼리 최적화, 인덱스 | ✅ | 1, 5 |
-| `data-engineer` | ETL 파이프라인, 데이터 레이크 | ✅ | 1 |
-| `data-scientist` | SQL/BigQuery 분석 | ✅ | 분석 |
+| `supabase-engineer` | Supabase 아키텍처 | ✅ | 1 |
 
-### 5. 전문 분야 (5개)
-
-| Agent | 용도 | 병렬 실행 | Phase |
-|-------|------|----------|-------|
-| `ai-engineer` | LLM/RAG 시스템 설계 | ✅ | 1 |
-| `ml-engineer` | ML 파이프라인, 모델 배포 | ✅ | 1 |
-| `UI_UX-Designer` | UI/UX 디자인 | ✅ | 0, 1 |
-| `prompt-engineer` | 프롬프트 최적화 | ✅ | 분석 |
-
-### 6. 지원/계획 (7개)
+### 지원/계획 (5개)
 
 | Agent | 용도 | 병렬 실행 | Phase |
 |-------|------|----------|-------|
 | `seq-engineer` | 순차적 사고, 복잡한 분석 | ✅ | 0 |
-| `context7-engineer` | 최신 문서 검증 (필수) | ✅ | 0, 1 |
-| `debugger` | 디버깅, 원인 분석 | ❌ | 문제 발생 시 |
 | `taskmanager-planner` | 작업 계획, 마일스톤 | ✅ | 0.5 |
 | `task-decomposition-expert` | 작업 분해 | ✅ | 0.5 |
-| `architect-reviewer` | 아키텍처 리뷰 | ✅ | 0, 1 |
 | `exa-search-specialist` | 웹 검색 (기술 조사) | ✅ | 0 |
 | `context-manager` | 컨텍스트 관리 | ✅ | 전체 |
+
+### 기타 (3개)
+
+| Agent | 용도 | 병렬 실행 | Phase |
+|-------|------|----------|-------|
+| `github-engineer` | Git 워크플로우, PR | ✅ | 4 |
+| `performance-engineer` | 성능 최적화, 병목 분석 | ✅ | 5 |
+
+---
+
+## ⚪ 로컬 에이전트 - 미사용 (21개)
+
+정의만 존재하며 어디서도 참조되지 않음. 아카이브 후보.
+
+```
+# AI/ML
+ai-engineer, ml-engineer, data-engineer, data-scientist, prompt-engineer
+
+# 개발 도구
+javascript-pro, typescript-pro, fastapi-pro
+
+# 인프라
+kubernetes-architect, terraform-specialist, network-engineer
+
+# 메타/문서화
+agent-expert, command-expert, mcp-expert, docs-architect, api-documenter
+
+# 기타
+dx-optimizer, legacy-modernizer, observability-engineer, tdd-orchestrator,
+design-review, pragmatic-code-review, UI_UX-Designer
+```
+
+---
+
+## 📦 아카이브 (6개)
+
+`.claude/plugins.archive/`로 이동됨:
+
+```
+cli-ui-designer, django-pro, docusaurus-expert,
+hybrid-cloud-architect, temporal-python-pro, tutorial-engineer
+```
+
+---
 
 **범례**:
 - ✅ 병렬 가능 - 독립적 작업, 다른 Agent와 동시 실행 가능

@@ -84,43 +84,63 @@ E2E 테스트 → Phase 3~5 자동 진행 → Phase 6(배포)은 사용자 확�
 
 ---
 
-## 4. Agents (내장 Subagent 중심)
+## 4. Agents
 
-Claude Code **내장 subagent 37개**를 활용. Task tool의 `subagent_type`으로 호출.
+### 4.1 내장 Subagent (4개)
 
-### Phase별 필수 에이전트
+Claude Code **공식 내장** subagent. `Task(subagent_type="...")` 으로 직접 호출.
 
-| Phase | 필수 | 선택 |
-|-------|------|------|
-| 0 (PRD) | `Plan`, `context7-engineer` | `seq-engineer`, `Explore` |
-| 0.5 (Task) | `task-decomposition-expert` | `taskmanager-planner` |
-| 1 (구현) | `debugger`(버그), `context7-engineer` | `backend-architect`, `frontend-developer`, `playwright-engineer`★ |
-| 2 (테스트) | `test-automator` | `playwright-engineer`★ |
-| 2.5 (리뷰) | `code-reviewer` | `security-auditor`, `architect-reviewer` |
-| 5 (E2E) | `playwright-engineer`, `security-auditor` | `performance-engineer` |
-| 6 (배포) | `deployment-engineer` | `cloud-architect` |
+| 에이전트 | 용도 | 도구 |
+|----------|------|------|
+| `general-purpose` | 복잡한 다단계 작업 | 모든 도구 |
+| `Explore` | 코드베이스 빠른 탐색 | Glob, Grep, Read |
+| `Plan` | 구현 계획 설계 | 읽기 도구만 |
+| `debugger` | 버그 분석/수정 | Read, Edit, Bash, Grep |
 
-★ **Browser Testing**: `playwright-engineer` 및 `webapp-testing` 스킬은 **모든 Phase에서 사용 가능**
+### 4.2 로컬 에이전트 - 활성 (7개)
 
-### 유틸리티 에이전트
+`.claude/plugins/*/agents/*.md`에 정의. Commands에서 직접 참조됨.
 
-| 에이전트 | 용도 | 사용 시점 |
-|----------|------|-----------|
-| `Explore` | 코드베이스 빠른 탐색 | 파일/키워드 검색 |
-| `Plan` | 구현 계획 설계 | 복잡한 기능 시작 전 |
-| `general-purpose` | 범용 멀티스텝 태스크 | 복합 조사 |
-| `claude-code-guide` | Claude Code 문서 조회 | 사용법 질문 |
+| 에이전트 | 참조 위치 | Phase |
+|----------|----------|-------|
+| `debugger` | analyze-logs, fix-issue, tdd | 문제 시 |
+| `backend-architect` | api-test | 1 |
+| `code-reviewer` | check, optimize, fix-issue, tdd | 2.5 |
+| `test-automator` | fix-issue, tdd | 2 |
+| `security-auditor` | check, api-test | 5 |
+| `playwright-engineer` | final-check | 2, 5 |
+| `context7-engineer` | pre-work | 0, 1 |
 
-### 전문 분야 에이전트
+### 4.3 로컬 에이전트 - 대기 (21개)
+
+CLAUDE.md에 언급되었으나 Commands에서 직접 호출되지 않음. 필요 시 활성화.
 
 | 분야 | 에이전트 |
 |------|----------|
-| **개발** | `backend-architect`, `frontend-developer`, `fullstack-developer`, `mobile-developer`, `typescript-expert`, `graphql-architect` |
-| **데이터** | `database-architect`, `database-optimizer`, `data-engineer`, `data-scientist` |
-| **AI/ML** | `ai-engineer`, `ml-engineer`, `prompt-engineer` |
-| **인프라** | `cloud-architect`, `deployment-engineer`, `devops-troubleshooter`, `supabase-engineer` |
-| **품질** | `code-reviewer`, `security-auditor`, `performance-engineer`, `test-automator`, `playwright-engineer` |
-| **분석** | `seq-engineer`, `context7-engineer`, `exa-search-specialist`, `debugger` |
+| **Phase 0** | `seq-engineer`, `exa-search-specialist`, `taskmanager-planner`, `task-decomposition-expert` |
+| **Phase 1** | `frontend-developer`, `fullstack-developer`, `typescript-expert`, `mobile-developer` |
+| **Phase 6** | `architect-reviewer`, `deployment-engineer`, `devops-troubleshooter`, `cloud-architect` |
+| **전문** | `python-pro`, `graphql-architect`, `supabase-engineer`, `performance-engineer`, `github-engineer`, `database-architect`, `database-optimizer`, `context-manager` |
+
+### 4.4 MCP 연동 에이전트 (3개)
+
+| 에이전트 | MCP 도구 | 상태 |
+|----------|---------|------|
+| `exa-search-specialist` | `mcp__exa__search` | 활성 |
+| `context7-engineer` | `mcp__ref__search` | 활성 |
+| `context-manager` | `mcp__mem0__*` | 대기 |
+
+### Phase별 권장 에이전트
+
+| Phase | 내장 | 로컬 (활성) |
+|-------|------|-------------|
+| 0 (PRD) | `Plan`, `Explore` | `context7-engineer` |
+| 1 (구현) | `debugger` | `backend-architect` |
+| 2 (테스트) | - | `test-automator`, `playwright-engineer` |
+| 2.5 (리뷰) | - | `code-reviewer`, `security-auditor` |
+| 5 (E2E) | - | `playwright-engineer`, `security-auditor` |
+
+★ **Browser Testing**: `playwright-engineer` 및 `webapp-testing` 스킬은 **모든 Phase에서 사용 가능**
 
 ### Agent-Workflow 연결
 
@@ -174,7 +194,7 @@ Task(subagent_type="test-automator", prompt="테스트 작성", description="테
 D:\AI\claude01\
 ├── .claude/
 │   ├── commands/      # 슬래시 커맨드 (28개)
-│   ├── plugins/       # 로컬 에이전트 정의 (80개)
+│   ├── plugins/       # 로컬 에이전트 정의 (49개)
 │   ├── skills/        # webapp-testing (E2E), skill-creator
 │   └── hooks/         # 프롬프트 검증
 ├── src/agents/        # LangGraph 멀티에이전트
