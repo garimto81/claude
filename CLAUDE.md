@@ -2,7 +2,7 @@
 
 This file provides guidance to Claude Code (claude.ai/code) when working with code in this repository.
 
-**Version**: 3.1.0 | **Updated**: 2025-12-05 | **Context**: Windows 10/11, PowerShell, Root: `D:\AI\claude01`
+**Version**: 3.4.0 | **Updated**: 2025-12-05 | **Context**: Windows 10/11, PowerShell, Root: `D:\AI\claude01`
 
 ## 1. Critical Rules
 
@@ -36,7 +36,23 @@ This file provides guidance to Claude Code (claude.ai/code) when working with co
 3. 커밋: `fix(scope): Resolve #123 🐛` / `feat(scope): Add feature ✨`
 
 ### FINAL_CHECK
+
 E2E 테스트 → Phase 3~5 자동 진행 → Phase 6(배포)은 사용자 확인
+
+**E2E 테스트 워크플로우**:
+```
+1. playwright-engineer 호출 또는 webapp-testing 스킬 사용
+2. 테스트 실행: npx playwright test
+3. 실패 시: 스크린샷 분석 → 자동 수정 (최대 3회)
+4. 100% 통과 필수 → 실패 시 수동 개입
+```
+
+**E2E 테스트 실패 처리**:
+| 시도 | 동작 |
+|------|------|
+| 1회 실패 | 스크린샷/로그 분석 → 자동 수정 |
+| 2회 실패 | selector 재검증 → 수정 |
+| 3회 실패 | ⏸️ `/issue-failed` → 수동 개입 |
 
 > 상세: `docs/WORKFLOW_REFERENCE.md`
 
@@ -93,11 +109,13 @@ Claude Code **내장 subagent 37개**를 활용. Task tool의 `subagent_type`으
 |-------|------|------|
 | 0 (PRD) | `Plan`, `context7-engineer` | `seq-engineer`, `Explore` |
 | 0.5 (Task) | `task-decomposition-expert` | `taskmanager-planner` |
-| 1 (구현) | `debugger`(버그), `context7-engineer` | `backend-architect`, `frontend-developer`, `fullstack-developer` |
-| 2 (테스트) | `test-automator` | `playwright-engineer` |
+| 1 (구현) | `debugger`(버그), `context7-engineer` | `backend-architect`, `frontend-developer`, `playwright-engineer`★ |
+| 2 (테스트) | `test-automator` | `playwright-engineer`★ |
 | 2.5 (리뷰) | `code-reviewer` | `security-auditor`, `architect-reviewer` |
 | 5 (E2E) | `playwright-engineer`, `security-auditor` | `performance-engineer` |
 | 6 (배포) | `deployment-engineer` | `cloud-architect` |
+
+★ **Browser Testing**: `playwright-engineer` 및 `webapp-testing` 스킬은 **모든 Phase에서 사용 가능**
 
 ### 유틸리티 에이전트
 
@@ -169,7 +187,7 @@ Task(subagent_type="test-automator", prompt="테스트 작성", description="테
 D:\AI\claude01\
 ├── .claude/
 │   ├── commands/      # 슬래시 커맨드 (28개)
-│   ├── skills/        # skill-creator, webapp-testing
+│   ├── skills/        # webapp-testing (E2E), skill-creator
 │   └── hooks/         # 프롬프트 검증
 ├── src/agents/        # LangGraph 멀티에이전트
 │   ├── parallel_workflow.py  # Fan-Out/Fan-In (Supervisor → Subagents)
@@ -201,15 +219,68 @@ D:\AI\claude01\
 
 ---
 
-## 7. Build & Test
+## 7. Browser Testing (Phase-Independent)
+
+**모든 Phase에서** 브라우저 기반 테스트 가능. UI 검증이 필요할 때 즉시 사용.
+
+### 사용 시점
+
+| Phase | 브라우저 테스트 용도 |
+|-------|---------------------|
+| 1 (구현) | UI 컴포넌트 동작 확인, 레이아웃 검증 |
+| 2 (테스트) | 통합 테스트, 사용자 플로우 검증 |
+| 2.5 (리뷰) | UI/UX 리뷰, 접근성 확인 |
+| 5 (E2E) | 전체 시나리오 테스트, 회귀 테스트 |
+
+### 실행 방법
 
 ```powershell
-# 테스트
+# 방법 1: Playwright 직접 실행
+npx playwright test                         # 전체 테스트
+npx playwright test --ui                    # UI 모드 (디버깅)
+npx playwright test tests/e2e/flow.spec.ts  # 단일 파일
+
+# 방법 2: webapp-testing 스킬 (서버 자동 관리)
+python .claude/skills/webapp-testing/scripts/with_server.py \
+  --server "npm run dev" --port 3000 \
+  -- python your_test.py
+
+# 방법 3: playwright-engineer 에이전트 호출
+Task(subagent_type="playwright-engineer",
+     prompt="로그인 → 대시보드 플로우 테스트",
+     description="E2E 테스트")
+```
+
+### 빠른 검증 패턴
+
+```python
+# 현재 UI 상태 스크린샷 캡처
+from playwright.sync_api import sync_playwright
+
+with sync_playwright() as p:
+    browser = p.chromium.launch(headless=True)
+    page = browser.new_page()
+    page.goto('http://localhost:3000')
+    page.wait_for_load_state('networkidle')
+    page.screenshot(path='D:/AI/claude01/logs/ui_check.png', full_page=True)
+    browser.close()
+```
+
+> 상세: `.claude/skills/webapp-testing/SKILL.md`
+
+---
+
+## 8. Build & Test
+
+```powershell
+# 단위 테스트
 pytest tests/ -v
-pytest tests/ -v -m unit                    # 단위 테스트
+pytest tests/ -v -m unit                    # 단위 테스트만
 pytest tests/test_parallel_workflow.py -v   # 단일 파일
 pytest tests/test_file.py::test_func -v     # 단일 함수
 pytest tests/ -v --cov=src --cov-report=term  # 커버리지
+
+# Browser/E2E 테스트 → 섹션 7 참조
 
 # 에이전트 실행
 python src/agents/parallel_workflow.py "프로젝트 분석"
@@ -217,6 +288,7 @@ python src/agents/dev_workflow.py "새 기능 구현"
 
 # Phase 상태
 .\scripts\phase-status.ps1
+.\scripts\validate-phase-5.ps1              # E2E + Security 검증
 ```
 
 ### archive-analyzer (서브프로젝트)
@@ -233,7 +305,51 @@ uvicorn src.archive_analyzer.api:app --reload --port 8000
 
 ---
 
-## 8. Environment
+## 9. MCP Tools
+
+`.mcp.json`에 설정된 외부 MCP 서버. `mcp__<server>__<tool>` 형태로 호출.
+
+| MCP Server | 용도 | 호출 예시 |
+|------------|------|----------|
+| **exa** | 고급 웹 검색 (exa.ai) | `mcp__exa__search` |
+| **mem0** | 대화 메모리 저장/조회 | `mcp__mem0__add_memory`, `mcp__mem0__search_memory` |
+| **ref** | 참조 문서 검색 (ref.tools) | `mcp__ref__search` |
+| **docfork** | 문서 포크/관리 | `mcp__docfork__*` |
+
+### 사용 시점
+
+| MCP | Phase | 용도 |
+|-----|-------|------|
+| **exa** | 0, PRE_WORK | 오픈소스/기술 트렌드 검색, 솔루션 조사 |
+| **mem0** | 전체 | 중요 결정사항 저장, 이전 컨텍스트 조회 |
+| **ref** | 0, 1 | API 문서, 라이브러리 레퍼런스 검색 |
+
+### 에이전트 연결
+
+| MCP | 내장 Subagent |
+|-----|--------------|
+| exa | `exa-search-specialist` |
+| mem0 | `context-manager` (권장) |
+| ref | `context7-engineer` (권장) |
+
+### 예시
+
+```python
+# Exa 검색 (PRE_WORK에서 자동 사용)
+mcp__exa__search(query="best React state management 2025")
+
+# 메모리 저장 (중요 결정사항)
+mcp__mem0__add_memory(content="DB 스키마: users 테이블에 role 컬럼 추가 결정")
+
+# 메모리 조회 (이전 컨텍스트)
+mcp__mem0__search_memory(query="DB 스키마 결정사항")
+```
+
+> 설정: `.mcp.json`
+
+---
+
+## 10. Environment
 
 | 변수 | 용도 |
 |------|------|
@@ -244,7 +360,7 @@ uvicorn src.archive_analyzer.api:app --reload --port 8000
 
 ---
 
-## 9. Do Not
+## 11. Do Not
 
 - ❌ Phase validator 없이 다음 Phase 진행
 - ❌ 상대 경로 사용 (`./`, `../`)
