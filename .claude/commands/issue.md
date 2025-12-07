@@ -15,6 +15,7 @@ description: GitHub issue lifecycle management (list, create, fix, failed)
 Actions:
   list [filter]     이슈 목록 조회
   create [title]    새 이슈 생성
+  edit <number>     이슈 수정 (상태, 라벨, 담당자)
   fix <number>      이슈 해결 (브랜치→구현→PR)
   failed [number]   실패 분석 및 새 솔루션 제안
 ```
@@ -112,6 +113,52 @@ gh issue create --title "[제목]" --assignee @me
 
 ---
 
+## /issue edit - 이슈 수정
+
+```bash
+/issue edit 123 --close          # 이슈 닫기
+/issue edit 123 --reopen         # 이슈 재오픈
+/issue edit 123 --label bug      # 라벨 추가
+/issue edit 123 --remove-label bug  # 라벨 제거
+/issue edit 123 --assignee @me   # 담당자 할당
+/issue edit 123 --milestone v1.0 # 마일스톤 설정
+```
+
+### 실행 명령어
+
+```bash
+# 상태 변경
+gh issue close <number>
+gh issue reopen <number>
+
+# 라벨 관리
+gh issue edit <number> --add-label "bug,high-priority"
+gh issue edit <number> --remove-label "needs-triage"
+
+# 담당자 할당
+gh issue edit <number> --add-assignee @me
+gh issue edit <number> --remove-assignee @user
+
+# 마일스톤 설정
+gh issue edit <number> --milestone "v1.0"
+
+# 제목/본문 수정
+gh issue edit <number> --title "새 제목"
+gh issue edit <number> --body "새 본문"
+```
+
+### 복합 수정 예시
+
+```bash
+# 이슈 작업 시작 시
+/issue edit 123 --label in-progress --assignee @me
+
+# 이슈 해결 완료 시
+/issue edit 123 --close --label resolved
+```
+
+---
+
 ## /issue fix - 이슈 해결
 
 ```bash
@@ -181,7 +228,7 @@ gh issue create --title "[제목]" --assignee @me
 1. **이슈 번호/제목**: 기존 이슈 식별
 2. **시도한 솔루션**: 어떤 해결책을 시도했는지
 3. **실패 증상**: 에러 메시지, 예상과 다른 동작
-4. **환경 정보**: OS, 버전, 설정
+4. **환경 정보**: OS, 버전, 설정 (필요시)
 
 ### 분석 보고서 형식
 
@@ -189,6 +236,7 @@ gh issue create --title "[제목]" --assignee @me
 ## 시도한 솔루션: [솔루션명]
 
 **시도 일시**: YYYY-MM-DD
+**소요 시간**:
 **수행한 작업**:
 1. [작업 1]
 2. [작업 2]
@@ -196,26 +244,85 @@ gh issue create --title "[제목]" --assignee @me
 **변경된 파일**:
 - `path/to/file.ts`: [변경 내용]
 
+---
+
 ## 실패 분석
 
-**증상**: [관찰된 문제점]
+### 증상
+- [관찰된 문제점]
+
+### 에러 로그
+\`\`\`
+[에러 메시지 또는 스택 트레이스]
+\`\`\`
+
+### 원인 분석
 **1차 원인**: [직접적 원인]
 **근본 원인**: [underlying 문제]
 
+### 분석한 영역
+- [x] 코드 로직 검토
+- [x] 의존성 버전 확인
+- [x] 환경 설정 검토
+- [ ] 네트워크/외부 서비스 확인
+- [ ] 권한/인증 확인
+
+### 배운 점
+- [이번 시도에서 알게 된 정보]
+
+---
+
 ## 새로운 솔루션 제안
+
+### 왜 이전 솔루션이 실패했는가
+[실패 원인과 새 솔루션의 연결고리]
 
 ### 솔루션 A: [수정된 접근법]
 **변경점**: 이전 시도 대비 무엇이 다른지
 **예상 성공률**: 높음 | 중간 | 낮음
+**리스크**: [잠재적 문제점]
 
 ### 솔루션 B: [대안적 접근법]
 **접근 방식**: 완전히 다른 방향
+**예상 성공률**: 높음 | 중간 | 낮음
+**리스크**: [잠재적 문제점]
+
+### 솔루션 C: [우회 방법]
+**접근 방식**: 문제를 피해가는 방법
+**트레이드오프**: [포기해야 하는 것]
+**예상 성공률**: 높음 | 중간 | 낮음
+
+---
+
+## 추가 조사 필요
+
+다음 정보가 있으면 더 정확한 진단 가능:
+- [ ] [필요한 정보 1]
+- [ ] [필요한 정보 2]
+
+### 디버깅 제안
+\`\`\`bash
+# 추가 진단을 위한 명령어
+[진단 명령어]
+\`\`\`
 ```
 
 ### GitHub 업데이트
 
 ```bash
-gh issue comment <number> --body "## 해결 시도 실패 보고..."
+# 실패 보고 코멘트 추가
+gh issue comment <number> --body "## 해결 시도 실패 보고
+
+### 시도한 솔루션
+...
+
+### 실패 원인
+...
+
+### 다음 시도 계획
+..."
+
+# 라벨 업데이트
 gh issue edit <number> --add-label "blocked,needs-investigation"
 ```
 
