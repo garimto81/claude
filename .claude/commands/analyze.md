@@ -46,6 +46,34 @@ classDiagram
     ClassA --> ClassB : uses
 ```
 
+### Rules (기본 모드)
+
+**CRITICAL**: 기본 모드에서는 Mermaid 코드 블록만 출력합니다.
+
+1. **NO TEXT OUTSIDE CODE BLOCK**: Only output the \`\`\`mermaid ... \`\`\` block
+2. **NO EXPLANATIONS**: No "Here's the diagram" or "This shows..."
+3. **NO MARKDOWN FORMATTING**: No headers, lists, or paragraphs before/after
+4. **ACCURATE RELATIONSHIPS**: Use correct Mermaid syntax for relationship types
+5. **FOCUSED SCOPE**: Include only essential classes/modules (max 10-15 nodes)
+6. **CLEAR NAMING**: Use descriptive class/module names
+
+### Anti-Patterns (기본 모드)
+
+❌ "Here's the Mermaid diagram showing..."
+❌ "The following classDiagram represents..."
+❌ Adding explanatory text before/after diagram
+❌ Using incorrect Mermaid syntax
+❌ Including too many nodes (>20)
+
+### Success Criteria (기본 모드)
+
+✅ Output starts with exactly: \`\`\`mermaid
+✅ Output ends with exactly: \`\`\`
+✅ No text before opening \`\`\`
+✅ No text after closing \`\`\`
+✅ Valid Mermaid classDiagram syntax
+✅ Relationships accurately reflect code structure
+
 ### --comprehensive 모드
 
 종합 분석 리포트를 생성합니다:
