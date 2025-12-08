@@ -2,7 +2,7 @@
 
 This file provides guidance to Claude Code (claude.ai/code) when working with code in this repository.
 
-**Version**: 5.0.0 | **Context**: Windows, PowerShell, Root: `D:\AI\claude01`
+**Version**: 6.0.0 | **Context**: Windows, PowerShell, Root: `D:\AI\archive-analyzer`
 
 ---
 
@@ -11,28 +11,73 @@ This file provides guidance to Claude Code (claude.ai/code) when working with co
 | 규칙 | 내용 |
 |------|------|
 | **언어** | 한글 출력. 기술 용어(code, GitHub)는 영어 |
-| **경로** | 절대 경로만. `D:\AI\claude01\...` |
+| **경로** | 절대 경로만. `D:\AI\archive-analyzer\...` |
 | **충돌** | 지침 충돌 시 → **사용자에게 질문** (임의 판단 금지) |
 
 ---
 
-## 출력 스타일
+## 프로젝트 구조
 
-**코드 수정**: 내용 보여주지 않음. 요약만.
-
-```
-✅ 파일: src/auth.py (+15/-3)
-   - 토큰 검증 로직 추가
-   - 만료 시간 체크
-```
-
-**응답 구조**: 논리 중심
+4개의 독립적인 컴포넌트로 구성된 모노레포:
 
 ```
-1. 문제/목표 (무엇을)
-2. 접근법 (어떻게)
-3. 결과 (완료/다음 단계)
+D:\AI\archive-analyzer\
+├── src/agents/          # AI 워크플로우 에이전트 (Python)
+├── archive-analyzer/    # OTT 미디어 아카이브 분석 도구 (Python)
+├── backend/             # FastAPI 비디오 처리 서버 (Python)
+└── frontend/            # React 프론트엔드 (TypeScript)
 ```
+
+**데이터 흐름**:
+```
+NAS(SMB) → archive-analyzer → pokervod.db ← backend → frontend
+                                   ↑
+                            MeiliSearch (검색)
+```
+
+---
+
+## 빌드 & 테스트
+
+### Python (archive-analyzer)
+
+```powershell
+cd D:\AI\archive-analyzer\archive-analyzer
+pip install -e ".[dev,media]"                # 설치
+pytest tests/test_scanner.py -v              # 단일 테스트
+pytest tests/ -v -m unit                     # 마커별 테스트
+ruff check src/ && black --check src/        # 린트
+```
+
+### Backend (FastAPI)
+
+```powershell
+cd D:\AI\archive-analyzer\backend
+pip install -r requirements.txt
+uvicorn src.main:app --reload --port 8001    # 서버 실행
+pytest tests/ -v                             # 테스트
+```
+
+### Frontend (React/Vite)
+
+```powershell
+cd D:\AI\archive-analyzer\frontend
+npm install
+npm run dev                                  # 개발 서버 (port 8003)
+npm test                                     # Vitest 단위 테스트
+npm run test:e2e                             # Playwright E2E
+npm run lint                                 # ESLint
+```
+
+---
+
+## 핵심 규칙 (Hook 강제)
+
+| 규칙 | 위반 시 | 해결 |
+|------|---------|------|
+| main 브랜치 수정 금지 | **차단** | `git checkout -b feat/issue-N-desc` |
+| 테스트 먼저 (TDD) | 경고 | Red → Green → Refactor |
+| 상대 경로 금지 | 경고 | 절대 경로 사용 |
 
 ---
 
@@ -51,49 +96,18 @@ This file provides guidance to Claude Code (claude.ai/code) when working with co
 
 ---
 
-## 핵심 규칙 (Hook 강제)
-
-| 규칙 | 위반 시 | 해결 |
-|------|---------|------|
-| main 브랜치 수정 금지 | **차단** | `git checkout -b feat/issue-N-desc` |
-| 테스트 먼저 (TDD) | 경고 | Red → Green → Refactor |
-| 상대 경로 금지 | 경고 | 절대 경로 사용 |
-
----
-
-## 문제 해결
-
-```
-문제 → WHY(원인) → WHERE(영향 범위) → HOW(해결) → 수정
-```
-
-**즉시 수정 금지.** 원인 파악 → 유사 패턴 검색 → 구조적 해결.
-
----
-
 ## 커맨드
 
 | 커맨드 | 용도 |
 |--------|------|
 | `/work "내용"` | 전체 워크플로우 |
 | `/issue fix #N` | 이슈 해결 |
-| `/issue create` | 이슈 생성 |
 | `/commit` | 커밋 |
 | `/tdd` | TDD 워크플로우 |
 | `/check` | 린트 + 테스트 |
 | `/parallel dev` | 병렬 개발 |
 
 전체: `.claude/commands/`
-
----
-
-## 빌드 & 테스트
-
-```powershell
-pytest tests/test_file.py -v          # 단일 테스트
-ruff check src/ && black --check src/ # 린트
-npx playwright test                   # E2E
-```
 
 ---
 
@@ -114,6 +128,17 @@ pytest tests/test_a.py -v             # 개별 실행
 ### 보호 대상
 
 - `pokervod.db` 스키마 변경 금지 (`qwen_hand_analysis` 소유)
+- 경로: `D:/AI/claude01/shared-data/pokervod.db`
+
+---
+
+## 문제 해결
+
+```
+문제 → WHY(원인) → WHERE(영향 범위) → HOW(해결) → 수정
+```
+
+**즉시 수정 금지.** 원인 파악 → 유사 패턴 검색 → 구조적 해결.
 
 ---
 
@@ -121,18 +146,7 @@ pytest tests/test_a.py -v             # 개별 실행
 
 | 문서 | 용도 |
 |------|------|
+| `archive-analyzer/CLAUDE.md` | 아카이브 분석기 상세 |
 | `docs/WORKFLOW_REFERENCE.md` | 상세 워크플로우 |
 | `docs/AGENTS_REFERENCE.md` | 에이전트 목록 |
 | `.claude/commands/` | 커맨드 상세 |
-| `.claude/skills/` | 스킬 (자동 트리거) |
-
----
-
-## 서브프로젝트
-
-```powershell
-cd D:\AI\claude01\archive-analyzer
-pip install -e ".[dev]" && pytest tests/ -v
-```
-
-상세: `archive-analyzer/CLAUDE.md`

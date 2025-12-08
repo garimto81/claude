@@ -11,6 +11,7 @@ GCS Streaming Service - Range Request 기반 부분 다운로드
 import subprocess
 import logging
 from datetime import datetime, timedelta
+from fractions import Fraction
 from typing import Optional, Dict, Tuple
 from google.cloud import storage
 from google.oauth2 import service_account
@@ -363,11 +364,15 @@ def get_video_metadata_from_gcs_streaming(gcs_path: str) -> dict:
     if not video_stream:
         raise Exception("No video stream found")
 
+    # fps 안전한 파싱 (eval 대신 Fraction 사용)
+    fps_str = video_stream["r_frame_rate"]
+    fps = float(Fraction(fps_str)) if fps_str else 0.0
+
     return {
         "duration_sec": float(metadata["format"]["duration"]),
         "width": video_stream["width"],
         "height": video_stream["height"],
-        "fps": eval(video_stream["r_frame_rate"]),  # "30/1" → 30.0
+        "fps": fps,
         "file_size_mb": int(metadata["format"]["size"]) / (1024 * 1024),
         "method": "streaming"  # 헤더만 읽음 (수 MB)
     }
