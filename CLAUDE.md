@@ -2,7 +2,17 @@
 
 This file provides guidance to Claude Code (claude.ai/code) when working with code in this repository.
 
-**Version**: 5.0.0 | **Context**: Windows, PowerShell, Root: `D:\AI\claude01`
+**Version**: 5.2.0 | **Context**: Windows, PowerShell, Root: `D:\AI\claude01`
+
+---
+
+## 환경 요구사항
+
+| 항목 | 값 |
+|------|-----|
+| **Python** | 3.11+ |
+| **API Key** | `ANTHROPIC_API_KEY` 환경변수 필수 |
+| **Git** | 2.30+ |
 
 ---
 
@@ -44,10 +54,45 @@ This file provides guidance to Claude Code (claude.ai/code) when working with co
 
 | 요청 유형 | 처리 |
 |-----------|------|
-| 기능/리팩토링 | `/work` → 이슈 → 브랜치 → TDD → PR |
-| 버그 수정 | `/issue fix #N` |
-| 문서 수정 | 직접 수정 (브랜치 불필요) |
+| 기능/리팩토링 | PRE_WORK → IMPL → FINAL_CHECK |
+| 버그 수정 | PRE_WORK(light) → IMPL → FINAL_CHECK |
+| 문서 수정 | 이슈 → 직접 커밋 |
 | 질문 | 직접 응답 |
+
+### 워크플로우 인과관계
+
+```
+PRE_WORK ──────────────→ IMPL ──────────────→ FINAL_CHECK
+    │                      │                      │
+    ├─ OSS 검색           ├─ 이슈/브랜치 생성    ├─ E2E 테스트
+    ├─ 중복 확인          ├─ TDD 구현           ├─ Phase 3~5 자동
+    └─ Make vs Buy        └─ 커밋               └─ Phase 6 사용자 확인
+```
+
+### Phase Pipeline
+
+| Phase | 핵심 | Validator |
+|-------|------|-----------|
+| 0 | PRD 생성 | `validate-phase-0.ps1` |
+| 0.5 | Task 분해 | `validate-phase-0.5.ps1` |
+| 1 | 구현 + 테스트 | `validate-phase-1.ps1` |
+| 2 | 테스트 통과 | `validate-phase-2.ps1` |
+| 2.5 | 코드 리뷰 | `/parallel review` |
+| 3 | 버전 결정 | Conventional Commits |
+| 4 | PR 생성 | `validate-phase-4.ps1` |
+| 5 | E2E + Security | `validate-phase-5.ps1` |
+| 6 | 배포 | 사용자 확인 필수 |
+
+**자동 진행 중지**: MAJOR 버전, Critical 보안 취약점, 배포, 3회 실패
+
+### 단계별 지침 (필수 참조)
+
+| 단계 | Phase | 지침 파일 | 트리거 |
+|------|-------|----------|--------|
+| **문서 작성** | 0, 0.5 | `docs/workflows/PHASE_DOC.md` | PRD, 설계, Task 분해 |
+| **코드 구현** | 1~6 | `docs/workflows/PHASE_CODE.md` | 구현, TDD, 테스트, 배포 |
+
+> ⚠️ **각 단계 시작 시 해당 지침 파일을 먼저 읽고 진행**
 
 ---
 
@@ -58,6 +103,8 @@ This file provides guidance to Claude Code (claude.ai/code) when working with co
 | main 브랜치 수정 금지 | **차단** | `git checkout -b feat/issue-N-desc` |
 | 테스트 먼저 (TDD) | 경고 | Red → Green → Refactor |
 | 상대 경로 금지 | 경고 | 절대 경로 사용 |
+
+**main에서 허용되는 파일**: `CLAUDE.md`, `.claude/`, `docs/`, `README.md`, `CHANGELOG.md`, `.gitignore`
 
 ---
 
@@ -90,10 +137,43 @@ This file provides guidance to Claude Code (claude.ai/code) when working with co
 ## 빌드 & 테스트
 
 ```powershell
-pytest tests/test_file.py -v          # 단일 테스트
-ruff check src/ && black --check src/ # 린트
-npx playwright test                   # E2E
+pytest tests/test_file.py -v                    # 단일 파일
+pytest tests/test_file.py::test_func -v         # 단일 함수
+ruff check src/ && black --check src/           # 린트
+mypy src/                                       # 타입 체크
+npx playwright test                             # E2E
 ```
+
+---
+
+## 코드 표준
+
+### 명명 규칙
+
+| 대상 | 규칙 | 예시 |
+|------|------|------|
+| 변수/함수 | snake_case (Python), camelCase (JS/TS) | `user_list`, `calculateTotal` |
+| 클래스 | PascalCase | `UserService` |
+| 상수 | UPPER_SNAKE_CASE | `MAX_RETRY_COUNT` |
+| Boolean | is/has/can 접두사 | `is_active`, `hasPermission` |
+
+### 코드 원칙
+
+| 원칙 | 설명 |
+|------|------|
+| **KISS** | 불필요한 복잡성 제거 |
+| **DRY** | 중복 코드 → 함수/모듈 분리 |
+| **단일 책임** | 함수 20-30줄 초과 시 분리 |
+| **Early Return** | 예외 먼저 처리 후 반환 |
+
+### 시큐어 코딩
+
+| 항목 | 필수 | 금지 |
+|------|------|------|
+| 입력 검증 | 서버단 검증 | 클라이언트만 의존 |
+| SQL | ORM, PreparedStatement | 동적 쿼리 |
+| 민감정보 | 환경변수, Secret Manager | 코드 하드코딩 |
+| 에러 메시지 | 일반 메시지 | Stack Trace 노출 |
 
 ---
 
@@ -117,6 +197,20 @@ pytest tests/test_a.py -v             # 개별 실행
 
 ---
 
+## Multi-Agent 아키텍처
+
+```
+src/agents/
+├── config.py             # 모델 티어링, 에이전트 설정
+├── parallel_workflow.py  # Fan-Out/Fan-In 병렬 실행
+├── dev_workflow.py       # 병렬 개발 (Architect/Coder/Tester/Docs)
+└── test_workflow.py      # 병렬 테스트 (Unit/Integration/E2E/Security)
+```
+
+**모델 티어링**: supervisor/lead/coder/reviewer → `claude-sonnet-4`, validator → `claude-haiku-3`
+
+---
+
 ## 참조
 
 | 문서 | 용도 |
@@ -128,11 +222,10 @@ pytest tests/test_a.py -v             # 개별 실행
 
 ---
 
-## 서브프로젝트
+## 금지 사항
 
-```powershell
-cd D:\AI\claude01\archive-analyzer
-pip install -e ".[dev]" && pytest tests/ -v
-```
-
-상세: `archive-analyzer/CLAUDE.md`
+- ❌ Phase validator 없이 다음 Phase 진행
+- ❌ 상대 경로 사용 (`./`, `../`)
+- ❌ PR 없이 main 직접 커밋
+- ❌ 테스트 없이 구현 완료
+- ❌ `pokervod.db` 스키마 무단 변경 (`qwen_hand_analysis` 소유)
