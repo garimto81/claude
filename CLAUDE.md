@@ -2,7 +2,7 @@
 
 This file provides guidance to Claude Code (claude.ai/code) when working with code in this repository.
 
-**Version**: 9.0.0 | **Context**: Windows, PowerShell, Root: `D:\AI\claude01`
+**Version**: 10.0.0 | **Context**: Windows, PowerShell, Root: `D:\AI\claude01`
 
 **GitHub**: `garimto81/claude`
 
@@ -23,18 +23,18 @@ This file provides guidance to Claude Code (claude.ai/code) when working with co
 ```
 D:\AI\claude01\
 ├── .claude/
-│   ├── commands/     # 슬래시 커맨드 (20개) - 자동 로드
-│   ├── skills/       # 스킬 (13개) - 자동 로드
-│   └── agents/       # 에이전트 (50개) - 자동 로드
+│   ├── commands/     # 슬래시 커맨드 (12개)
+│   ├── skills/       # 스킬 (13개)
+│   └── agents/       # 에이전트 (18개)
 ├── docs/             # 워크플로우 문서
 └── tasks/prds/       # PRD 문서
 ```
 
 ---
 
-## 에이전트 (50개)
+## 에이전트 (18개)
 
-`.claude/agents/`에 정의된 전문 에이전트 (자동 로드):
+`.claude/agents/`에 정의된 전문 에이전트:
 
 ### 호출 방법
 
@@ -43,20 +43,40 @@ D:\AI\claude01\
 예: "Use the debugger agent to analyze this error"
 ```
 
-### 주요 에이전트
+### Tier 1: CORE (6개) - 필수
 
 | Agent | 용도 |
 |-------|------|
-| `debugger` | 버그 분석, 근본 원인 분석 |
 | `code-reviewer` | 코드 품질, 보안 리뷰 |
-| `test-automator` | 테스트 자동화 |
-| `frontend-developer` | React/Next.js 개발 |
-| `backend-architect` | API 설계, 마이크로서비스 |
-| `playwright-engineer` | E2E 테스트 |
+| `architect` | 시스템 설계, 아키텍처 결정 |
+| `debugger` | 버그 분석, 근본 원인 분석 |
+| `test-engineer` | 단위/E2E/TDD 테스트 |
 | `security-auditor` | OWASP 보안 스캔 |
-| `python-pro` | Python 3.12+ 전문 |
+| `docs-writer` | API/시스템 문서화 |
 
-전체 목록: `docs/AGENTS_REFERENCE.md`
+### Tier 2: DOMAIN (8개)
+
+| Agent | 용도 |
+|-------|------|
+| `frontend-dev` | React/Next.js, UI/UX |
+| `backend-dev` | FastAPI, Django, Node.js |
+| `fullstack-dev` | 풀스택 개발 |
+| `devops-engineer` | CI/CD, K8s, Terraform |
+| `cloud-architect` | AWS/Azure/GCP |
+| `database-specialist` | DB 설계, 최적화, Supabase |
+| `data-specialist` | 데이터 분석, ML 파이프라인 |
+| `ai-engineer` | LLM, RAG 시스템 |
+
+### Tier 3-4: LANGUAGE & TOOLING (4개)
+
+| Agent | 용도 |
+|-------|------|
+| `typescript-dev` | TypeScript 고급 패턴 |
+| `python-dev` | Python 3.12+ 전문 |
+| `github-engineer` | GitHub 워크플로우 |
+| `claude-expert` | Claude Code, MCP, 에이전트 |
+
+전체: `docs/AGENTS_REFERENCE.md`
 
 ---
 
@@ -85,40 +105,54 @@ D:\AI\claude01\
 
 ---
 
-## 커맨드 (20개)
+## 커맨드 (12개)
 
-### 핵심 (5개)
+### 핵심 (자주 사용)
 
 | 커맨드 | 용도 |
 |--------|------|
 | `/work "내용"` | 전체 워크플로우 (`--auto` 완전 자동화) |
-| `/issue <action>` | 이슈 관리 (`list`, `create`, `fix`, `failed`) |
+| `/issue [action]` | 이슈 관리 (`list`, `create`, `fix`, `failed`) |
 | `/commit` | Conventional Commits |
-| `/check` | 린트 + 테스트 |
+| `/check [options]` | 린트/테스트 (`--e2e`, `--perf`, `--security`) |
 | `/tdd` | TDD 워크플로우 |
 
 ### 병렬 실행
 
 | 커맨드 | 용도 |
 |--------|------|
-| `/parallel dev` | 병렬 개발 |
+| `/parallel dev` | 병렬 개발 (`--branch` 브랜치 격리) |
 | `/parallel test` | 병렬 테스트 |
 | `/parallel review` | 병렬 코드 리뷰 |
 
-### 기타
+### 생성/분석
 
 | 커맨드 | 용도 |
 |--------|------|
-| `/pre-work` | 사전 조사 |
-| `/research` | 코드베이스 분석 |
-| `/plan` | 구현 계획 |
-| `/create <type>` | PRD/PR/문서 생성 |
-| `/optimize` | 성능 분석 |
-| `/final-check` | E2E 검증 |
-| `/pr <action>` | PR 리뷰/머지 |
-| `/changelog` | 변경로그 |
+| `/research [sub]` | 리서치 (`code`, `web`, `plan`) |
+| `/create [type]` | PRD/PR/문서 생성 (`prd`, `pr`, `docs`) |
+| `/pr [action]` | PR 리뷰/머지 (`review`, `merge`, `create`) |
+
+### 관리
+
+| 커맨드 | 용도 |
+|--------|------|
+| `/todo` | 작업 관리 |
+| `/session [sub]` | 세션 관리 (`compact`, `journey`, `changelog`) |
+| `/api-test` | API 엔드포인트 테스트 |
 
 전체: `.claude/commands/`
+
+---
+
+## MCP 서버 (4개)
+
+| MCP | 용도 |
+|-----|------|
+| `context7` | 기술 문서 조회 |
+| `sequential-thinking` | 복잡한 추론 |
+| `taskmanager` | 작업 관리 |
+| `exa` | 고급 웹 검색 |
 
 ---
 
@@ -165,7 +199,17 @@ pytest tests/test_a.py -v
 | 문서 | 용도 |
 |------|------|
 | `docs/AGENTS_REFERENCE.md` | 에이전트 전체 목록 |
-| `docs/COMMAND_SELECTOR.md` | 커맨드 선택 가이드 |
+| `docs/PRD-0031-AGENT-CONSOLIDATION.md` | 에이전트 통합 PRD |
+| `docs/PRD-0032-COMMAND-CONSOLIDATION.md` | 커맨드 통합 PRD |
 | `.claude/commands/` | 커맨드 상세 |
 | `.claude/skills/` | 스킬 상세 |
 | `.claude/agents/` | 에이전트 상세 |
+
+---
+
+## 변경 이력
+
+| 버전 | 날짜 | 변경 |
+|------|------|------|
+| 10.0.0 | 2025-12-11 | PRD-0032: 커맨드 통합 (20개 → 12개) |
+| 9.0.0 | 2025-12-11 | PRD-0031: 에이전트 통합 (50개 → 18개) |
