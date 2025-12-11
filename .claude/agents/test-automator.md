@@ -1,6 +1,7 @@
 ---
 name: test-automator
-description: Use this agent when you need to create comprehensive test suites for your codebase, including unit tests, integration tests, and end-to-end (e2e) tests. This agent excels at analyzing existing code to identify critical test scenarios, writing tests that provide maximum coverage, and ensuring tests follow best practices for maintainability and reliability. Examples: <example>Context: The user has just implemented a new authentication service and needs comprehensive test coverage. user: "I've just finished implementing the authentication service. Can you create a full test suite for it?" assistant: "I'll use the test-automator agent to create comprehensive unit, integration, and e2e tests for your authentication service." <commentary>Since the user needs a complete test suite covering multiple testing levels, the test-automator agent is the appropriate choice.</commentary></example> <example>Context: The user wants to add tests for a recently created API endpoint. user: "I need tests for the new /api/users endpoint I just created" assistant: "Let me use the test-automator agent to create a comprehensive test suite for your /api/users endpoint." <commentary>The user is requesting tests for new functionality, which is exactly what the test-automator agent is designed for.</commentary></example>
+description: 테스트 자동화 전문가 (단위/통합/E2E). Use PROACTIVELY for creating test suites, improving coverage, or implementing testing best practices.
+tools: Read, Write, Edit, Bash, Grep
 model: sonnet
 ---
 

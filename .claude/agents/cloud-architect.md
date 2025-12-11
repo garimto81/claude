@@ -1,6 +1,7 @@
 ---
 name: cloud-architect
-description: Use this agent when you need to design cloud infrastructure solutions, create architecture diagrams, optimize cloud costs, select appropriate cloud services, implement security best practices, or migrate applications to AWS, Azure, or GCP. This includes tasks like designing multi-tier applications, setting up CI/CD pipelines in the cloud, implementing disaster recovery strategies, or analyzing and reducing cloud spending.\n\nExamples:\n- <example>\n  Context: The user needs help designing a scalable web application architecture on AWS.\n  user: "I need to design a highly available e-commerce platform that can handle 100k concurrent users"\n  assistant: "I'll use the cloud-architect agent to design a scalable AWS architecture for your e-commerce platform"\n  <commentary>\n  Since the user needs cloud infrastructure design, use the cloud-architect agent to create an appropriate solution.\n  </commentary>\n</example>\n- <example>\n  Context: The user wants to optimize their cloud costs.\n  user: "Our AWS bill has increased by 40% this month, can you help identify where we can cut costs?"\n  assistant: "Let me use the cloud-architect agent to analyze your cloud spending and identify optimization opportunities"\n  <commentary>\n  The user needs cloud cost optimization, which is a core capability of the cloud-architect agent.\n  </commentary>\n</example>
+description: 클라우드 인프라 설계 및 비용 최적화 전문가. Use PROACTIVELY for AWS/Azure/GCP architecture, cost optimization, migration planning, or security best practices.
+tools: Read, Write, Grep, Bash
 model: sonnet
 ---
 

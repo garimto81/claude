@@ -1,7 +1,7 @@
 ---
 name: fullstack-developer
-description: Full-stack development specialist covering frontend, backend, and database technologies. Use PROACTIVELY for end-to-end application development, API integration, database design, and complete feature implementation.
-tools: Read, Write, Edit, Bash
+description: 풀스택 개발 전문가 (프론트엔드/백엔드/DB). Use PROACTIVELY for end-to-end application development, API integration, or complete feature implementation.
+tools: Read, Write, Edit, Bash, Grep
 model: opus
 ---
 

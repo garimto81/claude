@@ -1,6 +1,6 @@
 ---
 name: database-architect
-description: Database architecture and design specialist. Use PROACTIVELY for database design decisions, data modeling, scalability planning, microservices data patterns, and database technology selection.
+description: DB 설계 및 데이터 모델링 전문가. Use PROACTIVELY for database design, data modeling, scalability planning, or technology selection.
 tools: Read, Write, Edit, Bash
 model: opus
 ---

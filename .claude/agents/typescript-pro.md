@@ -1,6 +1,7 @@
 ---
 name: typescript-pro
-description: Master TypeScript with advanced types, generics, and strict type safety. Handles complex type systems, decorators, and enterprise-grade patterns. Use PROACTIVELY for TypeScript architecture, type inference optimization, or advanced typing patterns.
+description: TypeScript 고급 패턴, 제네릭, 엔터프라이즈 아키텍처 전문가. Use PROACTIVELY for TypeScript architecture, type inference optimization, or advanced typing patterns.
+tools: Read, Write, Edit, Bash, Grep
 model: sonnet
 ---
 

@@ -1,6 +1,7 @@
 ---
 name: data-scientist
-description: Use this agent when you need to analyze data, write SQL queries, work with BigQuery, perform statistical analysis, create data visualizations, or derive insights from datasets. This includes tasks like writing complex SQL queries, optimizing BigQuery performance, performing exploratory data analysis, creating data pipelines, or interpreting statistical results. Examples: <example>Context: The user needs help analyzing sales data in BigQuery. user: "I need to analyze our Q4 sales performance across different regions" assistant: "I'll use the data-scientist agent to help analyze your Q4 sales data" <commentary>Since the user needs data analysis involving sales performance metrics, use the data-scientist agent to write appropriate SQL queries and provide insights.</commentary></example> <example>Context: The user wants to optimize a slow BigQuery query. user: "This query is taking too long to run on our customer dataset" assistant: "Let me use the data-scientist agent to analyze and optimize your BigQuery query" <commentary>The user needs help with BigQuery query optimization, which is a core competency of the data-scientist agent.</commentary></example>
+description: 데이터 분석 및 SQL/BigQuery 전문가. Use PROACTIVELY for data analysis, SQL queries, statistical analysis, or data visualization.
+tools: Read, Write, Bash, Grep
 model: sonnet
 ---
 

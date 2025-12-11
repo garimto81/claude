@@ -1,6 +1,7 @@
 ---
 name: legacy-modernizer
-description: Refactor legacy codebases, migrate outdated frameworks, and implement gradual modernization. Handles technical debt, dependency updates, and backward compatibility. Use PROACTIVELY for legacy system updates, framework migrations, or technical debt reduction.
+description: 레거시 시스템 마이그레이션 전문가. Use PROACTIVELY for framework migrations, technical debt reduction, or backward compatibility.
+tools: Read, Write, Edit, Bash, Grep
 model: haiku
 ---
 

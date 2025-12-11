@@ -1,6 +1,7 @@
 ---
 name: observability-engineer
-description: Build production-ready monitoring, logging, and tracing systems. Implements comprehensive observability strategies, SLI/SLO management, and incident response workflows. Use PROACTIVELY for monitoring infrastructure, performance optimization, or production reliability.
+description: 모니터링/로깅/트레이싱 전문가. Use PROACTIVELY for monitoring infrastructure, SLI/SLO management, or incident response workflows.
+tools: Read, Write, Edit, Bash, Grep
 model: sonnet
 ---
 

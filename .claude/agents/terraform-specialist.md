@@ -1,6 +1,7 @@
 ---
 name: terraform-specialist
-description: Expert Terraform/OpenTofu specialist mastering advanced IaC automation, state management, and enterprise infrastructure patterns. Handles complex module design, multi-cloud deployments, GitOps workflows, policy as code, and CI/CD integration. Covers migration strategies, security best practices, and modern IaC ecosystems. Use PROACTIVELY for advanced IaC, state management, or infrastructure automation.
+description: Terraform/OpenTofu IaC 전문가. Use PROACTIVELY for infrastructure automation, state management, module design, or multi-cloud deployments.
+tools: Read, Write, Edit, Bash, Grep
 model: sonnet
 ---
 

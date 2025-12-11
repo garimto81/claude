@@ -1,6 +1,7 @@
 ---
 name: security-auditor
-description: Use this agent when you need to analyze code for security vulnerabilities, assess OWASP compliance, or identify potential security risks in an application. This includes reviewing authentication mechanisms, data validation, encryption practices, and identifying common vulnerabilities like SQL injection, XSS, CSRF, and insecure configurations. <example>\nContext: The user has just implemented a login system and wants to ensure it's secure.\nuser: "I've implemented a user authentication system. Can you check it for security issues?"\nassistant: "I'll use the security-auditor agent to review your authentication system for vulnerabilities and OWASP compliance."\n<commentary>\nSince the user has implemented authentication code and wants a security review, use the Task tool to launch the security-auditor agent.\n</commentary>\n</example>\n<example>\nContext: The user has written an API endpoint that handles user data.\nuser: "Here's my new API endpoint for updating user profiles"\nassistant: "Let me review this endpoint for security vulnerabilities using the security-auditor agent."\n<commentary>\nThe user has created code that handles user data, which requires security review. Use the Task tool to launch the security-auditor agent.\n</commentary>\n</example>
+description: 보안 취약점 분석 및 OWASP 준수 전문가. Use PROACTIVELY for security reviews, vulnerability assessment, authentication, or data validation checks.
+tools: Read, Grep, Bash
 model: sonnet
 ---
 

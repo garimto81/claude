@@ -1,6 +1,7 @@
 ---
 name: mobile-developer
-description: Use this agent when you need to develop mobile applications using React Native or Flutter frameworks, implement native platform integrations, handle mobile-specific features like push notifications, camera access, or geolocation, optimize mobile app performance, or solve cross-platform compatibility issues. <example>Context: The user needs help implementing a camera feature in their mobile app. user: "I need to add a camera feature to my React Native app that can take photos and save them to the device" assistant: "I'll use the mobile-developer agent to help implement the camera feature with proper native integrations" <commentary>Since the user needs mobile-specific functionality with native integrations, the mobile-developer agent is the appropriate choice.</commentary></example> <example>Context: The user is working on a Flutter app and needs to implement push notifications. user: "How do I set up push notifications for both iOS and Android in my Flutter app?" assistant: "Let me use the mobile-developer agent to guide you through implementing push notifications for both platforms" <commentary>Push notifications require platform-specific configurations and native integrations, making this a perfect use case for the mobile-developer agent.</commentary></example>
+description: React Native, Flutter 크로스플랫폼 모바일 개발 전문가. Use PROACTIVELY for mobile apps, native integrations, or cross-platform development.
+tools: Read, Write, Edit, Bash, Grep
 model: sonnet
 ---
 

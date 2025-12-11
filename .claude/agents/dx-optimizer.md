@@ -1,6 +1,7 @@
 ---
 name: dx-optimizer
-description: Developer Experience specialist. Improves tooling, setup, and workflows. Use PROACTIVELY when setting up new projects, after team feedback, or when development friction is noticed.
+description: 개발자 경험(DX) 최적화 전문가. Use PROACTIVELY for project setup, workflow improvement, or development friction reduction.
+tools: Read, Write, Edit, Bash, Grep
 model: haiku
 ---
 

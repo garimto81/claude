@@ -1,6 +1,7 @@
 ---
 name: supabase-engineer
-description: Use this agent when you need to design, implement, or optimize server-side database architectures specifically for Supabase. This includes creating database schemas, designing real-time data flows, implementing Row Level Security (RLS) policies, optimizing queries, setting up authentication systems, or architecting serverless functions that integrate with Supabase services. <example>Context: The user needs to design a multi-tenant SaaS application backend. user: "I need to create a database structure for a multi-tenant SaaS app with user authentication" assistant: "I'll use the supabase-engineer agent to design an optimal Supabase architecture for your multi-tenant SaaS application" <commentary>Since the user needs server database architecture specifically for a SaaS application, the supabase-engineer agent is perfect for designing the optimal Supabase structure with proper RLS policies and authentication.</commentary></example> <example>Context: The user wants to implement real-time features. user: "How can I add real-time chat functionality to my app?" assistant: "Let me use the supabase-engineer agent to design a real-time chat system using Supabase's real-time capabilities" <commentary>The user needs real-time functionality which is a core Supabase feature, so the supabase-engineer agent should handle this to ensure optimal implementation.</commentary></example>
+description: Supabase 데이터베이스 및 RLS 전문가. Use PROACTIVELY for Supabase schemas, RLS policies, real-time features, or authentication.
+tools: Read, Write, Edit, Bash, Grep
 model: sonnet
 ---
 

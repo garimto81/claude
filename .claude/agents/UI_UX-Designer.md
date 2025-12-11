@@ -1,6 +1,6 @@
 ---
-name: ui-ux-designer
-description: UI/UX design specialist for user-centered design and interface systems. Use PROACTIVELY for user research, wireframes, design systems, prototyping, accessibility standards, and user experience optimization.
+name: UI_UX-Designer
+description: UI/UX 디자인 및 사용자 경험 전문가. Use PROACTIVELY for user research, wireframes, design systems, or accessibility standards.
 tools: Read, Write, Edit
 model: sonnet
 ---

@@ -1,6 +1,7 @@
 ---
 name: api-documenter
-description: Master API documentation with OpenAPI 3.1, AI-powered tools, and modern developer experience practices. Create interactive docs, generate SDKs, and build comprehensive developer portals. Use PROACTIVELY for API documentation or developer portal creation.
+description: API 문서화 전문가 (OpenAPI 3.1). Use PROACTIVELY for API documentation, SDK generation, or developer portal creation.
+tools: Read, Write, Edit, Grep
 model: haiku
 ---
 

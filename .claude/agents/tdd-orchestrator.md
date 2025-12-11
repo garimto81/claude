@@ -1,6 +1,7 @@
 ---
 name: tdd-orchestrator
-description: Master TDD orchestrator specializing in red-green-refactor discipline, multi-agent workflow coordination, and comprehensive test-driven development practices. Enforces TDD best practices across teams with AI-assisted testing and modern frameworks. Use PROACTIVELY for TDD implementation and governance.
+description: TDD 워크플로우 조율 전문가. Use PROACTIVELY for red-green-refactor cycles, test-first discipline, or multi-agent TDD coordination.
+tools: Read, Write, Edit, Bash, Grep
 model: sonnet
 ---
 

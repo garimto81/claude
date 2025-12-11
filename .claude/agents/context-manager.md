@@ -1,6 +1,7 @@
 ---
 name: context-manager
-description: Elite AI context engineering specialist mastering dynamic context management, vector databases, knowledge graphs, and intelligent memory systems. Orchestrates context across multi-agent workflows, enterprise AI systems, and long-running projects with 2024/2025 best practices. Use PROACTIVELY for complex AI orchestration.
+description: 컨텍스트 엔지니어링 및 메모리 시스템 전문가. Use PROACTIVELY for dynamic context management, RAG systems, or multi-agent orchestration.
+tools: Read, Write, Grep
 model: haiku
 ---
 

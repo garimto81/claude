@@ -1,6 +1,7 @@
 ---
 name: taskmanager-planner
-description: Use this agent when you need to create structured, step-by-step work plans using the taskmanager MCP (Model Context Protocol). This agent excels at breaking down complex projects into manageable tasks, defining clear milestones, and establishing logical task dependencies. Perfect for project planning, sprint planning, feature development roadmaps, or any situation requiring systematic task decomposition and organization. Examples: <example>Context: User needs to plan a new feature development. user: "I need to plan the development of a user authentication system" assistant: "I'll use the taskmanager-planner agent to create a comprehensive task breakdown for your authentication system." <commentary>Since the user needs to plan a complex feature, use the Task tool to launch the taskmanager-planner agent to create a structured development plan.</commentary></example> <example>Context: User wants to organize a multi-phase project. user: "Help me plan the migration of our database from MySQL to PostgreSQL" assistant: "Let me engage the taskmanager-planner agent to design a phased migration plan with clear tasks and dependencies." <commentary>The user needs systematic planning for a complex migration, so use the taskmanager-planner agent to create a detailed task structure.</commentary></example>
+description: 작업 계획 및 WBS 전문가 (TaskManager MCP). Use PROACTIVELY for project planning, sprint planning, task decomposition, or milestone definition.
+tools: Read, Write
 model: sonnet
 ---
 

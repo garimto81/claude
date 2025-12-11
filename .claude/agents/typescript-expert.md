@@ -1,6 +1,7 @@
 ---
 name: typescript-expert
-description: Use this agent when you need to write, review, or refactor TypeScript code with a focus on type safety and advanced type system features. This includes creating complex type definitions, implementing generic constraints, working with conditional types, mapped types, template literal types, and ensuring maximum type safety across your codebase. <example>\nContext: The user needs help with TypeScript type definitions.\nuser: "I need to create a type-safe event emitter system in TypeScript"\nassistant: "I'll use the typescript-expert agent to help you create a type-safe event emitter with advanced TypeScript features."\n<commentary>\nSince the user needs TypeScript-specific expertise for type safety, use the typescript-expert agent.\n</commentary>\n</example>\n<example>\nContext: The user has written TypeScript code that needs review.\nuser: "Can you review this TypeScript utility type I created?"\nassistant: "Let me use the typescript-expert agent to review your utility type and suggest improvements."\n<commentary>\nThe user needs TypeScript-specific code review focusing on type system usage.\n</commentary>\n</example>
+description: TypeScript 타입 시스템 전문가. Use PROACTIVELY for complex type definitions, generics, conditional types, or type safety.
+tools: Read, Write, Edit, Bash, Grep
 model: sonnet
 ---
 

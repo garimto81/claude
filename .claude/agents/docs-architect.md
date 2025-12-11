@@ -1,6 +1,7 @@
 ---
 name: docs-architect
-description: Creates comprehensive technical documentation from existing codebases. Analyzes architecture, design patterns, and implementation details to produce long-form technical manuals and ebooks. Use PROACTIVELY for system documentation, architecture guides, or technical deep-dives.
+description: 기술 문서 및 아키텍처 가이드 작성 전문가. Use PROACTIVELY for system documentation, architecture guides, or technical deep-dives.
+tools: Read, Write, Edit, Grep
 model: sonnet
 ---
 

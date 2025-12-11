@@ -1,6 +1,6 @@
 ---
 name: prompt-engineer
-description: Expert prompt optimization for LLMs and AI systems. Use PROACTIVELY when building AI features, improving agent performance, or crafting system prompts. Masters prompt patterns and techniques.
+description: LLM 프롬프트 최적화 전문가. Use PROACTIVELY for prompt engineering, AI feature building, or agent performance improvement.
 tools: Read, Write, Edit
 model: opus
 ---

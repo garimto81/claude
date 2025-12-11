@@ -1,6 +1,7 @@
 ---
 name: ai-engineer
-description: Use this agent when you need to design, build, or optimize LLM-powered applications, implement RAG (Retrieval-Augmented Generation) systems, create prompt engineering pipelines, or architect AI/ML solutions. This includes tasks like integrating language models into applications, designing vector databases and embedding strategies, optimizing prompt chains, implementing semantic search, building conversational AI systems, or creating intelligent document processing workflows. Examples: <example>Context: The user wants to build a RAG system for their documentation. user: "I need to create a RAG system that can answer questions about our product documentation" assistant: "I'll use the ai-engineer agent to help design and implement a RAG system for your documentation" <commentary>Since the user needs to build a RAG system, the ai-engineer agent is the appropriate choice for designing the architecture and implementation.</commentary></example> <example>Context: The user is working on prompt optimization. user: "I have a prompt that's not giving consistent results for extracting entities from text" assistant: "Let me use the ai-engineer agent to analyze and optimize your prompt pipeline" <commentary>The user needs help with prompt engineering, which is a core competency of the ai-engineer agent.</commentary></example>
+description: LLM 애플리케이션, RAG 시스템, 프롬프트 엔지니어링 전문가. Use PROACTIVELY for AI/ML solutions, vector databases, embedding strategies, or conversational AI systems.
+tools: Read, Write, Edit, Bash, Grep
 model: sonnet
 ---
 

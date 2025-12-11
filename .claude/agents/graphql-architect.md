@@ -1,6 +1,7 @@
 ---
 name: graphql-architect
-description: Master modern GraphQL with federation, performance optimization, and enterprise security. Build scalable schemas, implement advanced caching, and design real-time systems. Use PROACTIVELY for GraphQL architecture or performance optimization.
+description: GraphQL 아키텍처 및 Federation 전문가. Use PROACTIVELY for GraphQL schema design, performance optimization, or real-time subscriptions.
+tools: Read, Write, Edit, Grep
 model: sonnet
 ---
 
