@@ -2,17 +2,18 @@
 
 **목적**: 에이전트 분류 및 활용법
 
-**버전**: 4.0.0 | **업데이트**: 2025-12-11 | **동기화**: CLAUDE.md v8.0.0
+**버전**: 5.0.0 | **업데이트**: 2025-12-11 | **동기화**: CLAUDE.md v9.0.0
 
 ---
 
-## 에이전트 소스 3계층
+## 에이전트 소스 2계층
 
 | 계층 | 위치 | 개수 | 역할 |
 |------|------|------|------|
 | **내장** | Claude Code | 4개 | 기본 subagent (직접 호출) |
-| **루트 스킬** | `.claude/skills/` | 13개 | 자동/수동 트리거 스킬 |
-| **플러그인** | `.claude/plugins/` | 56개 | 전문 에이전트 (25개 카테고리) |
+| **커스텀** | `.claude/agents/` | 50개 | 전문 에이전트 (자동 로드) |
+
+**루트 스킬**: `.claude/skills/` (13개) - 자동/수동 트리거 스킬
 
 ---
 
@@ -29,16 +30,24 @@ Claude Code 공식 내장, 직접 호출 가능:
 
 ---
 
-## 2. 플러그인 아키텍처 (56개 에이전트)
+## 2. 커스텀 에이전트 (50개)
 
-### 구조
+### 위치 및 호출 방법
 
 ```
-.claude/plugins/
-├── {category}/              # 25개 카테고리
-│   ├── agents/              # 에이전트 정의 (.md)
-│   ├── commands/            # 커맨드 정의 (.md)
-│   └── skills/              # 스킬 정의 (SKILL.md)
+.claude/agents/
+├── backend-architect.md
+├── code-reviewer.md
+├── debugger.md
+├── frontend-developer.md
+├── python-pro.md
+└── ... (50개)
+```
+
+**호출 방법**:
+```
+"Use the [agent-name] agent to [task]"
+예: "Use the debugger agent to analyze this error"
 ```
 
 ### Phase별 에이전트 (19개)
@@ -89,7 +98,7 @@ Claude Code 공식 내장, 직접 호출 가능:
 
 ---
 
-### 도메인별 에이전트 (37개)
+### 도메인별 에이전트 (31개)
 
 #### AI/ML (5개)
 | Agent | 용도 |
@@ -128,7 +137,7 @@ Claude Code 공식 내장, 직접 호출 가능:
 |-------|------|
 | `github-engineer` | 저장소 관리, Git 워크플로우, Actions |
 | `supabase-engineer` | Supabase DB, RLS 정책 |
-| `ui-ux-designer` | 사용자 중심 디자인, 인터페이스 시스템 |
+| `UI_UX-Designer` | 사용자 중심 디자인, 인터페이스 시스템 |
 | `api-documenter` | OpenAPI 3.1, API 문서화 |
 | `docs-architect` | 기술 문서, 아키텍처 가이드 |
 | `legacy-modernizer` | 레거시 마이그레이션, 프레임워크 업그레이드 |
@@ -185,27 +194,7 @@ Claude Code 공식 내장, 직접 호출 가능:
 
 ---
 
-## 4. 활성 vs 비활성 에이전트
-
-### Commands/Skills에서 직접 참조 (활성)
-
-| Agent | 참조 위치 | Phase |
-|-------|----------|-------|
-| `context7-engineer` | pre-work, research | 0 |
-| `debugger` | analyze, fix-issue, tdd | 1, 2, 5 |
-| `backend-architect` | api-test | 1 |
-| `code-reviewer` | check, optimize, tdd | 2, 2.5 |
-| `test-automator` | fix-issue, tdd | 2 |
-| `security-auditor` | check, api-test, final-check | 5 |
-| `playwright-engineer` | final-check | 2, 5 |
-
-### 활성화 예정 (P1)
-
-상세: [PLANNED_AGENTS.md](./PLANNED_AGENTS.md)
-
----
-
-## 5. 병렬 실행 패턴
+## 4. 병렬 실행 패턴
 
 ### 패턴 1: Phase 0 병렬 분석
 ```
@@ -236,7 +225,7 @@ security-auditor (보안 스캔)
 
 ---
 
-## 6. Agent 선택 가이드
+## 5. Agent 선택 가이드
 
 | 작업 | 추천 Agent | Phase |
 |------|-----------|-------|
@@ -256,13 +245,12 @@ security-auditor (보안 스캔)
 
 ## 참조
 
-- [CLAUDE.md](../CLAUDE.md) - 핵심 워크플로우 (v8.0.0)
-- [PLANNED_AGENTS.md](./PLANNED_AGENTS.md) - 활성화 예정 에이전트
+- [CLAUDE.md](../CLAUDE.md) - 핵심 워크플로우 (v9.0.0)
 - [COMMAND_SELECTOR.md](./COMMAND_SELECTOR.md) - 커맨드 선택 가이드
-- `.claude/plugins/` - 플러그인 상세
+- `.claude/agents/` - 에이전트 상세
 
 ---
 
 **관리**: Claude Code
 **업데이트**: 2025-12-11
-**버전**: 4.0.0
+**버전**: 5.0.0
