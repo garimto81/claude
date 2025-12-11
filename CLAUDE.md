@@ -2,9 +2,9 @@
 
 This file provides guidance to Claude Code (claude.ai/code) when working with code in this repository.
 
-**Version**: 8.0.0 | **Context**: Windows, PowerShell, Root: `D:\AI\claude01`
+**Version**: 8.1.0 | **Context**: Windows, PowerShell, Root: `D:\AI\claude01`
 
-**GitHub**: `garimto81/claude-code-config`
+**GitHub**: `garimto81/claude`
 
 ---
 
@@ -26,30 +26,55 @@ Claude Code 전역 워크플로우 설정 저장소:
 D:\AI\claude01\
 ├── .claude/
 │   ├── commands/        # 커스텀 슬래시 커맨드 (20개)
-│   └── skills/          # 커스텀 스킬 (13개)
-│       ├── tdd-workflow/
-│       ├── debugging-workflow/
-│       ├── code-quality-checker/
-│       ├── final-check-automation/
-│       ├── phase-validation/
-│       ├── pre-work-research/
-│       ├── issue-resolution/
-│       ├── parallel-agent-orchestration/
-│       ├── journey-sharing/
-│       ├── webapp-testing/
-│       ├── pr-review-agent/
-│       ├── command-analytics/
-│       └── skill-creator/
+│   ├── skills/          # 루트 스킬 (13개) - 자동/수동 트리거
+│   └── plugins/         # 플러그인 에이전트 (56개, 25개 카테고리)
 ├── docs/                # 워크플로우 문서
-├── src/agents/          # AI 워크플로우 에이전트 (Python)
-│   ├── config.py              # 모델 티어링 (Sonnet/Haiku)
-│   ├── parallel_workflow.py   # Fan-Out/Fan-In 병렬 실행
-│   ├── dev_workflow.py        # 4-에이전트 병렬 개발
-│   ├── test_workflow.py       # 4-에이전트 병렬 테스트
-│   ├── phase_validator.py     # Phase 0-6 검증
-│   └── utils.py               # 유틸리티
+├── src/agents/          # Python 워크플로우 모듈
 └── tasks/prds/          # PRD 문서
 ```
+
+---
+
+## 플러그인 시스템 (56개 에이전트)
+
+`.claude/plugins/`에 25개 카테고리의 전문 에이전트 정의:
+
+```
+.claude/plugins/
+├── phase-0-planning/     # 계획 에이전트 (5개)
+├── phase-1-development/  # 개발 에이전트 (6개)
+├── phase-2-testing/      # 테스팅 에이전트 (4개)
+├── phase-3-architecture/ # 아키텍처 에이전트 (1개)
+├── phase-6-deployment/   # 배포 에이전트 (3개)
+├── python-development/   # Python 전문 (2개)
+├── javascript-typescript/# JS/TS 전문 (2개)
+├── database-tools/       # DB 전문 (2개)
+├── ai-ml-tools/          # AI/ML 전문 (5개)
+└── ... (25개 카테고리)
+```
+
+### 플러그인 구조
+
+```
+{category}/
+├── agents/     # 에이전트 정의 (.md)
+├── commands/   # 커맨드 정의 (.md)
+└── skills/     # 스킬 정의 (SKILL.md)
+```
+
+### 활성 에이전트 (7개)
+
+| Agent | Phase | 용도 |
+|-------|-------|------|
+| `context7-engineer` | 0 | 기술 스택 검증 |
+| `debugger` | 1, 2, 5 | 버그 분석/수정 |
+| `backend-architect` | 1 | API 설계 |
+| `code-reviewer` | 2 | 코드 리뷰 |
+| `test-automator` | 2 | 테스트 자동화 |
+| `security-auditor` | 5 | 보안 스캔 |
+| `playwright-engineer` | 2, 5 | E2E 테스트 |
+
+상세: `docs/AGENTS_REFERENCE.md` (56개 전체 목록)
 
 ---
 
@@ -251,9 +276,10 @@ Generated with [Claude Code](https://claude.com/claude-code)
 
 | 문서 | 용도 |
 |------|------|
+| `docs/AGENTS_REFERENCE.md` | 에이전트 전체 목록 (56개) |
+| `docs/COMMAND_SELECTOR.md` | 시나리오별 커맨드 추천 |
+| `docs/PLANNED_AGENTS.md` | 에이전트 활성화 로드맵 |
 | `docs/WORKFLOW_REFERENCE.md` | 상세 워크플로우 |
-| `docs/AGENTS_REFERENCE.md` | 에이전트 목록 |
-| `docs/COMMAND_SELECTOR.md` | 커맨드 선택 가이드 |
-| `docs/PLANNED_AGENTS.md` | 계획 에이전트 목록 |
-| `.claude/commands/` | 커맨드 상세 |
-| `.claude/skills/` | 스킬 상세 |
+| `.claude/commands/` | 커맨드 상세 (20개) |
+| `.claude/skills/` | 루트 스킬 상세 (13개) |
+| `.claude/plugins/` | 플러그인 에이전트 (56개) |

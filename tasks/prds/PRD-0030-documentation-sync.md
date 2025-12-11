@@ -1,6 +1,6 @@
 # PRD-0030: 전역 지침 및 워크플로우 문서 동기화
 
-**Version**: 2.0.0 | **Date**: 2025-12-11 | **Status**: Draft
+**Version**: 3.0.0 | **Date**: 2025-12-11 | **Status**: In Progress
 **Priority**: P0 | **Parent**: [PRD-0025](./PRD-0025-master-workflow-optimization.md)
 
 ---
@@ -21,14 +21,16 @@
 | **에이전트** | 미사용 에이전트 | 21개 정의만 됨 (실제 미호출) | 높음 |
 | **에이전트** | 스킬 미문서화 | 13개 스킬 존재, CLAUDE.md 미기술 | 높음 |
 | **아키텍처** | src/agents/ 구조 | CLAUDE.md에 미기술 | 중간 |
+| **플러그인** | .claude/plugins/ 미문서화 | 25개 카테고리, 50+ 에이전트 존재 | **최고** |
 
 ### 제안 솔루션
 
 1. **CLAUDE.md v8.0.0 업데이트**: 커맨드 체계 재정립, src/agents/ 및 Skills 구조 추가
-2. **AGENTS_REFERENCE.md v3.0.0 전면 개편**: 실제 구현 기준으로 재작성
+2. **AGENTS_REFERENCE.md v4.0.0 전면 개편**: `.claude/plugins/` 구조 기반으로 재작성
 3. **커맨드 선택 가이드 신설**: docs/COMMAND_SELECTOR.md 생성
-4. **에이전트 정리**: 미사용 21개 → 별도 PLANNED_AGENTS.md로 이관
+4. **에이전트 정리**: plugins 내 미활성 에이전트 → PLANNED_AGENTS.md로 이관
 5. **README.md 버전 동기화**: v8.0.0
+6. **플러그인 아키텍처 문서화**: 25개 카테고리, 3계층 구조 설명
 
 ### 예상 효과
 
@@ -37,6 +39,7 @@
 | 문서 일관성 점수 | 62% | **95%+** |
 | 커맨드 선택 명확도 | 40% | **90%+** |
 | 에이전트 활용률 | 28% (7/49) | **85%+** |
+| 플러그인 문서화율 | 0% | **100%** |
 
 ---
 
@@ -140,6 +143,127 @@
 | **P1** | 스킬 문서화 | 미기술 | CLAUDE.md에 13개 스킬 추가 |
 | **P1** | Phase별 스킬 매핑 | 불명확 | 명시적 Phase → 스킬 표 |
 | **P2** | 모듈 최적화 | PowerShell 의존 | Python 단독 실행 |
+
+---
+
+### 2.3 .claude/plugins/ 구조 분석 (신규 발견)
+
+#### A. 플러그인 아키텍처 개요
+
+```
+.claude/plugins/
+├── {category}/              # 25개 카테고리
+│   ├── agents/              # 에이전트 정의 (.md)
+│   ├── commands/            # 커맨드 정의 (.md)
+│   └── skills/              # 스킬 정의 (SKILL.md)
+```
+
+#### B. 카테고리 목록 (25개)
+
+| 분류 | 카테고리 |
+|------|----------|
+| **Phase별** | phase-0-planning, phase-1-development, phase-2-testing, phase-3-architecture, phase-6-deployment |
+| **언어별** | python-development, javascript-typescript |
+| **도메인별** | backend-development, database-tools, cloud-infrastructure |
+| **인프라** | cicd-automation, kubernetes-operations, security-scanning |
+| **품질** | code-refactoring, debugging-toolkit, application-performance |
+| **워크플로우** | agent-orchestration, workflow-reviews, git-pr-workflows |
+| **기타** | meta-development, ai-ml-tools, specialized-tools, full-stack-orchestration, code-documentation, api-testing-observability |
+
+#### C. 3계층 구조 상세
+
+##### 1. Agent (에이전트)
+**역할**: 특정 분야의 전문가
+**파일 형식**: YAML 프론트매터 + Markdown
+
+```yaml
+# 예: .claude/plugins/phase-0-planning/agents/context7-engineer.md
+name: context7-engineer
+description: 기술 스택 검증 전문가
+model: sonnet
+
+## Expert Purpose
+## Capabilities (세부 카테고리별)
+## Behavioral Traits
+## Knowledge Base
+## Response Approach (1-10단계)
+## Example Interactions
+```
+
+##### 2. Skill (스킬)
+**역할**: 재사용 가능한 지식/패턴
+**파일 형식**: SKILL.md
+
+```yaml
+# 예: .claude/plugins/backend-development/skills/api-design-principles/SKILL.md
+name: api-design-principles
+description: REST/GraphQL API 설계 원칙
+
+## When to Use This Skill
+## Core Concepts (이론)
+## Design Patterns (구현 패턴 + 코드)
+## Best Practices
+## Common Pitfalls
+## Resources
+```
+
+##### 3. Command (커맨드)
+**역할**: 멀티 에이전트 워크플로우 오케스트레이션
+**파일 형식**: Markdown (프론트매터 없음)
+
+```markdown
+# 예: .claude/plugins/backend-development/commands/feature-development.md
+
+## Phase 1: Discovery
+Task: Use Task tool with subagent_type="context7-engineer"
+
+## Phase 2: Implementation
+Task: Use Task tool with subagent_type="backend-architect"
+
+## Phase 3: Testing
+Task: Use Task tool with subagent_type="test-automator"
+```
+
+#### D. 사용 흐름
+
+```
+사용자 요청
+    │
+    ▼
+┌─────────────────┐
+│   Command       │ ← 워크플로우 정의
+│ (오케스트레이터) │
+└────────┬────────┘
+         │
+    ┌────┴────┬────────┐
+    ▼         ▼        ▼
+┌───────┐ ┌───────┐ ┌───────┐
+│Agent 1│ │Agent 2│ │Agent 3│  ← 전문가 실행
+└───┬───┘ └───┬───┘ └───┬───┘
+    │         │        │
+    ▼         ▼        ▼
+┌───────┐ ┌───────┐ ┌───────┐
+│Skill A│ │Skill B│ │Skill C│  ← 지식/패턴 참조
+└───────┘ └───────┘ └───────┘
+```
+
+#### E. plugins vs .claude/skills 비교
+
+| 항목 | `.claude/skills/` | `.claude/plugins/` |
+|------|-------------------|-------------------|
+| **위치** | 루트 스킬 | 카테고리별 플러그인 |
+| **개수** | 13개 | 25개 카테고리, 50+ 에이전트 |
+| **활성화** | 자동/수동 트리거 | 명시적 호출 필요 |
+| **문서화** | CLAUDE.md 기술 | 미문서화 |
+
+#### F. 플러그인 개선 계획
+
+| 우선순위 | 개선 항목 | 현재 | 목표 |
+|---------|----------|------|------|
+| **P0** | 플러그인 아키텍처 문서화 | 0% | AGENTS_REFERENCE.md v4.0.0 |
+| **P0** | 활성 에이전트 식별 | 불명확 | Phase별 활성 에이전트 매핑 |
+| **P1** | plugins vs skills 관계 정리 | 중복 혼란 | 역할 명확화 문서 |
+| **P2** | 미사용 플러그인 정리 | 50+ 방치 | 아카이브 또는 활성화 |
 
 ---
 
@@ -511,5 +635,92 @@ Phase | pre-work | tdd | debug | quality | phase | final | issue | parallel
 ---
 
 **Dependencies**: PRD-0025 (전역 워크플로우 최적화)
-**Related Issue**: [#59](https://github.com/garimto81/archive-analyzer/issues/59)
-**Next**: 구현 후 `/changelog` 실행 → PR 생성
+**Related Issue**: [#1](https://github.com/garimto81/claude/issues/1)
+**Related PR**: [#2](https://github.com/garimto81/claude/pull/2)
+**Next**: v3.0.0 수정 → PR 업데이트 → 머지
+
+---
+
+## 8. 수정 계획 (v3.0.0)
+
+### 발견된 문제
+
+PRD v2.0.0 작성 시 `.claude/plugins/` 구조가 완전히 누락됨:
+
+| 항목 | v2.0.0 분석 | 실제 |
+|------|------------|------|
+| 에이전트 위치 | src/agents/, .claude/skills/ | **.claude/plugins/** 25개 카테고리 |
+| 에이전트 수 | 21개 (계획) | **50+ 에이전트** 정의 완료 |
+| 스킬 수 | 13개 | plugins 내 **30+ 스킬** 추가 존재 |
+
+### 수정 방향
+
+#### 1. AGENTS_REFERENCE.md v4.0.0 재작성
+
+```markdown
+# Agent 완전 참조 가이드 v4.0.0
+
+## 1. 에이전트 소스 3계층
+
+| 계층 | 위치 | 개수 | 역할 |
+|------|------|------|------|
+| 내장 | Claude Code | 4개 | 기본 subagent |
+| 루트 스킬 | .claude/skills/ | 13개 | 자동 트리거 스킬 |
+| 플러그인 | .claude/plugins/ | 25개 카테고리 | 전문 에이전트/스킬/커맨드 |
+
+## 2. 플러그인 아키텍처
+
+### 2.1 카테고리별 구조
+(25개 카테고리 테이블)
+
+### 2.2 Phase별 활성 에이전트
+(Phase 0-6 매핑)
+
+### 2.3 사용법
+(Task() 호출 예시)
+```
+
+#### 2. PLANNED_AGENTS.md 재작성
+
+기존: 21개 "미구현" 에이전트
+변경: plugins에서 **미활성화된** 에이전트 목록
+
+```markdown
+# 플러그인 에이전트 활성화 로드맵
+
+## 현재 활성 (Commands/Skills에서 참조)
+- context7-engineer, debugger, code-reviewer...
+
+## 활성화 예정 (P1)
+- python-pro, frontend-developer...
+
+## 검토 필요 (P2)
+- 사용 빈도 낮은 에이전트들
+```
+
+#### 3. CLAUDE.md v8.1.0 수정
+
+플러그인 참조 섹션 추가:
+
+```markdown
+## 플러그인 시스템
+
+`.claude/plugins/`에 25개 카테고리의 전문 에이전트/스킬/커맨드 정의:
+
+| 카테고리 | 용도 |
+|----------|------|
+| phase-0-planning | 사전 조사 에이전트 |
+| phase-1-development | 개발 에이전트 |
+| phase-2-testing | 테스트 에이전트 |
+| ... | ... |
+
+상세: `docs/AGENTS_REFERENCE.md`
+```
+
+### 작업 순서
+
+1. **AGENTS_REFERENCE.md v4.0.0** 재작성 (plugins 구조 반영)
+2. **PLANNED_AGENTS.md** 재작성 (실제 미활성 에이전트 기준)
+3. **CLAUDE.md v8.1.0** 플러그인 참조 추가
+4. PR #2 업데이트
+5. 머지
