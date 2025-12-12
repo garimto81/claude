@@ -11,7 +11,7 @@
 | 계층 | 위치 | 개수 | 역할 |
 |------|------|------|------|
 | **내장** | Claude Code | 4개 | 기본 subagent |
-| **커스텀** | `.claude/agents/` | 18개 | 전문 에이전트 |
+| **커스텀** | `.claude/agents/` | 19개 | 전문 에이전트 |
 | **스킬** | `.claude/skills/` | 13개 | 자동/수동 트리거 |
 | **MCP** | `.claude.json` | 4개 | 외부 도구 연동 |
 
@@ -61,12 +61,13 @@
 | `typescript-dev` | TypeScript 고급 패턴 | sonnet |
 | `python-dev` | Python 고급 패턴 | sonnet |
 
-### Tier 4: TOOLING (2개) - 도구 전문
+### Tier 4: TOOLING (3개) - 도구 전문
 
 | Agent | 용도 | 모델 |
 |-------|------|------|
 | `github-engineer` | GitHub 워크플로우 | sonnet |
 | `claude-expert` | Claude Code, MCP, 에이전트 | opus |
+| `catalog-engineer` | WSOPTV 카탈로그/제목 생성 (Block F/G) | sonnet |
 
 ---
 
@@ -136,6 +137,7 @@ claude mcp remove <name>
 | Python 고급 | `python-dev` |
 | GitHub 워크플로우 | `github-engineer` |
 | Claude Code 설정 | `claude-expert` |
+| WSOPTV 카탈로그 | `catalog-engineer` |
 
 ---
 
@@ -176,5 +178,6 @@ claude mcp remove <name>
 
 | 버전 | 날짜 | 변경 |
 |------|------|------|
+| 6.1.0 | 2025-12-12 | `catalog-engineer` 추가 (18 → 19개) |
 | 6.0.0 | 2025-12-11 | PRD-0031 적용: 50개 → 18개 통합, MCP 분리 |
 | 5.0.0 | 2025-12-11 | plugins/ → agents/ 이동, 구조 개편 |

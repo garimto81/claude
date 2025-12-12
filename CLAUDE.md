@@ -2,7 +2,7 @@
 
 This file provides guidance to Claude Code (claude.ai/code) when working with code in this repository.
 
-**Version**: 10.0.0 | **Context**: Windows, PowerShell, Root: `D:\AI\claude01`
+**Version**: 10.2.1 | **Context**: Windows, PowerShell, Root: `D:\AI\claude01`
 
 **GitHub**: `garimto81/claude`
 
@@ -23,60 +23,69 @@ This file provides guidance to Claude Code (claude.ai/code) when working with co
 ```
 D:\AI\claude01\
 ├── .claude/
-│   ├── commands/     # 슬래시 커맨드 (12개)
+│   ├── commands/     # 슬래시 커맨드 (14개)
 │   ├── skills/       # 스킬 (13개)
-│   └── agents/       # 에이전트 (18개)
+│   ├── agents/       # 에이전트 (19개)
+│   └── hooks/        # Git/Claude hooks
 ├── docs/             # 워크플로우 문서
-└── tasks/prds/       # PRD 문서
+├── tasks/prds/       # PRD 문서
+└── VTC_Logger/       # 하위 프로젝트 (React + Vite)
 ```
 
 ---
 
-## 에이전트 (18개)
+## 빌드/테스트 명령어
 
-`.claude/agents/`에 정의된 전문 에이전트:
+### Python 프로젝트
 
-### 호출 방법
+```powershell
+# 린트
+ruff check src/ --fix
+
+# 테스트 (개별 파일 권장 - 120초 타임아웃 방지)
+pytest tests/test_specific.py -v
+
+# 전체 테스트 (background 필수)
+# run_in_background: true
+pytest tests/ -v --cov=src
+```
+
+### VTC_Logger (React + Vite)
+
+```powershell
+cd D:\AI\claude01\VTC_Logger\vtc-app
+npm install
+npm run dev      # 개발 서버
+npm run build    # 빌드
+npm run lint     # ESLint
+```
+
+---
+
+## 에이전트 (19개)
+
+`.claude/agents/`에 정의. 상세: `docs/AGENTS_REFERENCE.md`
+
+### 호출
 
 ```
 "Use the [agent-name] agent to [task]"
-예: "Use the debugger agent to analyze this error"
 ```
 
-### Tier 1: CORE (6개) - 필수
+### 주요 에이전트
 
-| Agent | 용도 |
-|-------|------|
-| `code-reviewer` | 코드 품질, 보안 리뷰 |
-| `architect` | 시스템 설계, 아키텍처 결정 |
-| `debugger` | 버그 분석, 근본 원인 분석 |
-| `test-engineer` | 단위/E2E/TDD 테스트 |
-| `security-auditor` | OWASP 보안 스캔 |
-| `docs-writer` | API/시스템 문서화 |
+| Tier | Agent | 용도 |
+|------|-------|------|
+| CORE | `code-reviewer` | 코드 품질, 보안 리뷰 |
+| CORE | `architect` | 시스템 설계 |
+| CORE | `debugger` | 버그 분석 |
+| CORE | `test-engineer` | TDD/E2E 테스트 |
+| DOMAIN | `frontend-dev` | React/Next.js |
+| DOMAIN | `backend-dev` | FastAPI/Django |
+| DOMAIN | `database-specialist` | DB, Supabase |
+| TOOLING | `claude-expert` | Claude Code, MCP |
 
-### Tier 2: DOMAIN (8개)
-
-| Agent | 용도 |
-|-------|------|
-| `frontend-dev` | React/Next.js, UI/UX |
-| `backend-dev` | FastAPI, Django, Node.js |
-| `fullstack-dev` | 풀스택 개발 |
-| `devops-engineer` | CI/CD, K8s, Terraform |
-| `cloud-architect` | AWS/Azure/GCP |
-| `database-specialist` | DB 설계, 최적화, Supabase |
-| `data-specialist` | 데이터 분석, ML 파이프라인 |
-| `ai-engineer` | LLM, RAG 시스템 |
-
-### Tier 3-4: LANGUAGE & TOOLING (4개)
-
-| Agent | 용도 |
-|-------|------|
-| `typescript-dev` | TypeScript 고급 패턴 |
-| `python-dev` | Python 3.12+ 전문 |
-| `github-engineer` | GitHub 워크플로우 |
-| `claude-expert` | Claude Code, MCP, 에이전트 |
-
-전체: `docs/AGENTS_REFERENCE.md`
+전체 19개: `docs/AGENTS_REFERENCE.md`
 
 ---
 
@@ -87,6 +96,13 @@ D:\AI\claude01\
 | main 브랜치 수정 금지 | **차단** | `git checkout -b feat/issue-N-desc` |
 | 테스트 먼저 (TDD) | 경고 | Red → Green → Refactor |
 | 상대 경로 금지 | 경고 | 절대 경로 사용 |
+
+### main 브랜치 허용 파일
+
+Hook(`branch_guard.py`)이 main에서도 수정 허용하는 파일:
+- `CLAUDE.md`, `README.md`, `CHANGELOG.md`, `.gitignore`
+- `.claude/` 전체
+- `docs/` 전체
 
 ---
 
@@ -105,7 +121,7 @@ D:\AI\claude01\
 
 ---
 
-## 커맨드 (12개)
+## 커맨드 (14개)
 
 ### 핵심 (자주 사용)
 
@@ -139,7 +155,8 @@ D:\AI\claude01\
 |--------|------|
 | `/todo` | 작업 관리 |
 | `/session [sub]` | 세션 관리 (`compact`, `journey`, `changelog`) |
-| `/api-test` | API 엔드포인트 테스트 |
+| `/deploy` | 버전/Docker 배포 |
+| `/audit` | 설정 점검 및 개선 제안 |
 
 전체: `.claude/commands/`
 
@@ -153,6 +170,14 @@ D:\AI\claude01\
 | `sequential-thinking` | 복잡한 추론 |
 | `taskmanager` | 작업 관리 |
 | `exa` | 고급 웹 검색 |
+
+### MCP 관리
+
+```powershell
+claude mcp list                    # 목록
+claude mcp add <name> -- npx -y <package>  # 추가
+claude mcp remove <name>           # 제거
+```
 
 ---
 
@@ -198,10 +223,11 @@ pytest tests/test_a.py -v
 
 | 문서 | 용도 |
 |------|------|
+| `docs/COMMAND_REFERENCE.md` | **커맨드 사용법 총정리** |
 | `docs/AGENTS_REFERENCE.md` | 에이전트 전체 목록 |
 | `docs/PRD-0031-AGENT-CONSOLIDATION.md` | 에이전트 통합 PRD |
 | `docs/PRD-0032-COMMAND-CONSOLIDATION.md` | 커맨드 통합 PRD |
-| `.claude/commands/` | 커맨드 상세 |
+| `.claude/commands/` | 커맨드 원본 파일 |
 | `.claude/skills/` | 스킬 상세 |
 | `.claude/agents/` | 에이전트 상세 |
 
@@ -211,5 +237,8 @@ pytest tests/test_a.py -v
 
 | 버전 | 날짜 | 변경 |
 |------|------|------|
+| 10.2.1 | 2025-12-12 | `catalog-engineer` 에이전트 추가 (18 → 19개) |
+| 10.2.0 | 2025-12-12 | `/audit` 커맨드 추가, Daily Improvement System 문서 |
+| 10.1.0 | 2025-12-11 | 빌드/테스트 명령어, Hook 허용 파일, MCP 관리 추가 |
 | 10.0.0 | 2025-12-11 | PRD-0032: 커맨드 통합 (20개 → 12개) |
 | 9.0.0 | 2025-12-11 | PRD-0031: 에이전트 통합 (50개 → 18개) |
