@@ -2,7 +2,7 @@
 
 This file provides guidance to Claude Code (claude.ai/code) when working with code in this repository.
 
-**Version**: 10.2.1 | **Context**: Windows, PowerShell, Root: `D:\AI\claude01`
+**Version**: 10.3.1 | **Context**: Windows, PowerShell, Root: `D:\AI\claude01`
 
 **GitHub**: `garimto81/claude`
 
@@ -15,6 +15,30 @@ This file provides guidance to Claude Code (claude.ai/code) when working with co
 | **언어** | 한글 출력. 기술 용어(code, GitHub)는 영어 |
 | **경로** | 절대 경로만. `D:\AI\claude01\...` |
 | **충돌** | 지침 충돌 시 → **사용자에게 질문** (임의 판단 금지) |
+
+---
+
+## 응답 스타일
+
+작업 완료 시 아래 형식으로 마무리:
+
+```
+---
+## 요약
+> 사용자 질문/요청 내용 1줄 요약
+
+## 답변 정리
+| 항목 | 내용 |
+|------|------|
+| 수행 작업 | ... |
+| 변경 파일 | ... |
+| 결과 | ... |
+
+## 검증 방법
+- 파일: `경로/파일명` (Read로 확인)
+- 명령어: `실행 명령어`
+- URL: http://localhost:포트 (해당 시)
+```
 
 ---
 
@@ -156,7 +180,7 @@ Hook(`branch_guard.py`)이 main에서도 수정 허용하는 파일:
 | `/todo` | 작업 관리 |
 | `/session [sub]` | 세션 관리 (`compact`, `journey`, `changelog`) |
 | `/deploy` | 버전/Docker 배포 |
-| `/audit` | 설정 점검 및 개선 제안 |
+| `/audit` | 설정 점검 (`suggest` 솔루션 추천) |
 
 전체: `.claude/commands/`
 
@@ -237,6 +261,8 @@ pytest tests/test_a.py -v
 
 | 버전 | 날짜 | 변경 |
 |------|------|------|
+| 10.3.1 | 2025-12-12 | 응답 스타일 가이드 추가 (요약/정리/검증) |
+| 10.3.0 | 2025-12-12 | `/audit suggest` 서브커맨드 추가 (웹/GitHub 솔루션 추천) |
 | 10.2.1 | 2025-12-12 | `catalog-engineer` 에이전트 추가 (18 → 19개) |
 | 10.2.0 | 2025-12-12 | `/audit` 커맨드 추가, Daily Improvement System 문서 |
 | 10.1.0 | 2025-12-11 | 빌드/테스트 명령어, Hook 허용 파일, MCP 관리 추가 |
