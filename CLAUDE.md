@@ -2,7 +2,7 @@
 
 This file provides guidance to Claude Code (claude.ai/code) when working with code in this repository.
 
-**Version**: 10.3.1 | **Context**: Windows, PowerShell, Root: `D:\AI\claude01`
+**Version**: 10.3.2 | **Context**: Windows, PowerShell, Root: `D:\AI\claude01`
 
 **GitHub**: `garimto81/claude`
 
@@ -82,6 +82,45 @@ npm install
 npm run dev      # 개발 서버
 npm run build    # 빌드
 npm run lint     # ESLint
+```
+
+### E2E 테스트 (Playwright 필수)
+
+```powershell
+# Playwright 설치
+npx playwright install
+
+# E2E 테스트 실행
+npx playwright test
+
+# UI 모드
+npx playwright test --ui
+
+# 특정 테스트
+npx playwright test tests/e2e/auth.spec.ts
+```
+
+**E2E 테스트 규칙:**
+
+| 규칙 | 내용 |
+|------|------|
+| **도구** | Playwright 필수 (다른 도구 금지) |
+| **범위** | 모든 기능 엄격히 테스트 |
+| **결과** | 통과한 테스트 목록 명시 필수 |
+
+**결과 출력 형식:**
+
+```
+## E2E 테스트 결과
+
+✅ 통과: 15/15 (100%)
+
+| 테스트 | 상태 | 시간 |
+|--------|------|------|
+| auth.spec.ts > 로그인 성공 | ✅ | 1.2s |
+| auth.spec.ts > 로그인 실패 | ✅ | 0.8s |
+| dashboard.spec.ts > 메인 로드 | ✅ | 2.1s |
+...
 ```
 
 ---
@@ -261,6 +300,7 @@ pytest tests/test_a.py -v
 
 | 버전 | 날짜 | 변경 |
 |------|------|------|
+| 10.3.2 | 2025-12-13 | E2E 테스트 규칙 추가 (Playwright 필수, 결과 명시) |
 | 10.3.1 | 2025-12-12 | 응답 스타일 가이드 추가 (요약/정리/검증) |
 | 10.3.0 | 2025-12-12 | `/audit suggest` 서브커맨드 추가 (웹/GitHub 솔루션 추천) |
 | 10.2.1 | 2025-12-12 | `catalog-engineer` 에이전트 추가 (18 → 19개) |
