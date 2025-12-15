@@ -2,7 +2,7 @@
 
 This file provides guidance to Claude Code (claude.ai/code) when working with code in this repository.
 
-**Version**: 10.3.2 | **Context**: Windows, PowerShell, Root: `D:\AI\claude01`
+**Version**: 10.4.3 | **Context**: Windows, PowerShell, Root: `D:\AI\claude01`
 
 **GitHub**: `garimto81/claude`
 
@@ -15,6 +15,57 @@ This file provides guidance to Claude Code (claude.ai/code) when working with co
 | **언어** | 한글 출력. 기술 용어(code, GitHub)는 영어 |
 | **경로** | 절대 경로만. `D:\AI\claude01\...` |
 | **충돌** | 지침 충돌 시 → **사용자에게 질문** (임의 판단 금지) |
+
+---
+
+## 비개발자 응답 모드
+
+**목적**: 로직 흐름 이해 + 실수 가능성 검토
+
+### 숨김 처리 대상
+
+| 숨김 | 표시 |
+|------|------|
+| 코드 블록 | 변경 파일명 + 줄 수 |
+| Edit 도구 결과 | "파일 수정 완료" 한 줄 |
+| Bash 실행 상세 | 성공/실패 결과만 |
+
+### 필수 표시 대상
+
+| 항목 | 형식 |
+|------|------|
+| **로직 흐름** | ASCII 다이어그램 (직접 텍스트) |
+| **실수 가능성** | 주의점/리스크 목록 |
+| **검증 방법** | 확인할 수 있는 명령어/URL |
+
+### 시각화 규칙
+
+| 출력 위치 | 형식 |
+|-----------|------|
+| **터미널** | ASCII 다이어그램 직접 출력 (축약 안됨) |
+| **문서** | Mermaid 코드 블록 |
+
+### 응답 구조
+
+```
+## 작업 내용
+> 한 줄 요약
+
+## 로직 흐름
+[ASCII 다이어그램]
+
+## 주의점
+- 실수 가능성 1
+- 실수 가능성 2
+
+## 변경 파일
+| 파일 | 변경 |
+|------|------|
+| 파일명 | +N, -N |
+
+## 검증
+- 명령어: `...`
+```
 
 ---
 
@@ -47,7 +98,7 @@ This file provides guidance to Claude Code (claude.ai/code) when working with co
 ```
 D:\AI\claude01\
 ├── .claude/
-│   ├── commands/     # 슬래시 커맨드 (14개)
+│   ├── commands/     # 슬래시 커맨드 (13개)
 │   ├── skills/       # 스킬 (13개)
 │   ├── agents/       # 에이전트 (19개)
 │   └── hooks/        # Git/Claude hooks
@@ -184,7 +235,7 @@ Hook(`branch_guard.py`)이 main에서도 수정 허용하는 파일:
 
 ---
 
-## 커맨드 (14개)
+## 커맨드 (13개)
 
 ### 핵심 (자주 사용)
 
@@ -225,7 +276,7 @@ Hook(`branch_guard.py`)이 main에서도 수정 허용하는 파일:
 
 ---
 
-## MCP 서버 (4개)
+## MCP 서버 (5개)
 
 | MCP | 용도 |
 |-----|------|
@@ -233,6 +284,7 @@ Hook(`branch_guard.py`)이 main에서도 수정 허용하는 파일:
 | `sequential-thinking` | 복잡한 추론 |
 | `taskmanager` | 작업 관리 |
 | `exa` | 고급 웹 검색 |
+| `code-reviewer` | AI 코드 리뷰 (`/research review` 연동) |
 
 ### MCP 관리
 
@@ -300,6 +352,10 @@ pytest tests/test_a.py -v
 
 | 버전 | 날짜 | 변경 |
 |------|------|------|
+| 10.4.3 | 2025-12-15 | `/research review` 추가, `code-reviewer` MCP 서버 설치 (4개 → 5개) |
+| 10.4.2 | 2025-12-15 | 커맨드 통합 (/api-test → /check --api), 에이전트 참조 수정 (14개 → 13개) |
+| 10.4.1 | 2025-12-14 | 시각화 출력 규칙 개선 (터미널: ASCII 직접 출력, 문서: Mermaid) |
+| 10.4.0 | 2025-12-14 | 비개발자 응답 모드 추가 (코드 숨김, 시각화 우선) |
 | 10.3.2 | 2025-12-13 | E2E 테스트 규칙 추가 (Playwright 필수, 결과 명시) |
 | 10.3.1 | 2025-12-12 | 응답 스타일 가이드 추가 (요약/정리/검증) |
 | 10.3.0 | 2025-12-12 | `/audit suggest` 서브커맨드 추가 (웹/GitHub 솔루션 추천) |
