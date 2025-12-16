@@ -2,7 +2,7 @@
 
 This file provides guidance to Claude Code (claude.ai/code) when working with code in this repository.
 
-**Version**: 10.4.3 | **Context**: Windows, PowerShell, Root: `D:\AI\claude01`
+**Version**: 10.4.4 | **Context**: Windows, PowerShell, Root: `D:\AI\claude01`
 
 **GitHub**: `garimto81/claude`
 
@@ -276,15 +276,16 @@ Hook(`branch_guard.py`)이 main에서도 수정 허용하는 파일:
 
 ---
 
-## MCP 서버 (5개)
+## MCP 서버 (1개)
 
 | MCP | 용도 |
 |-----|------|
-| `context7` | 기술 문서 조회 |
-| `sequential-thinking` | 복잡한 추론 |
-| `taskmanager` | 작업 관리 |
-| `exa` | 고급 웹 검색 |
 | `code-reviewer` | AI 코드 리뷰 (`/research review` 연동) |
+
+> **참고**: 기존 MCP(context7, sequential-thinking, taskmanager, exa)는 Claude Code 내장 기능으로 대체됨
+> - 웹 검색 → `WebSearch` / `WebFetch` 내장
+> - 추론 → `Extended Thinking` 내장 (Claude 4)
+> - 작업 관리 → `TodoWrite` / `TodoRead` 내장
 
 ### MCP 관리
 
@@ -352,6 +353,7 @@ pytest tests/test_a.py -v
 
 | 버전 | 날짜 | 변경 |
 |------|------|------|
+| 10.4.4 | 2025-12-16 | MCP 정리 (5개 → 1개), 내장 기능 대체 (WebSearch, TodoWrite, Extended Thinking) |
 | 10.4.3 | 2025-12-15 | `/research review` 추가, `code-reviewer` MCP 서버 설치 (4개 → 5개) |
 | 10.4.2 | 2025-12-15 | 커맨드 통합 (/api-test → /check --api), 에이전트 참조 수정 (14개 → 13개) |
 | 10.4.1 | 2025-12-14 | 시각화 출력 규칙 개선 (터미널: ASCII 직접 출력, 문서: Mermaid) |
