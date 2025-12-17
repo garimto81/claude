@@ -1,0 +1,34 @@
+{
+  "$schema": "https://raw.githubusercontent.com/anthropics/claude-code/main/schemas/settings.json",
+  "statusLine": {
+    "type": "command",
+    "command": "python .claude/statusline.py",
+    "padding": 0
+  },
+  "hooks": {
+    "PreToolUse": [
+      {
+        "matcher": "Edit|Write",
+        "command": "python .claude/hooks/branch_guard.py",
+        "description": "main 브랜치에서 코드 수정 차단"
+      },
+      {
+        "matcher": "Bash|Write|Edit",
+        "command": "python .claude/hooks/tool_validator.py",
+        "description": "위험 명령 차단 및 민감 파일 보호"
+      }
+    ],
+    "SessionStart": [
+      {
+        "command": "python .claude/hooks/session_init.py",
+        "description": "세션 시작 - 이전 컨텍스트 로드"
+      }
+    ],
+    "SessionEnd": [
+      {
+        "command": "python .claude/hooks/session_cleanup.py",
+        "description": "세션 종료 - 미완료 작업 저장"
+      }
+    ]
+  }
+}
