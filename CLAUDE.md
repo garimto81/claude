@@ -2,7 +2,7 @@
 
 This file provides guidance to Claude Code (claude.ai/code) when working with code in this repository.
 
-**Version**: 10.4.4 | **Context**: Windows, PowerShell, Root: `D:\AI\claude01`
+**Version**: 11.1.0 | **Context**: Windows, PowerShell, Root: `D:\AI\claude01`
 
 **GitHub**: `garimto81/claude`
 
@@ -14,192 +14,8 @@ This file provides guidance to Claude Code (claude.ai/code) when working with co
 |------|------|
 | **언어** | 한글 출력. 기술 용어(code, GitHub)는 영어 |
 | **경로** | 절대 경로만. `D:\AI\claude01\...` |
-| **충돌** | 지침 충돌 시 → **사용자에게 질문** (임의 판단 금지) |
-
----
-
-## 비개발자 응답 모드
-
-**목적**: 로직 흐름 이해 + 실수 가능성 검토
-
-### 숨김 처리 대상
-
-| 숨김 | 표시 |
-|------|------|
-| 코드 블록 | 변경 파일명 + 줄 수 |
-| Edit 도구 결과 | "파일 수정 완료" 한 줄 |
-| Bash 실행 상세 | 성공/실패 결과만 |
-
-### 필수 표시 대상
-
-| 항목 | 형식 |
-|------|------|
-| **로직 흐름** | ASCII 다이어그램 (직접 텍스트) |
-| **실수 가능성** | 주의점/리스크 목록 |
-| **검증 방법** | 확인할 수 있는 명령어/URL |
-
-### 시각화 규칙
-
-| 출력 위치 | 형식 |
-|-----------|------|
-| **터미널** | ASCII 다이어그램 직접 출력 (축약 안됨) |
-| **문서** | Mermaid 코드 블록 |
-
-### 응답 구조
-
-```
-## 작업 내용
-> 한 줄 요약
-
-## 로직 흐름
-[ASCII 다이어그램]
-
-## 주의점
-- 실수 가능성 1
-- 실수 가능성 2
-
-## 변경 파일
-| 파일 | 변경 |
-|------|------|
-| 파일명 | +N, -N |
-
-## 검증
-- 명령어: `...`
-```
-
----
-
-## 응답 스타일
-
-작업 완료 시 아래 형식으로 마무리:
-
-```
----
-## 요약
-> 사용자 질문/요청 내용 1줄 요약
-
-## 답변 정리
-| 항목 | 내용 |
-|------|------|
-| 수행 작업 | ... |
-| 변경 파일 | ... |
-| 결과 | ... |
-
-## 검증 방법
-- 파일: `경로/파일명` (Read로 확인)
-- 명령어: `실행 명령어`
-- URL: http://localhost:포트 (해당 시)
-```
-
----
-
-## 프로젝트 구조
-
-```
-D:\AI\claude01\
-├── .claude/
-│   ├── commands/     # 슬래시 커맨드 (13개)
-│   ├── skills/       # 스킬 (13개)
-│   ├── agents/       # 에이전트 (19개)
-│   └── hooks/        # Git/Claude hooks
-├── docs/             # 워크플로우 문서
-├── tasks/prds/       # PRD 문서
-└── VTC_Logger/       # 하위 프로젝트 (React + Vite)
-```
-
----
-
-## 빌드/테스트 명령어
-
-### Python 프로젝트
-
-```powershell
-# 린트
-ruff check src/ --fix
-
-# 테스트 (개별 파일 권장 - 120초 타임아웃 방지)
-pytest tests/test_specific.py -v
-
-# 전체 테스트 (background 필수)
-# run_in_background: true
-pytest tests/ -v --cov=src
-```
-
-### VTC_Logger (React + Vite)
-
-```powershell
-cd D:\AI\claude01\VTC_Logger\vtc-app
-npm install
-npm run dev      # 개발 서버
-npm run build    # 빌드
-npm run lint     # ESLint
-```
-
-### E2E 테스트 (Playwright 필수)
-
-```powershell
-# Playwright 설치
-npx playwright install
-
-# E2E 테스트 실행
-npx playwright test
-
-# UI 모드
-npx playwright test --ui
-
-# 특정 테스트
-npx playwright test tests/e2e/auth.spec.ts
-```
-
-**E2E 테스트 규칙:**
-
-| 규칙 | 내용 |
-|------|------|
-| **도구** | Playwright 필수 (다른 도구 금지) |
-| **범위** | 모든 기능 엄격히 테스트 |
-| **결과** | 통과한 테스트 목록 명시 필수 |
-
-**결과 출력 형식:**
-
-```
-## E2E 테스트 결과
-
-✅ 통과: 15/15 (100%)
-
-| 테스트 | 상태 | 시간 |
-|--------|------|------|
-| auth.spec.ts > 로그인 성공 | ✅ | 1.2s |
-| auth.spec.ts > 로그인 실패 | ✅ | 0.8s |
-| dashboard.spec.ts > 메인 로드 | ✅ | 2.1s |
-...
-```
-
----
-
-## 에이전트 (19개)
-
-`.claude/agents/`에 정의. 상세: `docs/AGENTS_REFERENCE.md`
-
-### 호출
-
-```
-"Use the [agent-name] agent to [task]"
-```
-
-### 주요 에이전트
-
-| Tier | Agent | 용도 |
-|------|-------|------|
-| CORE | `code-reviewer` | 코드 품질, 보안 리뷰 |
-| CORE | `architect` | 시스템 설계 |
-| CORE | `debugger` | 버그 분석 |
-| CORE | `test-engineer` | TDD/E2E 테스트 |
-| DOMAIN | `frontend-dev` | React/Next.js |
-| DOMAIN | `backend-dev` | FastAPI/Django |
-| DOMAIN | `database-specialist` | DB, Supabase |
-| TOOLING | `claude-expert` | Claude Code, MCP |
-
-전체 19개: `docs/AGENTS_REFERENCE.md`
+| **충돌** | 사용자에게 질문 (임의 판단 금지) |
+| **응답** | 상세: `docs/RESPONSE_STYLE.md` |
 
 ---
 
@@ -211,12 +27,37 @@ npx playwright test tests/e2e/auth.spec.ts
 | 테스트 먼저 (TDD) | 경고 | Red → Green → Refactor |
 | 상대 경로 금지 | 경고 | 절대 경로 사용 |
 
-### main 브랜치 허용 파일
+main 허용: `CLAUDE.md`, `README.md`, `.claude/`, `docs/`
 
-Hook(`branch_guard.py`)이 main에서도 수정 허용하는 파일:
-- `CLAUDE.md`, `README.md`, `CHANGELOG.md`, `.gitignore`
-- `.claude/` 전체
-- `docs/` 전체
+---
+
+## 빌드/테스트 명령
+
+### Python
+
+```powershell
+ruff check src/ --fix                    # 린트
+pytest tests/test_specific.py -v         # 개별 테스트 (권장)
+# pytest tests/ -v --cov=src             # 전체 (background 필수)
+```
+
+### VTC_Logger (React + Vite)
+
+```powershell
+cd D:\AI\claude01\VTC_Logger\vtc-app
+npm install && npm run dev               # 개발 서버
+npm run build                            # 빌드
+npm run lint                             # ESLint
+```
+
+### E2E (Playwright 필수)
+
+```powershell
+npx playwright test                       # 전체 E2E
+npx playwright test tests/e2e/auth.spec.ts  # 개별 테스트
+```
+
+**안전 규칙**: `pytest tests/ -v --cov` → 120초 초과 → 크래시. 개별 파일 실행 권장.
 
 ---
 
@@ -230,105 +71,46 @@ Hook(`branch_guard.py`)이 main에서도 수정 허용하는 파일:
 |-----------|------|
 | 기능/리팩토링 | `/work` → 이슈 → 브랜치 → TDD → PR |
 | 버그 수정 | `/issue fix #N` |
-| 문서 수정 | 직접 수정 (브랜치 불필요) |
+| 문서 수정 | 직접 수정 |
 | 질문 | 직접 응답 |
 
 ---
 
-## 커맨드 (13개)
+## 빠른 참조
 
-### 핵심 (자주 사용)
-
-| 커맨드 | 용도 |
-|--------|------|
-| `/work "내용"` | 전체 워크플로우 (`--auto` 완전 자동화) |
-| `/issue [action]` | 이슈 관리 (`list`, `create`, `fix`, `failed`) |
-| `/commit` | Conventional Commits |
-| `/check [options]` | 린트/테스트 (`--e2e`, `--perf`, `--security`) |
-| `/tdd` | TDD 워크플로우 |
-
-### 병렬 실행
+### 커맨드 (13개)
 
 | 커맨드 | 용도 |
 |--------|------|
-| `/parallel dev` | 병렬 개발 (`--branch` 브랜치 격리) |
-| `/parallel test` | 병렬 테스트 |
-| `/parallel review` | 병렬 코드 리뷰 |
+| `/work` | 전체 워크플로우 |
+| `/issue` | 이슈 관리 |
+| `/commit` | 커밋 생성 |
+| `/check` | 린트/테스트 |
 
-### 생성/분석
+전체: `docs/COMMAND_REFERENCE.md`
 
-| 커맨드 | 용도 |
-|--------|------|
-| `/research [sub]` | 리서치 (`code`, `web`, `plan`) |
-| `/create [type]` | PRD/PR/문서 생성 (`prd`, `pr`, `docs`) |
-| `/pr [action]` | PR 리뷰/머지 (`review`, `merge`, `create`) |
+### 에이전트 (19개)
 
-### 관리
+| Agent | 용도 |
+|-------|------|
+| `code-reviewer` | 코드 리뷰 |
+| `architect` | 설계 |
+| `debugger` | 버그 분석 |
+| `test-engineer` | 테스트 |
 
-| 커맨드 | 용도 |
-|--------|------|
-| `/todo` | 작업 관리 |
-| `/session [sub]` | 세션 관리 (`compact`, `journey`, `changelog`) |
-| `/deploy` | 버전/Docker 배포 |
-| `/audit` | 설정 점검 (`suggest` 솔루션 추천) |
+전체: `docs/AGENTS_REFERENCE.md`
 
-전체: `.claude/commands/`
+### 스킬 (15개)
 
----
-
-## MCP 서버 (1개)
-
-| MCP | 용도 |
-|-----|------|
-| `code-reviewer` | AI 코드 리뷰 (`/research review` 연동) |
-
-> **참고**: 기존 MCP(context7, sequential-thinking, taskmanager, exa)는 Claude Code 내장 기능으로 대체됨
-> - 웹 검색 → `WebSearch` / `WebFetch` 내장
-> - 추론 → `Extended Thinking` 내장 (Claude 4)
-> - 작업 관리 → `TodoWrite` / `TodoRead` 내장
-
-### MCP 관리
-
-```powershell
-claude mcp list                    # 목록
-claude mcp add <name> -- npx -y <package>  # 추가
-claude mcp remove <name>           # 제거
-```
-
----
-
-## 스킬 (13개)
-
-자동 트리거 스킬:
-
-| 스킬 | 트리거 조건 |
-|------|-----------|
-| `tdd-workflow` | "TDD", "테스트 먼저" |
-| `debugging-workflow` | "debug", "3회 실패" |
-| `code-quality-checker` | "린트", "품질 검사" |
-| `final-check-automation` | "E2E", "최종 검증" |
-
-수동 호출: `webapp-testing`, `pr-review-agent`, `skill-creator`
-
----
-
-## 안전 규칙
-
-```powershell
-# 금지 (120초 초과 → 크래시)
-pytest tests/ -v --cov
-
-# 권장
-pytest tests/test_a.py -v
-# 또는 run_in_background: true
-```
+- 자동 트리거: 4개
+- 수동 트리거: 11개
 
 ---
 
 ## 문제 해결
 
 ```
-문제 → WHY(원인) → WHERE(영향 범위) → HOW(해결) → 수정
+문제 → WHY(원인) → WHERE(영향) → HOW(해결) → 수정
 ```
 
 **즉시 수정 금지.** 원인 파악 → 유사 패턴 검색 → 구조적 해결.
@@ -339,30 +121,8 @@ pytest tests/test_a.py -v
 
 | 문서 | 용도 |
 |------|------|
-| `docs/COMMAND_REFERENCE.md` | **커맨드 사용법 총정리** |
-| `docs/AGENTS_REFERENCE.md` | 에이전트 전체 목록 |
-| `docs/PRD-0031-AGENT-CONSOLIDATION.md` | 에이전트 통합 PRD |
-| `docs/PRD-0032-COMMAND-CONSOLIDATION.md` | 커맨드 통합 PRD |
-| `.claude/commands/` | 커맨드 원본 파일 |
-| `.claude/skills/` | 스킬 상세 |
-| `.claude/agents/` | 에이전트 상세 |
-
----
-
-## 변경 이력
-
-| 버전 | 날짜 | 변경 |
-|------|------|------|
-| 10.4.4 | 2025-12-16 | MCP 정리 (5개 → 1개), 내장 기능 대체 (WebSearch, TodoWrite, Extended Thinking) |
-| 10.4.3 | 2025-12-15 | `/research review` 추가, `code-reviewer` MCP 서버 설치 (4개 → 5개) |
-| 10.4.2 | 2025-12-15 | 커맨드 통합 (/api-test → /check --api), 에이전트 참조 수정 (14개 → 13개) |
-| 10.4.1 | 2025-12-14 | 시각화 출력 규칙 개선 (터미널: ASCII 직접 출력, 문서: Mermaid) |
-| 10.4.0 | 2025-12-14 | 비개발자 응답 모드 추가 (코드 숨김, 시각화 우선) |
-| 10.3.2 | 2025-12-13 | E2E 테스트 규칙 추가 (Playwright 필수, 결과 명시) |
-| 10.3.1 | 2025-12-12 | 응답 스타일 가이드 추가 (요약/정리/검증) |
-| 10.3.0 | 2025-12-12 | `/audit suggest` 서브커맨드 추가 (웹/GitHub 솔루션 추천) |
-| 10.2.1 | 2025-12-12 | `catalog-engineer` 에이전트 추가 (18 → 19개) |
-| 10.2.0 | 2025-12-12 | `/audit` 커맨드 추가, Daily Improvement System 문서 |
-| 10.1.0 | 2025-12-11 | 빌드/테스트 명령어, Hook 허용 파일, MCP 관리 추가 |
-| 10.0.0 | 2025-12-11 | PRD-0032: 커맨드 통합 (20개 → 12개) |
-| 9.0.0 | 2025-12-11 | PRD-0031: 에이전트 통합 (50개 → 18개) |
+| `docs/RESPONSE_STYLE.md` | 응답 스타일 상세 |
+| `docs/BUILD_TEST.md` | 빌드/테스트 명령어 |
+| `docs/COMMAND_REFERENCE.md` | 커맨드 상세 |
+| `docs/AGENTS_REFERENCE.md` | 에이전트 상세 |
+| `docs/CHANGELOG-CLAUDE.md` | 변경 이력 |
