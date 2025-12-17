@@ -3,7 +3,7 @@ name: google-workspace
 description: >
   Google Workspace 통합 스킬. Docs, Sheets, Drive, Gmail, Calendar API 연동.
   OAuth 2.0 인증, 서비스 계정 설정, 데이터 읽기/쓰기 자동화 지원.
-version: 2.0.0
+version: 2.1.0
 
 triggers:
   keywords:
@@ -84,31 +84,51 @@ uv add google-api-python-client google-auth-httplib2 google-auth-oauthlib
 
 ## 환경 변수 설정
 
+### 이 프로젝트의 인증 파일 위치 (중요!)
+
+```
+D:\AI\claude01\json\
+├── desktop_credentials.json   # OAuth 2.0 클라이언트 (업로드용) ⭐
+├── token.json                 # OAuth 토큰 (자동 생성)
+└── service_account_key.json   # 서비스 계정 (읽기 전용)
+```
+
+**서브 레포에서 작업 시 반드시 절대 경로 사용!**
+
+### 인증 방식 선택 가이드
+
+| 작업 | 인증 방식 | 파일 |
+|------|----------|------|
+| **파일 업로드** | OAuth 2.0 | `desktop_credentials.json` |
+| **파일 읽기** | 서비스 계정 또는 OAuth | 둘 다 가능 |
+| **스프레드시트 쓰기** | OAuth 2.0 | `desktop_credentials.json` |
+| **자동화 (읽기만)** | 서비스 계정 | `service_account_key.json` |
+
+⚠️ **주의**: 서비스 계정은 저장 용량 할당량이 없어 **Drive 업로드 불가**!
+
 ### 필수 환경 변수
 
 ```bash
-# OAuth 2.0 (사용자 인증)
-GOOGLE_CLIENT_ID=your-client-id.apps.googleusercontent.com
-GOOGLE_CLIENT_SECRET=your-client-secret
+# OAuth 2.0 (업로드 필요시 - 권장)
+GOOGLE_OAUTH_CREDENTIALS=D:\AI\claude01\json\desktop_credentials.json
+GOOGLE_OAUTH_TOKEN=D:\AI\claude01\json\token.json
 
-# 서비스 계정 (서버 간 통신)
-GOOGLE_SERVICE_ACCOUNT_FILE=path/to/service-account.json
-
-# 공통
-GOOGLE_APPLICATION_CREDENTIALS=path/to/credentials.json
+# 서비스 계정 (읽기 전용 자동화)
+GOOGLE_SERVICE_ACCOUNT_FILE=D:\AI\claude01\json\service_account_key.json
+GOOGLE_APPLICATION_CREDENTIALS=D:\AI\claude01\json\service_account_key.json
 ```
 
 ### 파일 구조
 
 ```
-project/
-├── credentials/
-│   ├── credentials.json      # OAuth 클라이언트 ID
-│   ├── service-account.json  # 서비스 계정 키
-│   └── token.json            # 사용자 토큰 (자동 생성)
-├── src/
-│   └── google_utils.py       # API 유틸리티
-└── .env                      # 환경 변수
+D:\AI\claude01\
+├── json/
+│   ├── desktop_credentials.json   # OAuth 클라이언트 ID (업로드용)
+│   ├── token.json                 # OAuth 토큰 (자동 생성)
+│   └── service_account_key.json   # 서비스 계정 (읽기 전용)
+├── wsoptv/                        # 서브 레포
+├── db_architecture/               # 서브 레포
+└── ...
 ```
 
 ## 인증 방식
@@ -122,7 +142,7 @@ project/
 └─────────┘     └─────────┘     └─────────┘     └─────────┘
 ```
 
-**용도**: 사용자의 개인 데이터 접근 (내 드라이브, 내 이메일)
+**용도**: 사용자의 개인 데이터 접근 (내 드라이브, 내 이메일), **파일 업로드**
 
 ```python
 from google.oauth2.credentials import Credentials
@@ -130,24 +150,26 @@ from google_auth_oauthlib.flow import InstalledAppFlow
 from google.auth.transport.requests import Request
 import os
 
-SCOPES = ['https://www.googleapis.com/auth/spreadsheets']
+SCOPES = ['https://www.googleapis.com/auth/drive']  # 전체 Drive 접근
+
+# 절대 경로 사용 (서브 레포에서도 동작)
+CREDENTIALS_FILE = r'D:\AI\claude01\json\desktop_credentials.json'
+TOKEN_FILE = r'D:\AI\claude01\json\token.json'
 
 def get_credentials():
     creds = None
-    token_path = 'credentials/token.json'
 
-    if os.path.exists(token_path):
-        creds = Credentials.from_authorized_user_file(token_path, SCOPES)
+    if os.path.exists(TOKEN_FILE):
+        creds = Credentials.from_authorized_user_file(TOKEN_FILE, SCOPES)
 
     if not creds or not creds.valid:
         if creds and creds.expired and creds.refresh_token:
             creds.refresh(Request())
         else:
-            flow = InstalledAppFlow.from_client_secrets_file(
-                'credentials/credentials.json', SCOPES)
+            flow = InstalledAppFlow.from_client_secrets_file(CREDENTIALS_FILE, SCOPES)
             creds = flow.run_local_server(port=0)
 
-        with open(token_path, 'w') as token:
+        with open(TOKEN_FILE, 'w') as token:
             token.write(creds.to_json())
 
     return creds
@@ -162,16 +184,21 @@ def get_credentials():
 └─────────┘     └─────────┘     └─────────┘
 ```
 
-**용도**: 자동화 작업, 공유된 리소스 접근
+**용도**: 자동화 작업, 공유된 리소스 **읽기**
+
+⚠️ **제한 사항**: 서비스 계정은 저장 용량이 없어 **Drive 업로드 불가!**
 
 ```python
 from google.oauth2 import service_account
 
 SCOPES = ['https://www.googleapis.com/auth/spreadsheets']
 
+# 절대 경로 사용 (서브 레포에서도 동작)
+SERVICE_ACCOUNT_FILE = r'D:\AI\claude01\json\service_account_key.json'
+
 def get_service_credentials():
     return service_account.Credentials.from_service_account_file(
-        'credentials/service-account.json',
+        SERVICE_ACCOUNT_FILE,
         scopes=SCOPES
     )
 ```
@@ -565,6 +592,20 @@ if os.path.exists('credentials/token.json'):
 1. Google Cloud Console에서 API 활성화 확인
 2. OAuth 동의 화면에서 Scope 추가
 3. 서비스 계정의 경우 파일/폴더 공유 확인
+```
+
+### 업로드 실패 - storageQuotaExceeded
+
+**증상**: `Service Accounts do not have storage quota`
+
+**원인**: 서비스 계정은 저장 용량 할당량이 없음
+
+**해결**: OAuth 2.0 인증으로 전환
+
+```python
+# 서비스 계정 대신 OAuth 사용
+CREDENTIALS_FILE = r'D:\AI\claude01\json\desktop_credentials.json'
+TOKEN_FILE = r'D:\AI\claude01\json\token.json'
 ```
 
 ### 할당량 초과 (429)
