@@ -18,10 +18,10 @@ jobs:
       - name: Checkout code
         uses: actions/checkout@v3
 
-      - name: Check if backend exists
+      - name: Check if backend exists and is tracked
         id: check_backend
         run: |
-          if [ -d "backend" ]; then
+          if [ -d "backend" ] && [ -f "backend/requirements.txt" ]; then
             echo "exists=true" >> $GITHUB_OUTPUT
           else
             echo "exists=false" >> $GITHUB_OUTPUT
@@ -74,10 +74,10 @@ jobs:
       - name: Checkout code
         uses: actions/checkout@v3
 
-      - name: Check if frontend exists
+      - name: Check if frontend exists and is tracked
         id: check_frontend
         run: |
-          if [ -d "frontend" ]; then
+          if [ -d "frontend" ] && [ -f "frontend/package.json" ]; then
             echo "exists=true" >> $GITHUB_OUTPUT
           else
             echo "exists=false" >> $GITHUB_OUTPUT
