@@ -151,12 +151,22 @@ export class BrowserViewManager {
     for (const provider of providers) {
       const adapter = this.adapters.get(provider);
       if (adapter) {
-        const isLoggedIn = await adapter.isLoggedIn();
-        result[provider] = {
-          provider,
-          isLoggedIn,
-          lastChecked: new Date().toISOString(),
-        };
+        try {
+          const isLoggedIn = await adapter.isLoggedIn();
+          result[provider] = {
+            provider,
+            isLoggedIn: Boolean(isLoggedIn),
+            lastChecked: new Date().toISOString(),
+          };
+          console.log(`[Login Check] ${provider}: ${isLoggedIn}`);
+        } catch (error) {
+          console.error(`[Login Check] ${provider} error:`, error);
+          result[provider] = {
+            provider,
+            isLoggedIn: false,
+            lastChecked: new Date().toISOString(),
+          };
+        }
       } else {
         result[provider] = {
           provider,

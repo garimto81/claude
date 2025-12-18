@@ -6,6 +6,7 @@
 
 import { useState } from 'react';
 import { useDebateStore } from '../stores/debate-store';
+import { useLoginStore } from '../stores/login-store';
 import { LoginStatusBoard } from '../components/LoginStatusBoard';
 import { DebateConfigPanel } from '../components/DebateConfigPanel';
 import { ElementScoreBoard } from '../components/ElementScoreBoard';
@@ -13,6 +14,12 @@ import { IterationViewer } from '../components/IterationViewer';
 import { ResponseViewer } from '../components/ResponseViewer';
 import { DebateControlPanel } from '../components/DebateControlPanel';
 import type { DebateConfig } from '@shared/types';
+
+const PROVIDER_LABELS: Record<string, string> = {
+  chatgpt: 'ChatGPT',
+  claude: 'Claude',
+  gemini: 'Gemini',
+};
 
 type View = 'config' | 'debate';
 
@@ -26,6 +33,7 @@ export function MainLayout() {
     responses,
     startDebate,
   } = useDebateStore();
+  const { activeLoginProvider, closeLoginWindow } = useLoginStore();
 
   const handleStartDebate = async (config: DebateConfig) => {
     await startDebate(config);
@@ -39,13 +47,32 @@ export function MainLayout() {
   return (
     <div className="h-screen flex flex-col bg-gray-900">
       {/* Header */}
-      <header className="h-14 flex items-center justify-between px-6 bg-gray-800/50 border-b border-gray-700">
+      <header className="h-14 flex items-center justify-between px-6 bg-gray-800/50 border-b border-gray-700 relative z-50">
         <div className="flex items-center gap-3">
-          <h1 className="text-xl font-bold text-white">MAD</h1>
-          <span className="text-sm text-gray-400">Multi-Agent Debate</span>
+          {activeLoginProvider ? (
+            <>
+              <span className="text-sm text-gray-400">
+                {PROVIDER_LABELS[activeLoginProvider]} 로그인 중
+              </span>
+              <button
+                onClick={closeLoginWindow}
+                className="flex items-center gap-2 px-3 py-1.5 bg-blue-600 hover:bg-blue-500 rounded-lg text-sm font-medium transition-colors"
+              >
+                <svg className="w-4 h-4" fill="none" stroke="currentColor" viewBox="0 0 24 24">
+                  <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M3 12l2-2m0 0l7-7 7 7M5 10v10a1 1 0 001 1h3m10-11l2 2m-2-2v10a1 1 0 01-1 1h-3m-6 0a1 1 0 001-1v-4a1 1 0 011-1h2a1 1 0 011 1v4a1 1 0 001 1m-6 0h6" />
+                </svg>
+                메인으로
+              </button>
+            </>
+          ) : (
+            <>
+              <h1 className="text-xl font-bold text-white">MAD</h1>
+              <span className="text-sm text-gray-400">Multi-Agent Debate</span>
+            </>
+          )}
         </div>
 
-        {view === 'debate' && (
+        {view === 'debate' && !activeLoginProvider && (
           <DebateControlPanel onStart={handleBack} />
         )}
       </header>

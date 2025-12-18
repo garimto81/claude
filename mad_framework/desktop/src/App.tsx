@@ -5,14 +5,14 @@ import { MainLayout } from './layouts/MainLayout';
 
 function App() {
   const { initializeIPC } = useDebateStore();
-  const { checkLoginStatus } = useLoginStore();
+  const { initializeLoginListener } = useLoginStore();
 
   useEffect(() => {
-    // Initialize IPC listeners
+    // Initialize IPC listeners for debate and login
     initializeIPC();
-    // Check initial login status
-    checkLoginStatus();
-  }, [initializeIPC, checkLoginStatus]);
+    initializeLoginListener();
+    // Login status will be auto-checked by main process after BrowserViews load
+  }, [initializeIPC, initializeLoginListener]);
 
   return <MainLayout />;
 }

@@ -30,17 +30,32 @@ export class GeminiAdapter extends BaseLLMAdapter {
   }
 
   async isLoggedIn(): Promise<boolean> {
-    const script = `!!document.querySelector('${this.selectors.loginCheck}')`;
-    return this.webContents.executeJavaScript(script);
+    // Check multiple possible login indicators
+    const script = `
+      !!(
+        document.querySelector('[data-user-email]') ||
+        document.querySelector('img[data-iml]') ||
+        document.querySelector('[aria-label*="Google Account"]') ||
+        document.querySelector('.ql-editor') ||
+        document.querySelector('rich-textarea')
+      )
+    `;
+    return this.executeScript<boolean>(script, false);
   }
 
   async inputPrompt(prompt: string): Promise<void> {
     const escapedPrompt = JSON.stringify(prompt);
     const script = `
-      const editor = document.querySelector('${this.selectors.inputTextarea}');
-      editor.innerHTML = ${escapedPrompt};
-      editor.dispatchEvent(new Event('input', { bubbles: true }));
+      (() => {
+        const editor = document.querySelector('${this.selectors.inputTextarea}');
+        if (!editor) return false;
+        editor.innerHTML = ${escapedPrompt};
+        editor.dispatchEvent(new Event('input', { bubbles: true }));
+        return true;
+      })()
     `;
-    await this.webContents.executeJavaScript(script);
+    await this.executeScript<boolean>(script, false);
   }
+
+  // extractResponse, getTokenCount, isWriting use base class methods with proper error handling
 }
