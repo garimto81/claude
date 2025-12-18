@@ -109,23 +109,31 @@ describe('Debate Flow Integration', () => {
       browserManager.createView('claude');
       browserManager.createView('gemini');
 
-      // Mock all logged in
-      const chatgptAdapter = browserManager.getAdapter('chatgpt');
-      vi.spyOn(chatgptAdapter, 'isLoggedIn').mockResolvedValue(true);
+      // Mock checkLoginStatus directly on browserManager
+      const checkLoginSpy = vi.spyOn(browserManager, 'checkLoginStatus').mockResolvedValue({
+        chatgpt: { provider: 'chatgpt', isLoggedIn: true, lastChecked: new Date().toISOString() },
+        claude: { provider: 'claude', isLoggedIn: true, lastChecked: new Date().toISOString() },
+        gemini: { provider: 'gemini', isLoggedIn: true, lastChecked: new Date().toISOString() },
+      });
 
-      const claudeAdapter = browserManager.getAdapter('claude');
-      vi.spyOn(claudeAdapter, 'isLoggedIn').mockResolvedValue(true);
+      // Mock all adapter methods for quick execution
+      const providers: LLMProvider[] = ['chatgpt', 'claude', 'gemini'];
+      providers.forEach(provider => {
+        const adapter = browserManager.getAdapter(provider);
+        vi.spyOn(adapter, 'isLoggedIn').mockResolvedValue(true);
+        vi.spyOn(adapter, 'waitForInputReady').mockResolvedValue(undefined);
+        vi.spyOn(adapter, 'inputPrompt').mockResolvedValue(undefined);
+        vi.spyOn(adapter, 'sendMessage').mockResolvedValue(undefined);
+        vi.spyOn(adapter, 'waitForResponse').mockResolvedValue(undefined);
+        vi.spyOn(adapter, 'extractResponse').mockResolvedValue('{}');
+      });
 
-      const geminiAdapter = browserManager.getAdapter('gemini');
-      vi.spyOn(geminiAdapter, 'isLoggedIn').mockResolvedValue(true);
-
-      // Quick complete
+      // Return empty elements to complete immediately after first iteration
       mockRepository.getIncompleteElements.mockResolvedValue([]);
 
       await controller.start(defaultConfig);
 
-      expect(chatgptAdapter.isLoggedIn).toHaveBeenCalled();
-      expect(claudeAdapter.isLoggedIn).toHaveBeenCalled();
+      expect(checkLoginSpy).toHaveBeenCalled();
     });
 
     it('should fail if any participant is not logged in', async () => {
@@ -217,6 +225,13 @@ describe('Debate Flow Integration', () => {
       browserManager.createView('claude');
       browserManager.createView('gemini');
 
+      // Mock checkLoginStatus
+      vi.spyOn(browserManager, 'checkLoginStatus').mockResolvedValue({
+        chatgpt: { provider: 'chatgpt', isLoggedIn: true, lastChecked: new Date().toISOString() },
+        claude: { provider: 'claude', isLoggedIn: true, lastChecked: new Date().toISOString() },
+        gemini: { provider: 'gemini', isLoggedIn: true, lastChecked: new Date().toISOString() },
+      });
+
       const providers: LLMProvider[] = ['chatgpt', 'claude', 'gemini'];
       providers.forEach(provider => {
         const adapter = browserManager.getAdapter(provider);
@@ -227,9 +242,9 @@ describe('Debate Flow Integration', () => {
         vi.spyOn(adapter, 'waitForResponse').mockResolvedValue(undefined);
 
         if (provider === 'gemini') {
-          // Judge response indicating cycle
+          // Judge response indicating cycle - use JSON code block format
           vi.spyOn(adapter, 'extractResponse').mockResolvedValue(
-            JSON.stringify({ isCycle: true, reason: 'Versions are repeating' })
+            '```json\n{"isCycle": true, "reason": "Versions are repeating"}\n```'
           );
         } else {
           vi.spyOn(adapter, 'extractResponse').mockResolvedValue(
@@ -253,9 +268,14 @@ describe('Debate Flow Integration', () => {
         ],
       };
 
+      // getIncompleteElements is called:
+      // 1. in executeIteration (needs element)
+      // 2. in while loop check (needs element for cycle detection)
+      // 3. after cycle detection (empty to end loop)
       mockRepository.getIncompleteElements
-        .mockResolvedValueOnce([elementWith3Versions])
-        .mockResolvedValueOnce([]);
+        .mockResolvedValueOnce([elementWith3Versions])  // executeIteration
+        .mockResolvedValueOnce([elementWith3Versions])  // while loop check
+        .mockResolvedValueOnce([]);                     // after cycle detection
 
       mockRepository.getLast3Versions.mockResolvedValue(elementWith3Versions.versionHistory);
 
