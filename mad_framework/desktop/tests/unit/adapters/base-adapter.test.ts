@@ -132,19 +132,25 @@ describe('BaseLLMAdapter', () => {
 
   describe('waitForResponse', () => {
     it('should resolve when typing indicator disappears', async () => {
-      mockWebContents.executeJavaScript.mockResolvedValue(undefined);
+      // Step 1: isWriting returns true (typing started)
+      // Step 2: isWriting returns false (typing finished)
+      mockWebContents.executeJavaScript
+        .mockResolvedValueOnce(true)  // waitForCondition: typing started
+        .mockResolvedValueOnce(false); // waitForCondition: typing finished
 
       const adapter = new BaseLLMAdapter('chatgpt', mockWebContents as any);
-      await expect(adapter.waitForResponse(5000)).resolves.toBeUndefined();
-    });
+      await expect(adapter.waitForResponse(15000)).resolves.toBeUndefined();
+    }, 20000);
 
-    it('should timeout if response takes too long', async () => {
-      mockWebContents.executeJavaScript.mockRejectedValue(new Error('Response timeout'));
+    it('should timeout if typing never finishes', async () => {
+      // Always return true (typing never finishes)
+      mockWebContents.executeJavaScript.mockResolvedValue(true);
 
       const adapter = new BaseLLMAdapter('chatgpt', mockWebContents as any);
 
-      await expect(adapter.waitForResponse(100)).rejects.toThrow('timeout');
-    });
+      // Short timeout to trigger failure quickly
+      await expect(adapter.waitForResponse(500)).rejects.toThrow('timeout');
+    }, 10000);
   });
 
   describe('extractResponse', () => {

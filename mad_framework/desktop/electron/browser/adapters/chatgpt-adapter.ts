@@ -54,7 +54,7 @@ export class ChatGPTAdapter extends BaseLLMAdapter {
             return { success: false, error: 'textarea not found' };
           }
 
-          // Focus and clear
+          // Focus first
           textarea.focus();
 
           // Method 1: For contenteditable (ProseMirror)
@@ -67,7 +67,12 @@ export class ChatGPTAdapter extends BaseLLMAdapter {
             p.textContent = ${escapedPrompt};
             textarea.appendChild(p);
 
-            // Trigger input event
+            // Trigger multiple events for React detection (Issue #16)
+            ['input', 'change', 'keyup', 'keydown'].forEach(eventType => {
+              textarea.dispatchEvent(new Event(eventType, { bubbles: true }));
+            });
+
+            // Also dispatch InputEvent for better compatibility
             textarea.dispatchEvent(new InputEvent('input', {
               bubbles: true,
               cancelable: true,
@@ -78,11 +83,20 @@ export class ChatGPTAdapter extends BaseLLMAdapter {
             return { success: true, method: 'contenteditable' };
           }
 
-          // Method 2: For regular textarea
+          // Method 2: For regular textarea - use native setter to bypass React
           if (textarea.tagName === 'TEXTAREA') {
-            textarea.value = ${escapedPrompt};
+            const nativeInputValueSetter = Object.getOwnPropertyDescriptor(
+              window.HTMLTextAreaElement.prototype, 'value'
+            )?.set;
+
+            if (nativeInputValueSetter) {
+              nativeInputValueSetter.call(textarea, ${escapedPrompt});
+            } else {
+              textarea.value = ${escapedPrompt};
+            }
+
             textarea.dispatchEvent(new Event('input', { bubbles: true }));
-            return { success: true, method: 'textarea' };
+            return { success: true, method: 'native-setter' };
           }
 
           return { success: false, error: 'unknown input type' };
@@ -95,8 +109,30 @@ export class ChatGPTAdapter extends BaseLLMAdapter {
     const result = await this.executeScript<{success: boolean; error?: string; method?: string}>(script, { success: false, error: 'script failed' });
     console.log(`[chatgpt] inputPrompt result:`, result);
 
-    // Wait a bit for React to process
-    await this.sleep(500);
+    if (!result.success) {
+      throw new Error(`ChatGPT inputPrompt failed: ${result.error}`);
+    }
+
+    // Wait longer for React to process (500ms → 1000ms as per Issue #16)
+    await this.sleep(1000);
+
+    // Verify input was successful
+    const verified = await this.verifyInput();
+    if (!verified) {
+      throw new Error('ChatGPT inputPrompt verification failed: input is empty');
+    }
+  }
+
+  // Verify that input was successfully entered
+  private async verifyInput(): Promise<boolean> {
+    const script = `
+      (() => {
+        const textarea = document.querySelector('#prompt-textarea');
+        const content = textarea?.innerText || textarea?.value || '';
+        return content.trim().length > 0;
+      })()
+    `;
+    return this.executeScript<boolean>(script, false);
   }
 
   async sendMessage(): Promise<void> {

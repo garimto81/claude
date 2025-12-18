@@ -92,18 +92,19 @@ export class BaseLLMAdapter {
   }
 
   async waitForInputReady(timeout: number = 10000): Promise<void> {
-    const startTime = Date.now();
+    const isReady = await this.waitForCondition(
+      async () => {
+        return this.executeScript<boolean>(
+          `!!document.querySelector('${this.selectors.inputTextarea}')`,
+          false
+        );
+      },
+      { timeout, interval: 500, description: 'input to be ready' }
+    );
 
-    while (Date.now() - startTime < timeout) {
-      const isReady = await this.executeScript<boolean>(
-        `!!document.querySelector('${this.selectors.inputTextarea}')`,
-        false
-      );
-      if (isReady) return;
-      await this.sleep(500);
+    if (!isReady) {
+      throw new Error(`Input not ready for ${this.provider}`);
     }
-
-    throw new Error(`Input not ready for ${this.provider}`);
   }
 
   async inputPrompt(prompt: string): Promise<void> {
@@ -147,32 +148,31 @@ export class BaseLLMAdapter {
 
   async waitForResponse(timeout: number = 120000): Promise<void> {
     console.log(`[${this.provider}] waitForResponse started, timeout: ${timeout}ms`);
-    const startTime = Date.now();
 
-    // Initial delay to let typing start
-    console.log(`[${this.provider}] Waiting 2s for typing to start...`);
-    await this.sleep(2000);
+    // Step 1: Wait for typing to start (max 10 seconds)
+    const typingStarted = await this.waitForCondition(
+      () => this.isWriting(),
+      { timeout: 10000, interval: 300, description: 'typing to start' }
+    );
 
-    while (Date.now() - startTime < timeout) {
-      try {
-        const isWriting = await this.executeScript<boolean>(
-          `!!document.querySelector('${this.selectors.typingIndicator}')`,
-          false
-        );
-        console.log(`[${this.provider}] isWriting: ${isWriting}`);
-        if (!isWriting) {
-          console.log(`[${this.provider}] Response complete`);
-          return;
-        }
-        await this.sleep(500);
-      } catch (error) {
-        console.error(`[${this.provider}] Error checking writing status:`, error);
-        // Continue checking instead of failing
-        await this.sleep(500);
-      }
+    if (!typingStarted) {
+      console.warn(`[${this.provider}] Typing never started, checking for response anyway`);
     }
 
-    throw new Error(`Response timeout for ${this.provider}`);
+    // Step 2: Wait for typing to finish (remaining timeout)
+    const remainingTimeout = Math.max(timeout - 10000, 5000);
+    const typingFinished = await this.waitForCondition(
+      async () => !(await this.isWriting()),
+      { timeout: remainingTimeout, interval: 500, description: 'typing to finish' }
+    );
+
+    if (!typingFinished) {
+      throw new Error(`Response timeout for ${this.provider}`);
+    }
+
+    // Step 3: DOM stabilization delay
+    await this.sleep(1000);
+    console.log(`[${this.provider}] Response complete`);
   }
 
   async extractResponse(): Promise<string> {
@@ -225,5 +225,37 @@ export class BaseLLMAdapter {
 
   protected sleep(ms: number): Promise<void> {
     return new Promise((resolve) => setTimeout(resolve, ms));
+  }
+
+  /**
+   * Wait for a condition to be true with configurable timeout and interval
+   * @param checkFn - Function that returns true when condition is met
+   * @param options - Configuration options
+   * @returns true if condition met, false if timeout
+   */
+  protected async waitForCondition(
+    checkFn: () => Promise<boolean>,
+    options: {
+      timeout: number;
+      interval: number;
+      description: string;
+    }
+  ): Promise<boolean> {
+    const startTime = Date.now();
+
+    while (Date.now() - startTime < options.timeout) {
+      try {
+        if (await checkFn()) {
+          console.log(`[${this.provider}] Condition met: ${options.description}`);
+          return true;
+        }
+      } catch (error) {
+        console.warn(`[${this.provider}] Check failed for ${options.description}:`, error);
+      }
+      await this.sleep(options.interval);
+    }
+
+    console.warn(`[${this.provider}] Timeout waiting for: ${options.description}`);
+    return false;
   }
 }
