@@ -131,6 +131,20 @@ D:\AI\claude01\
 └── ...
 ```
 
+### 공유된 Google Drive 리소스
+
+| 리소스 | 폴더/문서 ID | URL | 용도 |
+|--------|-------------|-----|------|
+| Google AI Studio | `1JwdlUe_v4Ug-yQ0veXTldFl6C24GH8hW` | [폴더](https://drive.google.com/drive/folders/1JwdlUe_v4Ug-yQ0veXTldFl6C24GH8hW) | 공유 문서/자료 저장소 |
+| WSOPTV 와이어프레임 | `1kHuCfqD7PPkybWXRL3pqeNISTPT7LUTB` | [폴더](https://drive.google.com/drive/folders/1kHuCfqD7PPkybWXRL3pqeNISTPT7LUTB) | 홈페이지 와이어프레임 PNG |
+| WSOPTV UX 기획서 | `1tghlhpQiWttpB-0CP5c1DiL5BJa4ttWj-2R77xaoVI8` | [문서](https://docs.google.com/document/d/1tghlhpQiWttpB-0CP5c1DiL5BJa4ttWj-2R77xaoVI8/edit) | 사용자 경험 설계 문서 |
+
+**서비스 계정 이메일**: `archive-sync@ggp-academy.iam.gserviceaccount.com`
+
+⚠️ **중요**: 서비스 계정은 스토리지 할당량이 없어 **파일 업로드 불가**!
+- 읽기/폴더 생성: 가능
+- 파일 업로드: **OAuth 2.0 필요**
+
 ## 인증 방식
 
 ### 1. OAuth 2.0 (사용자 대신 작업)

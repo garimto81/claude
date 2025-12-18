@@ -3,12 +3,43 @@ name: debugging-workflow
 description: >
   디버깅 실패 시 자동 트리거되는 체계적 문제 해결 워크플로우.
   DEBUGGING_STRATEGY.md 기반 Phase 0-3 디버깅 프로세스 자동화.
-  트리거: "로그 분석", "debug", "실패", "오류", "버그", "3회 실패"
-version: 1.0.0
+version: 2.0.0
+
+# 2025 Schema: 자동 트리거 조건
+triggers:
+  keywords:
+    - "로그 분석"
+    - "debug"
+    - "실패"
+    - "오류"
+    - "버그"
+    - "3회 실패"
+    - "error"
+    - "exception"
+  file_patterns:
+    - "logs/**/*.log"
+    - "**/*.error"
+    - "**/debug.log"
+  context:
+    - "테스트 실패 분석"
+    - "에러 로그 확인"
+    - "버그 원인 파악"
+
+# 2025 Schema: 스킬 기능 선언
+capabilities:
+  - analyze_logs
+  - add_debug_logs
+  - classify_problem_area
+  - verify_hypothesis
+
+# 2025 Schema: 모델 선호도
+model_preference: sonnet
+
+# 기존 필드 유지
 phase: [1, 2, 5]
 auto_trigger: true
 dependencies:
-  - debugger (subagent)
+  - debugger
 token_budget: 2500
 ---
 

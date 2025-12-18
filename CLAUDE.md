@@ -2,7 +2,7 @@
 
 This file provides guidance to Claude Code (claude.ai/code) when working with code in this repository.
 
-**Version**: 11.1.0 | **Context**: Windows, PowerShell, Root: `D:\AI\claude01`
+**Version**: 11.2.0 | **Context**: Windows, PowerShell, Root: `D:\AI\claude01`
 
 **GitHub**: `garimto81/claude`
 
@@ -26,6 +26,9 @@ This file provides guidance to Claude Code (claude.ai/code) when working with co
 | main 브랜치 수정 금지 | **차단** | `git checkout -b feat/issue-N-desc` |
 | 테스트 먼저 (TDD) | 경고 | Red → Green → Refactor |
 | 상대 경로 금지 | 경고 | 절대 경로 사용 |
+| **전체 프로세스 종료 금지** | **차단** | 해당 프로젝트 node만 종료 |
+
+⚠️ `taskkill /F /IM node.exe` 등 전체 종료 명령 **절대 금지**. 다른 프로젝트 영향.
 
 main 허용: `CLAUDE.md`, `README.md`, `.claude/`, `docs/`
 
@@ -114,6 +117,46 @@ npx playwright test tests/e2e/auth.spec.ts  # 개별 테스트
 ```
 
 **즉시 수정 금지.** 원인 파악 → 유사 패턴 검색 → 구조적 해결.
+
+---
+
+## 문서 작업 규칙
+
+### 시각화 필수
+
+| 단계 | 작업 | 산출물 |
+|------|------|--------|
+| 1 | HTML 목업 생성 | `docs/mockups/*.html` |
+| 2 | 스크린샷 캡처 | `docs/images/*.png` |
+| 3 | 문서에 이미지 첨부 | PRD, 설계 문서 |
+
+### 시각화 흐름
+
+```
+┌─────────────┐     ┌─────────────┐     ┌─────────────┐
+│  HTML 목업  │────▶│  스크린샷   │────▶│  문서 첨부  │
+│  작성       │     │  캡처       │     │             │
+└─────────────┘     └─────────────┘     └─────────────┘
+```
+
+### HTML 목업 생성
+
+```powershell
+# 목업 파일 생성
+Write docs/mockups/feature-name.html
+
+# Playwright로 스크린샷 캡처
+npx playwright screenshot docs/mockups/feature-name.html docs/images/feature-name.png
+```
+
+### 적용 대상
+
+| 문서 유형 | 시각화 필수 여부 |
+|-----------|-----------------|
+| PRD (기능 명세) | ✅ 필수 |
+| 아키텍처 설계 | ✅ 필수 |
+| API 문서 | ⚠️ 권장 |
+| 변경 로그 | ❌ 선택 |
 
 ---
 

@@ -42,9 +42,22 @@ archive-statistics/
 __pycache__/
 *.pyc
 node_modules/
+
+# 환경 변수 (민감 정보)
 .env
-.env.*
+.env.local
+.env.*.local
+.env.development
+.env.production
+!.env.template
 !.env.example
+
+# 인증서 및 키
+*.pem
+*.key
+*.p12
+*credentials*.json
+!*credentials*.template.json
 
 # 백업 파일
 *.backup

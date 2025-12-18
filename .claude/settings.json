@@ -1,33 +1,55 @@
 {
-  "$schema": "https://raw.githubusercontent.com/anthropics/claude-code/main/schemas/settings.json",
+  "$schema": "https://json.schemastore.org/claude-code-settings.json",
   "statusLine": {
     "type": "command",
-    "command": "python .claude/statusline.py",
+    "command": "python D:\\AI\\claude01\\.claude\\statusline.py",
     "padding": 0
   },
   "hooks": {
     "PreToolUse": [
       {
-        "matcher": "Edit|Write",
-        "command": "python .claude/hooks/branch_guard.py",
-        "description": "main 브랜치에서 코드 수정 차단"
+        "matcher": {
+          "tools": ["Edit", "Write"]
+        },
+        "hooks": [
+          {
+            "type": "command",
+            "command": "python .claude/hooks/branch_guard.py"
+          }
+        ]
       },
       {
-        "matcher": "Bash|Write|Edit",
-        "command": "python .claude/hooks/tool_validator.py",
-        "description": "위험 명령 차단 및 민감 파일 보호"
+        "matcher": {
+          "tools": ["Bash", "Write", "Edit"]
+        },
+        "hooks": [
+          {
+            "type": "command",
+            "command": "python .claude/hooks/tool_validator.py"
+          }
+        ]
       }
     ],
     "SessionStart": [
       {
-        "command": "python .claude/hooks/session_init.py",
-        "description": "세션 시작 - 이전 컨텍스트 로드"
+        "matcher": {},
+        "hooks": [
+          {
+            "type": "command",
+            "command": "python .claude/hooks/session_init.py"
+          }
+        ]
       }
     ],
     "SessionEnd": [
       {
-        "command": "python .claude/hooks/session_cleanup.py",
-        "description": "세션 종료 - 미완료 작업 저장"
+        "matcher": {},
+        "hooks": [
+          {
+            "type": "command",
+            "command": "python .claude/hooks/session_cleanup.py"
+          }
+        ]
       }
     ]
   }
