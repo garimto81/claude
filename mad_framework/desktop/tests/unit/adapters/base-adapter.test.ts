@@ -114,12 +114,19 @@ describe('BaseLLMAdapter', () => {
 
   describe('sendMessage', () => {
     it('should click send button', async () => {
-      mockWebContents.executeJavaScript.mockResolvedValue(undefined);
+      mockWebContents.executeJavaScript.mockResolvedValue(true);
 
       const adapter = new BaseLLMAdapter('chatgpt', mockWebContents as any);
       await adapter.sendMessage();
 
       expect(mockWebContents.executeJavaScript).toHaveBeenCalled();
+    });
+
+    it('should throw error when send button not found', async () => {
+      mockWebContents.executeJavaScript.mockResolvedValue(false);
+
+      const adapter = new BaseLLMAdapter('chatgpt', mockWebContents as any);
+      await expect(adapter.sendMessage()).rejects.toThrow('Failed to send message');
     });
   });
 

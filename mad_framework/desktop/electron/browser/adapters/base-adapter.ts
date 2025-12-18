@@ -139,7 +139,10 @@ export class BaseLLMAdapter {
         return false;
       })()
     `;
-    await this.executeScript<boolean>(script, false);
+    const success = await this.executeScript<boolean>(script, false);
+    if (!success) {
+      throw new Error(`Failed to send message for ${this.provider}: send button not found or click failed`);
+    }
   }
 
   async waitForResponse(timeout: number = 120000): Promise<void> {
