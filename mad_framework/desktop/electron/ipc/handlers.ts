@@ -17,21 +17,11 @@ import type {
 import { BrowserViewManager } from '../browser/browser-view-manager';
 import { DebateController } from '../debate/debate-controller';
 import { CycleDetector } from '../debate/cycle-detector';
+import { InMemoryRepository } from '../debate/in-memory-repository';
 
 let browserManager: BrowserViewManager | null = null;
 let debateController: DebateController | null = null;
-
-// Mock repository for now (will be replaced with actual DB)
-const mockRepository = {
-  create: async (data: unknown) => `debate-${Date.now()}`,
-  createElements: async () => {},
-  updateElementScore: async () => {},
-  markElementComplete: async () => {},
-  getLast3Versions: async () => [],
-  getIncompleteElements: async () => [],
-  updateIteration: async () => {},
-  updateStatus: async () => {},
-};
+let repository: InMemoryRepository | null = null;
 
 export function registerIpcHandlers(mainWindow: BrowserWindow) {
   // Initialize browser manager
@@ -50,11 +40,12 @@ export function registerIpcHandlers(mainWindow: BrowserWindow) {
     on: () => {},
   };
 
-  // Initialize cycle detector and debate controller
+  // Initialize repository, cycle detector, and debate controller
+  repository = new InMemoryRepository();
   const cycleDetector = new CycleDetector(browserManager);
   debateController = new DebateController(
     browserManager,
-    mockRepository,
+    repository,
     cycleDetector,
     eventEmitter
   );
@@ -168,4 +159,6 @@ export function cleanupIpcHandlers() {
   browserManager?.destroyAllViews();
   browserManager = null;
   debateController = null;
+  repository?.clear();
+  repository = null;
 }

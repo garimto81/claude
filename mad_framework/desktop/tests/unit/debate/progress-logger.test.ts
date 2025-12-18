@@ -7,13 +7,13 @@
  * - 순환 감지 로그
  */
 
-import { describe, it, expect, beforeEach, vi } from 'vitest';
+import { describe, it, expect, beforeEach, vi, type MockInstance } from 'vitest';
 import { ProgressLogger } from '../../../electron/debate/progress-logger';
 import type { LLMStatus } from '../../../shared/types';
 
 describe('ProgressLogger', () => {
   let logger: ProgressLogger;
-  let consoleSpy: ReturnType<typeof vi.spyOn>;
+  let consoleSpy: MockInstance;
 
   beforeEach(() => {
     logger = new ProgressLogger();

@@ -95,11 +95,29 @@ describe('ChatGPTAdapter', () => {
   describe('extractResponse', () => {
     it('should extract text from last assistant message', async () => {
       const response = 'This is ChatGPT response';
-      mockWebContents.executeJavaScript.mockResolvedValue(response);
+      // ChatGPT adapter returns { success, content } object
+      mockWebContents.executeJavaScript.mockResolvedValue({
+        success: true,
+        content: response,
+        selector: '[data-message-author-role="assistant"]'
+      });
 
       const result = await adapter.extractResponse();
 
+      console.log('[chatgpt] extractResponse result:', JSON.stringify(result).substring(0, 100));
       expect(result).toBe(response);
+    });
+
+    it('should return empty string when no messages found', async () => {
+      mockWebContents.executeJavaScript.mockResolvedValue({
+        success: false,
+        content: '',
+        error: 'no messages found'
+      });
+
+      const result = await adapter.extractResponse();
+
+      expect(result).toBe('');
     });
   });
 });

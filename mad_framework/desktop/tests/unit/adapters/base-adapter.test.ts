@@ -49,12 +49,14 @@ describe('BaseLLMAdapter', () => {
       expect(result).toBe(false);
     });
 
-    it('should throw error when browser not loaded', async () => {
+    it('should return false when browser throws error (graceful fallback)', async () => {
       mockWebContents.executeJavaScript.mockRejectedValue(new Error('Page not loaded'));
 
       const adapter = new BaseLLMAdapter('chatgpt', mockWebContents as any);
+      const result = await adapter.isLoggedIn();
 
-      await expect(adapter.isLoggedIn()).rejects.toThrow();
+      // executeScript returns defaultValue (false) on error
+      expect(result).toBe(false);
     });
   });
 
@@ -77,7 +79,8 @@ describe('BaseLLMAdapter', () => {
 
   describe('inputPrompt', () => {
     it('should input prompt text into textarea', async () => {
-      mockWebContents.executeJavaScript.mockResolvedValue(undefined);
+      // Script returns true when successful
+      mockWebContents.executeJavaScript.mockResolvedValue(true);
 
       const adapter = new BaseLLMAdapter('chatgpt', mockWebContents as any);
       const prompt = 'Test prompt for debate';
@@ -90,7 +93,7 @@ describe('BaseLLMAdapter', () => {
     });
 
     it('should escape special characters in prompt', async () => {
-      mockWebContents.executeJavaScript.mockResolvedValue(undefined);
+      mockWebContents.executeJavaScript.mockResolvedValue(true);
 
       const adapter = new BaseLLMAdapter('chatgpt', mockWebContents as any);
       const prompt = 'Test with "quotes" and \'apostrophes\'';
@@ -98,6 +101,14 @@ describe('BaseLLMAdapter', () => {
       await adapter.inputPrompt(prompt);
 
       expect(mockWebContents.executeJavaScript).toHaveBeenCalled();
+    });
+
+    it('should throw error when input fails', async () => {
+      mockWebContents.executeJavaScript.mockResolvedValue(false);
+
+      const adapter = new BaseLLMAdapter('chatgpt', mockWebContents as any);
+
+      await expect(adapter.inputPrompt('test')).rejects.toThrow('Failed to input prompt');
     });
   });
 

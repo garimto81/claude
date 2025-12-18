@@ -169,17 +169,20 @@ export class ChatGPTAdapter extends BaseLLMAdapter {
   async extractResponse(): Promise<string> {
     console.log(`[chatgpt] extractResponse called`);
 
+    // Wait for DOM to be fully rendered after response
+    await this.sleep(1000);
+
     const script = `
       (() => {
         try {
-          // Try multiple selectors for ChatGPT responses
+          // Try multiple selectors for ChatGPT responses (ordered by specificity)
           const selectors = [
-            '[data-message-author-role="assistant"]',
             '[data-message-author-role="assistant"] .markdown',
+            '[data-message-author-role="assistant"]',
+            'div[data-message-author-role="assistant"] > div > div',
             '.agent-turn .markdown',
-            '.text-base:has(.markdown)',
-            '[class*="agent"] .markdown',
-            '.prose'
+            '.prose',
+            'article[data-testid*="conversation"] div.markdown'
           ];
 
           for (const sel of selectors) {
@@ -188,20 +191,15 @@ export class ChatGPTAdapter extends BaseLLMAdapter {
               const lastMessage = messages[messages.length - 1];
               const content = lastMessage?.innerText || lastMessage?.textContent || '';
               if (content.trim()) {
-                return { success: true, content: content, selector: sel, count: messages.length };
+                return { success: true, content: content.trim(), selector: sel, count: messages.length };
               }
             }
           }
 
-          // Debug: log what's on the page
-          const allDivs = document.querySelectorAll('div[data-message-author-role]');
-          const roles = Array.from(allDivs).map(d => d.getAttribute('data-message-author-role'));
-
           return {
             success: false,
             content: '',
-            error: 'no messages found',
-            debug: { roles: roles, tried: selectors }
+            error: 'no messages found'
           };
         } catch (e) {
           return { success: false, content: '', error: e.message };
@@ -209,12 +207,12 @@ export class ChatGPTAdapter extends BaseLLMAdapter {
       })()
     `;
 
-    const result = await this.executeScript<{success: boolean; content: string; error?: string; selector?: string; debug?: any}>(
+    const result = await this.executeScript<{success: boolean; content: string; error?: string; selector?: string}>(
       script,
       { success: false, content: '', error: 'script failed' }
     );
 
-    console.log(`[chatgpt] extractResponse result:`, JSON.stringify(result).substring(0, 500));
+    console.log(`[chatgpt] extractResponse result:`, JSON.stringify(result).substring(0, 300));
     return result.content;
   }
 }
