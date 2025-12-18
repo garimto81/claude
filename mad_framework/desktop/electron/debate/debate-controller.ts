@@ -44,6 +44,10 @@ const PRESET_ELEMENTS: Record<string, string[]> = {
   decision: ['장점', '단점', '위험', '기회'],
 };
 
+// Circuit Breaker 상수
+const MAX_ITERATIONS = 100;
+const MAX_CONSECUTIVE_EMPTY_RESPONSES = 3;
+
 export class DebateController {
   private debateId: string | null = null;
   private cancelled: boolean = false;
@@ -88,9 +92,10 @@ export class DebateController {
 
     let iteration = 0;
     let participantIndex = 0;
+    let consecutiveEmptyResponses = 0;
 
-    // INFINITE LOOP until all elements complete
-    while (!this.cancelled) {
+    // Loop with Circuit Breaker protection
+    while (!this.cancelled && iteration < MAX_ITERATIONS) {
       iteration++;
       const provider = config.participants[participantIndex % config.participants.length];
 
@@ -104,8 +109,26 @@ export class DebateController {
         phase: 'input',
       } as DebateProgress);
 
-      // Execute iteration
-      await this.executeIteration(iteration, provider, config);
+      // Execute iteration and track empty responses
+      const hasValidResponse = await this.executeIteration(iteration, provider, config);
+
+      if (!hasValidResponse) {
+        consecutiveEmptyResponses++;
+        console.warn(`[Debate] Empty response ${consecutiveEmptyResponses}/${MAX_CONSECUTIVE_EMPTY_RESPONSES}`);
+
+        if (consecutiveEmptyResponses >= MAX_CONSECUTIVE_EMPTY_RESPONSES) {
+          console.error(`[Debate] Too many consecutive empty responses, stopping debate`);
+          this.eventEmitter.emit('debate:error', {
+            sessionId: this.debateId,
+            iteration,
+            provider,
+            error: `Stopped after ${MAX_CONSECUTIVE_EMPTY_RESPONSES} consecutive empty responses`,
+          });
+          break;
+        }
+      } else {
+        consecutiveEmptyResponses = 0;
+      }
 
       // Check for incomplete elements
       const incompleteElements = await this.repository.getIncompleteElements(this.debateId);
@@ -127,8 +150,18 @@ export class DebateController {
       participantIndex++;
     }
 
-    // Debate complete
-    await this.repository.updateStatus(this.debateId, this.cancelled ? 'cancelled' : 'completed');
+    // Determine final status
+    let finalStatus = 'completed';
+    if (this.cancelled) {
+      finalStatus = 'cancelled';
+    } else if (iteration >= MAX_ITERATIONS) {
+      finalStatus = 'max_iterations';
+      console.error(`[Debate] Reached maximum iterations (${MAX_ITERATIONS})`);
+    } else if (consecutiveEmptyResponses >= MAX_CONSECUTIVE_EMPTY_RESPONSES) {
+      finalStatus = 'error';
+    }
+
+    await this.repository.updateStatus(this.debateId, finalStatus);
 
     this.eventEmitter.emit('debate:complete', {
       sessionId: this.debateId,
@@ -145,11 +178,15 @@ export class DebateController {
     return PRESET_ELEMENTS[preset] || ['일반'];
   }
 
+  /**
+   * Execute a single iteration
+   * @returns true if valid response received, false if empty/error
+   */
   private async executeIteration(
     iteration: number,
     provider: LLMProvider,
     config: DebateConfig
-  ): Promise<void> {
+  ): Promise<boolean> {
     console.log(`[Debate] executeIteration ${iteration} with ${provider}`);
     const adapter = this.browserManager.getAdapter(provider);
     console.log(`[Debate] Got adapter for ${provider}`);
@@ -186,8 +223,34 @@ export class DebateController {
       const response = await adapter.extractResponse();
       console.log(`[Debate] Response extracted (${response.length} chars)`);
 
+      // Check for empty response (#13)
+      if (!response || response.trim().length === 0) {
+        console.error(`[Debate] Empty response from ${provider} at iteration ${iteration}`);
+        this.eventEmitter.emit('debate:error', {
+          sessionId: this.debateId,
+          iteration,
+          provider,
+          error: 'Empty response received',
+        });
+        return false;
+      }
+
       // Parse and update element scores
       const scores = this.parseElementScores(response);
+
+      // Check if parsing succeeded
+      if (scores.length === 0) {
+        console.warn(`[Debate] No scores parsed from response at iteration ${iteration}`);
+        // Still emit response event but return false for empty scores
+        this.eventEmitter.emit('debate:response', {
+          sessionId: this.debateId,
+          iteration,
+          provider,
+          content: response,
+          timestamp: new Date().toISOString(),
+        });
+        return false;
+      }
 
       for (const score of scores) {
         const element = incompleteElements.find((e) => e.name === score.elementName);
@@ -231,6 +294,8 @@ export class DebateController {
         content: response,
         timestamp: new Date().toISOString(),
       });
+
+      return true;
     } catch (error) {
       console.error(`[Debate] Error in iteration ${iteration}:`, error);
       this.eventEmitter.emit('debate:error', {
@@ -239,6 +304,7 @@ export class DebateController {
         provider,
         error: String(error),
       });
+      return false;
     }
   }
 
