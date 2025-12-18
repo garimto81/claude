@@ -171,16 +171,26 @@ describe('DebateController', () => {
         versionHistory: [],
       };
 
+      // Each iteration calls getIncompleteElements 3 times:
+      // 1. prompt building, 2. check after execute, 3. check after cycle
       // Simulate 3 iterations before completion
       mockRepository.getIncompleteElements
-        .mockResolvedValueOnce([element])
-        .mockResolvedValueOnce([{ ...element, currentScore: 88 }])
-        .mockResolvedValueOnce([{ ...element, currentScore: 92 }])
-        .mockResolvedValueOnce([]); // All complete
+        // Iteration 1
+        .mockResolvedValueOnce([element])                          // prompt building
+        .mockResolvedValueOnce([{ ...element, currentScore: 86 }]) // check after execute
+        .mockResolvedValueOnce([{ ...element, currentScore: 86 }]) // check after cycle
+        // Iteration 2
+        .mockResolvedValueOnce([{ ...element, currentScore: 86 }]) // prompt building
+        .mockResolvedValueOnce([{ ...element, currentScore: 88 }]) // check after execute
+        .mockResolvedValueOnce([{ ...element, currentScore: 88 }]) // check after cycle
+        // Iteration 3
+        .mockResolvedValueOnce([{ ...element, currentScore: 88 }]) // prompt building
+        .mockResolvedValueOnce([{ ...element, currentScore: 92 }]) // check after execute
+        .mockResolvedValueOnce([]);                                // check after cycle (all complete)
 
       await controller.start(defaultConfig);
 
-      // Should have iterated multiple times
+      // Should have iterated 3 times
       expect(mockRepository.updateIteration.mock.calls.length).toBeGreaterThanOrEqual(3);
     });
 
@@ -194,9 +204,14 @@ describe('DebateController', () => {
         versionHistory: [],
       };
 
+      // getIncompleteElements is called twice per iteration:
+      // 1. Inside executeIteration for prompt building
+      // 2. After executeIteration to check completion
+      // Plus once more after cycle detection
       mockRepository.getIncompleteElements
-        .mockResolvedValueOnce([element])
-        .mockResolvedValueOnce([]);
+        .mockResolvedValueOnce([element])  // iteration 1 - prompt building
+        .mockResolvedValueOnce([element])  // iteration 1 - check after execute
+        .mockResolvedValueOnce([]);        // iteration 1 - check after cycle detection
 
       // Mock response with high score
       mockBrowserManager.getAdapter().extractResponse.mockResolvedValue(
@@ -223,13 +238,25 @@ describe('DebateController', () => {
         versionHistory: [],
       };
 
+      // Each iteration calls getIncompleteElements 3 times
       // 4 iterations before complete
       mockRepository.getIncompleteElements
-        .mockResolvedValueOnce([element])
-        .mockResolvedValueOnce([element])
-        .mockResolvedValueOnce([element])
-        .mockResolvedValueOnce([element])
-        .mockResolvedValueOnce([]);
+        // Iteration 1 (chatgpt)
+        .mockResolvedValueOnce([element])  // prompt building
+        .mockResolvedValueOnce([element])  // check after execute
+        .mockResolvedValueOnce([element])  // check after cycle
+        // Iteration 2 (claude)
+        .mockResolvedValueOnce([element])  // prompt building
+        .mockResolvedValueOnce([element])  // check after execute
+        .mockResolvedValueOnce([element])  // check after cycle
+        // Iteration 3 (chatgpt)
+        .mockResolvedValueOnce([element])  // prompt building
+        .mockResolvedValueOnce([element])  // check after execute
+        .mockResolvedValueOnce([element])  // check after cycle
+        // Iteration 4 (claude)
+        .mockResolvedValueOnce([element])  // prompt building
+        .mockResolvedValueOnce([element])  // check after execute
+        .mockResolvedValueOnce([]);        // check after cycle (complete)
 
       await controller.start(defaultConfig);
 
@@ -238,6 +265,7 @@ describe('DebateController', () => {
       );
 
       // Should rotate: chatgpt, claude, chatgpt, claude
+      expect(progressCalls.length).toBeGreaterThanOrEqual(4);
       expect(progressCalls[0][1].currentProvider).toBe('chatgpt');
       expect(progressCalls[1][1].currentProvider).toBe('claude');
       expect(progressCalls[2][1].currentProvider).toBe('chatgpt');
@@ -254,9 +282,18 @@ describe('DebateController', () => {
         versionHistory: [],
       };
 
+      // getIncompleteElements is called twice per iteration + once after cycle detection
       mockRepository.getIncompleteElements
-        .mockResolvedValueOnce([element])
-        .mockResolvedValueOnce([]);
+        .mockResolvedValueOnce([element])  // iteration 1 - prompt building
+        .mockResolvedValueOnce([element])  // iteration 1 - check after execute
+        .mockResolvedValueOnce([]);        // iteration 1 - check after cycle detection
+
+      // Mock response with score
+      mockBrowserManager.getAdapter().extractResponse.mockResolvedValue(
+        JSON.stringify({
+          elements: [{ name: '보안', score: 75, critique: 'Needs improvement' }],
+        })
+      );
 
       await controller.start(defaultConfig);
 
@@ -285,9 +322,11 @@ describe('DebateController', () => {
         ],
       };
 
+      // getIncompleteElements: prompt building, check after execute, check after cycle
       mockRepository.getIncompleteElements
-        .mockResolvedValueOnce([element])
-        .mockResolvedValueOnce([]);
+        .mockResolvedValueOnce([element])  // iteration 1 - prompt building
+        .mockResolvedValueOnce([element])  // iteration 1 - check after execute (still incomplete)
+        .mockResolvedValueOnce([]);        // iteration 1 - check after cycle detection (now complete)
 
       mockRepository.getLast3Versions.mockResolvedValue(element.versionHistory);
 
@@ -313,9 +352,11 @@ describe('DebateController', () => {
         ],
       };
 
+      // getIncompleteElements: prompt building, check after execute, check after cycle
       mockRepository.getIncompleteElements
-        .mockResolvedValueOnce([element])
-        .mockResolvedValueOnce([]);
+        .mockResolvedValueOnce([element])  // iteration 1 - prompt building
+        .mockResolvedValueOnce([element])  // iteration 1 - check after execute (still incomplete)
+        .mockResolvedValueOnce([]);        // iteration 1 - check after cycle detection (now complete)
 
       mockRepository.getLast3Versions.mockResolvedValue(element.versionHistory);
       mockCycleDetector.detectCycle.mockResolvedValue(true);
@@ -342,9 +383,11 @@ describe('DebateController', () => {
         ],
       };
 
+      // getIncompleteElements: prompt building, check after execute, check after cycle
       mockRepository.getIncompleteElements
-        .mockResolvedValueOnce([element])
-        .mockResolvedValueOnce([]);
+        .mockResolvedValueOnce([element])  // iteration 1 - prompt building
+        .mockResolvedValueOnce([element])  // iteration 1 - check after execute (still incomplete)
+        .mockResolvedValueOnce([]);        // iteration 1 - check after cycle detection (now complete)
 
       mockRepository.getLast3Versions.mockResolvedValue(element.versionHistory);
       mockCycleDetector.detectCycle.mockResolvedValue(true);
@@ -371,18 +414,21 @@ describe('DebateController', () => {
         versionHistory: [],
       };
 
-      // Keep returning incomplete to simulate infinite loop
-      mockRepository.getIncompleteElements.mockResolvedValue([element]);
+      // Return incomplete for first 2 calls, then call cancel, then return incomplete again
+      let callCount = 0;
+      mockRepository.getIncompleteElements.mockImplementation(async () => {
+        callCount++;
+        // After 2 iterations, cancel
+        if (callCount === 2) {
+          controller.cancel();
+        }
+        // Return element to keep loop going until cancel takes effect
+        return [element];
+      });
 
-      // Start debate and cancel after short delay
-      const debatePromise = controller.start(defaultConfig);
+      await controller.start(defaultConfig);
 
-      setTimeout(() => {
-        controller.cancel();
-      }, 100);
-
-      await debatePromise;
-
+      // Should have been cancelled
       expect(mockRepository.updateStatus).toHaveBeenCalledWith(
         expect.any(String),
         'cancelled'
