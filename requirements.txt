@@ -3,5 +3,9 @@
 # Claude API
 anthropic>=0.40.0
 
+# LangGraph for parallel workflow
+langgraph>=0.2.0
+langchain-core>=0.3.0
+
 # Optional: For advanced git operations
 # GitPython>=3.1.40
