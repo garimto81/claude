@@ -15,9 +15,19 @@ vi.mock('../lib/ipc', () => ({
 Object.defineProperty(window, 'electronAPI', {
   value: {
     send: vi.fn(),
-    on: vi.fn(),
+    on: vi.fn(() => () => {}),
     off: vi.fn(),
     invoke: vi.fn(),
+    debate: {
+      start: vi.fn(),
+      cancel: vi.fn(),
+      getStatus: vi.fn(),
+    },
+    login: {
+      checkStatus: vi.fn(),
+      openLoginWindow: vi.fn(),
+      closeLoginWindow: vi.fn(),
+    },
   },
   writable: true,
 });

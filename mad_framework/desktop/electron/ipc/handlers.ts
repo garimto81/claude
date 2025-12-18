@@ -59,26 +59,56 @@ export function registerIpcHandlers(mainWindow: BrowserWindow) {
     eventEmitter
   );
 
+  // Auto-create views and check login status on startup
+  const providers: LLMProvider[] = ['chatgpt', 'claude', 'gemini'];
+  console.log('[IPC] Auto-creating browser views on startup...');
+
+  for (const provider of providers) {
+    browserManager.createView(provider);
+  }
+
+  // Wait for pages to load, then check login status
+  setTimeout(async () => {
+    console.log('[IPC] Auto-checking login status...');
+    const status = await browserManager!.checkLoginStatus();
+    console.log('[IPC] Auto-check result:', status);
+    eventEmitter.emit('login:status-changed', status);
+  }, 5000); // Wait 5 seconds for pages to load
+
   // === Debate Handlers ===
 
   ipcMain.handle('debate:start', async (_event, config: DebateConfig) => {
+    console.log('[IPC] debate:start called', config);
+
     if (!debateController) {
       throw new Error('Debate controller not initialized');
     }
 
     // Create browser views for participants
+    console.log('[IPC] Creating browser views...');
     const providers: LLMProvider[] = [...config.participants, config.judgeProvider];
     for (const provider of new Set(providers)) {
       if (!browserManager?.getView(provider)) {
+        console.log(`[IPC] Creating view for ${provider}`);
         browserManager?.createView(provider);
+      } else {
+        console.log(`[IPC] View already exists for ${provider}`);
       }
     }
 
+    // Hide all browser views - debate runs in background
+    // UI will show monitoring panel instead
+    console.log('[IPC] Hiding browser views - debate runs in background');
+    browserManager?.hideAllViews();
+
     // Start debate (runs in background)
+    console.log('[IPC] Starting debate controller...');
     debateController.start(config).catch((error) => {
+      console.error('[Debate Error]', error);
       eventEmitter.emit('debate:error', { error: String(error) });
     });
 
+    console.log('[IPC] debate:start returning success');
     return { success: true };
   });
 
@@ -120,6 +150,15 @@ export function registerIpcHandlers(mainWindow: BrowserWindow) {
       height: bounds.height - 50,
     });
 
+    return { success: true };
+  });
+
+  ipcMain.handle('login:close-window', async () => {
+    if (!browserManager) {
+      throw new Error('Browser manager not initialized');
+    }
+
+    browserManager.hideAllViews();
     return { success: true };
   });
 }

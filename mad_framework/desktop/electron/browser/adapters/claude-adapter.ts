@@ -30,24 +30,40 @@ export class ClaudeAdapter extends BaseLLMAdapter {
   }
 
   async isLoggedIn(): Promise<boolean> {
-    const script = `!!document.querySelector('${this.selectors.loginCheck}')`;
-    return this.webContents.executeJavaScript(script);
+    // Check multiple possible login indicators
+    const script = `
+      !!(
+        document.querySelector('[data-testid="user-menu"]') ||
+        document.querySelector('button[aria-label*="account"]') ||
+        document.querySelector('button[aria-label*="Account"]') ||
+        document.querySelector('[data-testid="menu-trigger"]') ||
+        document.querySelector('[contenteditable="true"]') ||
+        document.querySelector('fieldset[dir="auto"]')
+      )
+    `;
+    return this.executeScript<boolean>(script, false);
   }
 
   async inputPrompt(prompt: string): Promise<void> {
     const escapedPrompt = JSON.stringify(prompt);
     // Claude uses contenteditable div
     const script = `
-      const editor = document.querySelector('${this.selectors.inputTextarea}');
-      editor.innerHTML = '';
-      editor.innerText = ${escapedPrompt};
-      editor.dispatchEvent(new InputEvent('input', { bubbles: true }));
+      (() => {
+        const editor = document.querySelector('${this.selectors.inputTextarea}');
+        if (!editor) return false;
+        editor.innerHTML = '';
+        editor.innerText = ${escapedPrompt};
+        editor.dispatchEvent(new InputEvent('input', { bubbles: true }));
+        return true;
+      })()
     `;
-    await this.webContents.executeJavaScript(script);
+    await this.executeScript<boolean>(script, false);
   }
 
   async isWriting(): Promise<boolean> {
     const script = `!!document.querySelector('${this.selectors.typingIndicator}')`;
-    return this.webContents.executeJavaScript(script);
+    return this.executeScript<boolean>(script, false);
   }
+
+  // extractResponse, getTokenCount use base class methods with proper error handling
 }

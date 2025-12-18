@@ -29,6 +29,7 @@ const electronAPI = {
     checkStatus: () => ipcRenderer.invoke('login:check-status'),
     openLoginWindow: (provider: LLMProvider) =>
       ipcRenderer.invoke('login:open-window', provider),
+    closeLoginWindow: () => ipcRenderer.invoke('login:close-window'),
   },
 
   // Event listeners (Main → Renderer)

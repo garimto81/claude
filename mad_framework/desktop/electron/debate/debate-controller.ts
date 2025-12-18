@@ -56,17 +56,23 @@ export class DebateController {
   ) {}
 
   async start(config: DebateConfig): Promise<void> {
+    console.log('[Debate] Starting debate...');
     this.cancelled = false;
 
     // Check login status
+    console.log('[Debate] Checking login status...');
     const loginStatus = await this.browserManager.checkLoginStatus();
+    console.log('[Debate] Login status:', loginStatus);
+
     for (const participant of config.participants) {
       if (!loginStatus[participant]?.isLoggedIn) {
         throw new Error(`Not logged in: ${participant}`);
       }
     }
+    console.log('[Debate] All participants logged in');
 
     // Create debate session
+    console.log('[Debate] Creating debate session...');
     this.debateId = await this.repository.create({
       topic: config.topic,
       context: config.context,
@@ -144,24 +150,41 @@ export class DebateController {
     provider: LLMProvider,
     config: DebateConfig
   ): Promise<void> {
+    console.log(`[Debate] executeIteration ${iteration} with ${provider}`);
     const adapter = this.browserManager.getAdapter(provider);
+    console.log(`[Debate] Got adapter for ${provider}`);
 
     try {
       // Wait for input ready
+      console.log(`[Debate] Waiting for input ready...`);
       await adapter.waitForInputReady();
+      console.log(`[Debate] Input ready`);
 
       // Build and input prompt
+      console.log(`[Debate] Getting incomplete elements...`);
       const incompleteElements = await this.repository.getIncompleteElements(this.debateId!);
-      const prompt = this.buildPrompt(config, iteration, incompleteElements);
+      console.log(`[Debate] Got ${incompleteElements.length} incomplete elements`);
 
+      const prompt = this.buildPrompt(config, iteration, incompleteElements);
+      console.log(`[Debate] Built prompt (${prompt.length} chars)`);
+
+      console.log(`[Debate] Inputting prompt...`);
       await adapter.inputPrompt(prompt);
+      console.log(`[Debate] Prompt input done`);
+
+      console.log(`[Debate] Sending message...`);
       await adapter.sendMessage();
+      console.log(`[Debate] Message sent`);
 
       // Wait for response
+      console.log(`[Debate] Calling waitForResponse...`);
       await adapter.waitForResponse(120000);
+      console.log(`[Debate] waitForResponse completed`);
 
       // Extract response
+      console.log(`[Debate] Extracting response...`);
       const response = await adapter.extractResponse();
+      console.log(`[Debate] Response extracted (${response.length} chars)`);
 
       // Parse and update element scores
       const scores = this.parseElementScores(response);
@@ -209,6 +232,7 @@ export class DebateController {
         timestamp: new Date().toISOString(),
       });
     } catch (error) {
+      console.error(`[Debate] Error in iteration ${iteration}:`, error);
       this.eventEmitter.emit('debate:error', {
         sessionId: this.debateId,
         iteration,
