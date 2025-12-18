@@ -5,7 +5,7 @@ TextGrad 기반 프롬프트 최적화
 텍스트 그래디언트를 사용하여 에이전트 프롬프트를 자동 개선합니다.
 """
 
-from dataclasses import dataclass, field
+from dataclasses import dataclass
 from enum import Enum
 from pathlib import Path
 
