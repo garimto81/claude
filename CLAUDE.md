@@ -2,7 +2,7 @@
 
 This file provides guidance to Claude Code (claude.ai/code) when working with code in this repository.
 
-**Version**: 11.2.0 | **Context**: Windows, PowerShell, Root: `D:\AI\claude01`
+**Version**: 11.3.0 | **Context**: Windows, PowerShell, Root: `D:\AI\claude01`
 
 **GitHub**: `garimto81/claude`
 
@@ -27,6 +27,7 @@ This file provides guidance to Claude Code (claude.ai/code) when working with co
 | 테스트 먼저 (TDD) | 경고 | Red → Green → Refactor |
 | 상대 경로 금지 | 경고 | 절대 경로 사용 |
 | **전체 프로세스 종료 금지** | **차단** | 해당 프로젝트 node만 종료 |
+| **100줄 이상 수정 시 자동 커밋** | 자동 | `/commit` 실행 |
 
 ⚠️ `taskkill /F /IM node.exe` 등 전체 종료 명령 **절대 금지**. 다른 프로젝트 영향.
 
