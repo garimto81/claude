@@ -109,34 +109,54 @@ class SystemToolsServer:
         return {"success": True, "info": info}
 
     def handle_request(self, request: dict) -> dict:
-        """MCP 요청 처리"""
+        """MCP JSON-RPC 요청 처리"""
         method = request.get("method")
         params = request.get("params", {})
+        req_id = request.get("id")
 
-        if method == "tools/list":
-            return {"tools": self.get_tool_definitions()}
+        result = None
+        error = None
+
+        if method == "initialize":
+            result = {
+                "protocolVersion": "2024-11-05",
+                "capabilities": {"tools": {}},
+                "serverInfo": {"name": "system-tools", "version": "1.0.0"}
+            }
+        elif method == "notifications/initialized":
+            return None  # No response for notifications
+        elif method == "tools/list":
+            result = {"tools": self.get_tool_definitions()}
         elif method == "tools/call":
             tool_name = params.get("name")
             arguments = params.get("arguments", {})
             if tool_name in self.tools:
-                result = self.tools[tool_name](**arguments)
-                return {"content": [{"type": "text", "text": json.dumps(result)}]}
+                tool_result = self.tools[tool_name](**arguments)
+                result = {"content": [{"type": "text", "text": json.dumps(tool_result)}]}
             else:
-                return {"error": f"Unknown tool: {tool_name}"}
+                error = {"code": -32601, "message": f"Unknown tool: {tool_name}"}
         else:
-            return {"error": f"Unknown method: {method}"}
+            error = {"code": -32601, "message": f"Method not found: {method}"}
+
+        if error:
+            return {"jsonrpc": "2.0", "id": req_id, "error": error}
+        return {"jsonrpc": "2.0", "id": req_id, "result": result}
 
     def run(self):
-        """서버 실행 (stdio)"""
+        """서버 실행 (stdio JSON-RPC)"""
         for line in sys.stdin:
             try:
-                request = json.loads(line)
+                request = json.loads(line.strip())
                 response = self.handle_request(request)
-                print(json.dumps(response))
-                sys.stdout.flush()
+                if response:  # Skip None responses (notifications)
+                    print(json.dumps(response), flush=True)
             except json.JSONDecodeError:
-                print(json.dumps({"error": "Invalid JSON"}))
-                sys.stdout.flush()
+                error_response = {
+                    "jsonrpc": "2.0",
+                    "id": None,
+                    "error": {"code": -32700, "message": "Parse error"}
+                }
+                print(json.dumps(error_response), flush=True)
 
 
 if __name__ == "__main__":
