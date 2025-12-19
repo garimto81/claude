@@ -65,6 +65,16 @@ export interface ElementVersion {
   provider: LLMProvider;
 }
 
+// Cycle Detection Options
+export interface CycleDetectionOptions {
+  /** 유사도 임계값 (0-1). 기본값: 0.85 */
+  similarityThreshold?: number;
+  /** 순환 판정에 필요한 최소 버전 수. 기본값: 3 */
+  minVersions?: number;
+  /** Judge 모델 사용 여부. 기본값: false */
+  useJudgeModel?: boolean;
+}
+
 // Debate Config
 export interface DebateConfig {
   topic: string;
@@ -119,4 +129,14 @@ export interface DebateResult {
   finalElements: DebateElement[];
   totalIterations: number;
   completedAt: string;
+}
+
+// Streaming Chunk (CL-002)
+export interface StreamChunk {
+  sessionId: string;
+  iteration: number;
+  provider: LLMProvider;
+  chunk: string;
+  timestamp: string;
+  isComplete: boolean;
 }

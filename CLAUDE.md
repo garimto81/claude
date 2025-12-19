@@ -45,15 +45,6 @@ pytest tests/test_specific.py -v         # 개별 테스트 (권장)
 # pytest tests/ -v --cov=src             # 전체 (background 필수)
 ```
 
-### VTC_Logger (React + Vite)
-
-```powershell
-cd D:\AI\claude01\VTC_Logger\vtc-app
-npm install && npm run dev               # 개발 서버
-npm run build                            # 빌드
-npm run lint                             # ESLint
-```
-
 ### E2E (Playwright 필수)
 
 ```powershell
@@ -104,10 +95,14 @@ npx playwright test tests/e2e/auth.spec.ts  # 개별 테스트
 
 전체: `docs/AGENTS_REFERENCE.md`
 
-### 스킬 (15개)
+### 스킬 (16개)
 
 - 자동 트리거: 4개
-- 수동 트리거: 11개
+- 수동 트리거: 12개
+
+### 체크리스트 관리
+
+`/checklist` 스킬로 프로젝트별 YAML 체크리스트 관리. 서브 에이전트 작업 추적.
 
 ---
 

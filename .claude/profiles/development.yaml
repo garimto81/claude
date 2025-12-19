@@ -1,0 +1,40 @@
+# Development Profile - 일반 개발 작업용
+# 예상 토큰: 8k (표준)
+
+name: development
+description: 일반적인 개발 작업을 위한 표준 도구 세트
+
+tools:
+  core:
+    - Read           # 파일 읽기
+    - Write          # 파일 쓰기
+    - Edit           # 파일 편집
+    - Bash           # 명령어 실행
+
+  search:
+    - Glob           # 파일 패턴 검색
+    - Grep           # 내용 검색
+
+  workflow:
+    - TodoWrite      # 작업 추적
+    - AskUserQuestion # 질문
+    - Skill          # 스킬 실행
+
+  agents:
+    - Task           # 에이전트 실행
+    - TaskOutput     # 백그라운드 작업
+
+excluded:
+  - WebSearch        # 웹 검색 (필요 시 활성화)
+  - WebFetch         # URL (필요 시 활성화)
+  - NotebookEdit     # Jupyter (필요 시 활성화)
+  - EnterPlanMode    # 계획 모드 (필요 시 활성화)
+  - ExitPlanMode     # 계획 모드 (필요 시 활성화)
+  - KillShell        # 쉘 종료 (거의 불필요)
+
+estimated_tokens: 8000
+use_cases:
+  - 기능 구현
+  - 버그 수정
+  - 리팩토링
+  - 테스트 작성

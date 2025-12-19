@@ -41,6 +41,7 @@ const electronAPI = {
       'debate:progress',
       'debate:response',
       'debate:element-score',
+      'debate:stream-chunk',
       'debate:cycle-detected',
       'debate:complete',
       'debate:error',
