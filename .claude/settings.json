@@ -8,9 +8,7 @@
   "hooks": {
     "PreToolUse": [
       {
-        "matcher": {
-          "tools": ["Edit", "Write"]
-        },
+        "matcher": "Edit|Write",
         "hooks": [
           {
             "type": "command",
@@ -19,9 +17,7 @@
         ]
       },
       {
-        "matcher": {
-          "tools": ["Bash", "Write", "Edit"]
-        },
+        "matcher": "Bash|Write|Edit",
         "hooks": [
           {
             "type": "command",
@@ -32,7 +28,7 @@
     ],
     "SessionStart": [
       {
-        "matcher": {},
+        "matcher": "",
         "hooks": [
           {
             "type": "command",
@@ -43,7 +39,7 @@
     ],
     "SessionEnd": [
       {
-        "matcher": {},
+        "matcher": "",
         "hooks": [
           {
             "type": "command",
