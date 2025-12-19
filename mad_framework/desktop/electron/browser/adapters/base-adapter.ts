@@ -258,6 +258,70 @@ export class BaseLLMAdapter {
     return this.success();
   }
 
+  /**
+   * Stream response in real-time (CL-002)
+   * @param onChunk - Callback function called for each chunk
+   * @param timeout - Maximum wait time in milliseconds
+   */
+  async streamResponse(
+    onChunk: (chunk: string) => void,
+    timeout: number = 120000
+  ): Promise<AdapterResult<string>> {
+    console.log(`[${this.provider}] streamResponse started, timeout: ${timeout}ms`);
+
+    // Wait for typing to start
+    const typingStarted = await this.waitForCondition(
+      () => this.isWriting(),
+      { timeout: 10000, interval: 300, description: 'typing to start' }
+    );
+
+    if (!typingStarted) {
+      console.warn(`[${this.provider}] Typing never started for streaming`);
+      return this.error('RESPONSE_TIMEOUT', 'Streaming failed: typing never started');
+    }
+
+    const startTime = Date.now();
+    let previousContent = '';
+    let checkInterval = 200; // Check every 200ms
+
+    // Poll for content changes
+    while (await this.isWriting()) {
+      if (Date.now() - startTime > timeout) {
+        return this.error('RESPONSE_TIMEOUT', `Streaming timeout after ${timeout}ms`);
+      }
+
+      const currentContent = await this.extractStreamingContent();
+
+      if (currentContent.length > previousContent.length) {
+        const newChunk = currentContent.slice(previousContent.length);
+        onChunk(newChunk);
+        previousContent = currentContent;
+      }
+
+      await this.sleep(checkInterval);
+    }
+
+    // Final check after typing finished
+    await this.sleep(500);
+    const finalContent = await this.extractStreamingContent();
+
+    if (finalContent.length > previousContent.length) {
+      const lastChunk = finalContent.slice(previousContent.length);
+      onChunk(lastChunk);
+    }
+
+    console.log(`[${this.provider}] Streaming complete, total length: ${finalContent.length}`);
+    return this.success(finalContent);
+  }
+
+  /**
+   * Extract current streaming content (to be overridden by subclasses)
+   */
+  protected async extractStreamingContent(): Promise<string> {
+    const result = await this.getResponse();
+    return result.data || '';
+  }
+
   async getResponse(): Promise<AdapterResult<string>> {
     // Issue #18: Find response container with fallback
     const selector = await this.findElement(this.selectorSets.responseContainer);

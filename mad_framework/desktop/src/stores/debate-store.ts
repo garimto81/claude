@@ -14,6 +14,7 @@ import type {
   DebateResult,
   ElementScoreUpdate,
   LLMProvider,
+  StreamChunk,
 } from '@shared/types';
 import { ipc } from '../lib/ipc';
 
@@ -26,6 +27,10 @@ interface DebateState {
   currentProgress: DebateProgress | null;
   elements: DebateElement[];
   responses: DebateResponse[];
+
+  // Streaming state (CL-002)
+  streamingContent: Map<string, string>; // key: `${iteration}-${provider}`
+  currentStreamKey: string | null;
 
   // Error state
   error: string | null;
@@ -40,6 +45,7 @@ interface DebateState {
   handleProgress: (progress: DebateProgress) => void;
   handleElementScore: (update: ElementScoreUpdate) => void;
   handleResponse: (response: DebateResponse) => void;
+  handleStreamChunk: (chunk: StreamChunk) => void;
   handleCycleDetected: (data: { elementId: string; elementName: string }) => void;
   handleComplete: (result: DebateResult) => void;
   handleError: (error: { error: string }) => void;
@@ -52,6 +58,8 @@ export const useDebateStore = create<DebateState>((set, get) => ({
   currentProgress: null,
   elements: [],
   responses: [],
+  streamingContent: new Map(),
+  currentStreamKey: null,
   error: null,
 
   // Actions
@@ -93,6 +101,8 @@ export const useDebateStore = create<DebateState>((set, get) => ({
       currentProgress: null,
       elements: [],
       responses: [],
+      streamingContent: new Map(),
+      currentStreamKey: null,
       error: null,
     });
   },
@@ -105,6 +115,7 @@ export const useDebateStore = create<DebateState>((set, get) => ({
     ipc.onDebateProgress(store.handleProgress);
     ipc.onElementScore(store.handleElementScore);
     ipc.onDebateResponse(store.handleResponse);
+    ipc.onStreamChunk(store.handleStreamChunk);
     ipc.onCycleDetected(store.handleCycleDetected);
     ipc.onDebateComplete(store.handleComplete);
     ipc.onDebateError(store.handleError);
@@ -151,6 +162,32 @@ export const useDebateStore = create<DebateState>((set, get) => ({
     set((state) => ({
       responses: [...state.responses, response],
     }));
+  },
+
+  handleStreamChunk: (chunk: StreamChunk) => {
+    const streamKey = `${chunk.iteration}-${chunk.provider}`;
+
+    set((state) => {
+      const newStreamingContent = new Map(state.streamingContent);
+
+      if (chunk.isComplete) {
+        // Streaming complete for this iteration/provider
+        newStreamingContent.delete(streamKey);
+        return {
+          streamingContent: newStreamingContent,
+          currentStreamKey: null,
+        };
+      }
+
+      // Append chunk to existing content
+      const existingContent = newStreamingContent.get(streamKey) || '';
+      newStreamingContent.set(streamKey, existingContent + chunk.chunk);
+
+      return {
+        streamingContent: newStreamingContent,
+        currentStreamKey: streamKey,
+      };
+    });
   },
 
   handleCycleDetected: (data: { elementId: string; elementName: string }) => {

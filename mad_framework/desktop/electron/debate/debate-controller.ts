@@ -213,15 +213,44 @@ export class DebateController {
       await adapter.sendMessage();
       console.log(`[Debate] Message sent`);
 
-      // Wait for response
-      console.log(`[Debate] Calling waitForResponse...`);
-      await adapter.waitForResponse(120000);
-      console.log(`[Debate] waitForResponse completed`);
+      // Stream response with real-time updates (CL-002)
+      console.log(`[Debate] Starting response streaming...`);
+      const streamResult = await adapter.streamResponse(
+        (chunk: string) => {
+          // Emit chunk event to renderer
+          this.eventEmitter.emit('debate:stream-chunk', {
+            sessionId: this.debateId,
+            iteration,
+            provider,
+            chunk,
+            timestamp: new Date().toISOString(),
+            isComplete: false,
+          });
+        },
+        120000
+      );
 
-      // Extract response
-      console.log(`[Debate] Extracting response...`);
-      const response = await adapter.extractResponse();
+      if (!streamResult.success) {
+        console.error(`[Debate] Streaming failed:`, streamResult.error);
+        // Fall back to traditional method
+        console.log(`[Debate] Falling back to waitForResponse...`);
+        await adapter.waitForResponse(120000);
+      }
+
+      // Extract final response
+      console.log(`[Debate] Extracting final response...`);
+      const response = streamResult.success ? (streamResult.data || '') : await adapter.extractResponse();
       console.log(`[Debate] Response extracted (${response.length} chars)`);
+
+      // Emit completion chunk
+      this.eventEmitter.emit('debate:stream-chunk', {
+        sessionId: this.debateId,
+        iteration,
+        provider,
+        chunk: '',
+        timestamp: new Date().toISOString(),
+        isComplete: true,
+      });
 
       // Check for empty response (#13)
       if (!response || response.trim().length === 0) {

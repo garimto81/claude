@@ -6,11 +6,29 @@
     "padding": 0
   },
   "hooks": {
+    "PostToolUse": [
+      {
+        "matcher": "Task",
+        "hooks": [
+          {
+            "type": "command",
+            "command": "python .claude/hooks/checklist_updater.py"
+          }
+        ]
+      }
+    ],
     "PreToolUse": [
       {
-        "matcher": {
-          "tools": ["Edit", "Write"]
-        },
+        "matcher": "Task",
+        "hooks": [
+          {
+            "type": "command",
+            "command": "python .claude/hooks/checklist_start.py"
+          }
+        ]
+      },
+      {
+        "matcher": "Edit|Write",
         "hooks": [
           {
             "type": "command",
@@ -19,9 +37,7 @@
         ]
       },
       {
-        "matcher": {
-          "tools": ["Bash", "Write", "Edit"]
-        },
+        "matcher": "Bash|Write|Edit",
         "hooks": [
           {
             "type": "command",
@@ -32,7 +48,6 @@
     ],
     "SessionStart": [
       {
-        "matcher": {},
         "hooks": [
           {
             "type": "command",
@@ -43,7 +58,6 @@
     ],
     "SessionEnd": [
       {
-        "matcher": {},
         "hooks": [
           {
             "type": "command",

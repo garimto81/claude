@@ -325,4 +325,42 @@ export class ChatGPTAdapter extends BaseLLMAdapter {
     `;
     return this.executeScript<boolean>(script, false);
   }
+
+  /**
+   * Extract streaming content for ChatGPT (CL-002)
+   * Optimized for real-time extraction during response generation
+   */
+  protected async extractStreamingContent(): Promise<string> {
+    const script = `
+      (() => {
+        try {
+          const selectors = [
+            '[data-message-author-role="assistant"] .markdown',
+            '[data-message-author-role="assistant"]',
+            'div[data-message-author-role="assistant"] > div > div',
+            '.agent-turn .markdown',
+            '.prose',
+            'article[data-testid*="conversation"] div.markdown'
+          ];
+
+          for (const sel of selectors) {
+            const messages = document.querySelectorAll(sel);
+            if (messages.length > 0) {
+              const lastMessage = messages[messages.length - 1];
+              const content = lastMessage?.innerText || lastMessage?.textContent || '';
+              if (content.trim()) {
+                return content.trim();
+              }
+            }
+          }
+
+          return '';
+        } catch (e) {
+          return '';
+        }
+      })()
+    `;
+
+    return this.executeScript<string>(script, '');
+  }
 }

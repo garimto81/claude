@@ -124,3 +124,37 @@ Python tests use fixtures in `tests/conftest.py`:
 - `sample_code`: Code for review tests
 
 Desktop tests use `@testing-library/react` and Vitest globals.
+
+## Checklist 기반 작업 관리
+
+### 워크플로우
+
+모든 작업은 `mad_framework_checklist.yaml`을 통해 관리됩니다.
+
+```
+사용자 요청 → checklist.yaml 확인 → 서브 에이전트 할당 → 작업 수행 → yaml 결과 기록 → Orchestrator 확인
+```
+
+### 서브 에이전트 역할
+
+| Agent | 역할 | 트리거 키워드 |
+|-------|------|--------------|
+| Explore | 코드베이스 분석 | 분석, 조사, 파악 |
+| Plan | 구현 전략 설계 | 설계, 계획, 전략 |
+| python-dev | Python 개발 | python, provider, agent |
+| typescript-dev | TypeScript/Electron 개발 | typescript, electron, react |
+| test-engineer | 테스트 작성 | test, 테스트, TDD |
+| code-reviewer | 코드 리뷰 | review, 리뷰, 검토 |
+| debugger | 버그 수정 | bug, error, 오류 |
+
+### 작업 완료 후 필수 사항
+
+1. `checklist.yaml`의 `completed` 섹션에 결과 기록
+2. `agent_logs`에 작업 로그 추가
+3. `metrics` 업데이트
+4. 관련 파일 목록 기록
+
+### 파일 위치
+
+- 체크리스트: `mad_framework_checklist.yaml`
+- 진행상황: `mad_framework.yaml`
