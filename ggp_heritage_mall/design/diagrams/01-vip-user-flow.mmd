@@ -1,0 +1,31 @@
+%%{init: {'theme': 'base', 'themeVariables': { 'primaryColor': '#D4AF37', 'primaryTextColor': '#000', 'primaryBorderColor': '#B8860B', 'lineColor': '#B8860B', 'secondaryColor': '#F5F5F5', 'tertiaryColor': '#EEEEEE', 'background': '#FFFFFF', 'mainBkg': '#FFFFFF', 'nodeBorder': '#B8860B', 'clusterBkg': '#F9F9F9'}}}%%
+
+flowchart TB
+    subgraph ROW1["1. Invitation"]
+        direction LR
+        A[("Email/SNS")] --> B["Click URL"] --> C["Token Auth"]
+    end
+
+    subgraph ROW2["2. Shopping"]
+        direction LR
+        D["Main"] --> E["Products"] --> F["Select"]
+    end
+
+    subgraph ROW3["3. Cart"]
+        direction LR
+        G{"Limit Check"} -->|"OK"| H["Add to Cart"]
+        G -->|"Over"| I["Alert"]
+    end
+
+    subgraph ROW4["4. Checkout"]
+        direction LR
+        J["Shipping"] --> K["Confirm"] --> L[("Complete")]
+    end
+
+    C --> D
+    F --> G
+    H --> J
+
+    style A fill:#D4AF37,color:#000,stroke:#B8860B
+    style L fill:#2ECC71,color:#000,stroke:#27AE60
+    style G fill:#FFF,stroke:#B8860B

@@ -1,0 +1,36 @@
+%%{init: {'theme': 'base', 'themeVariables': { 'primaryColor': '#D4AF37', 'primaryTextColor': '#000', 'primaryBorderColor': '#B8860B', 'lineColor': '#B8860B', 'secondaryColor': '#F5F5F5', 'tertiaryColor': '#EEEEEE', 'background': '#FFFFFF', 'mainBkg': '#FFFFFF', 'nodeBorder': '#B8860B', 'clusterBkg': '#F9F9F9'}}}%%
+
+flowchart TB
+    subgraph ADMIN["Admin Product Registration"]
+        direction TB
+        A1["Click Add Product"] --> A2["Enter Basic Info"]
+        A2 --> A3["Upload Images"]
+        A3 --> A4["Select Category"]
+        A4 --> A5["Set Inventory"]
+        A5 --> A6["Set VIP Tier"]
+        A6 --> A7{"Review"}
+        A7 -->|"Edit"| A2
+        A7 -->|"Confirm"| A8["Complete"]
+    end
+
+    subgraph STORAGE["Supabase Storage"]
+        direction TB
+        S1["Save Image"]
+        S2["Generate URL"]
+        S1 --> S2
+    end
+
+    subgraph DB["PostgreSQL"]
+        direction TB
+        D1["products table"]
+        D2["inventory table"]
+    end
+
+    A3 --> S1
+    S2 --> A4
+    A8 --> D1
+    A8 --> D2
+
+    style A1 fill:#3498DB,color:#fff,stroke:#2980B9
+    style A8 fill:#2ECC71,color:#000,stroke:#27AE60
+    style A7 fill:#FFF,stroke:#B8860B

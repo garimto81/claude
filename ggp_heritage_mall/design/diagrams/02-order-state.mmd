@@ -1,0 +1,18 @@
+%%{init: {'theme': 'base', 'themeVariables': { 'primaryColor': '#D4AF37', 'primaryTextColor': '#000', 'primaryBorderColor': '#B8860B', 'lineColor': '#B8860B', 'secondaryColor': '#F5F5F5', 'tertiaryColor': '#EEEEEE', 'background': '#FFFFFF', 'labelBackground': '#FFFFFF', 'labelTextColor': '#333'}}}%%
+
+stateDiagram-v2
+    direction TB
+
+    [*] --> Pending: Order Received
+    Pending --> Processing: Admin Confirms
+    Processing --> Shipped: Start Shipping
+    Shipped --> Delivered: Delivery Complete
+    Delivered --> [*]
+
+    Pending --> Cancelled: Cancel
+    Cancelled --> [*]
+
+    note right of Shipped
+        Carrier: DHL, FedEx
+        Tracking Number
+    end note

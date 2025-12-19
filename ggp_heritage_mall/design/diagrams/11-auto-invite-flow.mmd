@@ -1,0 +1,27 @@
+%%{init: {'theme': 'base', 'themeVariables': { 'primaryColor': '#D4AF37', 'primaryTextColor': '#000', 'primaryBorderColor': '#B8860B', 'lineColor': '#B8860B', 'secondaryColor': '#F5F5F5', 'tertiaryColor': '#EEEEEE', 'background': '#FFFFFF', 'mainBkg': '#FFFFFF', 'nodeBorder': '#B8860B', 'clusterBkg': '#F9F9F9'}}}%%
+
+flowchart TB
+    subgraph ADMIN["Admin: Pre-Invitation"]
+        direction LR
+        A1["Set Target"] --> A2["Send Invites"] --> A3["Monitor"]
+    end
+
+    subgraph USER["User: Registration"]
+        direction LR
+        U1["Click Link"] --> U2["Register"] --> U3{"Target\nReached?"}
+    end
+
+    subgraph RESULT["Result"]
+        direction LR
+        R1["Access Granted"]
+        R2["Access Blocked"]
+    end
+
+    A3 --> U1
+    U3 -->|"No"| R1
+    U3 -->|"Yes"| R2
+
+    style A1 fill:#3498DB,color:#fff,stroke:#2980B9
+    style R1 fill:#2ECC71,color:#000,stroke:#27AE60
+    style R2 fill:#E74C3C,color:#fff,stroke:#C0392B
+    style U3 fill:#FFF,stroke:#B8860B

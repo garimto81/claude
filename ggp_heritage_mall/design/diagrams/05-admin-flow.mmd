@@ -1,0 +1,36 @@
+%%{init: {'theme': 'base', 'themeVariables': { 'primaryColor': '#3498DB', 'primaryTextColor': '#000', 'primaryBorderColor': '#2980B9', 'lineColor': '#2980B9', 'secondaryColor': '#F5F5F5', 'tertiaryColor': '#EEEEEE', 'background': '#FFFFFF', 'mainBkg': '#FFFFFF', 'nodeBorder': '#2980B9', 'clusterBkg': '#F0F8FF'}}}%%
+
+flowchart TB
+    A["로그인"] --> B["대시보드"]
+
+    subgraph VIP["VIP 관리"]
+        direction TB
+        C["목록"] --> D{"작업"}
+        D -->|"초대"| E["발송"]
+        D -->|"변경"| F["등급"]
+    end
+
+    subgraph ORDER["주문 관리"]
+        direction TB
+        G["목록"] --> H{"상태"}
+        H -->|"대기"| I["확인"]
+        H -->|"처리"| J["배송"]
+        I --> K["완료"]
+        J --> K
+    end
+
+    subgraph PRODUCT["제품 관리"]
+        direction TB
+        L["목록"] --> M{"작업"}
+        M -->|"등록"| N["추가"]
+        M -->|"재고"| O["조정"]
+    end
+
+    B --> VIP
+    VIP --> ORDER
+    ORDER --> PRODUCT
+
+    style A fill:#3498DB,color:#fff,stroke:#2980B9
+    style B fill:#D4AF37,color:#000,stroke:#B8860B
+    style E fill:#2ECC71,color:#000,stroke:#27AE60
+    style K fill:#2ECC71,color:#000,stroke:#27AE60

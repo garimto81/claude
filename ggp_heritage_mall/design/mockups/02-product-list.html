@@ -1,0 +1,643 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>Products - GG POKER Heritage Shop</title>
+    <link href="https://fonts.googleapis.com/css2?family=Playfair+Display:wght@400;500;600;700&family=Inter:wght@300;400;500;600&display=swap" rel="stylesheet">
+    <style>
+        * { margin: 0; padding: 0; box-sizing: border-box; }
+        :root {
+            --gold: #D4AF37;
+            --dark-gold: #B8860B;
+            --bg-primary: #0A0A0A;
+            --bg-secondary: #1A1A1A;
+            --bg-card: #151515;
+            --text-primary: #FFFFFF;
+            --text-secondary: #A0A0A0;
+            --border: #2A2A2A;
+        }
+        body {
+            font-family: 'Inter', sans-serif;
+            background-color: var(--bg-primary);
+            color: var(--text-primary);
+            min-height: 100vh;
+        }
+        .header {
+            position: fixed;
+            top: 0; left: 0; right: 0;
+            z-index: 100;
+            padding: 20px 60px;
+            display: flex;
+            justify-content: space-between;
+            align-items: center;
+            background: rgba(10, 10, 10, 0.95);
+            border-bottom: 1px solid var(--border);
+            backdrop-filter: blur(10px);
+        }
+        .logo {
+            display: flex;
+            align-items: center;
+            gap: 12px;
+        }
+        .logo-icon {
+            width: 40px; height: 40px;
+            background: linear-gradient(135deg, var(--gold) 0%, var(--dark-gold) 100%);
+            border-radius: 8px;
+            display: flex;
+            align-items: center;
+            justify-content: center;
+            font-family: 'Playfair Display', serif;
+            font-weight: 700;
+            font-size: 18px;
+            color: var(--bg-primary);
+        }
+        .logo-text {
+            font-family: 'Playfair Display', serif;
+            font-size: 20px;
+            font-weight: 600;
+            letter-spacing: 2px;
+        }
+        .header-center {
+            display: flex;
+            gap: 40px;
+        }
+        .nav-link {
+            font-size: 13px;
+            font-weight: 500;
+            letter-spacing: 1px;
+            color: var(--text-secondary);
+            text-decoration: none;
+            transition: color 0.3s ease;
+        }
+        .nav-link:hover, .nav-link.active { color: var(--gold); }
+        .header-right {
+            display: flex;
+            align-items: center;
+            gap: 24px;
+        }
+        .selection-indicator {
+            display: flex;
+            align-items: center;
+            gap: 12px;
+            padding: 10px 20px;
+            background: rgba(212, 175, 55, 0.1);
+            border: 1px solid var(--gold);
+            border-radius: 8px;
+        }
+        .selection-count {
+            font-size: 24px;
+            font-weight: 600;
+            color: var(--gold);
+        }
+        .selection-limit {
+            font-size: 12px;
+            color: var(--text-secondary);
+        }
+        .selection-limit span { color: var(--text-primary); }
+        .cart-btn {
+            position: relative;
+            width: 44px; height: 44px;
+            background: var(--bg-secondary);
+            border: 1px solid var(--border);
+            border-radius: 50%;
+            display: flex;
+            align-items: center;
+            justify-content: center;
+            cursor: pointer;
+            transition: all 0.3s ease;
+        }
+        .cart-btn:hover { border-color: var(--gold); }
+        .cart-btn svg { width: 20px; height: 20px; stroke: var(--text-primary); }
+        .cart-count {
+            position: absolute;
+            top: -4px; right: -4px;
+            width: 20px; height: 20px;
+            background: var(--gold);
+            border-radius: 50%;
+            font-size: 11px;
+            font-weight: 600;
+            color: var(--bg-primary);
+            display: flex;
+            align-items: center;
+            justify-content: center;
+        }
+        .main { padding-top: 100px; }
+        .page-header {
+            padding: 60px;
+            text-align: center;
+            background: var(--bg-secondary);
+            border-bottom: 1px solid var(--border);
+        }
+        .page-title {
+            font-family: 'Playfair Display', serif;
+            font-size: 48px;
+            font-weight: 400;
+            margin-bottom: 16px;
+        }
+        .page-description {
+            font-size: 16px;
+            color: var(--text-secondary);
+            max-width: 600px;
+            margin: 0 auto;
+        }
+        .filter-bar {
+            padding: 24px 60px;
+            display: flex;
+            justify-content: space-between;
+            align-items: center;
+            border-bottom: 1px solid var(--border);
+        }
+        .filter-tabs { display: flex; gap: 8px; }
+        .filter-tab {
+            padding: 10px 20px;
+            background: transparent;
+            border: 1px solid var(--border);
+            border-radius: 20px;
+            font-size: 13px;
+            font-weight: 500;
+            color: var(--text-secondary);
+            cursor: pointer;
+            transition: all 0.3s ease;
+        }
+        .filter-tab:hover { border-color: var(--text-secondary); }
+        .filter-tab.active {
+            background: var(--gold);
+            border-color: var(--gold);
+            color: var(--bg-primary);
+        }
+        .view-toggle { display: flex; gap: 8px; }
+        .view-btn {
+            width: 40px; height: 40px;
+            background: transparent;
+            border: 1px solid var(--border);
+            border-radius: 8px;
+            display: flex;
+            align-items: center;
+            justify-content: center;
+            cursor: pointer;
+            transition: all 0.3s ease;
+        }
+        .view-btn:hover { border-color: var(--text-secondary); }
+        .view-btn.active {
+            border-color: var(--gold);
+            background: rgba(212, 175, 55, 0.1);
+        }
+        .view-btn svg { width: 18px; height: 18px; stroke: var(--text-secondary); }
+        .view-btn.active svg { stroke: var(--gold); }
+        .products-section { padding: 60px; }
+        .products-grid {
+            display: grid;
+            grid-template-columns: repeat(4, 1fr);
+            gap: 30px;
+            max-width: 1600px;
+            margin: 0 auto;
+        }
+        .product-card {
+            background: var(--bg-card);
+            border: 1px solid var(--border);
+            border-radius: 12px;
+            overflow: hidden;
+            transition: all 0.4s ease;
+            position: relative;
+        }
+        .product-card:hover {
+            transform: translateY(-8px);
+            border-color: var(--gold);
+            box-shadow: 0 20px 40px rgba(0, 0, 0, 0.4);
+        }
+        .product-card.selected {
+            border-color: var(--gold);
+            box-shadow: 0 0 0 2px var(--gold);
+        }
+        .product-card.out-of-stock {
+            opacity: 0.5;
+            pointer-events: none;
+        }
+        .product-image {
+            aspect-ratio: 1;
+            background: linear-gradient(135deg, #1a1a1a 0%, #2a2a2a 100%);
+            display: flex;
+            align-items: center;
+            justify-content: center;
+            position: relative;
+            overflow: hidden;
+        }
+        .product-image img {
+            width: 100%; height: 100%;
+            object-fit: cover;
+            transition: transform 0.4s ease;
+        }
+        .product-card:hover .product-image img { transform: scale(1.05); }
+        .product-image::after {
+            content: '';
+            position: absolute;
+            inset: 0;
+            background: linear-gradient(180deg, transparent 60%, rgba(0,0,0,0.8) 100%);
+        }
+        .product-badge {
+            position: absolute;
+            top: 16px; left: 16px;
+            padding: 6px 12px;
+            border-radius: 4px;
+            font-size: 10px;
+            font-weight: 600;
+            letter-spacing: 1px;
+            text-transform: uppercase;
+            z-index: 1;
+        }
+        .product-badge.new { background: var(--gold); color: var(--bg-primary); }
+        .product-badge.limited { background: #E74C3C; color: white; }
+        .product-badge.out-of-stock { background: var(--text-secondary); color: var(--bg-primary); }
+        .product-select {
+            position: absolute;
+            top: 16px; right: 16px;
+            width: 32px; height: 32px;
+            background: rgba(0, 0, 0, 0.5);
+            border: 2px solid var(--text-secondary);
+            border-radius: 50%;
+            display: flex;
+            align-items: center;
+            justify-content: center;
+            cursor: pointer;
+            transition: all 0.3s ease;
+            z-index: 1;
+        }
+        .product-select:hover { border-color: var(--gold); }
+        .product-select.checked { background: var(--gold); border-color: var(--gold); }
+        .product-select svg { width: 16px; height: 16px; stroke: transparent; }
+        .product-select.checked svg { stroke: var(--bg-primary); }
+        .product-info { padding: 24px; }
+        .product-category {
+            font-size: 11px;
+            font-weight: 500;
+            letter-spacing: 2px;
+            color: var(--gold);
+            text-transform: uppercase;
+            margin-bottom: 8px;
+        }
+        .product-name {
+            font-family: 'Playfair Display', serif;
+            font-size: 22px;
+            font-weight: 500;
+            margin-bottom: 8px;
+        }
+        .product-description {
+            font-size: 13px;
+            color: var(--text-secondary);
+            line-height: 1.6;
+            margin-bottom: 16px;
+        }
+        .product-meta {
+            display: flex;
+            justify-content: space-between;
+            align-items: center;
+        }
+        .product-sizes { display: flex; gap: 8px; }
+        .size-option {
+            width: 32px; height: 32px;
+            background: transparent;
+            border: 1px solid var(--border);
+            border-radius: 4px;
+            font-size: 11px;
+            font-weight: 500;
+            color: var(--text-secondary);
+            display: flex;
+            align-items: center;
+            justify-content: center;
+            cursor: pointer;
+            transition: all 0.3s ease;
+        }
+        .size-option:hover { border-color: var(--text-primary); color: var(--text-primary); }
+        .size-option.selected {
+            background: var(--gold);
+            border-color: var(--gold);
+            color: var(--bg-primary);
+        }
+        .stock-indicator { font-size: 12px; color: var(--text-secondary); }
+        .stock-indicator.low { color: #E74C3C; }
+        .stock-indicator.available { color: #2ECC71; }
+        .action-bar {
+            position: fixed;
+            bottom: 0; left: 0; right: 0;
+            padding: 20px 60px;
+            background: rgba(26, 26, 26, 0.95);
+            border-top: 1px solid var(--border);
+            backdrop-filter: blur(10px);
+            display: flex;
+            justify-content: space-between;
+            align-items: center;
+        }
+        .selection-summary {
+            display: flex;
+            align-items: center;
+            gap: 24px;
+        }
+        .summary-text { font-size: 14px; color: var(--text-secondary); }
+        .summary-text strong { color: var(--gold); font-size: 18px; }
+        .selected-items { display: flex; gap: 8px; }
+        .selected-item {
+            width: 48px; height: 48px;
+            background: var(--bg-card);
+            border: 1px solid var(--border);
+            border-radius: 8px;
+            display: flex;
+            align-items: center;
+            justify-content: center;
+            font-family: 'Playfair Display', serif;
+            font-size: 14px;
+            color: var(--text-secondary);
+        }
+        .checkout-btn {
+            display: flex;
+            align-items: center;
+            gap: 12px;
+            padding: 16px 40px;
+            background: linear-gradient(135deg, var(--gold) 0%, var(--dark-gold) 100%);
+            border: none;
+            border-radius: 8px;
+            font-family: 'Inter', sans-serif;
+            font-size: 14px;
+            font-weight: 600;
+            letter-spacing: 1px;
+            color: var(--bg-primary);
+            cursor: pointer;
+            transition: all 0.3s ease;
+        }
+        .checkout-btn:hover {
+            transform: translateY(-2px);
+            box-shadow: 0 10px 30px rgba(212, 175, 55, 0.3);
+        }
+        .checkout-btn svg { width: 18px; height: 18px; stroke: var(--bg-primary); }
+    </style>
+</head>
+<body>
+    <header class="header">
+        <div class="logo">
+            <div class="logo-icon">GG</div>
+            <span class="logo-text">HERITAGE</span>
+        </div>
+        <nav class="header-center">
+            <a href="#" class="nav-link">Home</a>
+            <a href="#" class="nav-link active">Products</a>
+            <a href="#" class="nav-link">My Orders</a>
+        </nav>
+        <div class="header-right">
+            <div class="selection-indicator">
+                <span class="selection-count">2</span>
+                <div class="selection-limit">
+                    of <span>5</span> items<br>
+                    <small>Gold Member</small>
+                </div>
+            </div>
+            <button class="cart-btn">
+                <svg viewBox="0 0 24 24" fill="none" stroke-width="2" stroke-linecap="round" stroke-linejoin="round">
+                    <path d="M6 2L3 6v14a2 2 0 0 0 2 2h14a2 2 0 0 0 2-2V6l-3-4z"/>
+                    <line x1="3" y1="6" x2="21" y2="6"/>
+                    <path d="M16 10a4 4 0 0 1-8 0"/>
+                </svg>
+                <span class="cart-count">2</span>
+            </button>
+        </div>
+    </header>
+
+    <main class="main">
+        <div class="page-header">
+            <h1 class="page-title">Heritage Collection</h1>
+            <p class="page-description">
+                Premium items curated exclusively for Gold Members.
+                You may select up to 5 items.
+            </p>
+        </div>
+
+        <div class="filter-bar">
+            <div class="filter-tabs">
+                <button class="filter-tab active">All</button>
+                <button class="filter-tab">Apparel</button>
+                <button class="filter-tab">Accessories</button>
+                <button class="filter-tab">Collectibles</button>
+                <button class="filter-tab">Lifestyle</button>
+            </div>
+            <div class="view-toggle">
+                <button class="view-btn active">
+                    <svg viewBox="0 0 24 24" fill="none" stroke-width="2">
+                        <rect x="3" y="3" width="7" height="7"/>
+                        <rect x="14" y="3" width="7" height="7"/>
+                        <rect x="3" y="14" width="7" height="7"/>
+                        <rect x="14" y="14" width="7" height="7"/>
+                    </svg>
+                </button>
+                <button class="view-btn">
+                    <svg viewBox="0 0 24 24" fill="none" stroke-width="2">
+                        <line x1="8" y1="6" x2="21" y2="6"/>
+                        <line x1="8" y1="12" x2="21" y2="12"/>
+                        <line x1="8" y1="18" x2="21" y2="18"/>
+                        <line x1="3" y1="6" x2="3.01" y2="6"/>
+                        <line x1="3" y1="12" x2="3.01" y2="12"/>
+                        <line x1="3" y1="18" x2="3.01" y2="18"/>
+                    </svg>
+                </button>
+            </div>
+        </div>
+
+        <section class="products-section">
+            <div class="products-grid">
+                <div class="product-card selected">
+                    <div class="product-image">
+                        <span class="product-badge new">New</span>
+                        <div class="product-select checked">
+                            <svg viewBox="0 0 24 24" fill="none" stroke-width="3" stroke-linecap="round" stroke-linejoin="round">
+                                <polyline points="20 6 9 17 4 12"/>
+                            </svg>
+                        </div>
+                        <img src="https://images.unsplash.com/photo-1556821840-3a63f95609a7?w=400&h=400&fit=crop" alt="Premium Hoodie">
+                    </div>
+                    <div class="product-info">
+                        <div class="product-category">Apparel</div>
+                        <h3 class="product-name">Premium Hoodie</h3>
+                        <p class="product-description">Oversized hoodie in premium cotton</p>
+                        <div class="product-meta">
+                            <div class="product-sizes">
+                                <span class="size-option">S</span>
+                                <span class="size-option selected">M</span>
+                                <span class="size-option">L</span>
+                                <span class="size-option">XL</span>
+                            </div>
+                            <span class="stock-indicator available">In Stock: 12</span>
+                        </div>
+                    </div>
+                </div>
+
+                <div class="product-card selected">
+                    <div class="product-image">
+                        <div class="product-select checked">
+                            <svg viewBox="0 0 24 24" fill="none" stroke-width="3" stroke-linecap="round" stroke-linejoin="round">
+                                <polyline points="20 6 9 17 4 12"/>
+                            </svg>
+                        </div>
+                        <img src="https://images.unsplash.com/photo-1606107557195-0e29a4b5b4aa?w=400&h=400&fit=crop" alt="Card Protector Set">
+                    </div>
+                    <div class="product-info">
+                        <div class="product-category">Accessories</div>
+                        <h3 class="product-name">Card Protector Set</h3>
+                        <p class="product-description">Premium card protector 3-piece set</p>
+                        <div class="product-meta">
+                            <div class="product-sizes">
+                                <span class="size-option selected">One</span>
+                            </div>
+                            <span class="stock-indicator available">In Stock: 25</span>
+                        </div>
+                    </div>
+                </div>
+
+                <div class="product-card">
+                    <div class="product-image">
+                        <span class="product-badge limited">Limited</span>
+                        <div class="product-select">
+                            <svg viewBox="0 0 24 24" fill="none" stroke-width="3" stroke-linecap="round" stroke-linejoin="round">
+                                <polyline points="20 6 9 17 4 12"/>
+                            </svg>
+                        </div>
+                        <img src="https://images.unsplash.com/photo-1596451190630-186aff535bf2?w=400&h=400&fit=crop" alt="Signature Chips">
+                    </div>
+                    <div class="product-info">
+                        <div class="product-category">Collectibles</div>
+                        <h3 class="product-name">Signature Chips</h3>
+                        <p class="product-description">Limited edition signature chip set</p>
+                        <div class="product-meta">
+                            <div class="product-sizes">
+                                <span class="size-option">One</span>
+                            </div>
+                            <span class="stock-indicator low">Only 3 left</span>
+                        </div>
+                    </div>
+                </div>
+
+                <div class="product-card">
+                    <div class="product-image">
+                        <div class="product-select">
+                            <svg viewBox="0 0 24 24" fill="none" stroke-width="3" stroke-linecap="round" stroke-linejoin="round">
+                                <polyline points="20 6 9 17 4 12"/>
+                            </svg>
+                        </div>
+                        <img src="https://images.unsplash.com/photo-1553062407-98eeb64c6a62?w=400&h=400&fit=crop" alt="Travel Kit">
+                    </div>
+                    <div class="product-info">
+                        <div class="product-category">Lifestyle</div>
+                        <h3 class="product-name">Travel Kit</h3>
+                        <p class="product-description">Premium travel pouch set</p>
+                        <div class="product-meta">
+                            <div class="product-sizes">
+                                <span class="size-option">One</span>
+                            </div>
+                            <span class="stock-indicator available">In Stock: 18</span>
+                        </div>
+                    </div>
+                </div>
+
+                <div class="product-card">
+                    <div class="product-image">
+                        <div class="product-select">
+                            <svg viewBox="0 0 24 24" fill="none" stroke-width="3" stroke-linecap="round" stroke-linejoin="round">
+                                <polyline points="20 6 9 17 4 12"/>
+                            </svg>
+                        </div>
+                        <img src="https://images.unsplash.com/photo-1588850561407-ed78c282e89b?w=400&h=400&fit=crop" alt="Classic Cap">
+                    </div>
+                    <div class="product-info">
+                        <div class="product-category">Apparel</div>
+                        <h3 class="product-name">Classic Cap</h3>
+                        <p class="product-description">Embroidered logo cap</p>
+                        <div class="product-meta">
+                            <div class="product-sizes">
+                                <span class="size-option">One</span>
+                            </div>
+                            <span class="stock-indicator available">In Stock: 30</span>
+                        </div>
+                    </div>
+                </div>
+
+                <div class="product-card">
+                    <div class="product-image">
+                        <span class="product-badge new">New</span>
+                        <div class="product-select">
+                            <svg viewBox="0 0 24 24" fill="none" stroke-width="3" stroke-linecap="round" stroke-linejoin="round">
+                                <polyline points="20 6 9 17 4 12"/>
+                            </svg>
+                        </div>
+                        <img src="https://images.unsplash.com/photo-1627123424574-724758594e93?w=400&h=400&fit=crop" alt="Leather Wallet">
+                    </div>
+                    <div class="product-info">
+                        <div class="product-category">Accessories</div>
+                        <h3 class="product-name">Leather Wallet</h3>
+                        <p class="product-description">Premium leather wallet</p>
+                        <div class="product-meta">
+                            <div class="product-sizes">
+                                <span class="size-option">One</span>
+                            </div>
+                            <span class="stock-indicator available">In Stock: 15</span>
+                        </div>
+                    </div>
+                </div>
+
+                <div class="product-card out-of-stock">
+                    <div class="product-image">
+                        <span class="product-badge out-of-stock">Sold Out</span>
+                        <img src="https://images.unsplash.com/photo-1611930022073-b7a4ba5fcccd?w=400&h=400&fit=crop" alt="Gold Chip Set">
+                    </div>
+                    <div class="product-info">
+                        <div class="product-category">Collectibles</div>
+                        <h3 class="product-name">Gold Chip Set</h3>
+                        <p class="product-description">24K gold-plated chip set</p>
+                        <div class="product-meta">
+                            <div class="product-sizes">
+                                <span class="size-option">One</span>
+                            </div>
+                            <span class="stock-indicator">Out of Stock</span>
+                        </div>
+                    </div>
+                </div>
+
+                <div class="product-card">
+                    <div class="product-image">
+                        <div class="product-select">
+                            <svg viewBox="0 0 24 24" fill="none" stroke-width="3" stroke-linecap="round" stroke-linejoin="round">
+                                <polyline points="20 6 9 17 4 12"/>
+                            </svg>
+                        </div>
+                        <img src="https://images.unsplash.com/photo-1602143407151-7111542de6e8?w=400&h=400&fit=crop" alt="Tumbler Set">
+                    </div>
+                    <div class="product-info">
+                        <div class="product-category">Lifestyle</div>
+                        <h3 class="product-name">Tumbler Set</h3>
+                        <p class="product-description">Insulated tumbler set</p>
+                        <div class="product-meta">
+                            <div class="product-sizes">
+                                <span class="size-option">One</span>
+                            </div>
+                            <span class="stock-indicator available">In Stock: 22</span>
+                        </div>
+                    </div>
+                </div>
+            </div>
+        </section>
+    </main>
+
+    <div class="action-bar">
+        <div class="selection-summary">
+            <span class="summary-text">Selected Items: <strong>2</strong> / 5</span>
+            <div class="selected-items">
+                <div class="selected-item">01</div>
+                <div class="selected-item">02</div>
+            </div>
+        </div>
+        <button class="checkout-btn">
+            Proceed to Checkout
+            <svg viewBox="0 0 24 24" fill="none" stroke-width="2" stroke-linecap="round" stroke-linejoin="round">
+                <line x1="5" y1="12" x2="19" y2="12"/>
+                <polyline points="12 5 19 12 12 19"/>
+            </svg>
+        </button>
+    </div>
+</body>
+</html>

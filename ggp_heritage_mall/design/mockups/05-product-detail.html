@@ -1,0 +1,257 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>Product Detail - GG POKER Heritage Shop</title>
+    <link href="https://fonts.googleapis.com/css2?family=Playfair+Display:wght@400;500;600;700&family=Inter:wght@300;400;500;600&display=swap" rel="stylesheet">
+    <style>
+        * { margin: 0; padding: 0; box-sizing: border-box; }
+        :root {
+            --gold: #D4AF37;
+            --dark-gold: #B8860B;
+            --bg-primary: #0A0A0A;
+            --bg-secondary: #1A1A1A;
+            --bg-card: #151515;
+            --text-primary: #FFFFFF;
+            --text-secondary: #A0A0A0;
+            --border: #2A2A2A;
+            --success: #2ECC71;
+        }
+        body {
+            font-family: 'Inter', sans-serif;
+            background-color: var(--bg-primary);
+            color: var(--text-primary);
+            min-height: 100vh;
+        }
+        .header {
+            position: fixed;
+            top: 0; left: 0; right: 0;
+            z-index: 100;
+            padding: 20px 60px;
+            display: flex;
+            justify-content: space-between;
+            align-items: center;
+            background: rgba(10, 10, 10, 0.95);
+            border-bottom: 1px solid var(--border);
+            backdrop-filter: blur(10px);
+        }
+        .logo { display: flex; align-items: center; gap: 12px; }
+        .logo-icon {
+            width: 40px; height: 40px;
+            background: linear-gradient(135deg, var(--gold) 0%, var(--dark-gold) 100%);
+            border-radius: 8px;
+            display: flex;
+            align-items: center;
+            justify-content: center;
+            font-family: 'Playfair Display', serif;
+            font-weight: 700;
+            font-size: 18px;
+            color: var(--bg-primary);
+        }
+        .logo-text {
+            font-family: 'Playfair Display', serif;
+            font-size: 20px;
+            font-weight: 600;
+            letter-spacing: 2px;
+        }
+        .breadcrumb { display: flex; align-items: center; gap: 8px; font-size: 13px; color: var(--text-secondary); }
+        .breadcrumb a { color: var(--text-secondary); text-decoration: none; }
+        .breadcrumb a:hover { color: var(--gold); }
+        .breadcrumb span { color: var(--text-primary); }
+        .main { padding-top: 100px; max-width: 1400px; margin: 0 auto; padding-left: 60px; padding-right: 60px; }
+        .product-detail { display: grid; grid-template-columns: 1fr 1fr; gap: 80px; padding: 60px 0; }
+        .product-gallery { position: sticky; top: 120px; }
+        .main-image { aspect-ratio: 1; background: var(--bg-secondary); border-radius: 12px; overflow: hidden; margin-bottom: 16px; }
+        .main-image img { width: 100%; height: 100%; object-fit: cover; }
+        .thumbnail-row { display: flex; gap: 12px; }
+        .thumbnail {
+            width: 80px; height: 80px;
+            background: var(--bg-secondary);
+            border: 2px solid var(--border);
+            border-radius: 8px;
+            overflow: hidden;
+            cursor: pointer;
+            transition: border-color 0.3s;
+        }
+        .thumbnail.active, .thumbnail:hover { border-color: var(--gold); }
+        .thumbnail img { width: 100%; height: 100%; object-fit: cover; }
+        .product-info { padding: 20px 0; }
+        .product-category {
+            font-size: 12px;
+            font-weight: 500;
+            letter-spacing: 3px;
+            color: var(--gold);
+            text-transform: uppercase;
+            margin-bottom: 12px;
+        }
+        .product-title {
+            font-family: 'Playfair Display', serif;
+            font-size: 42px;
+            font-weight: 400;
+            margin-bottom: 24px;
+            line-height: 1.2;
+        }
+        .product-description { font-size: 16px; line-height: 1.8; color: var(--text-secondary); margin-bottom: 40px; }
+        .product-meta {
+            display: flex;
+            flex-direction: column;
+            gap: 24px;
+            margin-bottom: 40px;
+            padding: 24px;
+            background: var(--bg-secondary);
+            border-radius: 12px;
+            border: 1px solid var(--border);
+        }
+        .meta-row { display: flex; justify-content: space-between; align-items: center; }
+        .meta-label { font-size: 13px; color: var(--text-secondary); }
+        .meta-value { font-size: 15px; font-weight: 500; }
+        .meta-value.stock { color: var(--success); }
+        .size-section { margin-bottom: 32px; }
+        .section-label { font-size: 13px; font-weight: 500; letter-spacing: 1px; margin-bottom: 16px; color: var(--text-secondary); }
+        .size-options { display: flex; gap: 12px; }
+        .size-btn {
+            width: 48px; height: 48px;
+            display: flex;
+            align-items: center;
+            justify-content: center;
+            background: var(--bg-secondary);
+            border: 1px solid var(--border);
+            border-radius: 8px;
+            font-size: 14px;
+            font-weight: 500;
+            color: var(--text-primary);
+            cursor: pointer;
+            transition: all 0.3s;
+        }
+        .size-btn:hover, .size-btn.selected { border-color: var(--gold); background: rgba(212, 175, 55, 0.1); color: var(--gold); }
+        .action-buttons { display: flex; gap: 16px; }
+        .btn-primary {
+            flex: 1;
+            padding: 18px 32px;
+            background: linear-gradient(135deg, var(--gold) 0%, var(--dark-gold) 100%);
+            border: none;
+            border-radius: 8px;
+            font-size: 14px;
+            font-weight: 600;
+            letter-spacing: 1px;
+            color: var(--bg-primary);
+            cursor: pointer;
+            transition: all 0.3s;
+        }
+        .btn-primary:hover { transform: translateY(-2px); box-shadow: 0 10px 30px rgba(212, 175, 55, 0.3); }
+        .btn-secondary {
+            padding: 18px 24px;
+            background: var(--bg-secondary);
+            border: 1px solid var(--border);
+            border-radius: 8px;
+            font-size: 14px;
+            font-weight: 500;
+            color: var(--text-primary);
+            cursor: pointer;
+            transition: all 0.3s;
+        }
+        .btn-secondary:hover { border-color: var(--gold); }
+        .specs-section { margin-top: 48px; padding-top: 48px; border-top: 1px solid var(--border); }
+        .specs-title { font-family: 'Playfair Display', serif; font-size: 24px; margin-bottom: 24px; }
+        .specs-grid { display: grid; grid-template-columns: repeat(2, 1fr); gap: 16px; }
+        .spec-item { display: flex; justify-content: space-between; padding: 16px; background: var(--bg-secondary); border-radius: 8px; }
+        .spec-label { color: var(--text-secondary); font-size: 14px; }
+        .spec-value { font-weight: 500; font-size: 14px; }
+    </style>
+</head>
+<body>
+    <header class="header">
+        <div class="logo">
+            <div class="logo-icon">GG</div>
+            <span class="logo-text">HERITAGE</span>
+        </div>
+        <nav class="breadcrumb">
+            <a href="#">Home</a> / <a href="#">Products</a> / <span>Premium Hoodie</span>
+        </nav>
+    </header>
+
+    <main class="main">
+        <div class="product-detail">
+            <div class="product-gallery">
+                <div class="main-image">
+                    <img src="https://images.unsplash.com/photo-1556821840-3a63f95609a7?w=600&h=600&fit=crop" alt="Premium Hoodie">
+                </div>
+                <div class="thumbnail-row">
+                    <div class="thumbnail active">
+                        <img src="https://images.unsplash.com/photo-1556821840-3a63f95609a7?w=100&h=100&fit=crop" alt="">
+                    </div>
+                    <div class="thumbnail">
+                        <img src="https://images.unsplash.com/photo-1578587018452-892bacefd3f2?w=100&h=100&fit=crop" alt="">
+                    </div>
+                    <div class="thumbnail">
+                        <img src="https://images.unsplash.com/photo-1620799140408-edc6dcb6d633?w=100&h=100&fit=crop" alt="">
+                    </div>
+                </div>
+            </div>
+
+            <div class="product-info">
+                <div class="product-category">Apparel</div>
+                <h1 class="product-title">Premium Hoodie</h1>
+                <p class="product-description">
+                    Premium hoodie featuring the embroidered GG POKER logo.
+                    Crafted from high-quality cotton for exceptional comfort,
+                    with a refined design perfect for everyday style.
+                </p>
+
+                <div class="product-meta">
+                    <div class="meta-row">
+                        <span class="meta-label">Product Code</span>
+                        <span class="meta-value">GGH-2024-001</span>
+                    </div>
+                    <div class="meta-row">
+                        <span class="meta-label">Availability</span>
+                        <span class="meta-value stock">In Stock: 12</span>
+                    </div>
+                    <div class="meta-row">
+                        <span class="meta-label">VIP Tier</span>
+                        <span class="meta-value">Silver / Gold</span>
+                    </div>
+                </div>
+
+                <div class="size-section">
+                    <div class="section-label">Select Size</div>
+                    <div class="size-options">
+                        <button class="size-btn">S</button>
+                        <button class="size-btn selected">M</button>
+                        <button class="size-btn">L</button>
+                        <button class="size-btn">XL</button>
+                    </div>
+                </div>
+
+                <div class="action-buttons">
+                    <button class="btn-primary">Add to Cart</button>
+                    <button class="btn-secondary">♡</button>
+                </div>
+
+                <div class="specs-section">
+                    <h3 class="specs-title">Product Details</h3>
+                    <div class="specs-grid">
+                        <div class="spec-item">
+                            <span class="spec-label">Material</span>
+                            <span class="spec-value">100% Cotton</span>
+                        </div>
+                        <div class="spec-item">
+                            <span class="spec-label">Color</span>
+                            <span class="spec-value">Charcoal Gray</span>
+                        </div>
+                        <div class="spec-item">
+                            <span class="spec-label">Made In</span>
+                            <span class="spec-value">Korea</span>
+                        </div>
+                        <div class="spec-item">
+                            <span class="spec-label">Care</span>
+                            <span class="spec-value">Machine Wash</span>
+                        </div>
+                    </div>
+                </div>
+            </div>
+        </div>
+    </main>
+</body>
+</html>
