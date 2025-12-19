@@ -69,8 +69,8 @@ npm --version     # 10.x.x 이상
 
 ```bash
 # 1. 저장소 클론
-git clone https://github.com/your-repo/mad-desktop.git
-cd mad-desktop
+git clone https://github.com/garimto81/mad_framework.git
+cd mad_framework/desktop
 
 # 2. 의존성 설치
 npm install
@@ -362,8 +362,8 @@ export class AutoUpdater {
 {
   "publish": {
     "provider": "github",
-    "owner": "your-username",
-    "repo": "mad-desktop",
+    "owner": "garimto81",
+    "repo": "mad_framework",
     "releaseType": "release"
   }
 }

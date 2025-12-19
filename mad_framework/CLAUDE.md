@@ -2,6 +2,8 @@
 
 This file provides guidance to Claude Code (claude.ai/code) when working with code in this repository.
 
+**GitHub**: https://github.com/garimto81/mad_framework
+
 ## Project Overview
 
 MAD Framework (Multi-Agent Debate) is a Python/TypeScript hybrid project for conducting structured debates between multiple LLM agents. It has two main components:
