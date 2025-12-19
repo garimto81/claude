@@ -282,7 +282,7 @@ export class BaseLLMAdapter {
 
     const startTime = Date.now();
     let previousContent = '';
-    let checkInterval = 200; // Check every 200ms
+    const checkInterval = 200; // Check every 200ms
 
     // Poll for content changes
     while (await this.isWriting()) {

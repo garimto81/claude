@@ -4,157 +4,113 @@ This file provides guidance to Claude Code (claude.ai/code) when working with co
 
 ## Project Overview
 
-MAD Framework (Multi-Agent Debate) is a Python/TypeScript hybrid project for conducting structured debates between multiple LLM agents. It has two main components:
+MAD Framework (Multi-Agent Debate) - Python/TypeScript hybrid for LLM agent debates.
+- **Python Core** (`src/mad/`): LangGraph-based debate orchestration with async support
+- **Desktop App** (`desktop/`): Electron + React + Zustand UI for browser LLM automation
 
-1. **Python Core** (`src/mad/`): LangGraph-based debate orchestration library
-2. **Electron Desktop App** (`desktop/`): React + Electron UI for browser-based LLM automation
+## Commands
 
-## Build & Development Commands
-
-### Python Core
-
+### Python
 ```bash
-# Setup (uses uv)
-uv sync --all-extras
-
-# Run single test (recommended)
-pytest tests/unit/test_config.py -v
-
-# Run all tests
-pytest tests/ -v
-
-# Lint
-ruff check src/
-
-# Type check
-mypy src/
+uv sync --all-extras                     # Setup (dev + google extras)
+pytest tests/unit/test_config.py -v      # Single test (권장)
+pytest tests/unit/ -v                    # Unit tests only
+ruff check src/ && mypy src/             # Lint + Type check
 ```
 
-### Desktop App (Electron + React)
-
+### Desktop
 ```powershell
 cd D:\AI\claude01\mad_framework\desktop
-
-# Install dependencies
-npm install
-
-# Development (Vite dev server only)
-npm run dev
-
-# Development with Electron
-npm run dev:electron
-
-# Run tests
-npm run test:run
-
-# Run tests with coverage
-npm run test:coverage
-
-# Lint
-npm run lint
-
-# Build for Windows
-npm run build:win
+npm run dev:electron   # Dev with Electron
+npm run test:run       # All tests (Vitest)
+npm run lint           # ESLint
 ```
 
 ## Architecture
 
-### Python Core (`src/mad/`)
+### Python (`src/mad/`)
 
+**StateGraph Flow:**
 ```
-LangGraph StateGraph Flow:
-  initialize → debate → moderate → (loop) → judge → END
+initialize → debate → moderate → (loop if not consensus) → judge → END
 ```
 
-Key components:
-- **`core/orchestrator.py`**: `MAD` class - main entry point. Creates agents and builds StateGraph
-- **`core/graph.py`**: LangGraph StateGraph definition with nodes (initialize, debate, moderate, judge)
-- **`core/state.py`**: Pydantic state models for debate flow
-- **`agents/`**: Debater, Judge, Moderator agents
-- **`providers/`**: Anthropic, OpenAI provider adapters with registry pattern
-- **`presets/`**: Pre-configured debate types (code_review, qa_accuracy, decision)
+| Module | Purpose |
+|--------|---------|
+| `core/orchestrator.py` | `MAD` class - entry point, creates graph and agents |
+| `core/graph.py` | LangGraph StateGraph definition, node functions |
+| `core/state.py` | `DebateState` TypedDict for graph state |
+| `core/config.py` | Pydantic configs: `DebateConfig`, `DebaterConfig`, `JudgeConfig` |
+| `agents/debater.py` | `DebaterAgent` - perspective-based argumentation |
+| `agents/judge.py` | `JudgeAgent` - final verdict with confidence score |
+| `agents/moderator.py` | `ModeratorAgent` - consensus check, early stopping |
+| `providers/registry.py` | `get_provider("anthropic")` - singleton factory |
 
-### Desktop App (`desktop/`)
+**Usage:**
+```python
+from mad import MAD, DebateConfig
+result = await mad.debate(topic="...", context="...")
+# result.verdict, result.confidence, result.total_cost
+```
 
-**Process Architecture:**
-- **Main process** (`electron/main.ts`): Window management, IPC handlers
-- **Renderer** (`src/`): React UI with Zustand stores
-- **Browser adapters** (`electron/browser/adapters/`): Automate ChatGPT, Claude, Gemini web interfaces
+### Desktop (`desktop/`)
 
-**Key Files:**
-- `electron/debate/debate-controller.ts`: Infinite loop debate execution with cycle detection and circuit breaker (MAX_ITERATIONS=100)
-- `electron/browser/browser-view-manager.ts`: Manages BrowserViews for each LLM provider
-- `src/stores/debate-store.ts`: Zustand store for UI state
-- `shared/types.ts`: Shared TypeScript types between main/renderer
+**Main Process (Electron):**
+| File | Purpose |
+|------|---------|
+| `electron/debate/debate-controller.ts` | Infinite debate loop (MAX_ITERATIONS=100), Circuit Breaker |
+| `electron/debate/cycle-detector.ts` | Levenshtein-based cycle detection (threshold=0.85) |
+| `electron/browser/browser-view-manager.ts` | Multi-provider BrowserView management |
+| `electron/browser/adapters/base-adapter.ts` | Browser automation with selector fallbacks |
+| `electron/browser/adapters/selector-config.ts` | Per-provider CSS selectors |
+| `electron/ipc/handlers.ts` | IPC handlers for renderer communication |
 
-**IPC Communication:**
-- Renderer calls main via `window.api.*` (exposed in preload.ts)
-- Main emits events: `debate:progress`, `debate:response`, `debate:element-score`, `debate:complete`
+**Renderer Process (React):**
+| File | Purpose |
+|------|---------|
+| `src/App.tsx` | Main app with Zustand store |
+| `src/components/DebateControlPanel.tsx` | Start/stop debate controls |
+| `src/components/ResponseViewer.tsx` | Streaming response display |
+| `src/components/ElementScoreBoard.tsx` | Per-element score tracking |
 
-## Key Patterns
+**Shared Types:**
+- `shared/types.ts`: `LLMProvider`, `AdapterResult<T>`, `DebateConfig`, `StreamChunk`
 
-### Python
-- Async-first (`async def debate()`)
-- Provider registry pattern (`get_provider("anthropic")`)
-- Pydantic for config/state validation
-- pytest-asyncio for async tests
-
-### TypeScript/Electron
-- Path aliases: `@/*` (src), `@electron/*` (electron), `@shared/*` (shared)
-- Context isolation with preload bridge
-- Vitest for testing with jsdom
+**Key Patterns:**
+- `AdapterResult<T>` for standardized success/error returns (Issue #17)
+- Selector fallback system for UI changes (Issue #18)
+- Event-based streaming: `debate:stream-chunk` for real-time updates
 
 ## Environment Variables
 
 ```bash
-# Required for Python core
 ANTHROPIC_API_KEY=sk-ant-xxxxx
 OPENAI_API_KEY=sk-xxxxx
-
-# Optional
-MAD_DEFAULT_PROVIDER=anthropic
-MAD_MAX_ROUNDS=3
+GOOGLE_API_KEY=xxxxx              # Optional, for google provider
+MAD_DEFAULT_PROVIDER=anthropic    # Optional
 ```
 
 ## Testing
 
-Python tests use fixtures in `tests/conftest.py`:
-- `sample_topic`: Debate topic string
-- `sample_context`: Context string
-- `sample_code`: Code for review tests
-
-Desktop tests use `@testing-library/react` and Vitest globals.
-
-## Checklist 기반 작업 관리
-
-### 워크플로우
-
-모든 작업은 `mad_framework_checklist.yaml`을 통해 관리됩니다.
-
-```
-사용자 요청 → checklist.yaml 확인 → 서브 에이전트 할당 → 작업 수행 → yaml 결과 기록 → Orchestrator 확인
+### Python
+```bash
+pytest tests/unit/test_config.py -v          # Single file
+pytest tests/unit/ -v -k "test_debater"      # By pattern
+pytest --cov=src/mad tests/unit/             # With coverage
 ```
 
-### 서브 에이전트 역할
+### Desktop (Vitest)
+```bash
+npm run test:run                              # All tests
+npm run test:run -- tests/unit/adapters      # Directory
+npm run test:coverage                         # With coverage
+```
 
-| Agent | 역할 | 트리거 키워드 |
-|-------|------|--------------|
-| Explore | 코드베이스 분석 | 분석, 조사, 파악 |
-| Plan | 구현 전략 설계 | 설계, 계획, 전략 |
-| python-dev | Python 개발 | python, provider, agent |
-| typescript-dev | TypeScript/Electron 개발 | typescript, electron, react |
-| test-engineer | 테스트 작성 | test, 테스트, TDD |
-| code-reviewer | 코드 리뷰 | review, 리뷰, 검토 |
-| debugger | 버그 수정 | bug, error, 오류 |
+## Key Constants
 
-### 작업 완료 후 필수 사항
-
-1. `checklist.yaml`의 `completed` 섹션에 결과 기록
-2. `agent_logs`에 작업 로그 추가
-3. `metrics` 업데이트
-4. 관련 파일 목록 기록
-
-### 파일 위치
-
-- 체크리스트: `mad_framework_checklist.yaml`
-- 진행상황: `mad_framework.yaml`
+| Constant | Location | Value | Purpose |
+|----------|----------|-------|---------|
+| `MAX_ITERATIONS` | debate-controller.ts:48 | 100 | Debate loop limit |
+| `MAX_CONSECUTIVE_EMPTY_RESPONSES` | debate-controller.ts:49 | 3 | Circuit breaker |
+| `DEFAULT_SIMILARITY_THRESHOLD` | cycle-detector.ts:77 | 0.85 | Cycle detection |
+| `completionThreshold` | DebateConfig | 90 | Element completion score |
