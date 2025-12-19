@@ -126,6 +126,7 @@ describe('Debate Flow Integration', () => {
         vi.spyOn(adapter, 'sendMessage').mockResolvedValue(undefined);
         vi.spyOn(adapter, 'waitForResponse').mockResolvedValue(undefined);
         vi.spyOn(adapter, 'extractResponse').mockResolvedValue('{}');
+        vi.spyOn(adapter, 'streamResponse').mockResolvedValue({ success: true, data: '{}' });
       });
 
       // Return empty elements to complete immediately after first iteration
@@ -177,6 +178,13 @@ describe('Debate Flow Integration', () => {
       browserManager.createView('claude');
       browserManager.createView('gemini');
 
+      const responseJson = JSON.stringify({
+        elements: [
+          { name: '보안', score: 92, critique: 'Good security' },
+          { name: '성능', score: 91, critique: 'Good performance' },
+        ],
+      });
+
       const providers: LLMProvider[] = ['chatgpt', 'claude', 'gemini'];
       providers.forEach(provider => {
         const adapter = browserManager.getAdapter(provider);
@@ -185,14 +193,8 @@ describe('Debate Flow Integration', () => {
         vi.spyOn(adapter, 'inputPrompt').mockResolvedValue(undefined);
         vi.spyOn(adapter, 'sendMessage').mockResolvedValue(undefined);
         vi.spyOn(adapter, 'waitForResponse').mockResolvedValue(undefined);
-        vi.spyOn(adapter, 'extractResponse').mockResolvedValue(
-          JSON.stringify({
-            elements: [
-              { name: '보안', score: 92, critique: 'Good security' },
-              { name: '성능', score: 91, critique: 'Good performance' },
-            ],
-          })
-        );
+        vi.spyOn(adapter, 'extractResponse').mockResolvedValue(responseJson);
+        vi.spyOn(adapter, 'streamResponse').mockResolvedValue({ success: true, data: responseJson });
       });
 
       const incompleteElement = {
@@ -243,15 +245,15 @@ describe('Debate Flow Integration', () => {
 
         if (provider === 'gemini') {
           // Judge response indicating cycle - use JSON code block format
-          vi.spyOn(adapter, 'extractResponse').mockResolvedValue(
-            '```json\n{"isCycle": true, "reason": "Versions are repeating"}\n```'
-          );
+          const cycleResponse = '```json\n{"isCycle": true, "reason": "Versions are repeating"}\n```';
+          vi.spyOn(adapter, 'extractResponse').mockResolvedValue(cycleResponse);
+          vi.spyOn(adapter, 'streamResponse').mockResolvedValue({ success: true, data: cycleResponse });
         } else {
-          vi.spyOn(adapter, 'extractResponse').mockResolvedValue(
-            JSON.stringify({
-              elements: [{ name: '보안', score: 85, critique: 'Review' }],
-            })
-          );
+          const reviewResponse = JSON.stringify({
+            elements: [{ name: '보안', score: 85, critique: 'Review' }],
+          });
+          vi.spyOn(adapter, 'extractResponse').mockResolvedValue(reviewResponse);
+          vi.spyOn(adapter, 'streamResponse').mockResolvedValue({ success: true, data: reviewResponse });
         }
       });
 

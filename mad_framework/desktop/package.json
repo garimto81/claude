@@ -1,7 +1,6 @@
 {
   "name": "mad-desktop",
   "version": "0.1.0",
-  "type": "module",
   "description": "MAD Desktop Application - Multi-Agent Debate with Browser Automation",
   "main": "dist/main/electron/main.js",
   "scripts": {
