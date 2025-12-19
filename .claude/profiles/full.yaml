@@ -1,0 +1,51 @@
+# Full Profile - 모든 도구 활성화
+# 예상 토큰: 10k+ (전체)
+
+name: full
+description: 복잡한 멀티에이전트 작업을 위한 전체 도구 세트
+
+tools:
+  all: true  # 모든 도구 활성화
+
+  core:
+    - Read
+    - Write
+    - Edit
+    - Bash
+
+  search:
+    - Glob
+    - Grep
+
+  web:
+    - WebSearch
+    - WebFetch
+
+  workflow:
+    - TodoWrite
+    - AskUserQuestion
+    - Skill
+
+  agents:
+    - Task
+    - TaskOutput
+
+  planning:
+    - EnterPlanMode
+    - ExitPlanMode
+
+  notebook:
+    - NotebookEdit
+
+  system:
+    - KillShell
+
+excluded: []
+
+estimated_tokens: 10000
+use_cases:
+  - 대규모 리팩토링
+  - 새 프로젝트 설정
+  - 복잡한 디버깅
+  - 웹 리서치 필요 작업
+  - Jupyter 노트북 작업

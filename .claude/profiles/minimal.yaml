@@ -1,0 +1,36 @@
+# Minimal Profile - 기본 파일 작업용
+# 예상 토큰 절감: 50% (5k 토큰)
+
+name: minimal
+description: 간단한 파일 읽기/쓰기 작업용 최소 도구 세트
+
+tools:
+  core:
+    - Read       # 파일 읽기
+    - Write      # 파일 쓰기
+    - Edit       # 파일 편집
+    - Bash       # 명령어 실행
+
+  search:
+    - Glob       # 파일 패턴 검색
+    - Grep       # 내용 검색
+
+excluded:
+  - Task           # 에이전트 실행 (불필요)
+  - TaskOutput     # 백그라운드 작업 (불필요)
+  - WebSearch      # 웹 검색 (불필요)
+  - WebFetch       # URL 가져오기 (불필요)
+  - NotebookEdit   # Jupyter (불필요)
+  - EnterPlanMode  # 계획 모드 (불필요)
+  - ExitPlanMode   # 계획 모드 (불필요)
+  - TodoWrite      # 할일 관리 (선택적)
+  - AskUserQuestion # 질문 (선택적)
+  - Skill          # 스킬 (불필요)
+  - KillShell      # 쉘 종료 (불필요)
+
+estimated_tokens: 4000
+use_cases:
+  - 단순 파일 수정
+  - 코드 리뷰 (읽기 전용)
+  - 설정 파일 업데이트
+  - 빠른 검색
