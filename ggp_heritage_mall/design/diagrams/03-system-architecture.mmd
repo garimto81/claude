@@ -1,0 +1,31 @@
+%%{init: {'theme': 'base', 'themeVariables': { 'primaryColor': '#D4AF37', 'primaryTextColor': '#000', 'primaryBorderColor': '#B8860B', 'lineColor': '#B8860B', 'secondaryColor': '#F5F5F5', 'tertiaryColor': '#EEEEEE', 'background': '#FFFFFF', 'mainBkg': '#FFFFFF', 'nodeBorder': '#B8860B', 'clusterBkg': '#F9F9F9'}}}%%
+
+flowchart TB
+    subgraph CLIENT["Client"]
+        VIP["VIP 고객"]
+        ADMIN["관리자"]
+    end
+
+    subgraph FRONTEND["Frontend - Vercel"]
+        NEXT["Next.js 15"]
+        UI["Tailwind + shadcn"]
+    end
+
+    subgraph BACKEND["Backend - Supabase"]
+        AUTH["Auth"]
+        DB["PostgreSQL"]
+        STORAGE["Storage"]
+    end
+
+    subgraph EXTERNAL["External"]
+        EMAIL["Resend"]
+    end
+
+    CLIENT --> FRONTEND
+    FRONTEND --> BACKEND
+    AUTH --> EXTERNAL
+
+    style VIP fill:#D4AF37,color:#000,stroke:#B8860B
+    style ADMIN fill:#3498DB,color:#fff,stroke:#2980B9
+    style NEXT fill:#000,color:#fff,stroke:#333
+    style DB fill:#F5F5F5,color:#2ECC71,stroke:#2ECC71

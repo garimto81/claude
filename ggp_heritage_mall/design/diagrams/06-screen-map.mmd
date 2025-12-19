@@ -1,0 +1,37 @@
+%%{init: {'theme': 'base', 'themeVariables': { 'primaryColor': '#D4AF37', 'primaryTextColor': '#000', 'primaryBorderColor': '#B8860B', 'lineColor': '#B8860B', 'secondaryColor': '#F5F5F5', 'tertiaryColor': '#EEEEEE', 'background': '#FFFFFF', 'mainBkg': '#FFFFFF'}}}%%
+
+flowchart TB
+    subgraph VIP["VIP 고객 화면"]
+        direction TB
+        V1["Landing
+/shop/{token}"] --> V2["메인
+/"]
+        V2 --> V3["제품목록
+/products"]
+        V3 --> V4["상세
+/products/{id}"]
+        V4 --> V5["장바구니
+/cart"]
+        V5 --> V6["체크아웃
+/checkout"]
+        V6 --> V7["완료
+/order-complete"]
+    end
+
+    subgraph ADMIN["관리자 화면"]
+        direction TB
+        A1["로그인
+/admin/login"] --> A2["대시보드
+/admin"]
+        A2 --> A3["VIP관리
+/admin/vips"]
+        A2 --> A4["주문관리
+/admin/orders"]
+        A2 --> A5["제품관리
+/admin/products"]
+    end
+
+    style V1 fill:#D4AF37,color:#000,stroke:#B8860B
+    style V7 fill:#2ECC71,color:#000,stroke:#27AE60
+    style A1 fill:#3498DB,color:#fff,stroke:#2980B9
+    style A2 fill:#F5F5F5,color:#3498DB,stroke:#3498DB

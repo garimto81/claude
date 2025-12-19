@@ -1,0 +1,40 @@
+%%{init: {'theme': 'base', 'themeVariables': { 'primaryColor': '#D4AF37', 'primaryTextColor': '#000', 'primaryBorderColor': '#B8860B', 'lineColor': '#B8860B', 'secondaryColor': '#F5F5F5', 'tertiaryColor': '#EEEEEE', 'background': '#FFFFFF', 'mainBkg': '#FFFFFF', 'nodeBorder': '#B8860B', 'clusterBkg': '#F9F9F9'}}}%%
+
+flowchart TB
+    subgraph AUTH["1. 인증"]
+        A1["초대 링크 클릭"] --> A2{"토큰 유효?"}
+        A2 -->|"Yes"| A3["VIP 인증 완료"]
+        A2 -->|"No"| A4["접근 거부"]
+    end
+
+    subgraph BROWSE["2. 상품 탐색"]
+        B1["제품 목록"] --> B2["카테고리 필터"]
+        B2 --> B3["제품 상세 보기"]
+        B3 --> B4{"재고 확인"}
+        B4 -->|"있음"| B5["사이즈 선택"]
+        B4 -->|"품절"| B1
+    end
+
+    subgraph CART["3. 장바구니"]
+        C1["장바구니 추가"] --> C2{"수량 제한 확인"}
+        C2 -->|"Silver: 3개"| C3["장바구니 업데이트"]
+        C2 -->|"Gold: 5개"| C3
+        C2 -->|"초과"| C4["제한 알림"]
+    end
+
+    subgraph CHECKOUT["4. 주문"]
+        D1["배송 정보 확인"] --> D2{"수정 필요?"}
+        D2 -->|"Yes"| D3["정보 수정"]
+        D3 --> D1
+        D2 -->|"No"| D4["주문 확정"]
+        D4 --> D5["주문 완료"]
+    end
+
+    A3 --> B1
+    B5 --> C1
+    C3 --> D1
+
+    style A1 fill:#3498DB,color:#fff,stroke:#2980B9
+    style A4 fill:#E74C3C,color:#fff,stroke:#C0392B
+    style D5 fill:#2ECC71,color:#000,stroke:#27AE60
+    style C4 fill:#F39C12,color:#000,stroke:#E67E22

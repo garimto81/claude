@@ -1,0 +1,17 @@
+%%{init: {'theme': 'base', 'themeVariables': { 'primaryColor': '#D4AF37', 'primaryTextColor': '#000', 'primaryBorderColor': '#B8860B', 'lineColor': '#B8860B', 'secondaryColor': '#F5F5F5', 'tertiaryColor': '#EEEEEE', 'background': '#FFFFFF', 'mainBkg': '#FFFFFF'}}}%%
+
+flowchart LR
+    subgraph SILVER["Silver"]
+        S1["3 Items"]
+    end
+
+    subgraph GOLD["Gold"]
+        G1["5 Items"]
+    end
+
+    SILVER ==>|"Upgrade"| GOLD
+
+    style SILVER fill:#C0C0C0,color:#000,stroke:#808080
+    style GOLD fill:#D4AF37,color:#000,stroke:#B8860B
+    style S1 fill:#F5F5F5,color:#333,stroke:#999
+    style G1 fill:#FFF8DC,color:#B8860B,stroke:#D4AF37

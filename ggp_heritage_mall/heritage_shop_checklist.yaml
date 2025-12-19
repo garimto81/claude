@@ -1,0 +1,590 @@
+# GGP Heritage Mall - 작업 체크리스트
+# 서브 에이전트가 작업 수행 후 이 파일에 결과 기록
+# 메인 에이전트가 이 파일을 검토하여 진행 관리
+
+project:
+  name: GGP Heritage Mall
+  version: 0.1.0
+  created_at: 2024-12-19
+  last_updated: 2024-12-19
+
+summary:
+  total_tasks: 28
+  completed: 9
+  in_progress: 3
+  pending: 16
+  blocked: 0
+
+# =============================================================================
+# Phase 1: 핵심 기능 (Core) - 6개 작업
+# =============================================================================
+phase_1_core:
+  name: "핵심 기능"
+  status: in_progress
+  progress: "3/6 (3 in progress)"
+
+  tasks:
+    - id: CORE-001
+      name: "Supabase 프로젝트 설정 및 DB 마이그레이션"
+      status: completed
+      priority: critical
+      assignee: database-specialist
+      started_at: 2024-12-19
+      description: |
+        - Supabase 프로젝트 생성
+        - 테이블 생성 (vips, products, categories, inventory, orders, order_items, verification_codes)
+        - 초기 데이터 시딩
+      dependencies: []
+      files_modified:
+        - "web/supabase/migrations/001_initial_schema.sql"
+        - "web/supabase/migrations/002_rls_policies.sql"
+        - "web/supabase/migrations/003_storage_buckets.sql"
+        - "web/supabase/seed.sql"
+        - "web/supabase/config.toml"
+      result: |
+        이미 완성된 마이그레이션 확인:
+        - 8개 테이블 (vips, verification_codes, categories, products, inventory, orders, order_items, admins)
+        - 4개 Enum 타입 (vip_tier, registration_type, order_status, verification_status)
+        - 9개 인덱스
+        - RLS 정책 및 Storage 버킷 설정
+        - 시드 데이터 (4개 카테고리, 5개 제품, 2명 VIP)
+      completed_at: 2024-12-19
+
+    - id: CORE-002
+      name: "VIP 초대 토큰 인증 시스템"
+      status: completed
+      priority: critical
+      assignee: backend-dev
+      started_at: 2024-12-19
+      description: |
+        - 초대 토큰 검증 미들웨어
+        - VIP 세션 관리
+        - 인증 실패 시 리다이렉트
+      dependencies: [CORE-001]
+      files_modified:
+        - "web/middleware.ts"
+        - "web/src/lib/auth/vip-auth.ts"
+        - "web/src/lib/auth/vip-session.ts"
+        - "web/src/lib/auth/index.ts"
+        - "web/src/hooks/use-vip-session.ts"
+        - "web/src/app/invalid-token/page.tsx"
+      result: |
+        VIP 초대 토큰 인증 시스템 구현 완료:
+        - middleware.ts: URL ?token= 파라미터로 VIP 인증, 쿠키 세션 관리
+        - vip-session.ts: 서버 컴포넌트용 세션 관리 함수 (getVipSession, canVipOrder 등)
+        - use-vip-session.ts: 클라이언트 컴포넌트용 React 훅
+        - invalid-token 페이지: 유효하지 않은 토큰 안내 페이지
+        - 보호된 경로: /shop, /orders, /profile (세션 없으면 리다이렉트)
+        - VIP 등급별 주문 수량 제한: Silver(3개), Gold(5개)
+      completed_at: 2024-12-19
+
+    - id: CORE-003
+      name: "제품 API Supabase 연동"
+      status: completed
+      priority: critical
+      assignee: backend-dev
+      started_at: 2024-12-19
+      description: |
+        - 제품 목록 조회 API
+        - 제품 상세 조회 API
+        - 카테고리별 필터링
+        - 재고 정보 포함
+      dependencies: [CORE-001]
+      files_modified:
+        - "web/src/lib/api/products.ts"
+        - "web/src/app/products/page.tsx"
+        - "web/src/app/products/products-client.tsx"
+      result: |
+        제품 API Supabase 연동 완료:
+        - products.ts API 함수: getProducts, getProductById, getCategories, getProductInventory
+        - 카테고리별 필터링 지원
+        - 재고 정보 조인 쿼리 (inventory 테이블)
+        - products/page.tsx: 서버 컴포넌트로 변환 (SSR 데이터 페칭)
+        - products-client.tsx: 클라이언트 컴포넌트 분리 (상태 관리)
+        - 빌드 통과 확인
+      completed_at: 2024-12-19
+
+    - id: CORE-004
+      name: "주문 생성 API 구현"
+      status: in_progress
+      priority: critical
+      assignee: backend-dev
+      started_at: 2024-12-19
+      description: |
+        - 주문 생성 서버 액션
+        - 재고 차감 트랜잭션
+        - 주문 확인 응답
+      dependencies: [CORE-001, CORE-002]
+      files_to_modify:
+        - "web/src/lib/api/orders.ts"
+        - "web/src/app/checkout/page.tsx"
+      result: null
+      completed_at: null
+
+    - id: CORE-005
+      name: "제품 상세 페이지 구현"
+      status: in_progress
+      priority: high
+      assignee: frontend-dev
+      started_at: 2024-12-19
+      description: |
+        - 이미지 갤러리
+        - 상품 정보 표시
+        - 사이즈별 재고 표시
+        - 장바구니 추가 기능
+      dependencies: [CORE-003]
+      files_to_modify:
+        - "web/src/app/products/[id]/page.tsx"
+        - "web/src/components/products/ProductDetail.tsx"
+        - "web/src/components/products/ImageGallery.tsx"
+      result: null
+      completed_at: null
+
+    - id: CORE-006
+      name: "마이 주문 페이지 구현"
+      status: in_progress
+      priority: high
+      assignee: frontend-dev
+      started_at: 2024-12-19
+      description: |
+        - 주문 목록 표시
+        - 주문 상세 정보
+        - 배송 상태 표시
+      dependencies: [CORE-004]
+      files_to_modify:
+        - "web/src/app/orders/page.tsx"
+        - "web/src/components/orders/OrderList.tsx"
+        - "web/src/components/orders/OrderCard.tsx"
+      result: null
+      completed_at: null
+
+# =============================================================================
+# Phase 2: 주요 기능 (Features) - 6개 작업
+# =============================================================================
+phase_2_features:
+  name: "주요 기능"
+  status: pending
+  progress: "0/6"
+
+  tasks:
+    - id: FEAT-001
+      name: "VIP 프로필 배송 정보 저장/로드"
+      status: pending
+      priority: high
+      assignee: fullstack-dev
+      description: |
+        - 배송 정보 저장 API
+        - 프로필에서 배송 정보 로드
+        - 체크아웃 시 자동 채우기
+      dependencies: [CORE-002]
+      files_to_modify:
+        - "web/src/lib/api/profile.ts"
+        - "web/src/components/checkout/ShippingForm.tsx"
+      result: null
+      completed_at: null
+
+    - id: FEAT-002
+      name: "배송 추적 정보 표시"
+      status: pending
+      priority: medium
+      assignee: frontend-dev
+      description: |
+        - 운송사 정보 표시
+        - 송장번호 표시
+        - 배송 상태 타임라인
+      dependencies: [CORE-006]
+      files_to_modify:
+        - "web/src/components/orders/TrackingInfo.tsx"
+      result: null
+      completed_at: null
+
+    - id: FEAT-003
+      name: "Resend 이메일 연동"
+      status: pending
+      priority: medium
+      assignee: backend-dev
+      description: |
+        - Resend API 설정
+        - 주문 확인 이메일 템플릿
+        - 배송 알림 이메일
+      dependencies: [CORE-004]
+      files_to_modify:
+        - "web/src/lib/email/resend.ts"
+        - "web/src/lib/email/templates/*.tsx"
+      result: null
+      completed_at: null
+
+    - id: FEAT-004
+      name: "QR 코드 VIP 가입 시스템"
+      status: pending
+      priority: medium
+      assignee: fullstack-dev
+      description: |
+        - QR 코드 생성
+        - 가입 폼 페이지
+        - 관리자 승인 대기 상태
+      dependencies: [CORE-001]
+      files_to_modify:
+        - "web/src/app/register/page.tsx"
+        - "web/src/components/register/QRRegistrationForm.tsx"
+      result: null
+      completed_at: null
+
+    - id: FEAT-005
+      name: "6자리 인증 코드 생성/검증"
+      status: pending
+      priority: medium
+      assignee: backend-dev
+      description: |
+        - 랜덤 코드 생성
+        - 코드 검증 API
+        - 만료 시간 관리
+      dependencies: [FEAT-004]
+      files_to_modify:
+        - "web/src/lib/auth/verification-code.ts"
+      result: null
+      completed_at: null
+
+    - id: FEAT-006
+      name: "제품 검색 기능"
+      status: pending
+      priority: low
+      assignee: frontend-dev
+      description: |
+        - 검색 입력 컴포넌트
+        - 실시간 검색 결과
+        - 검색 필터
+      dependencies: [CORE-003]
+      files_to_modify:
+        - "web/src/components/products/ProductSearch.tsx"
+      result: null
+      completed_at: null
+
+# =============================================================================
+# Phase 3: 관리자 기능 (Admin) - 9개 작업
+# =============================================================================
+phase_3_admin:
+  name: "관리자 기능"
+  status: pending
+  progress: "0/9"
+
+  tasks:
+    - id: ADMIN-001
+      name: "관리자 인증 시스템"
+      status: pending
+      priority: critical
+      assignee: backend-dev
+      description: |
+        - 이메일/비밀번호 로그인
+        - 관리자 권한 확인
+        - 세션 관리
+      dependencies: [CORE-001]
+      files_to_modify:
+        - "web/src/lib/auth/admin-auth.ts"
+        - "web/src/app/admin/login/page.tsx"
+      result: null
+      completed_at: null
+
+    - id: ADMIN-002
+      name: "관리자 대시보드 레이아웃"
+      status: pending
+      priority: high
+      assignee: frontend-dev
+      description: |
+        - 사이드바 네비게이션
+        - 대시보드 레이아웃
+        - 통계 카드
+      dependencies: [ADMIN-001]
+      files_to_modify:
+        - "web/src/app/admin/layout.tsx"
+        - "web/src/app/admin/page.tsx"
+        - "web/src/components/admin/Sidebar.tsx"
+      result: null
+      completed_at: null
+
+    - id: ADMIN-003
+      name: "VIP 관리 (목록/초대/등급변경)"
+      status: pending
+      priority: high
+      assignee: fullstack-dev
+      description: |
+        - VIP 목록 테이블
+        - 신규 VIP 초대
+        - 등급 변경 기능
+        - 초대 링크 생성
+      dependencies: [ADMIN-002]
+      files_to_modify:
+        - "web/src/app/admin/vips/page.tsx"
+        - "web/src/components/admin/VIPTable.tsx"
+        - "web/src/components/admin/InviteVIPModal.tsx"
+      result: null
+      completed_at: null
+
+    - id: ADMIN-004
+      name: "제품 관리 CRUD"
+      status: pending
+      priority: high
+      assignee: fullstack-dev
+      description: |
+        - 제품 목록 테이블
+        - 제품 추가/수정 폼
+        - 제품 삭제 (soft delete)
+      dependencies: [ADMIN-002]
+      files_to_modify:
+        - "web/src/app/admin/products/page.tsx"
+        - "web/src/app/admin/products/[id]/page.tsx"
+        - "web/src/components/admin/ProductForm.tsx"
+      result: null
+      completed_at: null
+
+    - id: ADMIN-005
+      name: "이미지 업로드 (Supabase Storage)"
+      status: pending
+      priority: high
+      assignee: backend-dev
+      description: |
+        - Supabase Storage 버킷 설정
+        - 이미지 업로드 API
+        - 이미지 리사이징
+      dependencies: [ADMIN-004]
+      files_to_modify:
+        - "web/src/lib/storage/upload.ts"
+        - "web/src/components/admin/ImageUploader.tsx"
+      result: null
+      completed_at: null
+
+    - id: ADMIN-006
+      name: "재고 관리"
+      status: pending
+      priority: high
+      assignee: fullstack-dev
+      description: |
+        - 사이즈별 재고 조정
+        - 재고 이력 조회
+        - 저재고 알림
+      dependencies: [ADMIN-004]
+      files_to_modify:
+        - "web/src/app/admin/inventory/page.tsx"
+        - "web/src/components/admin/InventoryTable.tsx"
+      result: null
+      completed_at: null
+
+    - id: ADMIN-007
+      name: "주문 관리"
+      status: pending
+      priority: high
+      assignee: fullstack-dev
+      description: |
+        - 주문 목록 테이블
+        - 주문 상태 변경
+        - 송장번호/운송사 입력
+      dependencies: [ADMIN-002]
+      files_to_modify:
+        - "web/src/app/admin/orders/page.tsx"
+        - "web/src/components/admin/OrderTable.tsx"
+        - "web/src/components/admin/ShippingModal.tsx"
+      result: null
+      completed_at: null
+
+    - id: ADMIN-008
+      name: "통계 대시보드"
+      status: pending
+      priority: medium
+      assignee: frontend-dev
+      description: |
+        - 주문 현황 차트
+        - 재고 현황 차트
+        - 기간별 통계
+      dependencies: [ADMIN-002]
+      files_to_modify:
+        - "web/src/components/admin/StatsChart.tsx"
+        - "web/src/components/admin/DashboardStats.tsx"
+      result: null
+      completed_at: null
+
+    - id: ADMIN-009
+      name: "QR 가입 승인 관리"
+      status: pending
+      priority: medium
+      assignee: fullstack-dev
+      description: |
+        - 대기 중인 가입 요청 목록
+        - 승인/거부 기능
+        - 등급 지정
+      dependencies: [FEAT-004, ADMIN-002]
+      files_to_modify:
+        - "web/src/app/admin/pending-vips/page.tsx"
+        - "web/src/components/admin/PendingVIPTable.tsx"
+      result: null
+      completed_at: null
+
+# =============================================================================
+# Phase 4: 배포 및 최적화 (Deploy) - 7개 작업
+# =============================================================================
+phase_4_deploy:
+  name: "배포 및 최적화"
+  status: pending
+  progress: "0/7"
+
+  tasks:
+    - id: DEPLOY-001
+      name: "RLS 정책 설정"
+      status: pending
+      priority: critical
+      assignee: database-specialist
+      description: |
+        - vips 테이블 RLS
+        - orders 테이블 RLS
+        - products 테이블 RLS (읽기 전용)
+      dependencies: [CORE-001]
+      files_to_modify:
+        - "web/supabase/migrations/*_rls.sql"
+      result: null
+      completed_at: null
+
+    - id: DEPLOY-002
+      name: "환경 변수 설정"
+      status: pending
+      priority: high
+      assignee: devops-engineer
+      description: |
+        - 프로덕션 환경 변수
+        - Vercel 환경 변수 설정
+        - 시크릿 관리
+      dependencies: []
+      files_to_modify:
+        - ".env.production"
+        - "vercel.json"
+      result: null
+      completed_at: null
+
+    - id: DEPLOY-003
+      name: "Vercel 배포 설정"
+      status: pending
+      priority: high
+      assignee: devops-engineer
+      description: |
+        - Vercel 프로젝트 연결
+        - 빌드 설정
+        - 도메인 연결
+      dependencies: [DEPLOY-002]
+      files_to_modify:
+        - "vercel.json"
+      result: null
+      completed_at: null
+
+    - id: DEPLOY-004
+      name: "이미지 최적화"
+      status: pending
+      priority: medium
+      assignee: frontend-dev
+      description: |
+        - Next.js Image 최적화
+        - 레이지 로딩
+        - WebP 변환
+      dependencies: []
+      files_to_modify:
+        - "web/next.config.ts"
+      result: null
+      completed_at: null
+
+    - id: DEPLOY-005
+      name: "성능 테스트"
+      status: pending
+      priority: medium
+      assignee: test-engineer
+      description: |
+        - Lighthouse 점수 측정
+        - Core Web Vitals 확인
+        - 로드 시간 < 2초 달성
+      dependencies: [DEPLOY-003]
+      files_to_modify: []
+      result: null
+      completed_at: null
+
+    - id: DEPLOY-006
+      name: "보안 감사"
+      status: pending
+      priority: high
+      assignee: security-auditor
+      description: |
+        - OWASP Top 10 점검
+        - 인증/인가 검토
+        - 입력 유효성 검사
+      dependencies: [CORE-002, ADMIN-001]
+      files_to_modify: []
+      result: null
+      completed_at: null
+
+    - id: DEPLOY-007
+      name: "E2E 테스트 작성"
+      status: pending
+      priority: medium
+      assignee: test-engineer
+      description: |
+        - 제품 선택 플로우 테스트
+        - 체크아웃 플로우 테스트
+        - 관리자 기능 테스트
+      dependencies: [CORE-006, ADMIN-007]
+      files_to_modify:
+        - "web/tests/e2e/*.spec.ts"
+      result: null
+      completed_at: null
+
+# =============================================================================
+# 완료된 작업 (이전 구현)
+# =============================================================================
+completed_tasks:
+  - id: DONE-001
+    name: "제품 목록 페이지 UI"
+    status: completed
+    completed_at: 2024-12-19
+    result: "ProductCard, CategoryFilter, ActionBar 구현 완료"
+    files_modified:
+      - "web/src/app/products/page.tsx"
+      - "web/src/components/products/ProductCard.tsx"
+      - "web/src/components/products/CategoryFilter.tsx"
+      - "web/src/components/products/ActionBar.tsx"
+
+  - id: DONE-002
+    name: "체크아웃 페이지 UI"
+    status: completed
+    completed_at: 2024-12-19
+    result: "ShippingForm, OrderSummary, CheckoutHeader 구현 완료"
+    files_modified:
+      - "web/src/app/checkout/page.tsx"
+      - "web/src/components/checkout/ShippingForm.tsx"
+      - "web/src/components/checkout/OrderSummary.tsx"
+      - "web/src/components/checkout/CheckoutHeader.tsx"
+
+  - id: DONE-003
+    name: "주문 완료 페이지"
+    status: completed
+    completed_at: 2024-12-19
+    result: "주문 확인 애니메이션, 주문번호 표시"
+    files_modified:
+      - "web/src/app/checkout/complete/page.tsx"
+
+  - id: DONE-004
+    name: "장바구니 상태 관리"
+    status: completed
+    completed_at: 2024-12-19
+    result: "Zustand 스토어, localStorage 영속화"
+    files_modified:
+      - "web/src/stores/cartStore.ts"
+
+  - id: DONE-005
+    name: "헤더 컴포넌트"
+    status: completed
+    completed_at: 2024-12-19
+    result: "네비게이션, 선택 현황 표시"
+    files_modified:
+      - "web/src/components/layout/Header.tsx"
+
+  - id: DONE-006
+    name: "shadcn/ui 컴포넌트 설치"
+    status: completed
+    completed_at: 2024-12-19
+    result: "Button, Card, Badge, Checkbox, Input, Label, Textarea"
+    files_modified:
+      - "web/src/components/ui/*.tsx"

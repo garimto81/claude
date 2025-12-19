@@ -1,0 +1,30 @@
+%%{init: {'theme': 'base', 'themeVariables': { 'primaryColor': '#D4AF37', 'primaryTextColor': '#000', 'primaryBorderColor': '#B8860B', 'lineColor': '#B8860B', 'secondaryColor': '#F5F5F5', 'tertiaryColor': '#EEEEEE', 'background': '#FFFFFF', 'mainBkg': '#FFFFFF', 'nodeBorder': '#B8860B', 'clusterBkg': '#F9F9F9'}}}%%
+
+flowchart TB
+    subgraph USER["사용자 흐름"]
+        direction TB
+        U1["QR 코드 스캔"] --> U2["가입 정보 입력"]
+        U2 --> U3["6자리 인증코드 발급"]
+        U3 --> U4["코드 확인 화면"]
+        U4 --> U5{"승인 대기"}
+        U5 -->|"승인됨"| U6["쇼핑몰 접속"]
+        U5 -->|"거부됨"| U7["접근 거부"]
+    end
+
+    subgraph ADMIN["관리자 흐름"]
+        direction TB
+        A1["대기 목록 확인"] --> A2["신청자 정보 검토"]
+        A2 --> A3{"승인 여부"}
+        A3 -->|"승인"| A4["코드 활성화"]
+        A3 -->|"거부"| A5["코드 비활성화"]
+    end
+
+    U3 -.->|"코드 생성"| A1
+    A4 -.->|"상태 변경"| U5
+    A5 -.->|"상태 변경"| U5
+
+    style U1 fill:#3498DB,color:#fff,stroke:#2980B9
+    style U6 fill:#2ECC71,color:#000,stroke:#27AE60
+    style U7 fill:#E74C3C,color:#fff,stroke:#C0392B
+    style A4 fill:#2ECC71,color:#000,stroke:#27AE60
+    style A5 fill:#E74C3C,color:#fff,stroke:#C0392B

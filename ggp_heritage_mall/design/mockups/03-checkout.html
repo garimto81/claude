@@ -1,0 +1,381 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>Checkout - GG POKER Heritage Shop</title>
+    <link href="https://fonts.googleapis.com/css2?family=Playfair+Display:wght@400;500;600;700&family=Inter:wght@300;400;500;600&display=swap" rel="stylesheet">
+    <style>
+        * { margin: 0; padding: 0; box-sizing: border-box; }
+        :root {
+            --gold: #D4AF37;
+            --dark-gold: #B8860B;
+            --bg-primary: #0A0A0A;
+            --bg-secondary: #1A1A1A;
+            --bg-card: #151515;
+            --text-primary: #FFFFFF;
+            --text-secondary: #A0A0A0;
+            --border: #2A2A2A;
+            --success: #2ECC71;
+        }
+        body {
+            font-family: 'Inter', sans-serif;
+            background-color: var(--bg-primary);
+            color: var(--text-primary);
+            min-height: 100vh;
+        }
+        .header {
+            position: fixed;
+            top: 0; left: 0; right: 0;
+            z-index: 100;
+            padding: 20px 60px;
+            display: flex;
+            justify-content: space-between;
+            align-items: center;
+            background: rgba(10, 10, 10, 0.95);
+            border-bottom: 1px solid var(--border);
+            backdrop-filter: blur(10px);
+        }
+        .logo { display: flex; align-items: center; gap: 12px; }
+        .logo-icon {
+            width: 40px; height: 40px;
+            background: linear-gradient(135deg, var(--gold) 0%, var(--dark-gold) 100%);
+            border-radius: 8px;
+            display: flex;
+            align-items: center;
+            justify-content: center;
+            font-family: 'Playfair Display', serif;
+            font-weight: 700;
+            font-size: 18px;
+            color: var(--bg-primary);
+        }
+        .logo-text {
+            font-family: 'Playfair Display', serif;
+            font-size: 20px;
+            font-weight: 600;
+            letter-spacing: 2px;
+        }
+        .progress-steps { display: flex; align-items: center; gap: 16px; }
+        .step { display: flex; align-items: center; gap: 8px; }
+        .step-number {
+            width: 32px; height: 32px;
+            border-radius: 50%;
+            display: flex;
+            align-items: center;
+            justify-content: center;
+            font-size: 13px;
+            font-weight: 600;
+            border: 2px solid var(--border);
+            color: var(--text-secondary);
+        }
+        .step.completed .step-number { background: var(--gold); border-color: var(--gold); color: var(--bg-primary); }
+        .step.active .step-number { border-color: var(--gold); color: var(--gold); }
+        .step-label { font-size: 13px; color: var(--text-secondary); }
+        .step.active .step-label { color: var(--text-primary); }
+        .step-divider { width: 40px; height: 2px; background: var(--border); }
+        .step-divider.completed { background: var(--gold); }
+        .main { padding-top: 100px; min-height: 100vh; display: flex; }
+        .checkout-form { flex: 1; padding: 60px; border-right: 1px solid var(--border); }
+        .form-header { margin-bottom: 40px; }
+        .form-title { font-family: 'Playfair Display', serif; font-size: 32px; font-weight: 400; margin-bottom: 8px; }
+        .form-description { font-size: 14px; color: var(--text-secondary); }
+        .form-section { margin-bottom: 40px; }
+        .section-title {
+            font-size: 14px;
+            font-weight: 600;
+            letter-spacing: 1px;
+            color: var(--gold);
+            text-transform: uppercase;
+            margin-bottom: 24px;
+            padding-bottom: 12px;
+            border-bottom: 1px solid var(--border);
+        }
+        .form-row { display: grid; grid-template-columns: repeat(2, 1fr); gap: 20px; margin-bottom: 20px; }
+        .form-row.full { grid-template-columns: 1fr; }
+        .form-group { display: flex; flex-direction: column; gap: 8px; }
+        .form-label { font-size: 13px; font-weight: 500; color: var(--text-secondary); }
+        .form-input {
+            padding: 16px 20px;
+            background: var(--bg-secondary);
+            border: 1px solid var(--border);
+            border-radius: 8px;
+            font-family: 'Inter', sans-serif;
+            font-size: 15px;
+            color: var(--text-primary);
+            transition: all 0.3s ease;
+        }
+        .form-input:focus { outline: none; border-color: var(--gold); box-shadow: 0 0 0 3px rgba(212, 175, 55, 0.1); }
+        .form-input::placeholder { color: var(--text-secondary); }
+        .form-textarea { min-height: 100px; resize: vertical; }
+        .saved-address {
+            padding: 24px;
+            background: var(--bg-card);
+            border: 1px solid var(--border);
+            border-radius: 12px;
+            margin-bottom: 24px;
+        }
+        .saved-address-header { display: flex; justify-content: space-between; align-items: center; margin-bottom: 16px; }
+        .saved-label {
+            display: flex;
+            align-items: center;
+            gap: 8px;
+            font-size: 12px;
+            font-weight: 500;
+            letter-spacing: 1px;
+            color: var(--gold);
+            text-transform: uppercase;
+        }
+        .saved-label svg { width: 16px; height: 16px; stroke: var(--gold); }
+        .edit-btn {
+            padding: 8px 16px;
+            background: transparent;
+            border: 1px solid var(--border);
+            border-radius: 4px;
+            font-size: 12px;
+            font-weight: 500;
+            color: var(--text-secondary);
+            cursor: pointer;
+            transition: all 0.3s ease;
+        }
+        .edit-btn:hover { border-color: var(--gold); color: var(--gold); }
+        .saved-address-content { line-height: 1.8; }
+        .saved-address-content strong { font-weight: 600; }
+        .order-summary { width: 480px; padding: 60px 40px; background: var(--bg-secondary); }
+        .summary-title { font-family: 'Playfair Display', serif; font-size: 24px; font-weight: 400; margin-bottom: 32px; }
+        .summary-items { margin-bottom: 32px; }
+        .summary-item { display: flex; gap: 16px; padding: 16px 0; border-bottom: 1px solid var(--border); }
+        .item-image {
+            width: 72px; height: 72px;
+            background: var(--bg-card);
+            border-radius: 8px;
+            display: flex;
+            align-items: center;
+            justify-content: center;
+            font-family: 'Playfair Display', serif;
+            font-size: 20px;
+            color: var(--border);
+        }
+        .item-details { flex: 1; }
+        .item-category { font-size: 10px; font-weight: 500; letter-spacing: 1px; color: var(--gold); text-transform: uppercase; margin-bottom: 4px; }
+        .item-name { font-size: 15px; font-weight: 500; margin-bottom: 4px; }
+        .item-size { font-size: 13px; color: var(--text-secondary); }
+        .item-remove {
+            width: 32px; height: 32px;
+            background: transparent;
+            border: none;
+            border-radius: 50%;
+            display: flex;
+            align-items: center;
+            justify-content: center;
+            cursor: pointer;
+            transition: background 0.3s ease;
+        }
+        .item-remove:hover { background: rgba(255, 255, 255, 0.1); }
+        .item-remove svg { width: 16px; height: 16px; stroke: var(--text-secondary); }
+        .summary-divider { height: 1px; background: var(--border); margin: 24px 0; }
+        .summary-row { display: flex; justify-content: space-between; align-items: center; margin-bottom: 12px; }
+        .summary-label { font-size: 14px; color: var(--text-secondary); }
+        .summary-value { font-size: 14px; font-weight: 500; }
+        .summary-total { font-size: 16px; font-weight: 600; color: var(--gold); }
+        .complimentary-badge {
+            display: inline-flex;
+            align-items: center;
+            gap: 6px;
+            padding: 4px 12px;
+            background: rgba(46, 204, 113, 0.1);
+            border: 1px solid var(--success);
+            border-radius: 4px;
+            font-size: 12px;
+            font-weight: 500;
+            color: var(--success);
+        }
+        .complimentary-badge svg { width: 14px; height: 14px; stroke: var(--success); }
+        .confirm-btn {
+            width: 100%;
+            padding: 18px;
+            background: linear-gradient(135deg, var(--gold) 0%, var(--dark-gold) 100%);
+            border: none;
+            border-radius: 8px;
+            font-family: 'Inter', sans-serif;
+            font-size: 15px;
+            font-weight: 600;
+            letter-spacing: 1px;
+            color: var(--bg-primary);
+            cursor: pointer;
+            transition: all 0.3s ease;
+            margin-top: 32px;
+        }
+        .confirm-btn:hover { transform: translateY(-2px); box-shadow: 0 10px 30px rgba(212, 175, 55, 0.3); }
+        .terms-text { margin-top: 16px; font-size: 12px; color: var(--text-secondary); text-align: center; line-height: 1.6; }
+        .terms-text a { color: var(--gold); text-decoration: none; }
+    </style>
+</head>
+<body>
+    <header class="header">
+        <div class="logo">
+            <div class="logo-icon">GG</div>
+            <span class="logo-text">HERITAGE</span>
+        </div>
+        <div class="progress-steps">
+            <div class="step completed">
+                <div class="step-number">1</div>
+                <span class="step-label">Select Items</span>
+            </div>
+            <div class="step-divider completed"></div>
+            <div class="step active">
+                <div class="step-number">2</div>
+                <span class="step-label">Shipping Info</span>
+            </div>
+            <div class="step-divider"></div>
+            <div class="step">
+                <div class="step-number">3</div>
+                <span class="step-label">Complete</span>
+            </div>
+        </div>
+        <div style="width: 100px"></div>
+    </header>
+
+    <main class="main">
+        <div class="checkout-form">
+            <div class="form-header">
+                <h1 class="form-title">Shipping Information</h1>
+                <p class="form-description">Please review your saved shipping information and update if needed.</p>
+            </div>
+
+            <div class="saved-address">
+                <div class="saved-address-header">
+                    <span class="saved-label">
+                        <svg viewBox="0 0 24 24" fill="none" stroke-width="2" stroke-linecap="round" stroke-linejoin="round">
+                            <path d="M20 21v-2a4 4 0 0 0-4-4H8a4 4 0 0 0-4 4v2"/>
+                            <circle cx="12" cy="7" r="4"/>
+                        </svg>
+                        Saved Information
+                    </span>
+                    <button class="edit-btn">Edit</button>
+                </div>
+                <div class="saved-address-content">
+                    <strong>John Smith</strong><br>
+                    +1 (555) 123-4567<br>
+                    123 Heritage Boulevard<br>
+                    Las Vegas, NV 89101
+                </div>
+            </div>
+
+            <div class="form-section">
+                <h3 class="section-title">Recipient Information</h3>
+                <div class="form-row">
+                    <div class="form-group">
+                        <label class="form-label">Full Name *</label>
+                        <input type="text" class="form-input" value="John Smith">
+                    </div>
+                    <div class="form-group">
+                        <label class="form-label">Phone Number *</label>
+                        <input type="tel" class="form-input" value="+1 (555) 123-4567">
+                    </div>
+                </div>
+            </div>
+
+            <div class="form-section">
+                <h3 class="section-title">Shipping Address</h3>
+                <div class="form-row">
+                    <div class="form-group">
+                        <label class="form-label">ZIP Code *</label>
+                        <input type="text" class="form-input" value="89101" style="width: 150px;">
+                    </div>
+                </div>
+                <div class="form-row full">
+                    <div class="form-group">
+                        <label class="form-label">Street Address *</label>
+                        <input type="text" class="form-input" value="123 Heritage Boulevard">
+                    </div>
+                </div>
+                <div class="form-row full">
+                    <div class="form-group">
+                        <label class="form-label">City, State *</label>
+                        <input type="text" class="form-input" value="Las Vegas, NV">
+                    </div>
+                </div>
+            </div>
+
+            <div class="form-section">
+                <h3 class="section-title">Delivery Notes</h3>
+                <div class="form-row full">
+                    <div class="form-group">
+                        <label class="form-label">Special Instructions (Optional)</label>
+                        <textarea class="form-input form-textarea" placeholder="Enter any delivery instructions here..."></textarea>
+                    </div>
+                </div>
+            </div>
+        </div>
+
+        <div class="order-summary">
+            <h2 class="summary-title">Order Summary</h2>
+
+            <div class="summary-items">
+                <div class="summary-item">
+                    <div class="item-image">01</div>
+                    <div class="item-details">
+                        <div class="item-category">Apparel</div>
+                        <div class="item-name">Premium Hoodie</div>
+                        <div class="item-size">Size: M</div>
+                    </div>
+                    <button class="item-remove">
+                        <svg viewBox="0 0 24 24" fill="none" stroke-width="2" stroke-linecap="round" stroke-linejoin="round">
+                            <line x1="18" y1="6" x2="6" y2="18"/>
+                            <line x1="6" y1="6" x2="18" y2="18"/>
+                        </svg>
+                    </button>
+                </div>
+
+                <div class="summary-item">
+                    <div class="item-image">02</div>
+                    <div class="item-details">
+                        <div class="item-category">Accessories</div>
+                        <div class="item-name">Card Protector Set</div>
+                        <div class="item-size">One Size</div>
+                    </div>
+                    <button class="item-remove">
+                        <svg viewBox="0 0 24 24" fill="none" stroke-width="2" stroke-linecap="round" stroke-linejoin="round">
+                            <line x1="18" y1="6" x2="6" y2="18"/>
+                            <line x1="6" y1="6" x2="18" y2="18"/>
+                        </svg>
+                    </button>
+                </div>
+            </div>
+
+            <div class="summary-divider"></div>
+
+            <div class="summary-row">
+                <span class="summary-label">Selected Items</span>
+                <span class="summary-value">2 items</span>
+            </div>
+            <div class="summary-row">
+                <span class="summary-label">Remaining Selection</span>
+                <span class="summary-value">3 items</span>
+            </div>
+            <div class="summary-row">
+                <span class="summary-label">Shipping</span>
+                <span class="complimentary-badge">
+                    <svg viewBox="0 0 24 24" fill="none" stroke-width="2" stroke-linecap="round" stroke-linejoin="round">
+                        <polyline points="20 6 9 17 4 12"/>
+                    </svg>
+                    Free
+                </span>
+            </div>
+
+            <div class="summary-divider"></div>
+
+            <div class="summary-row">
+                <span class="summary-label">Total</span>
+                <span class="summary-total">VIP Complimentary</span>
+            </div>
+
+            <button class="confirm-btn">Confirm Order</button>
+
+            <p class="terms-text">
+                By confirming, you agree to our <a href="#">Terms of Service</a> and <a href="#">Privacy Policy</a>.
+            </p>
+        </div>
+    </main>
+</body>
+</html>

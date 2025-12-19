@@ -1,0 +1,35 @@
+%%{init: {'theme': 'base', 'themeVariables': { 'primaryColor': '#D4AF37', 'primaryTextColor': '#000', 'primaryBorderColor': '#B8860B', 'lineColor': '#B8860B', 'secondaryColor': '#F5F5F5', 'tertiaryColor': '#EEEEEE', 'background': '#FFFFFF', 'mainBkg': '#FFFFFF'}}}%%
+
+flowchart LR
+    subgraph USER["User Domain"]
+        direction TB
+        VIPS["vips\n─────────\nid PK\nemail UK\nname\ntier\ninvite_token"]
+        VERIFY["verification_codes\n─────────\nid PK\ncode UK\nemail\nstatus"]
+    end
+
+    subgraph PRODUCT["Product Domain"]
+        direction TB
+        CAT["categories\n─────────\nid PK\nname UK\nslug UK"]
+        PROD["products\n─────────\nid PK\nname\ncategory_id FK\ntier_required"]
+        INV["inventory\n─────────\nid PK\nproduct_id FK\nsize, quantity"]
+    end
+
+    subgraph ORDER["Order Domain"]
+        direction TB
+        ORD["orders\n─────────\nid PK\nvip_id FK\nstatus\nshipping_address"]
+        ITEMS["order_items\n─────────\nid PK\norder_id FK\nproduct_id FK"]
+    end
+
+    VIPS --> VERIFY
+    VIPS --> ORD
+    CAT --> PROD
+    PROD --> INV
+    PROD --> ITEMS
+    ORD --> ITEMS
+
+    style USER fill:#F5F5F5,stroke:#B8860B
+    style PRODUCT fill:#F5F5F5,stroke:#B8860B
+    style ORDER fill:#F5F5F5,stroke:#B8860B
+    style VIPS fill:#FFF8DC,stroke:#D4AF37
+    style PROD fill:#FFF8DC,stroke:#D4AF37
+    style ORD fill:#FFF8DC,stroke:#D4AF37
