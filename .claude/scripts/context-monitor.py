@@ -164,50 +164,30 @@ def parse_context_from_transcript(transcript_path):
         return None
 
 def get_context_display(context_info):
-    """Generate context display with visual indicators.
-
-    Context Engineering Thresholds (Dumb Zone Prevention):
-    - 0-40%:  Green  - Safe zone
-    - 40-60%: Yellow - DUMB ZONE warning (performance degradation starts)
-    - 60-80%: Orange - COMPRESS recommended (intentional compaction needed)
-    - 80%+:   Red    - CRITICAL (immediate action required)
-    """
+    """Generate context display with progress bar only (no text alerts)."""
     if not context_info:
-        return "🔵 ???"
+        return "🔵▁▁▁▁▁▁▁▁ ???"
 
     percent = context_info.get('percent', 0)
-    warning = context_info.get('warning')
 
-    # Context Engineering thresholds based on "Dumb Zone" research
-    # Performance degradation starts at ~40% context usage
+    # Context Engineering thresholds
     if percent >= 80:
-        icon, color = "🚨", "\033[31;1m"  # Blinking red
-        alert = "CRITICAL"
+        icon, color = "🚨", "\033[31;1m"  # Red
     elif percent >= 60:
         icon, color = "🟠", "\033[91m"    # Orange
-        alert = "COMPRESS"
     elif percent >= 40:
-        icon, color = "🟡", "\033[33m"    # Yellow - DUMB ZONE
-        alert = "DUMB"
+        icon, color = "🟡", "\033[33m"    # Yellow
     else:
-        icon, color = "🟢", "\033[32m"    # Green - Safe
-        alert = ""
+        icon, color = "🟢", "\033[32m"    # Green
 
     # Create progress bar
     segments = 8
     filled = int((percent / 100) * segments)
     bar = "█" * filled + "▁" * (segments - filled)
 
-    # Special warnings override
-    if warning == 'auto-compact':
-        alert = "AUTO-COMPACT!"
-    elif warning == 'low':
-        alert = "LOW!"
-
     reset = "\033[0m"
-    alert_str = f" {alert}" if alert else ""
 
-    return f"{icon}{color}{bar}{reset} {percent:.0f}%{alert_str}"
+    return f"{icon}{color}{bar}{reset} {percent:.0f}%"
 
 def get_directory_display(workspace_data):
     """Get directory display name."""
