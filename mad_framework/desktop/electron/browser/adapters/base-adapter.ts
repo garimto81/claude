@@ -231,21 +231,38 @@ export class BaseLLMAdapter {
     // Step 1: Wait for typing to start (max 10 seconds)
     const typingStarted = await this.waitForCondition(
       () => this.isWriting(),
-      { timeout: 10000, interval: 300, description: 'typing to start' }
+      { timeout: 10000, interval: 300, maxAttempts: 30, description: 'typing to start' }
     );
 
     if (!typingStarted) {
       console.warn(`[${this.provider}] Typing never started, checking for response anyway`);
+      // Early check: 응답이 이미 있는지 확인
+      const hasResponse = await this.hasValidResponse();
+      if (hasResponse) {
+        console.log(`[${this.provider}] Response already present, skipping wait`);
+        return this.success();
+      }
     }
 
-    // Step 2: Wait for typing to finish (remaining timeout)
+    // Step 2: Wait for typing to finish with reasonable limits
     const remainingTimeout = Math.max(timeout - 10000, 5000);
     const typingFinished = await this.waitForCondition(
       async () => !(await this.isWriting()),
-      { timeout: remainingTimeout, interval: 500, description: 'typing to finish' }
+      {
+        timeout: remainingTimeout,
+        interval: 500,
+        maxAttempts: 120, // 최대 120회 (약 60초 @500ms)
+        description: 'typing to finish',
+      }
     );
 
     if (!typingFinished) {
+      // Fallback: 타임아웃 되었지만 응답이 있는지 최종 확인
+      const hasResponse = await this.hasValidResponse();
+      if (hasResponse) {
+        console.log(`[${this.provider}] Response present despite timeout`);
+        return this.success();
+      }
       return this.error('RESPONSE_TIMEOUT', `Response timeout for ${this.provider}`, {
         timeout,
         remainingTimeout,
@@ -256,6 +273,12 @@ export class BaseLLMAdapter {
     await this.sleep(1000);
     console.log(`[${this.provider}] Response complete`);
     return this.success();
+  }
+
+  // Helper: 유효한 응답이 있는지 확인
+  protected async hasValidResponse(): Promise<boolean> {
+    const result = await this.getResponse();
+    return result.success && typeof result.data === 'string' && result.data.trim().length > 10;
   }
 
   async getResponse(): Promise<AdapterResult<string>> {
@@ -394,23 +417,33 @@ export class BaseLLMAdapter {
       timeout: number;
       interval: number;
       description: string;
+      maxAttempts?: number;
     }
   ): Promise<boolean> {
     const startTime = Date.now();
+    const maxAttempts = options.maxAttempts || 60; // 기본 60회 (30초 @500ms)
+    let attempts = 0;
 
-    while (Date.now() - startTime < options.timeout) {
+    while (Date.now() - startTime < options.timeout && attempts < maxAttempts) {
+      attempts++;
       try {
         if (await checkFn()) {
-          console.log(`[${this.provider}] Condition met: ${options.description}`);
+          console.log(`[${this.provider}] Condition met: ${options.description} (${attempts} attempts)`);
           return true;
         }
       } catch (error) {
         console.warn(`[${this.provider}] Check failed for ${options.description}:`, error);
       }
-      await this.sleep(options.interval);
+
+      // Progressive backoff: 처음 10회는 빠르게, 이후 점점 느리게
+      const backoffInterval = attempts <= 10
+        ? options.interval
+        : Math.min(options.interval * 2, 2000);
+
+      await this.sleep(backoffInterval);
     }
 
-    console.warn(`[${this.provider}] Timeout waiting for: ${options.description}`);
+    console.warn(`[${this.provider}] Timeout waiting for: ${options.description} (${attempts} attempts)`);
     return false;
   }
 }

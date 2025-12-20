@@ -87,7 +87,12 @@ describe('ChatGPTAdapter', () => {
 
   describe('isWriting', () => {
     it('should check for .result-streaming class', async () => {
-      mockWebContents.executeJavaScript.mockResolvedValue(true);
+      // ChatGPTAdapter.isWriting() returns {writing: boolean, reason: string, debug: object}
+      mockWebContents.executeJavaScript.mockResolvedValue({
+        writing: true,
+        reason: 'resultStreaming',
+        debug: {}
+      });
 
       const isWriting = await adapter.isWriting();
 
