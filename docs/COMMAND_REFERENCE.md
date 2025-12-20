@@ -1,6 +1,6 @@
 # Command Reference
 
-**Version**: 1.0.0 | **Updated**: 2025-12-11
+**Version**: 1.1.0 | **Updated**: 2025-12-20
 
 이 문서는 모든 슬래시 커맨드의 사용법을 정리합니다.
 
@@ -11,6 +11,7 @@
 | 카테고리 | 커맨드 | 설명 |
 |----------|--------|------|
 | **핵심** | `/work` | 전체 워크플로우 자동화 |
+| | `/orchestrate` | 메인-서브 에이전트 오케스트레이션 |
 | | `/commit` | Conventional Commit 생성 |
 | | `/check` | 코드 품질/보안 검사 |
 | | `/tdd` | TDD 워크플로우 |
@@ -72,7 +73,63 @@ $ /work API 응답 캐싱 추가
 
 ---
 
-## 2. /commit - Conventional Commit 생성
+## 2. /orchestrate - 메인-서브 에이전트 오케스트레이션
+
+YAML 기반으로 서브 에이전트를 백그라운드에서 격리 실행하고 결과를 수집합니다.
+
+### 사용법
+
+```bash
+/orchestrate "작업 지시 내용"
+/orchestrate "로그인 기능 만들어줘"
+/orchestrate --parallel "3개 API 만들어줘"
+/orchestrate --timeout=30 "대규모 작업"
+```
+
+### 실행 흐름
+
+```
+STEP 1: 지시 분석 (에이전트 매핑)
+    ↓
+STEP 2: YAML 업무 파일 생성
+    ↓
+STEP 3: 서브 에이전트 백그라운드 실행 (격리)
+    ↓
+STEP 4: 결과 수집 (TaskOutput 대기)
+    ↓
+STEP 5: 결과 보고 및 판단
+```
+
+### 핵심 원칙
+
+| 원칙 | 설명 |
+|------|------|
+| **YAML 기반** | 모든 업무와 결과를 YAML 파일로 관리 |
+| **진행 상황 비공유** | 서브 에이전트는 진행 상황을 공유하지 않음 |
+| **결과만 저장** | 서브 에이전트는 결과만 YAML에 저장 |
+| **메인 판단** | 메인 에이전트가 결과 확인 후 다음 단계 판단 |
+
+### 옵션
+
+| 옵션 | 설명 |
+|------|------|
+| `--parallel` | 독립 작업 병렬 실행 |
+| `--sequential` | 모든 작업 순차 실행 |
+| `--timeout=N` | 작업별 타임아웃 (분) |
+| `--retry=N` | 실패 시 재시도 횟수 |
+
+### 폴더 구조
+
+```
+.claude/workflow/
+├── jobs/           # 업무 정의
+├── results/        # 서브 에이전트 결과
+└── history/        # 완료된 워크플로우 아카이브
+```
+
+---
+
+## 3. /commit - Conventional Commit 생성
 
 Conventional Commits 형식으로 커밋을 생성하고 푸시합니다.
 
@@ -122,7 +179,7 @@ git push origin main
 
 ---
 
-## 3. /check - 코드 품질/보안 검사
+## 4. /check - 코드 품질/보안 검사
 
 정적 분석, E2E 테스트, 성능 분석, 보안 검사를 수행합니다.
 
@@ -192,7 +249,7 @@ Summary: 1 warning, 1 moderate issue
 
 ---
 
-## 4. /tdd - TDD 워크플로우
+## 5. /tdd - TDD 워크플로우
 
 Red-Green-Refactor 사이클로 TDD를 수행합니다.
 
@@ -252,7 +309,7 @@ git commit -m "refactor: Use User.authenticate method ♻️"
 
 ---
 
-## 5. /issue - GitHub 이슈 관리
+## 6. /issue - GitHub 이슈 관리
 
 이슈의 전체 생명주기를 관리합니다.
 
@@ -321,7 +378,7 @@ git commit -m "refactor: Use User.authenticate method ♻️"
 
 ---
 
-## 6. /pr - PR 리뷰/머지
+## 7. /pr - PR 리뷰/머지
 
 PR 리뷰, 개선 제안, 자동 머지를 수행합니다.
 
@@ -390,7 +447,7 @@ $ /pr auto
 
 ---
 
-## 7. /create - PRD/PR/문서 생성
+## 8. /create - PRD/PR/문서 생성
 
 PRD, PR, 문서를 생성합니다.
 
@@ -454,7 +511,7 @@ B. Authentication Method
 
 ---
 
-## 8. /research - 리서치
+## 9. /research - 리서치
 
 코드베이스 분석, 웹 검색, 구현 계획을 수행합니다.
 
@@ -509,7 +566,7 @@ B. Authentication Method
 
 ---
 
-## 9. /parallel - 병렬 멀티에이전트 실행
+## 10. /parallel - 병렬 멀티에이전트 실행
 
 4개의 전문 에이전트가 병렬로 작업합니다.
 
@@ -595,7 +652,7 @@ B. Authentication Method
 
 ---
 
-## 10. /todo - 작업 관리
+## 11. /todo - 작업 관리
 
 프로젝트 작업을 관리합니다.
 
@@ -642,7 +699,7 @@ B. Authentication Method
 
 ---
 
-## 11. /session - 세션 관리
+## 12. /session - 세션 관리
 
 컨텍스트 압축, 여정 기록, 변경 로그, 세션 이어가기를 관리합니다.
 
@@ -724,7 +781,7 @@ B. Authentication Method
 
 ---
 
-## 12. /deploy - 버전/Docker 배포
+## 13. /deploy - 버전/Docker 배포
 
 버전 업데이트와 Docker 재빌드를 수행합니다.
 
@@ -772,7 +829,7 @@ Version: 1.2.3 → 1.3.0
 
 ---
 
-## 13. /audit - 설정 점검
+## 14. /audit - 설정 점검
 
 CLAUDE.md, 커맨드, 에이전트, 스킬의 일관성을 점검합니다.
 
