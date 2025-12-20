@@ -305,12 +305,31 @@ export class ChatGPTAdapter extends BaseLLMAdapter {
 
   async isWriting(): Promise<boolean> {
     const script = `
-      !!(
-        document.querySelector('.result-streaming') ||
-        document.querySelector('[data-message-author-role="assistant"] .markdown.prose.dark:empty') ||
-        document.querySelector('.agent-turn')
-      )
+      (() => {
+        // Primary: Stop 버튼 감지 (가장 신뢰성 높음)
+        const stopButton = document.querySelector('button[aria-label="Stop generating"]');
+        if (stopButton) return true;
+
+        // Fallback: data-testid 기반 stop 버튼
+        const stopButtonAlt = document.querySelector('button[data-testid="stop-button"]');
+        if (stopButtonAlt) return true;
+
+        // Secondary: Send 버튼 비활성화 확인
+        const sendButton = document.querySelector('button[data-testid="send-button"]');
+        if (sendButton && sendButton.disabled) return true;
+
+        // Tertiary: 스트리밍 클래스
+        const streaming = document.querySelector('.result-streaming');
+        if (streaming) return true;
+
+        // 커서 인디케이터 (최신 UI)
+        const cursorIndicator = document.querySelector('[data-message-author-role="assistant"] .cursor, [data-message-author-role="assistant"] .animate-pulse');
+        if (cursorIndicator) return true;
+
+        return false;
+      })()
     `;
+
     return this.executeScript<boolean>(script, false);
   }
 

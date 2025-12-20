@@ -156,9 +156,21 @@ export function registerIpcHandlers(mainWindow: BrowserWindow) {
 
 // Cleanup on app quit
 export function cleanupIpcHandlers() {
-  browserManager?.destroyAllViews();
-  browserManager = null;
-  debateController = null;
-  repository?.clear();
-  repository = null;
+  // 1. 진행 중인 토론 취소
+  if (debateController) {
+    debateController.cancel();
+    debateController = null;
+  }
+
+  // 2. BrowserView 정리
+  if (browserManager) {
+    browserManager.destroyAllViews();
+    browserManager = null;
+  }
+
+  // 3. Repository 정리
+  if (repository) {
+    repository.clear();
+    repository = null;
+  }
 }
