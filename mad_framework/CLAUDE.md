@@ -6,14 +6,9 @@ This file provides guidance to Claude Code (claude.ai/code) when working with co
 
 ## Project Overview
 
-MAD Framework (Multi-Agent Debate) is a Python/TypeScript hybrid project for conducting structured debates between multiple LLM agents. It has two main components:
-
-1. **Python Core** (`src/mad/`): LangGraph-based debate orchestration library
-2. **Electron Desktop App** (`desktop/`): React + Electron UI for browser-based LLM automation
+MAD Framework (Multi-Agent Debate) is a Python library for conducting structured debates between multiple LLM agents using LangGraph.
 
 ## Build & Development Commands
-
-### Python Core
 
 ```bash
 # Setup (uses uv)
@@ -22,107 +17,68 @@ uv sync --all-extras
 # Run single test (recommended)
 pytest tests/unit/test_config.py -v
 
-# Run all tests
-pytest tests/ -v
+# Lint with auto-fix
+ruff check src/ --fix
 
-# Lint
-ruff check src/
+# Format
+ruff format src/
 
 # Type check
 mypy src/
 ```
 
-### Desktop App (Electron + React)
-
-```powershell
-cd D:\AI\claude01\mad_framework\desktop
-
-# Install dependencies
-npm install
-
-# Development (Vite dev server only)
-npm run dev
-
-# Development with Electron
-npm run dev:electron
-
-# Run tests
-npm run test:run
-
-# Run tests with coverage
-npm run test:coverage
-
-# Lint
-npm run lint
-
-# Build for Windows
-npm run build:win
-```
-
 ## Architecture
 
-### Python Core (`src/mad/`)
+### LangGraph Flow
 
 ```
-LangGraph StateGraph Flow:
-  initialize → debate → moderate → (loop) → judge → END
+initialize → debate → moderate → (loop if not consensus) → judge → END
 ```
 
-Key components:
-- **`core/orchestrator.py`**: `MAD` class - main entry point. Creates agents and builds StateGraph
-- **`core/graph.py`**: LangGraph StateGraph definition with nodes (initialize, debate, moderate, judge)
-- **`core/state.py`**: Pydantic state models for debate flow
-- **`agents/`**: Debater, Judge, Moderator agents
-- **`providers/`**: Anthropic, OpenAI provider adapters with registry pattern
-- **`presets/`**: Pre-configured debate types (code_review, qa_accuracy, decision)
+### Core Components (`src/mad/`)
 
-### Desktop App (`desktop/`)
+- **`core/orchestrator.py`**: `MAD` class - entry point, creates agents and StateGraph
+- **`core/graph.py`**: StateGraph with nodes (initialize, debate, moderate, judge)
+- **`core/state.py`**: `DebateState` TypedDict with `Annotated[list[DebateMessage], add_messages]`
+- **`agents/`**: Debater, Judge, Moderator - each has `act(state)` method
+- **`providers/registry.py`**: `get_provider("anthropic"|"openai")` - singleton cache pattern
+- **`strategies/round_robin.py`**: Debate turn strategy (extensible)
+- **`presets/`**: CodeReviewPreset, QAAccuracyPreset, DecisionPreset
 
-**Process Architecture:**
-- **Main process** (`electron/main.ts`): Window management, IPC handlers
-- **Renderer** (`src/`): React UI with Zustand stores
-- **Browser adapters** (`electron/browser/adapters/`): Automate ChatGPT, Claude, Gemini web interfaces
+### Data Flow
 
-**Key Files:**
-- `electron/debate/debate-controller.ts`: Infinite loop debate execution with cycle detection and circuit breaker (MAX_ITERATIONS=100)
-- `electron/browser/browser-view-manager.ts`: Manages BrowserViews for each LLM provider
-- `src/stores/debate-store.ts`: Zustand store for UI state
-- `shared/types.ts`: Shared TypeScript types between main/renderer
-
-**IPC Communication:**
-- Renderer calls main via `window.api.*` (exposed in preload.ts)
-- Main emits events: `debate:progress`, `debate:response`, `debate:element-score`, `debate:complete`
+```python
+MAD(config) → _create_debaters() → create_debate_graph() → graph.ainvoke() → DebateResult
+```
 
 ## Key Patterns
 
-### Python
-- Async-first (`async def debate()`)
-- Provider registry pattern (`get_provider("anthropic")`)
-- Pydantic for config/state validation
-- pytest-asyncio for async tests
+- **Async-first**: All debate methods are `async def`
+- **Provider registry**: `ProviderRegistry.get()` caches instances by `{name}:{api_key}`
+- **State accumulation**: `add_messages` reducer appends to `messages` list
+- **Early stopping**: Moderator checks `consensus_threshold` to short-circuit rounds
 
-### TypeScript/Electron
-- Path aliases: `@/*` (src), `@electron/*` (electron), `@shared/*` (shared)
-- Context isolation with preload bridge
-- Vitest for testing with jsdom
-
-## Environment Variables
+## Desktop App 실행
 
 ```bash
-# Required for Python core
-ANTHROPIC_API_KEY=sk-ant-xxxxx
-OPENAI_API_KEY=sk-xxxxx
-
-# Optional
-MAD_DEFAULT_PROVIDER=anthropic
-MAD_MAX_ROUNDS=3
+cd D:\AI\claude01\mad_framework\desktop
+npm install
+npm run dev:electron
 ```
+
+API 키 불필요. 웹 브라우저 자동화로 ChatGPT/Claude/Gemini 연동.
 
 ## Testing
 
-Python tests use fixtures in `tests/conftest.py`:
-- `sample_topic`: Debate topic string
-- `sample_context`: Context string
-- `sample_code`: Code for review tests
+```bash
+pytest tests/unit/test_config.py -v  # 개별 테스트
+pytest tests/ -v                      # 전체 테스트
+```
 
-Desktop tests use `@testing-library/react` and Vitest globals.
+Fixtures (`tests/conftest.py`): `sample_topic`, `sample_context`, `sample_code`
+
+## References
+
+- **상세 아키텍처**: `docs/ARCHITECTURE.md`
+- **사용법 예제**: `examples/`
+- **API 문서**: `README.md`

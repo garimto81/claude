@@ -104,7 +104,7 @@ class MAD:
 
     def _get_provider(self, provider_name: str) -> LLMProvider:
         """Get a provider instance."""
-        return get_provider(provider_name, config=self.global_config)
+        return get_provider(provider_name)
 
     def _create_debaters(self) -> list[DebaterAgent]:
         """Create debater agents from config."""

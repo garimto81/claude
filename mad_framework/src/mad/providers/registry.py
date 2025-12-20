@@ -4,7 +4,6 @@ from __future__ import annotations
 
 from typing import TYPE_CHECKING, Literal
 
-from mad.core.config import MADConfig
 from mad.providers.anthropic import AnthropicProvider
 from mad.providers.openai import OpenAIProvider
 
@@ -33,15 +32,11 @@ class ProviderRegistry:
     def get(
         cls,
         name: ProviderType,
-        api_key: str | None = None,
-        config: MADConfig | None = None,
     ) -> LLMProvider:
         """Get or create a provider instance.
 
         Args:
             name: Provider name ('anthropic', 'openai', 'google').
-            api_key: Optional API key (overrides config/env).
-            config: Optional MADConfig for API keys.
 
         Returns:
             LLMProvider instance.
@@ -54,23 +49,11 @@ class ProviderRegistry:
             msg = f"Unknown provider '{name}'. Available: {available}"
             raise ValueError(msg)
 
-        # Resolve API key
-        if api_key is None and config is not None:
-            key_map = {
-                "anthropic": config.anthropic_api_key,
-                "openai": config.openai_api_key,
-                "google": config.google_api_key,
-            }
-            api_key = key_map.get(name)
-
-        # Create cache key
-        cache_key = f"{name}:{api_key or 'default'}"
-
-        if cache_key not in cls._instances:
+        if name not in cls._instances:
             provider_class = cls._providers[name]
-            cls._instances[cache_key] = provider_class(api_key=api_key)
+            cls._instances[name] = provider_class()
 
-        return cls._instances[cache_key]
+        return cls._instances[name]
 
     @classmethod
     def available_providers(cls) -> list[str]:
@@ -85,17 +68,13 @@ class ProviderRegistry:
 
 def get_provider(
     name: ProviderType,
-    api_key: str | None = None,
-    config: MADConfig | None = None,
 ) -> LLMProvider:
     """Convenience function to get a provider from the registry.
 
     Args:
         name: Provider name ('anthropic', 'openai', 'google').
-        api_key: Optional API key.
-        config: Optional MADConfig.
 
     Returns:
         LLMProvider instance.
     """
-    return ProviderRegistry.get(name, api_key, config)
+    return ProviderRegistry.get(name)

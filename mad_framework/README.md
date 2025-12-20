@@ -117,17 +117,17 @@ result = await mad.debate(
 
 ## Configuration
 
-### Environment Variables
+### Desktop App
 
 ```bash
-# .env
-ANTHROPIC_API_KEY=sk-ant-xxxxx
-OPENAI_API_KEY=sk-xxxxx
-GOOGLE_API_KEY=xxxxx
-
-MAD_DEFAULT_PROVIDER=anthropic
-MAD_MAX_ROUNDS=3
+# Electron 앱 실행 (API 키 불필요)
+cd desktop
+npm install
+npm run dev:electron
 ```
+
+BrowserView를 통해 ChatGPT, Claude, Gemini 웹 UI와 자동 연동됩니다.
+웹 로그인만 하면 토론이 가능합니다.
 
 ### Debate Config
 
