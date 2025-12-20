@@ -28,6 +28,23 @@ table_tracker/
 ggp_ojt_v2/
 frontend/
 backend/
+Archive_Converter/
+GGP-showroom/
+db_architecture/
+field-uploader/
+ggp_heritage_mall/
+ggp_store_parser/
+json/
+pokergo_crawling/
+project_master/
+shorts-generator/
+side_monitor/
+slakc_list/
+tools/
+wsoptv/
+wsoptv_v2/
+wsoptv_v2_db/
+youtube-dlp/
 
 # 별도 레포 프로젝트들
 archive-analyzer/
@@ -67,6 +84,15 @@ scripts.backup/
 # 임시 파일
 *.md.backup
 nul
+temp_*.py
+temp_*.txt
+temp_*.md
+test_*.py
+test-diagram.*
+D*test-diagram.mmd
+*_checklist.yaml
+gemini.md
+mcp-credentials.env
 
 # MCP 설정 (API 키 포함)
 .mcp.json
@@ -81,6 +107,7 @@ nul
 .claude/optimizer-error.log
 .claude/plugins.old/
 .claude/settings.local.json
+.claude/session_state.json
 .claude-global/
 .claude.backup-*/
 
