@@ -25,9 +25,8 @@ OPENAI_PRICING = {
 class OpenAIProvider(LLMProvider):
     """OpenAI GPT provider using LangChain."""
 
-    def __init__(self, api_key: str | None = None):
-        """Initialize with optional API key (falls back to env var)."""
-        super().__init__(api_key)
+    def __init__(self):
+        """Initialize the OpenAI provider."""
         self._clients: dict[str, ChatOpenAI] = {}
 
     @property
@@ -45,7 +44,6 @@ class OpenAIProvider(LLMProvider):
             self._clients[cache_key] = ChatOpenAI(
                 model=model,
                 temperature=temperature,
-                api_key=self._api_key,
             )
         return self._clients[cache_key]
 

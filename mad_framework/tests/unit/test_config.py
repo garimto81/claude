@@ -17,14 +17,6 @@ class TestMADConfig:
         assert config.max_rounds == 3
         assert config.log_level == "INFO"
 
-    def test_api_keys_default_to_none(self):
-        """API keys should default to None."""
-        config = MADConfig()
-
-        assert config.anthropic_api_key is None
-        assert config.openai_api_key is None
-        assert config.google_api_key is None
-
 
 class TestDebaterConfig:
     """Tests for DebaterConfig."""

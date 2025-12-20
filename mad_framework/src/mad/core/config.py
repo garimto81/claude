@@ -18,11 +18,6 @@ class MADConfig(BaseSettings):
         extra="ignore",
     )
 
-    # API Keys
-    anthropic_api_key: str | None = Field(default=None, alias="ANTHROPIC_API_KEY")
-    openai_api_key: str | None = Field(default=None, alias="OPENAI_API_KEY")
-    google_api_key: str | None = Field(default=None, alias="GOOGLE_API_KEY")
-
     # Defaults
     default_provider: Literal["anthropic", "openai", "google"] = "anthropic"
     default_model: str = "claude-sonnet-4-20250514"

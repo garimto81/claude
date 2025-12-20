@@ -23,10 +23,6 @@ class ProviderResponse(TypedDict):
 class LLMProvider(ABC):
     """Abstract base class for LLM providers."""
 
-    def __init__(self, api_key: str | None = None):
-        """Initialize the provider with an optional API key."""
-        self._api_key = api_key
-
     @property
     @abstractmethod
     def name(self) -> str:

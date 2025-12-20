@@ -23,9 +23,8 @@ ANTHROPIC_PRICING = {
 class AnthropicProvider(LLMProvider):
     """Anthropic Claude provider using LangChain."""
 
-    def __init__(self, api_key: str | None = None):
-        """Initialize with optional API key (falls back to env var)."""
-        super().__init__(api_key)
+    def __init__(self):
+        """Initialize the Anthropic provider."""
         self._clients: dict[str, ChatAnthropic] = {}
 
     @property
@@ -43,7 +42,6 @@ class AnthropicProvider(LLMProvider):
             self._clients[cache_key] = ChatAnthropic(
                 model=model,
                 temperature=temperature,
-                api_key=self._api_key,
             )
         return self._clients[cache_key]
 
