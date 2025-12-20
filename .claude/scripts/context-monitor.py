@@ -8,9 +8,95 @@ import json
 import sys
 import os
 import re
+import io
+
+# Windows UTF-8 출력 설정
+if sys.platform == 'win32':
+    sys.stdout = io.TextIOWrapper(sys.stdout.buffer, encoding='utf-8', errors='replace')
+
+from pathlib import Path
+
+def get_git_remote(project_dir):
+    """Get GitHub remote repository (repo only, without owner)"""
+    try:
+        git_dir = Path(project_dir) / '.git'
+        if git_dir.exists():
+            config_file = git_dir / 'config'
+            if config_file.exists():
+                content = config_file.read_text(encoding='utf-8')
+                lines = content.split('\n')
+                in_remote_origin = False
+                for line in lines:
+                    stripped = line.strip()
+                    if stripped == '[remote "origin"]':
+                        in_remote_origin = True
+                        continue
+                    if in_remote_origin and stripped.startswith('['):
+                        break
+                    if in_remote_origin and stripped.startswith('url = '):
+                        url = stripped.split('url = ', 1)[1].strip()
+                        if 'github.com' in url:
+                            repo = url.split('github.com')[1]
+                            repo = repo.replace(':', '/').replace('.git', '').strip('/')
+                            # Return only repo name (remove owner)
+                            if '/' in repo:
+                                return repo.split('/')[-1]
+                            return repo
+        return ""
+    except Exception:
+        return ""
+
+
+def get_git_branch(project_dir):
+    """Get current git branch name"""
+    try:
+        git_dir = Path(project_dir) / '.git'
+        if git_dir.exists():
+            head_file = git_dir / 'HEAD'
+            if head_file.exists():
+                content = head_file.read_text(encoding='utf-8').strip()
+                if content.startswith('ref: refs/heads/'):
+                    return content.replace('ref: refs/heads/', '')
+                # Detached HEAD - return short hash
+                return content[:7]
+        return ""
+    except Exception:
+        return ""
+
+def parse_context_from_json(data):
+    """Parse context usage directly from Claude Code JSON input (primary method)."""
+    try:
+        context_window = data.get('context_window', {})
+        if not context_window:
+            return None
+
+        window_size = context_window.get('context_window_size', 200000)
+        current_usage = context_window.get('current_usage', {})
+
+        if not current_usage:
+            return None
+
+        input_tokens = current_usage.get('input_tokens', 0)
+        cache_read = current_usage.get('cache_read_input_tokens', 0)
+        cache_creation = current_usage.get('cache_creation_input_tokens', 0)
+
+        total_tokens = input_tokens + cache_read + cache_creation
+        if total_tokens > 0:
+            percent_used = min(100, (total_tokens / window_size) * 100)
+            return {
+                'percent': percent_used,
+                'tokens': total_tokens,
+                'window_size': window_size,
+                'method': 'context_window'
+            }
+
+        return None
+    except Exception:
+        return None
+
 
 def parse_context_from_transcript(transcript_path):
-    """Parse context usage from transcript file."""
+    """Parse context usage from transcript file (fallback method)."""
     if not transcript_path or not os.path.exists(transcript_path):
         return None
     
@@ -141,101 +227,42 @@ def get_directory_display(workspace_data):
     else:
         return "unknown"
 
-def get_session_metrics(cost_data):
-    """Get session metrics display."""
-    if not cost_data:
-        return ""
-    
-    metrics = []
-    
-    # Cost
-    cost_usd = cost_data.get('total_cost_usd', 0)
-    if cost_usd > 0:
-        if cost_usd >= 0.10:
-            cost_color = "\033[31m"  # Red for expensive
-        elif cost_usd >= 0.05:
-            cost_color = "\033[33m"  # Yellow for moderate
-        else:
-            cost_color = "\033[32m"  # Green for cheap
-        
-        cost_str = f"{cost_usd*100:.0f}¢" if cost_usd < 0.01 else f"${cost_usd:.3f}"
-        metrics.append(f"{cost_color}💰 {cost_str}\033[0m")
-    
-    # Duration
-    duration_ms = cost_data.get('total_duration_ms', 0)
-    if duration_ms > 0:
-        minutes = duration_ms / 60000
-        if minutes >= 30:
-            duration_color = "\033[33m"  # Yellow for long sessions
-        else:
-            duration_color = "\033[32m"  # Green
-        
-        if minutes < 1:
-            duration_str = f"{duration_ms//1000}s"
-        else:
-            duration_str = f"{minutes:.0f}m"
-        
-        metrics.append(f"{duration_color}⏱ {duration_str}\033[0m")
-    
-    # Lines changed
-    lines_added = cost_data.get('total_lines_added', 0)
-    lines_removed = cost_data.get('total_lines_removed', 0)
-    if lines_added > 0 or lines_removed > 0:
-        net_lines = lines_added - lines_removed
-        
-        if net_lines > 0:
-            lines_color = "\033[32m"  # Green for additions
-        elif net_lines < 0:
-            lines_color = "\033[31m"  # Red for deletions
-        else:
-            lines_color = "\033[33m"  # Yellow for neutral
-        
-        sign = "+" if net_lines >= 0 else ""
-        metrics.append(f"{lines_color}📝 {sign}{net_lines}\033[0m")
-    
-    return f" \033[90m|\033[0m {' '.join(metrics)}" if metrics else ""
 
 def main():
     try:
         # Read JSON input from Claude Code
         data = json.load(sys.stdin)
-        
+
         # Extract information
-        model_name = data.get('model', {}).get('display_name', 'Claude')
         workspace = data.get('workspace', {})
         transcript_path = data.get('transcript_path', '')
-        cost_data = data.get('cost', {})
-        
-        # Parse context usage
-        context_info = parse_context_from_transcript(transcript_path)
-        
+        project_dir = workspace.get('project_dir', os.getcwd())
+
+        # Parse context usage (priority: context_window > transcript)
+        context_info = parse_context_from_json(data)
+        if not context_info:
+            context_info = parse_context_from_transcript(transcript_path)
+
         # Build status components
         context_display = get_context_display(context_info)
         directory = get_directory_display(workspace)
-        session_metrics = get_session_metrics(cost_data)
-        
-        # Model display with context-aware coloring
-        if context_info:
-            percent = context_info.get('percent', 0)
-            if percent >= 90:
-                model_color = "\033[31m"  # Red
-            elif percent >= 75:
-                model_color = "\033[33m"  # Yellow
-            else:
-                model_color = "\033[32m"  # Green
-            
-            model_display = f"{model_color}[{model_name}]\033[0m"
-        else:
-            model_display = f"\033[94m[{model_name}]\033[0m"
-        
-        # Combine all components
-        status_line = f"{model_display} \033[93m📁 {directory}\033[0m 🧠 {context_display}{session_metrics}"
-        
+        git_remote = get_git_remote(project_dir)
+        git_branch = get_git_branch(project_dir)
+
+        # GitHub remote display (repo only)
+        github_display = f" \033[36m🔗 {git_remote}\033[0m" if git_remote else ""
+
+        # Git branch display
+        branch_display = f" \033[35m🌿 {git_branch}\033[0m" if git_branch else ""
+
+        # Combine all components (model removed, lines removed)
+        status_line = f"\033[93m📁 {directory}\033[0m{github_display}{branch_display} {context_display}"
+
         print(status_line)
-        
+
     except Exception as e:
         # Fallback display on any error
-        print(f"\033[94m[Claude]\033[0m \033[93m📁 {os.path.basename(os.getcwd())}\033[0m 🧠 \033[31m[Error: {str(e)[:20]}]\033[0m")
+        print(f"\033[93m📁 {os.path.basename(os.getcwd())}\033[0m 🧠 \033[31m[Error: {str(e)[:20]}]\033[0m")
 
 if __name__ == "__main__":
     main()
