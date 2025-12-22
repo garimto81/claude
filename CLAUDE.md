@@ -141,6 +141,38 @@ npx playwright screenshot docs/mockups/feature-name.html docs/images/feature-nam
 
 ---
 
+## Checklist 표준 (Slack List 연동 필수)
+
+⚠️ **Slack List 연동을 위해 반드시 Checklist 문서를 작성해야 합니다.**
+
+### 문서 위치 (필수)
+
+| 순위 | 경로 | 설명 |
+|:----:|------|------|
+| 1 | `docs/checklists/PRD-NNNN.md` | **필수** - 전용 Checklist 폴더 |
+| 2 | `tasks/prds/NNNN-prd-*.md` | PRD 문서 내 Checklist 섹션 |
+| 3 | `docs/CHECKLIST.md` | 프로젝트 전체 Checklist |
+
+❌ **미작성 시**: PR 본문 Checklist로 Fallback (누적 진행률 추적 불가)
+
+### PR-Checklist 연결 (필수)
+
+```
+PR 제목: feat: add login [PRD-0001] #123
+브랜치: feat/PRD-0001-123-add-login
+```
+
+### 자동 체크 항목 작성
+
+```markdown
+- [ ] 기능 구현 (#101)     ← PR #101 머지 시 자동 체크
+- [ ] 테스트 작성         ← 수동 체크 (PR 번호 없음)
+```
+
+**상세**: `.github/CHECKLIST_STANDARD.md`
+
+---
+
 ## 참조
 
 | 문서 | 용도 |
@@ -150,3 +182,4 @@ npx playwright screenshot docs/mockups/feature-name.html docs/images/feature-nam
 | `docs/COMMAND_REFERENCE.md` | 커맨드 상세 |
 | `docs/AGENTS_REFERENCE.md` | 에이전트 상세 |
 | `docs/CHANGELOG-CLAUDE.md` | 변경 이력 |
+| `.github/CHECKLIST_STANDARD.md` | Checklist 작성 표준 |
