@@ -29,6 +29,11 @@ env:
   # garimto81은 개인 계정 (users API 사용)
   OWNER_NAME: 'garimto81'
   IS_ORG: 'false'
+  # Column IDs (중앙 관리)
+  COL_TITLE: 'Col0A4WG2LPHA'
+  COL_PROGRESS: 'Col0A55RYJHEV'
+  COL_NOTES: 'Col0A4WG5SFD2'
+  COL_DATE: 'Col0A4ZL4THPU'
 
 jobs:
   collect-org-prs:
@@ -251,12 +256,7 @@ jobs:
         run: |
           echo "=== Updating Slack List ==="
 
-          # Slack List 컬럼 ID (기존 설정 사용)
-          COL_TITLE="Col0A4WG2LPHA"
-          COL_PROGRESS="Col0A55RYJHEV"
-          COL_NOTES="Col0A4WG5SFD2"
-          COL_DATE="Col0A4ZL4THPU"
-
+          # Column IDs는 env에서 가져옴
           TODAY=$(TZ=Asia/Seoul date +%Y-%m-%d)
 
           # 레포별로 Slack List 업데이트
@@ -269,54 +269,124 @@ jobs:
             # 진행률 계산 (모든 PR의 checklist 평균)
             PROGRESS=$(echo "$REPO" | jq '[.prs[].checklist.progress // 0] | add / length | floor // 0')
 
-            # 프로그레스 바 생성
+            # 컬러 이모지 프로그레스 바 생성 (slack-list-sync 방식 통일)
+            if [ "$PROGRESS" -le 30 ]; then
+              STATUS_EMOJI="🔴"; FILL_BLOCK="🟥"
+            elif [ "$PROGRESS" -le 70 ]; then
+              STATUS_EMOJI="🟡"; FILL_BLOCK="🟨"
+            else
+              STATUS_EMOJI="🟢"; FILL_BLOCK="🟩"
+            fi
+            EMPTY_BLOCK="⬜"
+
             FILLED=$((PROGRESS / 10))
             EMPTY=$((10 - FILLED))
-            BAR=$(printf '█%.0s' $(seq 1 $FILLED 2>/dev/null) || echo "")$(printf '░%.0s' $(seq 1 $EMPTY 2>/dev/null) || echo "░░░░░░░░░░")
-            PROGRESS_TEXT="$BAR $PROGRESS%"
+
+            BAR=""
+            for i in $(seq 1 $FILLED); do BAR+="$FILL_BLOCK"; done
+            for i in $(seq 1 $EMPTY); do BAR+="$EMPTY_BLOCK"; done
+
+            PROGRESS_TEXT="$STATUS_EMOJI $BAR $PROGRESS%"
 
             # 진행중 항목 목록
             PENDING=$(echo "$REPO" | jq -r '[.prs[] | select(.checklist.progress != null and .checklist.progress < 100) | .prd_id] | unique | join(", ")' || echo "")
 
-            echo "Updating: $REPO_NAME ($PROGRESS_TEXT)"
+            echo "Processing: $REPO_NAME ($PROGRESS_TEXT)"
 
-            # 기존 항목 검색
-            EXISTING=$(curl -s -X POST "https://slack.com/api/slackLists.items.list" \
+            # 기존 항목 검색 (fields 방식으로 통일)
+            LIST_RESPONSE=$(curl -s -X POST "https://slack.com/api/slackLists.items.list" \
               -H "Authorization: Bearer $SLACK_USER_TOKEN" \
-              -H "Content-Type: application/json" \
-              -d "{\"list_id\": \"$SLACK_LIST_ID\"}" | \
-              jq -r --arg name "$REPO_NAME" '.items[] | select(.values[$COL_TITLE].text_value == $name) | .id' 2>/dev/null || echo "")
+              -H "Content-Type: application/json; charset=utf-8" \
+              -d "{\"list_id\": \"$SLACK_LIST_ID\"}")
+
+            # 에러 처리
+            if [ "$(echo "$LIST_RESPONSE" | jq -r '.ok')" != "true" ]; then
+              echo "  ERROR: Failed to list items - $(echo "$LIST_RESPONSE" | jq -r '.error')"
+              continue
+            fi
+
+            # fields 배열에서 제목 Column으로 검색 (통일된 방식)
+            EXISTING=$(echo "$LIST_RESPONSE" | jq -r --arg name "$REPO_NAME" --arg col "$COL_TITLE" \
+              '.items[] | select(.fields[] | select(.column_id == $col) | .text == $name) | .id' | head -1)
 
             if [ -n "$EXISTING" ] && [ "$EXISTING" != "null" ]; then
-              # 기존 항목 업데이트
-              curl -s -X POST "https://slack.com/api/slackLists.items.update" \
-                -H "Authorization: Bearer $SLACK_USER_TOKEN" \
-                -H "Content-Type: application/json" \
-                -d "{
-                  \"list_id\": \"$SLACK_LIST_ID\",
-                  \"item_id\": \"$EXISTING\",
-                  \"values\": {
-                    \"$COL_PROGRESS\": {\"text_value\": \"$PROGRESS_TEXT\"},
-                    \"$COL_NOTES\": {\"text_value\": \"$PENDING\"},
-                    \"$COL_DATE\": {\"date_value\": \"$TODAY\"}
-                  }
-                }" > /dev/null
-              echo "  Updated existing item"
+              # 역할 분리: 기존 항목은 slack-list-sync에서 담당 - 스킵
+              echo "  Skipped existing item (managed by slack-list-sync)"
             else
-              # 새 항목 생성
-              curl -s -X POST "https://slack.com/api/slackLists.items.create" \
+              # 새 항목 생성 (cells 방식으로 통일)
+              CREATE_RESPONSE=$(curl -s -X POST "https://slack.com/api/slackLists.items.create" \
                 -H "Authorization: Bearer $SLACK_USER_TOKEN" \
-                -H "Content-Type: application/json" \
+                -H "Content-Type: application/json; charset=utf-8" \
                 -d "{
                   \"list_id\": \"$SLACK_LIST_ID\",
-                  \"values\": {
-                    \"$COL_TITLE\": {\"text_value\": \"$REPO_NAME\"},
-                    \"$COL_PROGRESS\": {\"text_value\": \"$PROGRESS_TEXT\"},
-                    \"$COL_NOTES\": {\"text_value\": \"$PENDING\"},
-                    \"$COL_DATE\": {\"date_value\": \"$TODAY\"}
+                  \"item\": {
+                    \"fields\": {}
                   }
-                }" > /dev/null
-              echo "  Created new item"
+                }")
+
+              # 에러 처리
+              if [ "$(echo "$CREATE_RESPONSE" | jq -r '.ok')" != "true" ]; then
+                echo "  ERROR: Failed to create item - $(echo "$CREATE_RESPONSE" | jq -r '.error')"
+                continue
+              fi
+
+              NEW_ITEM_ID=$(echo "$CREATE_RESPONSE" | jq -r '.item.id // empty')
+
+              if [ -n "$NEW_ITEM_ID" ]; then
+                # 제목 및 초기 데이터 설정 (cells 방식)
+                UPDATE_RESPONSE=$(curl -s -X POST "https://slack.com/api/slackLists.items.update" \
+                  -H "Authorization: Bearer $SLACK_USER_TOKEN" \
+                  -H "Content-Type: application/json; charset=utf-8" \
+                  -d "{
+                    \"list_id\": \"$SLACK_LIST_ID\",
+                    \"cells\": [
+                      {
+                        \"row_id\": \"$NEW_ITEM_ID\",
+                        \"column_id\": \"$COL_TITLE\",
+                        \"rich_text\": [{
+                          \"type\": \"rich_text\",
+                          \"elements\": [{
+                            \"type\": \"rich_text_section\",
+                            \"elements\": [{\"type\": \"text\", \"text\": \"$REPO_NAME\"}]
+                          }]
+                        }]
+                      },
+                      {
+                        \"row_id\": \"$NEW_ITEM_ID\",
+                        \"column_id\": \"$COL_PROGRESS\",
+                        \"rich_text\": [{
+                          \"type\": \"rich_text\",
+                          \"elements\": [{
+                            \"type\": \"rich_text_section\",
+                            \"elements\": [{\"type\": \"text\", \"text\": \"$PROGRESS_TEXT\"}]
+                          }]
+                        }]
+                      },
+                      {
+                        \"row_id\": \"$NEW_ITEM_ID\",
+                        \"column_id\": \"$COL_NOTES\",
+                        \"rich_text\": [{
+                          \"type\": \"rich_text\",
+                          \"elements\": [{
+                            \"type\": \"rich_text_section\",
+                            \"elements\": [{\"type\": \"text\", \"text\": \"$PENDING\"}]
+                          }]
+                        }]
+                      },
+                      {
+                        \"row_id\": \"$NEW_ITEM_ID\",
+                        \"column_id\": \"$COL_DATE\",
+                        \"date\": [\"$TODAY\"]
+                      }
+                    ]
+                  }")
+
+                if [ "$(echo "$UPDATE_RESPONSE" | jq -r '.ok')" != "true" ]; then
+                  echo "  WARNING: Item created but update failed - $(echo "$UPDATE_RESPONSE" | jq -r '.error')"
+                else
+                  echo "  Created new item: $NEW_ITEM_ID"
+                fi
+              fi
             fi
           done
 
