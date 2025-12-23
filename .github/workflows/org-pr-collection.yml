@@ -87,7 +87,8 @@ jobs:
 
           TOTAL_REPOS=$(echo "$ACTIVE_REPOS" | jq 'length')
           echo "total_repos=$TOTAL_REPOS" >> $GITHUB_OUTPUT
-          echo "active_repos=$ACTIVE_REPOS" >> $GITHUB_OUTPUT
+          # JSON을 한 줄로 압축해서 저장 (멀티라인 오류 방지)
+          echo "active_repos=$(echo "$ACTIVE_REPOS" | jq -c '.')" >> $GITHUB_OUTPUT
 
           echo ""
           echo "=== Active repositories: $TOTAL_REPOS ==="
