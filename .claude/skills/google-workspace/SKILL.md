@@ -643,6 +643,117 @@ def api_call_with_retry(func, max_retries=5):
 
 ---
 
+## PRD 관리 시스템 (Google Docs 마스터)
+
+PRD(Product Requirements Document)를 Google Docs로 관리하는 통합 시스템입니다.
+
+### 아키텍처
+
+```
+┌─────────────────┐        ┌─────────────────┐        ┌─────────────────┐
+│   /create prd   │───────▶│   Google Docs   │───────▶│  Local Cache    │
+│   (대화형 질문) │        │   (마스터)      │        │  (읽기 전용)    │
+└─────────────────┘        └─────────────────┘        └─────────────────┘
+                                    │                          │
+                                    └──────────┬───────────────┘
+                                               ▼
+                                    ┌─────────────────┐
+                                    │ .prd-registry   │
+                                    │    .json        │
+                                    └─────────────────┘
+```
+
+### 모듈 구조
+
+```
+src/services/google_docs/
+├── __init__.py
+├── client.py              # Google Docs API 클라이언트
+├── prd_service.py         # PRD CRUD 서비스
+├── cache_manager.py       # 로컬 캐시 동기화
+├── metadata_manager.py    # .prd-registry.json 관리
+└── migration.py           # Markdown → Docs 마이그레이션
+```
+
+### 커맨드
+
+| 커맨드 | 설명 |
+|--------|------|
+| `/create prd [name]` | Google Docs에 PRD 생성 |
+| `/create prd [name] --local-only` | 로컬 Markdown만 생성 (호환 모드) |
+| `/prd-sync [PRD-ID]` | PRD 동기화 (Docs → 로컬 캐시) |
+| `/prd-sync all` | 전체 PRD 동기화 |
+| `/prd-sync list` | 등록된 PRD 목록 |
+| `/prd-sync stats` | PRD 통계 |
+
+### 사용 예시
+
+```python
+from src.services.google_docs import GoogleDocsClient, PRDService
+
+# 클라이언트 생성
+client = GoogleDocsClient()
+
+# PRD 서비스 생성
+prd_service = PRDService(client=client)
+
+# 새 PRD 생성
+metadata = prd_service.create_prd(
+    title="User Authentication",
+    priority="P1",
+    tags=["auth", "security"]
+)
+
+print(f"PRD 생성됨: {metadata.prd_id}")
+print(f"Google Docs: {metadata.google_doc_url}")
+```
+
+### 마이그레이션
+
+```bash
+# 기존 Markdown PRD를 Google Docs로 마이그레이션
+python scripts/migrate_prds_to_gdocs.py list      # 대상 목록
+python scripts/migrate_prds_to_gdocs.py all       # 전체 마이그레이션
+python scripts/migrate_prds_to_gdocs.py PRD-0001  # 단일 마이그레이션
+```
+
+### 레지스트리 구조
+
+`.prd-registry.json`:
+
+```json
+{
+  "version": "1.0.0",
+  "last_sync": "2025-12-24T10:00:00Z",
+  "next_prd_number": 2,
+  "prds": {
+    "PRD-0001": {
+      "google_doc_id": "1abc...",
+      "google_doc_url": "https://docs.google.com/document/d/.../edit",
+      "title": "포커 핸드 자동 캡처",
+      "status": "In Progress",
+      "priority": "P0",
+      "local_cache": "PRD-0001.cache.md",
+      "checklist_path": "docs/checklists/PRD-0001.md"
+    }
+  }
+}
+```
+
+### 공유 폴더
+
+- **폴더 ID**: `1JwdlUe_v4Ug-yQ0veXTldFl6C24GH8hW`
+- **URL**: [Google AI Studio 폴더](https://drive.google.com/drive/folders/1JwdlUe_v4Ug-yQ0veXTldFl6C24GH8hW)
+
+### 인증 파일
+
+| 파일 | 용도 |
+|------|------|
+| `D:\AI\claude01\json\token_docs.json` | Google Docs OAuth 토큰 |
+| `D:\AI\claude01\json\desktop_credentials.json` | OAuth 클라이언트 자격증명 |
+
+---
+
 ## 참조 문서
 
 - [Google Sheets API](https://developers.google.com/sheets/api)
