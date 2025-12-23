@@ -162,9 +162,10 @@ jobs:
         env:
           GH_TOKEN: ${{ secrets.GITHUB_TOKEN }}
 
-      # Step 3: Checklist 정보 추가 (각 레포 접근)
+      # Step 3: Checklist 정보 추가 (각 레포 접근) - 선택적 단계
       - name: Enrich with Checklist Data
         id: enrich_checklist
+        continue-on-error: true
         run: |
           echo "=== Enriching with checklist data ==="
 
