@@ -176,20 +176,32 @@ gh issue edit <number> --body "새 본문"
    - 요구사항 추출
    - 라벨/마일스톤 확인
 
-2. **Analyze Context**
+2. **Analyze Context** (가설-검증 기반)
    - 관련 코드 리뷰
    - 유사 이슈 확인
    - 근본 원인 파악
+
+   **Confidence 체크**:
+   ```
+   원인 분석 결과
+       │
+       ├─ confidence >= 80% → 직접 수정 진행
+       │
+       └─ confidence < 80% → /debug 자동 트리거
+                              └─ 가설-검증 사이클
+   ```
 
 3. **Create Branch**
    ```bash
    git checkout -b fix/issue-<number>-<description>
    ```
 
-4. **Implement Fix**
+4. **Implement Fix** (D4 도달 후만)
    - Phase 0-6 워크플로우 따름
    - 테스트 작성 (Phase 2)
    - 문서 업데이트
+
+   > **주의**: 원인 불명확 시 수정 금지. `/debug`로 가설 검증 필수
 
 5. **Create PR**
    - `Fixes #<number>` 참조
@@ -206,9 +218,10 @@ gh issue edit <number> --body "새 본문"
 
 ### 연동 에이전트
 
-| 단계 | 에이전트 | 역할 |
-|------|----------|------|
+| 단계 | 에이전트/커맨드 | 역할 |
+|------|----------------|------|
 | 원인 분석 | `debugger` | 근본 원인 파악 |
+| 원인 불명확 | `/debug` | 가설-검증 사이클 |
 | 코드 수정 | `code-reviewer` | 코드 품질 확인 |
 | 테스트 | `test-engineer` | 테스트 작성 |
 
@@ -351,6 +364,7 @@ gh issue edit <number> --add-label "blocked,needs-investigation"
 
 ## Related
 
+- `/debug` - 가설-검증 기반 디버깅 (원인 불명확 시 자동 트리거)
 - `/create pr` - PR 생성
 - `/commit` - 커밋 생성
 - `scripts/github-issue-dev.ps1`

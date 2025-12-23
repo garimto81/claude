@@ -31,6 +31,8 @@ capabilities:
   - add_debug_logs
   - classify_problem_area
   - verify_hypothesis
+  - manage_debug_state      # Phase D0-D4 상태 관리
+  - enforce_phase_gate      # 수정 전 가설 검증 강제
 
 # 2025 Schema: 모델 선호도
 model_preference: sonnet
@@ -242,3 +244,80 @@ Known Issue 해당 여부 판단
 ---
 
 > 상세 전략: `docs/DEBUGGING_STRATEGY.md`
+
+---
+
+## Phase D0-D4: 가설-검증 강제 디버깅
+
+**수정 전 가설 검증을 강제하여 무의미한 수정-실행 반복 방지**
+
+### Phase Gate 모델
+
+```
+문제 발생
+    ↓
+[D0: 이슈 등록] ─── 이슈 설명 필수
+    ↓
+[D1: 원인 분석] ─── 가설 작성 필수 (최소 20자)
+    ↓
+[D2: 검증 설계] ─── 검증 방법 기록 필수
+    ↓
+[D3: 가설 검증] ─── 결과 기록 필수
+    │
+    ├─ 기각 → D1로 복귀 (3회 시 /issue failed)
+    │
+    └─ 확인 → [D4: 수정 허용]
+```
+
+### 상태 기반 Phase 전환
+
+| Phase | 진입 조건 | Gate 조건 |
+|-------|----------|----------|
+| D0 | /debug start | 이슈 설명 작성 |
+| D1 | D0 완료 | 가설 작성 (min 20자) |
+| D2 | 가설 존재 | 검증 계획 작성 |
+| D3 | 검증 계획 존재 | 결과 기록 (confirmed/rejected) |
+| D4 | hypothesis_confirmed=true | - |
+
+### 가설 반복 제한
+
+- 동일 이슈에서 **3회 가설 실패** 시 `/issue failed` 강제 호출
+- 각 가설은 `.debug/hypotheses/NNN-*.md`에 기록됨
+- 검증 증거는 `.debug/evidence/NNN-*.txt`에 기록됨
+
+### 반자동 실행 모드
+
+`/debug` 커맨드 호출 시:
+1. D0 → 이슈 설명 요청
+2. D1 → 가설 요청 (자동 진행)
+3. D2 → 검증 계획 요청 (자동 진행)
+4. D3 → 검증 결과 요청 (자동 진행)
+5. D4 → 수정 허용 (가설 확인 시)
+
+Gate 미충족 시만 멈추고 사용자 입력 요청
+
+### 상태 관리 스크립트
+
+```python
+from debug_state import DebugState
+
+state = DebugState(project_root)
+state.start("이슈 설명")
+state.set_hypothesis("가설 (min 20자)")
+state.set_verification_plan("검증 방법")
+state.set_verification_result("confirmed", "증거")
+state.advance_to_fix()
+```
+
+### 통합 워크플로우
+
+```
+/work E2E 실패 → /debug 자동 트리거
+/issue fix → confidence < 80% → /debug 자동 트리거
+```
+
+### 관련 커맨드
+
+- `/debug` - 가설-검증 디버깅 시작
+- `/debug status` - 현재 상태 확인
+- `/debug abort` - 세션 취소

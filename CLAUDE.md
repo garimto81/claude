@@ -80,8 +80,10 @@ npx playwright test tests/e2e/auth.spec.ts  # 개별 테스트
 | `/orchestrate` | 메인-서브 에이전트 오케스트레이션 |
 | `/check` | 린트/테스트/보안 검사 |
 | `/commit` | Conventional Commit 생성 |
+| `/debug` | 가설-검증 기반 디버깅 (D0-D4) |
+| `/issue` | GitHub 이슈 관리 (list/create/fix) |
 
-**전체 14개**: `docs/COMMAND_REFERENCE.md`
+**전체 15개**: `docs/COMMAND_REFERENCE.md`
 
 ### 에이전트 & 스킬
 

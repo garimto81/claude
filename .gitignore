@@ -49,6 +49,7 @@ youtube-dlp/
 # 별도 레포 프로젝트들
 archive-analyzer/
 archive-statistics/
+mad_framework/
 
 # 로컬 에이전트 데이터
 .agent/
