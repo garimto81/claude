@@ -344,11 +344,11 @@
             </ul>
           </div>
           <div class="main-content">
-            {{ content }}
+            {{ content | safe }}
           </div>
         </div>
         {% else %}
-        {{ content }}
+        {{ content | safe }}
         {% endif %}
       </div>
     </div>
