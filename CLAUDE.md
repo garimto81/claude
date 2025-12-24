@@ -34,6 +34,34 @@ main 허용: `CLAUDE.md`, `README.md`, `.claude/`, `docs/`
 
 ---
 
+## 프로젝트 구조
+
+```
+D:\AI\claude01\
+├── CLAUDE.md                    # 핵심 워크플로우 (이 파일)
+├── README.md                    # 프로젝트 소개
+├── docs/                        # 문서
+│   ├── COMMAND_REFERENCE.md     # 커맨드 상세 (14개)
+│   ├── AGENTS_REFERENCE.md      # 에이전트/스킬 참조
+│   └── WORKFLOWS/               # 워크플로우 레시피
+├── .claude/                     # Claude Code 설정
+│   ├── commands/                # 커스텀 슬래시 커맨드
+│   ├── skills/                  # 커스텀 스킬
+│   └── agents/                  # 커스텀 에이전트
+├── scripts/                     # 자동화 스크립트
+└── automation_sub/              # 서브 프로젝트 (WSOP Broadcast)
+    └── tasks/prds/              # PRD 문서
+```
+
+### 서브 프로젝트
+
+| 경로 | 설명 |
+|------|------|
+| `automation_sub/` | WSOP Broadcast Graphics System 개발 |
+| `automation_sub/tasks/prds/` | PRD 문서 저장소 |
+
+---
+
 ## 빌드/테스트 명령
 
 ### Python
@@ -52,6 +80,45 @@ npx playwright test tests/e2e/auth.spec.ts  # 개별 테스트
 ```
 
 **안전 규칙**: `pytest tests/ -v --cov` → 120초 초과 → 크래시. 개별 파일 실행 권장.
+
+---
+
+## 스크립트 (scripts/)
+
+| 스크립트 | 용도 |
+|----------|------|
+| `validate_phase_universal.py` | Phase 검증 (범용) |
+| `plugin_manager.py` | 플러그인 관리 |
+| `auto-version.ps1` | 버전 자동 업데이트 |
+| `setup-github-labels.ps1` | GitHub 라벨 설정 |
+| `migrate_prds_to_gdocs.py` | PRD → Google Docs 마이그레이션 |
+
+---
+
+## MCP 설정
+
+### 설치된 MCP
+
+| MCP | 패키지 | 용도 |
+|-----|--------|------|
+| `code-reviewer` | `@vibesnipe/code-review-mcp` | AI 코드 리뷰 |
+
+### MCP 관리 명령
+
+```bash
+claude mcp add <name> -- npx -y <package>   # 설치
+claude mcp list                              # 목록
+claude mcp remove <name>                     # 제거
+```
+
+### 내장 기능으로 대체됨
+
+| 기존 MCP | 대체 내장 기능 |
+|----------|---------------|
+| `context7` | `WebSearch` + `WebFetch` |
+| `sequential-thinking` | `Extended Thinking` |
+| `taskmanager` | `TodoWrite` / `TodoRead` |
+| `exa` | `WebSearch` |
 
 ---
 
@@ -83,7 +150,7 @@ npx playwright test tests/e2e/auth.spec.ts  # 개별 테스트
 | `/debug` | 가설-검증 기반 디버깅 (D0-D4) |
 | `/issue` | GitHub 이슈 관리 (list/create/fix) |
 
-**전체 15개**: `docs/COMMAND_REFERENCE.md`
+**전체 14개**: `docs/COMMAND_REFERENCE.md`
 
 ### 에이전트 & 스킬
 
@@ -105,71 +172,31 @@ npx playwright test tests/e2e/auth.spec.ts  # 개별 테스트
 
 ## 문서 작업 규칙
 
-### 시각화 필수
-
-| 단계 | 작업 | 산출물 |
-|------|------|--------|
-| 1 | HTML 목업 생성 | `docs/mockups/*.html` |
-| 2 | 스크린샷 캡처 | `docs/images/*.png` |
-| 3 | 문서에 이미지 첨부 | PRD, 설계 문서 |
-
-### 시각화 흐름
+### 시각화 (PRD, 아키텍처 필수)
 
 ```
-┌─────────────┐     ┌─────────────┐     ┌─────────────┐
-│  HTML 목업  │────▶│  스크린샷   │────▶│  문서 첨부  │
-│  작성       │     │  캡처       │     │             │
-└─────────────┘     └─────────────┘     └─────────────┘
+HTML 목업 (540px, 16px+) → 요소 캡처 → 문서 첨부
 ```
 
-### HTML 목업 생성
+| 규칙 | 값 |
+|------|-----|
+| 가로 너비 | 540px |
+| 최소 폰트 | 16px |
+| 캡처 대상 | `#capture-target` (전체 화면 X) |
 
 ```powershell
-# 목업 파일 생성
-Write docs/mockups/feature-name.html
-
-# Playwright로 스크린샷 캡처
-npx playwright screenshot docs/mockups/feature-name.html docs/images/feature-name.png
+# 요소만 캡처 (--selector 필수)
+npx playwright screenshot docs/mockups/feature.html docs/images/feature.png --selector="#capture-target"
 ```
 
-### 적용 대상
+**상세**: `docs/HTML_MOCKUP_GUIDE.md`
 
-| 문서 유형 | 시각화 필수 여부 |
-|-----------|-----------------|
-| PRD (기능 명세) | ✅ 필수 |
-| 아키텍처 설계 | ✅ 필수 |
-| API 문서 | ⚠️ 권장 |
-| 변경 로그 | ❌ 선택 |
+### Checklist (Slack List 연동)
 
----
-
-## Checklist 표준 (Slack List 연동 필수)
-
-⚠️ **Slack List 연동을 위해 반드시 Checklist 문서를 작성해야 합니다.**
-
-### 문서 위치 (필수)
-
-| 순위 | 경로 | 설명 |
-|:----:|------|------|
-| 1 | `docs/checklists/PRD-NNNN.md` | **필수** - 전용 Checklist 폴더 |
-| 2 | `tasks/prds/NNNN-prd-*.md` | PRD 문서 내 Checklist 섹션 |
-| 3 | `docs/CHECKLIST.md` | 프로젝트 전체 Checklist |
-
-❌ **미작성 시**: PR 본문 Checklist로 Fallback (누적 진행률 추적 불가)
-
-### PR-Checklist 연결 (필수)
-
-```
-PR 제목: feat: add login [PRD-0001] #123
-브랜치: feat/PRD-0001-123-add-login
-```
-
-### 자동 체크 항목 작성
-
-```markdown
-- [ ] 기능 구현 (#101)     ← PR #101 머지 시 자동 체크
-- [ ] 테스트 작성         ← 수동 체크 (PR 번호 없음)
-```
+| 우선순위 | 경로 |
+|:--------:|------|
+| 1 | `docs/checklists/PRD-NNNN.md` |
+| 2 | `tasks/prds/NNNN-prd-*.md` |
 
 **상세**: `.github/CHECKLIST_STANDARD.md`
 
@@ -183,5 +210,6 @@ PR 제목: feat: add login [PRD-0001] #123
 | `docs/BUILD_TEST.md` | 빌드/테스트 명령어 |
 | `docs/COMMAND_REFERENCE.md` | 커맨드 상세 |
 | `docs/AGENTS_REFERENCE.md` | 에이전트 상세 |
+| `docs/HTML_MOCKUP_GUIDE.md` | HTML 목업 설계 가이드 |
 | `docs/CHANGELOG-CLAUDE.md` | 변경 이력 |
 | `.github/CHECKLIST_STANDARD.md` | Checklist 작성 표준 |
