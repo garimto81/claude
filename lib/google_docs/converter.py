@@ -142,12 +142,12 @@ class MarkdownToDocsConverter:
         # 정규식 패턴들 (순서 중요)
         patterns = [
             (r'\[([^\]]+)\]\(([^)]+)\)', 'link'),      # [text](url)
-            (r'\*\*([^*]+)\*\*', 'bold'),              # **bold**
-            (r'__([^_]+)__', 'bold'),                  # __bold__
-            (r'\*([^*]+)\*', 'italic'),                # *italic*
-            (r'_([^_]+)_', 'italic'),                  # _italic_
+            (r'\*\*(.+?)\*\*', 'bold'),                # **bold** (non-greedy, 내부 * 허용)
+            (r'__(.+?)__', 'bold'),                    # __bold__ (non-greedy, 내부 _ 허용)
+            (r'(?<!\*)\*(?!\*)(.+?)(?<!\*)\*(?!\*)', 'italic'),  # *italic* (** 제외)
+            (r'(?<!_)_(?!_)(.+?)(?<!_)_(?!_)', 'italic'),        # _italic_ (__ 제외)
             (r'`([^`]+)`', 'code'),                    # `code`
-            (r'~~([^~]+)~~', 'strikethrough'),         # ~~strike~~
+            (r'~~(.+?)~~', 'strikethrough'),           # ~~strike~~ (non-greedy)
         ]
 
         # 모든 매치 찾기
