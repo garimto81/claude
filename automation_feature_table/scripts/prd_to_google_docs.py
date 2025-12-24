@@ -1,10 +1,13 @@
 #!/usr/bin/env python3
 """
-PRD to Google Docs Converter (Optimized)
+PRD to Google Docs Converter (Notion Style)
 
 PRD 마크다운 파일을 Google Docs로 변환하여 업로드합니다.
+Notion 스타일의 깔끔한 디자인과 세련된 타이포그래피를 적용합니다.
 
 Features:
+- Notion 스타일 디자인 (파스텔 색상, 넉넉한 여백)
+- 섹션 아이콘 자동 추가
 - 인라인 스타일 지원 (bold, italic, code, strikethrough)
 - 하이퍼링크 변환
 - 실제 테이블 생성
@@ -34,6 +37,17 @@ from google_auth_oauthlib.flow import InstalledAppFlow
 from google.auth.transport.requests import Request
 from googleapiclient.discovery import build
 
+# Notion 스타일 시스템 import
+sys.path.insert(0, str(Path(__file__).parent.parent.parent))
+from lib.google_docs.notion_style import (
+    NOTION_COLORS,
+    NOTION_FONTS,
+    NOTION_TYPOGRAPHY,
+    SECTION_ICONS,
+    NotionStyle,
+    get_default_style,
+)
+
 # OAuth 2.0 설정 (절대 경로)
 CREDENTIALS_FILE = r'D:\AI\claude01\json\desktop_credentials.json'
 TOKEN_FILE = r'D:\AI\claude01\json\token.json'
@@ -46,6 +60,27 @@ SCOPES = [
 
 # 공유 폴더 ID (Google AI Studio 폴더)
 DEFAULT_FOLDER_ID = '1JwdlUe_v4Ug-yQ0veXTldFl6C24GH8hW'
+
+# ============================================================================
+# Notion 스타일 시스템 (lib/google_docs/notion_style.py에서 가져옴)
+# ============================================================================
+
+# 스타일 인스턴스 생성
+STYLE = get_default_style()
+
+# 기존 코드와의 호환성을 위한 별칭
+COLORS = NOTION_COLORS
+FONTS = NOTION_FONTS
+
+# Heading 스타일 (강조된 스타일)
+HEADING_STYLES = {
+    1: {'size': 32, 'color': 'heading_primary', 'space_before': 48, 'space_after': 16, 'underline': True},
+    2: {'size': 24, 'color': 'heading_secondary', 'space_before': 36, 'space_after': 12, 'border_bottom': True},
+    3: {'size': 18, 'color': 'heading_secondary', 'space_before': 28, 'space_after': 8},
+    4: {'size': 16, 'color': 'text_primary', 'space_before': 20, 'space_after': 6},
+    5: {'size': 14, 'color': 'text_secondary', 'space_before': 16, 'space_after': 4},
+    6: {'size': 13, 'color': 'text_secondary', 'space_before': 12, 'space_after': 4},
+}
 
 
 def get_credentials():
@@ -95,6 +130,7 @@ class MarkdownToDocsConverter:
         self.requests = []
         self.current_index = 1  # Google Docs는 1부터 시작
         self.headings = []  # 목차용 헤딩 수집
+        self.pending_tables = []  # 테이블 정보 (나중에 처리)
 
     def parse(self) -> list:
         """마크다운 파싱 및 Google Docs 요청 생성"""
@@ -306,20 +342,17 @@ class MarkdownToDocsConverter:
                 style_fields.append('strikethrough')
 
             if segment.code:
-                text_style['weightedFontFamily'] = {
-                    'fontFamily': 'Consolas',
-                    'weight': 400
-                }
-                text_style['backgroundColor'] = {
-                    'color': {'rgbColor': {'red': 0.95, 'green': 0.95, 'blue': 0.95}}
-                }
-                style_fields.extend(['weightedFontFamily', 'backgroundColor'])
+                # Notion 스타일 인라인 코드 (빨간색 텍스트 + 연한 배경)
+                text_style['weightedFontFamily'] = {'fontFamily': FONTS['code'], 'weight': 400}
+                text_style['fontSize'] = {'magnitude': 13, 'unit': 'PT'}
+                text_style['backgroundColor'] = {'color': {'rgbColor': COLORS['code_bg']}}
+                text_style['foregroundColor'] = {'color': {'rgbColor': COLORS['code_text']}}
+                style_fields.extend(['weightedFontFamily', 'fontSize', 'backgroundColor', 'foregroundColor'])
 
             if segment.link:
+                # Notion 스타일 링크 (부드러운 파란색, 밑줄)
                 text_style['link'] = {'url': segment.link}
-                text_style['foregroundColor'] = {
-                    'color': {'rgbColor': {'red': 0.06, 'green': 0.46, 'blue': 0.88}}
-                }
+                text_style['foregroundColor'] = {'color': {'rgbColor': COLORS['blue']}}
                 text_style['underline'] = True
                 style_fields.extend(['link', 'foregroundColor', 'underline'])
 
@@ -338,58 +371,127 @@ class MarkdownToDocsConverter:
             current_pos = end_pos
 
     def _add_heading(self, text: str, level: int):
-        """제목 추가"""
+        """제목 추가 (강조된 스타일 - 아이콘 + 테두리)"""
         # 목차용 헤딩 수집
         self.headings.append({'text': text, 'level': level, 'index': self.current_index})
 
-        start = self._add_text(text)
+        # 섹션 아이콘 찾기 (H2, H3에만 적용)
+        icon = None
+        if level in [2, 3]:
+            icon = STYLE.get_section_icon(text)
 
-        # 제목 스타일 적용
+        # 아이콘이 있으면 제목 앞에 추가
+        display_text = f"{icon}  {text}" if icon else text
+
+        start = self._add_text(display_text)
+        end = self.current_index - 1
+
+        # 스타일 설정 가져오기
+        style_config = HEADING_STYLES.get(level, HEADING_STYLES[3])
+        color = COLORS.get(style_config['color'], COLORS['text_primary'])
+
+        # 제목 스타일 적용 (기본 heading + 커스텀 스타일)
         heading_style = f'HEADING_{min(level, 6)}'
+
+        # Paragraph 스타일 구성
+        para_style = {
+            'namedStyleType': heading_style,
+            'spaceAbove': {'magnitude': style_config['space_before'], 'unit': 'PT'},
+            'spaceBelow': {'magnitude': style_config['space_after'], 'unit': 'PT'},
+            'lineSpacing': 130,
+        }
+        para_fields = ['namedStyleType', 'spaceAbove', 'spaceBelow', 'lineSpacing']
+
+        # H1, H2에 하단 테두리 추가
+        if level in [1, 2]:
+            para_style['borderBottom'] = {
+                'color': {'color': {'rgbColor': COLORS['border']}},
+                'width': {'magnitude': 1, 'unit': 'PT'},
+                'padding': {'magnitude': 8, 'unit': 'PT'},
+                'dashStyle': 'SOLID',
+            }
+            para_fields.append('borderBottom')
+
         self.requests.append({
             'updateParagraphStyle': {
-                'range': {
-                    'startIndex': start,
-                    'endIndex': self.current_index - 1
+                'range': {'startIndex': start, 'endIndex': end},
+                'paragraphStyle': para_style,
+                'fields': ','.join(para_fields)
+            }
+        })
+
+        # 텍스트 스타일 (강조된 색상)
+        self.requests.append({
+            'updateTextStyle': {
+                'range': {'startIndex': start, 'endIndex': end},
+                'textStyle': {
+                    'bold': True,
+                    'fontSize': {'magnitude': style_config['size'], 'unit': 'PT'},
+                    'foregroundColor': {'color': {'rgbColor': color}},
+                    'weightedFontFamily': {'fontFamily': FONTS['heading'], 'weight': 700},
                 },
-                'paragraphStyle': {
-                    'namedStyleType': heading_style
-                },
-                'fields': 'namedStyleType'
+                'fields': 'bold,fontSize,foregroundColor,weightedFontFamily'
             }
         })
 
     def _add_code_block(self, code: str, lang: str = ''):
-        """코드 블록 추가"""
-        # 코드 블록 앞에 언어 표시
+        """코드 블록 추가 (강조된 스타일 - 테두리 + 배경)"""
+        # 코드 블록 앞에 언어 표시 (눈에 띄는 라벨)
         if lang:
-            self._add_text(f'[{lang}]')
+            lang_start = self._add_text(f' {lang.upper()} ')
+            self.requests.append({
+                'updateTextStyle': {
+                    'range': {'startIndex': lang_start, 'endIndex': self.current_index - 1},
+                    'textStyle': {
+                        'weightedFontFamily': {'fontFamily': FONTS['code'], 'weight': 500},
+                        'fontSize': {'magnitude': 10, 'unit': 'PT'},
+                        'foregroundColor': {'color': {'rgbColor': COLORS['blue']}},
+                        'backgroundColor': {'color': {'rgbColor': COLORS['highlight_blue']}},
+                    },
+                    'fields': 'weightedFontFamily,fontSize,foregroundColor,backgroundColor'
+                }
+            })
 
         start = self._add_text(code)
+        end = self.current_index - 1
 
-        # 코드 스타일 (고정폭 폰트)
+        # 코드 스타일 (강조된 배경)
         self.requests.append({
             'updateTextStyle': {
-                'range': {
-                    'startIndex': start,
-                    'endIndex': self.current_index - 1
-                },
+                'range': {'startIndex': start, 'endIndex': end},
                 'textStyle': {
-                    'weightedFontFamily': {
-                        'fontFamily': 'Consolas',
-                        'weight': 400
-                    },
-                    'fontSize': {'magnitude': 10, 'unit': 'PT'},
-                    'backgroundColor': {
-                        'color': {'rgbColor': {'red': 0.95, 'green': 0.95, 'blue': 0.95}}
-                    }
+                    'weightedFontFamily': {'fontFamily': FONTS['code'], 'weight': 400},
+                    'fontSize': {'magnitude': 12, 'unit': 'PT'},
+                    'foregroundColor': {'color': {'rgbColor': COLORS['text_primary']}},
+                    'backgroundColor': {'color': {'rgbColor': COLORS['code_bg']}},
                 },
-                'fields': 'weightedFontFamily,fontSize,backgroundColor'
+                'fields': 'weightedFontFamily,fontSize,foregroundColor,backgroundColor'
+            }
+        })
+
+        # 코드 블록 스타일 (테두리 + 패딩)
+        self.requests.append({
+            'updateParagraphStyle': {
+                'range': {'startIndex': start, 'endIndex': end},
+                'paragraphStyle': {
+                    'indentStart': {'magnitude': 16, 'unit': 'PT'},
+                    'indentEnd': {'magnitude': 16, 'unit': 'PT'},
+                    'spaceAbove': {'magnitude': 12, 'unit': 'PT'},
+                    'spaceBelow': {'magnitude': 12, 'unit': 'PT'},
+                    'lineSpacing': 140,
+                    'borderLeft': {
+                        'color': {'color': {'rgbColor': COLORS['blue']}},
+                        'width': {'magnitude': 3, 'unit': 'PT'},
+                        'padding': {'magnitude': 12, 'unit': 'PT'},
+                        'dashStyle': 'SOLID',
+                    },
+                },
+                'fields': 'indentStart,indentEnd,spaceAbove,spaceBelow,lineSpacing,borderLeft'
             }
         })
 
     def _add_table(self, table_lines: list):
-        """테이블 추가 (정렬된 텍스트 형식)"""
+        """테이블 정보 저장 (나중에 별도 처리)."""
         # 테이블 데이터 파싱
         rows = []
         for line in table_lines:
@@ -402,42 +504,35 @@ class MarkdownToDocsConverter:
         if not rows:
             return
 
-        # 각 열의 최대 너비 계산
+        num_rows = len(rows)
         num_cols = max(len(row) for row in rows)
-        col_widths = [0] * num_cols
-        for row in rows:
-            for i, cell in enumerate(row):
-                if i < num_cols:
-                    col_widths[i] = max(col_widths[i], len(cell))
 
-        # 정렬된 텍스트 테이블 생성
-        for row_idx, row in enumerate(rows):
-            # 각 셀을 고정 너비로 패딩
-            padded_cells = []
-            for i in range(num_cols):
-                cell = row[i] if i < len(row) else ""
-                padded_cells.append(cell.ljust(col_widths[i]))
+        # 테이블 삽입 요청
+        self.requests.append({
+            'insertTable': {
+                'rows': num_rows,
+                'columns': num_cols,
+                'location': {'index': self.current_index}
+            }
+        })
 
-            line_text = " | ".join(padded_cells)
+        # 테이블 정보 저장 (나중에 셀 내용 삽입용)
+        self.pending_tables.append({
+            'insert_index': self.current_index,
+            'rows': rows,
+            'num_rows': num_rows,
+            'num_cols': num_cols
+        })
 
-            if row_idx == 0:
-                # 헤더 행 (볼드)
-                start = self._add_text(line_text)
-                self.requests.append({
-                    'updateTextStyle': {
-                        'range': {
-                            'startIndex': start,
-                            'endIndex': self.current_index - 1
-                        },
-                        'textStyle': {'bold': True},
-                        'fields': 'bold'
-                    }
-                })
-                # 구분선 추가
-                separator = "-+-".join("-" * w for w in col_widths)
-                self._add_text(separator)
-            else:
-                self._add_text(line_text)
+        # 테이블 후 인덱스 업데이트
+        # 실제 테이블 구조 (테스트로 확인):
+        # - 테이블 앞 빈 paragraph(1)
+        # - 테이블 본체: 테이블 시작(1) + 행 수 * (행 시작(1) + 셀 수 * 2) + 테이블 끝(1)
+        # - 테이블 뒤 빈 paragraph(1) - 마지막 \n은 다음 삽입 시 덮어씀
+        # 2x2 테이블: 1 + (2 + 2*(1+2*2)) + 0 = 1 + 12 = 13 (다음 삽입은 paragraph 시작에)
+        table_body = 2 + num_rows * (1 + num_cols * 2)
+        table_size = 1 + table_body  # 테이블 후 paragraph 시작 위치
+        self.current_index += table_size
 
     def _add_bullet_item(self, text: str):
         """불릿 리스트 아이템 추가"""
@@ -465,23 +560,43 @@ class MarkdownToDocsConverter:
         self._add_text(f"{checkbox} {full_text}")
 
     def _add_quote(self, text: str):
-        """인용문 추가"""
-        start = self._add_text(f"│ {text}")
+        """인용문 추가 (Notion 스타일 - 연한 배경 + 왼쪽 테두리)"""
+        start = self._add_text(f"  {text}")
+        end = self.current_index - 1
 
-        # 이탤릭 스타일 적용
+        # 텍스트 스타일 (Notion 스타일 - 이탤릭 없이 깔끔하게)
         self.requests.append({
             'updateTextStyle': {
-                'range': {
-                    'startIndex': start,
-                    'endIndex': self.current_index - 1
-                },
+                'range': {'startIndex': start, 'endIndex': end},
                 'textStyle': {
-                    'italic': True,
-                    'foregroundColor': {
-                        'color': {'rgbColor': {'red': 0.4, 'green': 0.4, 'blue': 0.4}}
-                    }
+                    'foregroundColor': {'color': {'rgbColor': COLORS['text_secondary']}},
+                    'fontSize': {'magnitude': 14, 'unit': 'PT'},
                 },
-                'fields': 'italic,foregroundColor'
+                'fields': 'foregroundColor,fontSize'
+            }
+        })
+
+        # Paragraph 스타일 (Notion 스타일 - 회색 왼쪽 테두리 + 연한 배경)
+        self.requests.append({
+            'updateParagraphStyle': {
+                'range': {'startIndex': start, 'endIndex': end},
+                'paragraphStyle': {
+                    'indentStart': {'magnitude': 16, 'unit': 'PT'},
+                    'indentEnd': {'magnitude': 16, 'unit': 'PT'},
+                    'borderLeft': {
+                        'color': {'color': {'rgbColor': COLORS['text_muted']}},
+                        'width': {'magnitude': 3, 'unit': 'PT'},
+                        'padding': {'magnitude': 12, 'unit': 'PT'},
+                        'dashStyle': 'SOLID',
+                    },
+                    'shading': {
+                        'backgroundColor': {'color': {'rgbColor': COLORS['background_gray']}}
+                    },
+                    'spaceAbove': {'magnitude': 12, 'unit': 'PT'},
+                    'spaceBelow': {'magnitude': 12, 'unit': 'PT'},
+                    'lineSpacing': 160,  # 1.6 line-height
+                },
+                'fields': 'indentStart,indentEnd,borderLeft,shading,spaceAbove,spaceBelow,lineSpacing'
             }
         })
 
@@ -503,20 +618,17 @@ class MarkdownToDocsConverter:
             style_fields.append('italic')
 
         if segment.code:
-            text_style['weightedFontFamily'] = {
-                'fontFamily': 'Consolas',
-                'weight': 400
-            }
-            text_style['backgroundColor'] = {
-                'color': {'rgbColor': {'red': 0.95, 'green': 0.95, 'blue': 0.95}}
-            }
-            style_fields.extend(['weightedFontFamily', 'backgroundColor'])
+            # Notion 스타일 인라인 코드
+            text_style['weightedFontFamily'] = {'fontFamily': FONTS['code'], 'weight': 400}
+            text_style['fontSize'] = {'magnitude': 13, 'unit': 'PT'}
+            text_style['backgroundColor'] = {'color': {'rgbColor': COLORS['code_bg']}}
+            text_style['foregroundColor'] = {'color': {'rgbColor': COLORS['code_text']}}
+            style_fields.extend(['weightedFontFamily', 'fontSize', 'backgroundColor', 'foregroundColor'])
 
         if segment.link:
+            # Notion 스타일 링크
             text_style['link'] = {'url': segment.link}
-            text_style['foregroundColor'] = {
-                'color': {'rgbColor': {'red': 0.06, 'green': 0.46, 'blue': 0.88}}
-            }
+            text_style['foregroundColor'] = {'color': {'rgbColor': COLORS['blue']}}
             text_style['underline'] = True
             style_fields.extend(['link', 'foregroundColor', 'underline'])
 
@@ -582,9 +694,171 @@ def create_google_doc(
         except Exception as e:
             print(f"  Content add failed: {e}")
 
-    # 4. 문서 URL 반환
+    # 4. 테이블 셀 내용 삽입 (별도 처리)
+    if converter.pending_tables:
+        try:
+            _fill_table_cells(docs_service, doc_id, converter.pending_tables)
+            print(f"  Tables filled: {len(converter.pending_tables)} tables")
+        except Exception as e:
+            print(f"  Table fill failed: {e}")
+
+    # 5. 문서 URL 반환
     doc_url = f"https://docs.google.com/document/d/{doc_id}/edit"
     return doc_url
+
+
+def _fill_table_cells(docs_service, doc_id: str, pending_tables: list):
+    """테이블 셀에 내용 삽입 (문서 구조 분석 후)."""
+    # 문서 가져오기
+    doc = docs_service.documents().get(documentId=doc_id).execute()
+    body_content = doc.get('body', {}).get('content', [])
+
+    # 문서에서 테이블 찾기
+    tables_in_doc = []
+    for element in body_content:
+        if 'table' in element:
+            tables_in_doc.append({
+                'startIndex': element.get('startIndex'),
+                'table': element.get('table')
+            })
+
+    # 모든 셀 삽입 요청 수집
+    all_insert_requests = []
+    all_style_requests = []
+
+    for table_idx, pending in enumerate(pending_tables):
+        if table_idx >= len(tables_in_doc):
+            continue
+
+        table_info = tables_in_doc[table_idx]
+        table_struct = table_info['table']
+        rows_data = pending['rows']
+
+        for row_idx, table_row in enumerate(table_struct.get('tableRows', [])):
+            row_data = rows_data[row_idx] if row_idx < len(rows_data) else []
+
+            for col_idx, table_cell in enumerate(table_row.get('tableCells', [])):
+                cell_text = row_data[col_idx] if col_idx < len(row_data) else ""
+                if not cell_text:
+                    continue
+
+                # 셀 내 첫 번째 paragraph의 시작 인덱스
+                cell_content = table_cell.get('content', [])
+                if cell_content:
+                    para = cell_content[0]
+                    para_start = para.get('startIndex', 0)
+
+                    all_insert_requests.append({
+                        'insertText': {
+                            'location': {'index': para_start},
+                            'text': cell_text
+                        },
+                        '_sort_index': para_start
+                    })
+
+                    # 헤더 행 (첫 번째 행) 볼드 스타일
+                    if row_idx == 0:
+                        all_style_requests.append({
+                            'updateTextStyle': {
+                                'range': {
+                                    'startIndex': para_start,
+                                    'endIndex': para_start + len(cell_text)
+                                },
+                                'textStyle': {'bold': True},
+                                'fields': 'bold'
+                            },
+                            '_sort_index': para_start
+                        })
+
+    # 역순으로 정렬 (인덱스가 큰 것부터 삽입해야 앞쪽 인덱스에 영향 없음)
+    all_insert_requests.sort(key=lambda r: r['_sort_index'], reverse=True)
+
+    # _sort_index 제거
+    for r in all_insert_requests:
+        del r['_sort_index']
+    for r in all_style_requests:
+        del r['_sort_index']
+
+    # insertText 먼저 실행, 그 다음 스타일 적용
+    if all_insert_requests:
+        docs_service.documents().batchUpdate(
+            documentId=doc_id,
+            body={'requests': all_insert_requests}
+        ).execute()
+
+    # 스타일 적용 (텍스트 삽입 후 인덱스가 변경되므로 다시 문서 가져오기)
+    if all_style_requests:
+        # 문서 다시 가져오기
+        doc = docs_service.documents().get(documentId=doc_id).execute()
+        body_content = doc.get('body', {}).get('content', [])
+
+        # 테이블에서 헤더 행 셀 찾기 및 스타일 적용
+        style_requests = []
+        cell_style_requests = []
+
+        for element in body_content:
+            if 'table' in element:
+                table = element['table']
+                table_start = element.get('startIndex', 0)
+                first_row = table.get('tableRows', [{}])[0]
+
+                for col_idx, cell in enumerate(first_row.get('tableCells', [])):
+                    cell_content = cell.get('content', [])
+                    if cell_content:
+                        para = cell_content[0]
+                        elements = para.get('paragraph', {}).get('elements', [])
+                        if elements:
+                            text_run = elements[0].get('textRun', {})
+                            content = text_run.get('content', '').rstrip('\n')
+                            if content:
+                                start = elements[0].get('startIndex', 0)
+                                end = start + len(content)
+                                # 텍스트 볼드 + 색상
+                                style_requests.append({
+                                    'updateTextStyle': {
+                                        'range': {'startIndex': start, 'endIndex': end},
+                                        'textStyle': {
+                                            'bold': True,
+                                            'foregroundColor': {'color': {'rgbColor': COLORS['heading_secondary']}},
+                                        },
+                                        'fields': 'bold,foregroundColor'
+                                    }
+                                })
+
+                    # 헤더 셀 배경색 (tableRange 사용)
+                    cell_style_requests.append({
+                        'updateTableCellStyle': {
+                            'tableRange': {
+                                'tableCellLocation': {
+                                    'tableStartLocation': {'index': table_start},
+                                    'rowIndex': 0,
+                                    'columnIndex': col_idx,
+                                },
+                                'rowSpan': 1,
+                                'columnSpan': 1,
+                            },
+                            'tableCellStyle': {
+                                'backgroundColor': {'color': {'rgbColor': COLORS['table_header_bg']}},
+                            },
+                            'fields': 'backgroundColor'
+                        }
+                    })
+
+        if style_requests:
+            docs_service.documents().batchUpdate(
+                documentId=doc_id,
+                body={'requests': style_requests}
+            ).execute()
+
+        if cell_style_requests:
+            try:
+                docs_service.documents().batchUpdate(
+                    documentId=doc_id,
+                    body={'requests': cell_style_requests}
+                ).execute()
+            except Exception as e:
+                # 셀 스타일 실패해도 계속 진행
+                print(f"  Table cell style warning: {e}")
 
 
 def process_file(
