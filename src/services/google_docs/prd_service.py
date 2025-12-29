@@ -420,7 +420,7 @@ class PRDService:
 
             # 제목에서 PRD ID 제거
             if title.startswith(f"{prd_id}:"):
-                title = title[len(f"{prd_id}:"):].strip()
+                title = title[len(f"{prd_id}:") :].strip()
 
             return self.metadata.update_prd(prd_id, title=title)
         except Exception as e:

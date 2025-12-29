@@ -210,7 +210,9 @@ class CacheManager:
         if bullet:
             nesting = bullet.get("nestingLevel", 0)
             indent = "  " * nesting
-            _list_id = bullet.get("listId", "")  # TODO: 번호 매기기 리스트에서 사용 예정
+            _list_id = bullet.get(
+                "listId", ""
+            )  # TODO: 번호 매기기 리스트에서 사용 예정
 
             # 번호 매기기 또는 글머리 기호
             # TODO: 번호 매기기 리스트 지원

@@ -275,9 +275,7 @@ class MarkdownToDocsConverter:
             {
                 "updateTextStyle": {
                     "range": {"startIndex": index, "endIndex": end_index - 1},
-                    "textStyle": {
-                        "weightedFontFamily": {"fontFamily": "Courier New"}
-                    },
+                    "textStyle": {"weightedFontFamily": {"fontFamily": "Courier New"}},
                     "fields": "weightedFontFamily",
                 }
             },
@@ -430,7 +428,9 @@ class PRDMigrator:
     def _extract_title(self, markdown_content: str, prd_id: str) -> str:
         """Markdown에서 제목 추출"""
         # # PRD: Title 또는 # PRD-0001: Title 패턴
-        match = re.search(r"^#\s+(?:PRD[-:\s]*\d*[-:\s]*)?\s*(.+)$", markdown_content, re.MULTILINE)
+        match = re.search(
+            r"^#\s+(?:PRD[-:\s]*\d*[-:\s]*)?\s*(.+)$", markdown_content, re.MULTILINE
+        )
         if match:
             title = match.group(1).strip()
             # PRD ID 제거
