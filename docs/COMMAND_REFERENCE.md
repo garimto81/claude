@@ -1,6 +1,6 @@
 # Command Reference
 
-**Version**: 1.1.0 | **Updated**: 2025-12-20
+**Version**: 1.2.0 | **Updated**: 2025-12-30
 
 이 문서는 모든 슬래시 커맨드의 사용법을 정리합니다.
 
@@ -11,6 +11,7 @@
 | 카테고리 | 커맨드 | 설명 |
 |----------|--------|------|
 | **핵심** | `/work` | 전체 워크플로우 자동화 |
+| | `/auto` | 자율 판단 자동 완성 (로그/Context 관리) |
 | | `/orchestrate` | 메인-서브 에이전트 오케스트레이션 |
 | | `/commit` | Conventional Commit 생성 |
 | | `/check` | 코드 품질/보안 검사 |
@@ -73,7 +74,88 @@ $ /work API 응답 캐싱 추가
 
 ---
 
-## 2. /orchestrate - 메인-서브 에이전트 오케스트레이션
+## 2. /auto - 자율 판단 자동 완성
+
+Claude가 다음 작업을 스스로 판단하고 자동 실행합니다. Context 90% 도달 시 자동 저장/재개.
+
+### 사용법
+
+```bash
+/auto                    # 자율 판단 루프 시작
+/auto resume [id]        # 세션 재개
+/auto status             # 현재 상태 확인
+/auto pause              # 일시 정지 (체크포인트 저장)
+/auto abort              # 세션 취소
+/auto --max 5            # 최대 5개 작업 후 중단
+```
+
+### 핵심 기능
+
+| 기능 | 설명 |
+|------|------|
+| **로그 기록** | 모든 작업을 JSON Lines 형식으로 기록 |
+| **로그 청킹** | 50KB 초과 시 자동 분할 |
+| **Context 모니터링** | 90% 도달 시 자동 저장/재개 |
+| **자동 재개** | `/clear` 후 자동으로 이어서 진행 |
+
+### Context 임계값
+
+| 사용량 | 상태 | 액션 |
+|--------|------|------|
+| 0-40% | safe | 정상 작업 |
+| 40-60% | monitor | 주의 |
+| 60-80% | prepare | 체크포인트 준비 |
+| 80-90% | warning | 체크포인트 저장 |
+| **90%+** | **critical** | **저장 → /clear → 자동 재개** |
+
+### 로그 저장 위치
+
+```
+.claude/auto-logs/
+├── active/                     # 진행 중인 세션
+│   └── session_YYYYMMDD_HHMMSS/
+│       ├── state.json          # 세션 상태
+│       ├── log_001.json        # 로그 청크 (50KB 단위)
+│       └── checkpoint.json     # 재개용 체크포인트
+└── archive/                    # 완료된 세션
+```
+
+### 예시
+
+```bash
+$ /auto
+
+🤖 /auto - 자율 판단 모드 시작
+   Session: session_20251230_103000
+
+🔍 상태 분석 중...
+   Git: feat/login 브랜치
+   테스트: 2개 실패
+   📊 Context: 12% | 🟢█▁▁▁▁▁▁▁▁
+
+💭 판단: 테스트 실패 → 우선 수정 필요
+
+⚡ 실행: 테스트 수정
+   [LOG] action: analyze_test_failure
+   ▶ 테스트 재실행... ✓
+
+...
+
+📊 Context: 92% | 🚨█████████
+
+⚠️ Context 90% 도달
+   ✅ 체크포인트 저장 완료
+   🔄 Context 초기화 후 자동 재개...
+```
+
+### 관련 파일
+
+- `.claude/commands/auto.md` - 커맨드 정의
+- `.claude/skills/auto-workflow/` - 스킬 및 스크립트
+
+---
+
+## 3. /orchestrate - 메인-서브 에이전트 오케스트레이션
 
 YAML 기반으로 서브 에이전트를 백그라운드에서 격리 실행하고 결과를 수집합니다.
 
@@ -129,7 +211,7 @@ STEP 5: 결과 보고 및 판단
 
 ---
 
-## 3. /commit - Conventional Commit 생성
+## 4. /commit - Conventional Commit 생성
 
 Conventional Commits 형식으로 커밋을 생성하고 푸시합니다.
 
@@ -179,7 +261,7 @@ git push origin main
 
 ---
 
-## 4. /check - 코드 품질/보안 검사
+## 5. /check - 코드 품질/보안 검사
 
 정적 분석, E2E 테스트, 성능 분석, 보안 검사를 수행합니다.
 
@@ -249,7 +331,7 @@ Summary: 1 warning, 1 moderate issue
 
 ---
 
-## 5. /tdd - TDD 워크플로우
+## 6. /tdd - TDD 워크플로우
 
 Red-Green-Refactor 사이클로 TDD를 수행합니다.
 
@@ -309,7 +391,7 @@ git commit -m "refactor: Use User.authenticate method ♻️"
 
 ---
 
-## 6. /issue - GitHub 이슈 관리
+## 7. /issue - GitHub 이슈 관리
 
 이슈의 전체 생명주기를 관리합니다.
 
@@ -378,7 +460,7 @@ git commit -m "refactor: Use User.authenticate method ♻️"
 
 ---
 
-## 7. /pr - PR 리뷰/머지
+## 8. /pr - PR 리뷰/머지
 
 PR 리뷰, 개선 제안, 자동 머지를 수행합니다.
 
@@ -447,7 +529,7 @@ $ /pr auto
 
 ---
 
-## 8. /create - PRD/PR/문서 생성
+## 9. /create - PRD/PR/문서 생성
 
 PRD, PR, 문서를 생성합니다.
 
@@ -511,7 +593,7 @@ B. Authentication Method
 
 ---
 
-## 9. /research - 리서치
+## 10. /research - 리서치
 
 코드베이스 분석, 웹 검색, 구현 계획을 수행합니다.
 
@@ -566,7 +648,7 @@ B. Authentication Method
 
 ---
 
-## 10. /parallel - 병렬 멀티에이전트 실행
+## 11. /parallel - 병렬 멀티에이전트 실행
 
 4개의 전문 에이전트가 병렬로 작업합니다.
 
@@ -652,7 +734,7 @@ B. Authentication Method
 
 ---
 
-## 11. /todo - 작업 관리
+## 12. /todo - 작업 관리
 
 프로젝트 작업을 관리합니다.
 
@@ -699,7 +781,7 @@ B. Authentication Method
 
 ---
 
-## 12. /session - 세션 관리
+## 13. /session - 세션 관리
 
 컨텍스트 압축, 여정 기록, 변경 로그, 세션 이어가기를 관리합니다.
 
@@ -781,7 +863,7 @@ B. Authentication Method
 
 ---
 
-## 13. /deploy - 버전/Docker 배포
+## 14. /deploy - 버전/Docker 배포
 
 버전 업데이트와 Docker 재빌드를 수행합니다.
 
@@ -829,7 +911,7 @@ Version: 1.2.3 → 1.3.0
 
 ---
 
-## 14. /audit - 설정 점검
+## 15. /audit - 설정 점검
 
 CLAUDE.md, 커맨드, 에이전트, 스킬의 일관성을 점검합니다.
 
