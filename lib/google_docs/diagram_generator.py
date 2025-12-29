@@ -61,7 +61,7 @@ class DiagramGenerator:
         template_name: str,
         data: dict[str, Any],
         output_path: Path,
-        width: int = 900,
+        width: int = 540,
         height: Optional[int] = None,
     ) -> Path:
         """
@@ -119,12 +119,12 @@ class DiagramGenerator:
                 # 출력 디렉토리 생성
                 output_path.parent.mkdir(parents=True, exist_ok=True)
 
-                # 스크린샷 캡처
-                await page.screenshot(
-                    path=str(output_path),
-                    full_page=True,
-                    type='png'
-                )
+                # 스크린샷 캡처 (.container 영역만)
+                container = await page.query_selector('.container')
+                if container:
+                    await container.screenshot(path=str(output_path), type='png')
+                else:
+                    await page.screenshot(path=str(output_path), full_page=True, type='png')
 
                 await browser.close()
 
@@ -142,7 +142,7 @@ class DiagramGenerator:
         template_name: str,
         data: dict[str, Any],
         output_path: Path,
-        width: int = 900,
+        width: int = 540,
         height: Optional[int] = None,
     ) -> Path:
         """
@@ -168,7 +168,7 @@ class DiagramGenerator:
         self,
         data: dict[str, Any],
         output_path: Path,
-        width: int = 900,
+        width: int = 540,
     ) -> Path:
         """
         아키텍처 다이어그램 생성
@@ -205,7 +205,7 @@ class DiagramGenerator:
         self,
         data: dict[str, Any],
         output_path: Path,
-        width: int = 1000,
+        width: int = 540,
     ) -> Path:
         """
         ERD 다이어그램 생성
@@ -251,7 +251,7 @@ class DiagramGenerator:
         self,
         data: dict[str, Any],
         output_path: Path,
-        width: int = 800,
+        width: int = 540,
     ) -> Path:
         """
         플로우차트 생성
@@ -285,7 +285,7 @@ class DiagramGenerator:
         self,
         data: dict[str, Any],
         output_path: Path,
-        width: int = 900,
+        width: int = 540,
     ) -> Path:
         """
         UI 목업 생성

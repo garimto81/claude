@@ -15,14 +15,19 @@
     body {
       font-family: 'Segoe UI', -apple-system, BlinkMacSystemFont, 'Noto Sans KR', sans-serif;
       background: white;
-      padding: 40px;
+      padding: 0;
+      margin: 0;
       color: #242424;
+      font-size: 16px;
       line-height: 1.6;
     }
 
     .container {
-      max-width: 900px;
-      margin: 0 auto;
+      width: 540px;
+      max-width: 540px;
+      margin: 0;
+      padding: 24px;
+      background: white;
     }
 
     /* 헤더 */
@@ -34,16 +39,21 @@
     }
 
     .header h1 {
-      font-size: 24px;
-      font-weight: 600;
+      font-size: 28px;
+      font-weight: 700;
       color: #242424;
       margin-bottom: 8px;
     }
 
     .header .subtitle {
-      font-size: 14px;
+      font-size: 16px;
       color: #6B6B6B;
     }
+
+    /* 제목 스타일 */
+    h1 { font-size: 28px; font-weight: 700; }
+    h2 { font-size: 22px; font-weight: 600; margin-top: 24px; margin-bottom: 12px; }
+    h3 { font-size: 18px; font-weight: 600; margin-top: 16px; margin-bottom: 8px; }
 
     /* Notion 색상 변수 */
     :root {
@@ -96,28 +106,29 @@
     }
 
     .card-title {
-      font-size: 16px;
+      font-size: 18px;
       font-weight: 600;
       color: var(--notion-text);
     }
 
     .card-subtitle {
-      font-size: 13px;
+      font-size: 16px;
       color: var(--notion-text-secondary);
       margin-top: 2px;
     }
 
     .card-body {
-      font-size: 14px;
+      font-size: 16px;
       color: var(--notion-text-secondary);
+      line-height: 1.5;
     }
 
     /* 태그 */
     .tag {
       display: inline-block;
-      padding: 2px 8px;
-      border-radius: 4px;
-      font-size: 12px;
+      padding: 4px 10px;
+      border-radius: 6px;
+      font-size: 14px;
       font-weight: 500;
       background: var(--notion-bg);
       color: var(--notion-text-secondary);
@@ -178,7 +189,7 @@
     }
 
     .layer-label {
-      font-size: 11px;
+      font-size: 13px;
       font-weight: 600;
       text-transform: uppercase;
       letter-spacing: 0.5px;

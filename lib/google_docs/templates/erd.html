@@ -10,13 +10,18 @@
     body {
       font-family: 'Segoe UI', -apple-system, BlinkMacSystemFont, 'Noto Sans KR', sans-serif;
       background: white;
-      padding: 40px;
+      padding: 0;
+      margin: 0;
       color: #242424;
+      font-size: 16px;
     }
 
     .container {
-      max-width: 1000px;
-      margin: 0 auto;
+      width: 540px;
+      max-width: 540px;
+      margin: 0;
+      padding: 24px;
+      background: white;
     }
 
     :root {
@@ -40,21 +45,21 @@
 
     .header h1 {
       font-size: 24px;
-      font-weight: 600;
+      font-weight: 700;
       margin-bottom: 6px;
     }
 
     .header .subtitle {
-      font-size: 14px;
+      font-size: 16px;
       color: var(--notion-text-secondary);
     }
 
     /* ERD 컨테이너 */
     .erd-container {
-      display: grid;
-      grid-template-columns: repeat(auto-fit, minmax(250px, 1fr));
-      gap: 24px;
-      margin-bottom: 32px;
+      display: flex;
+      flex-direction: column;
+      gap: 16px;
+      margin-bottom: 24px;
     }
 
     /* 엔티티 카드 */
@@ -78,7 +83,7 @@
     }
 
     .entity-name {
-      font-size: 15px;
+      font-size: 17px;
       font-weight: 600;
       color: var(--notion-text);
     }
@@ -90,8 +95,8 @@
     .field {
       display: flex;
       align-items: center;
-      padding: 6px 16px;
-      font-size: 13px;
+      padding: 8px 16px;
+      font-size: 15px;
       gap: 8px;
     }
 
@@ -100,11 +105,11 @@
     }
 
     .field-key {
-      font-size: 9px;
+      font-size: 11px;
       font-weight: 600;
-      padding: 2px 4px;
+      padding: 2px 6px;
       border-radius: 3px;
-      min-width: 20px;
+      min-width: 24px;
       text-align: center;
     }
 
@@ -126,13 +131,13 @@
 
     .field-type {
       color: var(--notion-text-muted);
-      font-size: 12px;
+      font-size: 14px;
       font-family: 'Consolas', monospace;
     }
 
     .field-nullable {
       color: var(--notion-text-muted);
-      font-size: 11px;
+      font-size: 13px;
     }
 
     /* 엔티티 색상 */
@@ -149,7 +154,7 @@
     }
 
     .relations-title {
-      font-size: 13px;
+      font-size: 14px;
       font-weight: 600;
       color: var(--notion-text-secondary);
       margin-bottom: 12px;
@@ -162,7 +167,7 @@
       align-items: center;
       gap: 12px;
       padding: 8px 0;
-      font-size: 13px;
+      font-size: 15px;
       border-bottom: 1px solid var(--notion-border);
     }
 
