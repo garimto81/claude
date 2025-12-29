@@ -12,7 +12,7 @@ from pathlib import Path
 from typing import Any, Dict, List, Optional, Tuple
 
 from .client import GoogleDocsClient
-from .metadata_manager import MetadataManager, PRDMetadata
+from .metadata_manager import MetadataManager
 from .cache_manager import CacheManager
 
 logger = logging.getLogger(__name__)
@@ -212,7 +212,7 @@ class MarkdownToDocsConverter:
         # 들여쓰기 레벨 계산
         stripped = line.lstrip()
         indent = len(line) - len(stripped)
-        nesting_level = indent // 2
+        _nesting_level = indent // 2  # TODO: 중첩 리스트에서 사용 예정
 
         text = re.sub(r"^[-*]\s+", "", stripped)
         text_with_newline = text + "\n"

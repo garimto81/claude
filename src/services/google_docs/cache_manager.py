@@ -11,7 +11,7 @@ from pathlib import Path
 from typing import Any, Dict, List, Optional
 
 from .client import GoogleDocsClient
-from .metadata_manager import MetadataManager, PRDMetadata
+from .metadata_manager import MetadataManager
 
 logger = logging.getLogger(__name__)
 
@@ -210,7 +210,7 @@ class CacheManager:
         if bullet:
             nesting = bullet.get("nestingLevel", 0)
             indent = "  " * nesting
-            list_id = bullet.get("listId", "")
+            _list_id = bullet.get("listId", "")  # TODO: 번호 매기기 리스트에서 사용 예정
 
             # 번호 매기기 또는 글머리 기호
             # TODO: 번호 매기기 리스트 지원

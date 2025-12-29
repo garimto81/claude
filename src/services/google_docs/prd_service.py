@@ -5,9 +5,8 @@ Google Docs 기반 PRD 생성 및 관리 서비스.
 """
 
 import logging
-from dataclasses import dataclass, field
+from dataclasses import dataclass
 from datetime import datetime
-from pathlib import Path
 from typing import Any, Dict, List, Optional
 
 from .client import GoogleDocsClient
