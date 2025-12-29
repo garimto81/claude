@@ -65,9 +65,7 @@ class PRDRegistry:
             "version": self.version,
             "last_sync": self.last_sync,
             "next_prd_number": self.next_prd_number,
-            "prds": {
-                prd_id: prd.to_dict() for prd_id, prd in self.prds.items()
-            },
+            "prds": {prd_id: prd.to_dict() for prd_id, prd in self.prds.items()},
         }
 
     @classmethod

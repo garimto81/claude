@@ -5,9 +5,8 @@ Google Docs 기반 PRD 생성 및 관리 서비스.
 """
 
 import logging
-from dataclasses import dataclass, field
+from dataclasses import dataclass
 from datetime import datetime
-from pathlib import Path
 from typing import Any, Dict, List, Optional
 
 from .client import GoogleDocsClient
@@ -421,7 +420,7 @@ class PRDService:
 
             # 제목에서 PRD ID 제거
             if title.startswith(f"{prd_id}:"):
-                title = title[len(f"{prd_id}:"):].strip()
+                title = title[len(f"{prd_id}:") :].strip()
 
             return self.metadata.update_prd(prd_id, title=title)
         except Exception as e:

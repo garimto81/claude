@@ -12,7 +12,7 @@ from pathlib import Path
 from typing import Any, Dict, List, Optional, Tuple
 
 from .client import GoogleDocsClient
-from .metadata_manager import MetadataManager, PRDMetadata
+from .metadata_manager import MetadataManager
 from .cache_manager import CacheManager
 
 logger = logging.getLogger(__name__)
@@ -212,7 +212,7 @@ class MarkdownToDocsConverter:
         # 들여쓰기 레벨 계산
         stripped = line.lstrip()
         indent = len(line) - len(stripped)
-        nesting_level = indent // 2
+        _nesting_level = indent // 2  # TODO: 중첩 리스트에서 사용 예정
 
         text = re.sub(r"^[-*]\s+", "", stripped)
         text_with_newline = text + "\n"
@@ -275,9 +275,7 @@ class MarkdownToDocsConverter:
             {
                 "updateTextStyle": {
                     "range": {"startIndex": index, "endIndex": end_index - 1},
-                    "textStyle": {
-                        "weightedFontFamily": {"fontFamily": "Courier New"}
-                    },
+                    "textStyle": {"weightedFontFamily": {"fontFamily": "Courier New"}},
                     "fields": "weightedFontFamily",
                 }
             },
@@ -430,7 +428,9 @@ class PRDMigrator:
     def _extract_title(self, markdown_content: str, prd_id: str) -> str:
         """Markdown에서 제목 추출"""
         # # PRD: Title 또는 # PRD-0001: Title 패턴
-        match = re.search(r"^#\s+(?:PRD[-:\s]*\d*[-:\s]*)?\s*(.+)$", markdown_content, re.MULTILINE)
+        match = re.search(
+            r"^#\s+(?:PRD[-:\s]*\d*[-:\s]*)?\s*(.+)$", markdown_content, re.MULTILINE
+        )
         if match:
             title = match.group(1).strip()
             # PRD ID 제거
