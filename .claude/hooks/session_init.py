@@ -14,6 +14,7 @@ from pathlib import Path
 
 PROJECT_DIR = os.environ.get("CLAUDE_PROJECT_DIR", "D:/AI/claude01")
 SESSION_FILE = Path(PROJECT_DIR) / ".claude" / "session_state.json"
+AUTO_STATE_FILE = Path(PROJECT_DIR) / ".claude" / "workflow" / "auto_state.json"
 
 
 def get_current_branch() -> str:
@@ -49,6 +50,17 @@ def load_previous_session() -> dict:
     if SESSION_FILE.exists():
         try:
             with open(SESSION_FILE, "r", encoding="utf-8") as f:
+                return json.load(f)
+        except Exception:
+            pass
+    return {}
+
+
+def load_auto_state() -> dict:
+    """자동 완성 상태 로드"""
+    if AUTO_STATE_FILE.exists():
+        try:
+            with open(AUTO_STATE_FILE, "r", encoding="utf-8") as f:
                 return json.load(f)
         except Exception:
             pass
@@ -95,6 +107,19 @@ def main():
         # 이전 세션 종료 시간
         if prev_session.get("last_end"):
             session_info.append(f"🕐 이전 세션: {prev_session['last_end'][:16]}")
+
+        # 자동 완성 상태 확인
+        auto_state = load_auto_state()
+        if auto_state.get("enabled") and auto_state.get("status") in ["running", "paused"]:
+            queue_len = len(auto_state.get("taskQueue", []))
+            completed = auto_state.get("stats", {}).get("completed", 0)
+            session_info.append("")
+            session_info.append(f"🔄 자동 완성 루프 {'일시정지' if auto_state['status'] == 'paused' else '진행'} 중")
+            session_info.append(f"   - 완료: {completed}개, 대기: {queue_len}개")
+            if auto_state.get("currentTask"):
+                task_title = auto_state["currentTask"].get("title", "Unknown")
+                session_info.append(f"   - 현재 작업: {task_title}")
+            session_info.append("   → /auto --resume 로 재개 가능")
 
         # 세션 상태 저장
         save_session_state({
