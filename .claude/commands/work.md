@@ -3,17 +3,36 @@ name: work
 description: Execute work instructions with parallel analysis, issue creation, and strict validation
 ---
 
-# /work - 작업 지시 실행
+# /work - 통합 작업 실행
 
 작업 지시를 받아 **병렬 분석 → 이슈/문서 → Todo → E2E → TDD 보고**까지 자동 수행합니다.
+`--loop` 모드에서는 **자율 판단 기반 반복 실행**을 지원합니다.
 
 ## 사용법
 
-```
+```bash
+# 기본: 지시 기반 실행
 /work <작업 지시 내용>
 /work "API 성능 개선"
-/work "인증 시스템 리팩토링"
+
+# 자동: 중간 확인 없이 실행
+/work --auto "인증 시스템 리팩토링"
+
+# 루프: 자율 판단 반복 실행 (기존 /auto)
+/work --loop
+/work --loop --max 5              # 최대 5개 작업
+/work --loop resume [session_id]  # 세션 재개
+/work --loop status               # 현재 상태
+/work --loop pause                # 일시 정지
 ```
+
+## 모드 비교
+
+| 모드 | 입력 | 실행 방식 | Context 관리 |
+|------|------|-----------|--------------|
+| **기본** | 작업 지시 필수 | 5단계 워크플로우 | - |
+| **--auto** | 작업 지시 필수 | 5단계 자동 실행 | - |
+| **--loop** | 없음 (자율 판단) | 우선순위 기반 루프 | 90% 임계값 |
 
 ## 실행 흐름
 
@@ -286,13 +305,14 @@ $ /work API 응답 캐싱 추가
 | 옵션 | 설명 | 예시 |
 |------|------|------|
 | `--auto` | 완전 자동화 (최종 보고서만 확인) | `/work --auto "대규모 리팩토링"` |
+| `--loop` | 자율 판단 루프 (기존 `/auto`) | `/work --loop` |
 | `--skip-analysis` | Phase 1 스킵 | `/work --skip-analysis "빠른 수정"` |
 | `--no-issue` | 이슈 생성 안함 | `/work --no-issue "내부 리팩토링"` |
 | `--strict` | 엄격 모드 (E2E 1회 실패 시 중단) | `/work --strict "프로덕션 배포"` |
+| `--max N` | 최대 N개 작업 후 중단 (loop 모드) | `/work --loop --max 5` |
+| `--dry-run` | 판단만 보여주고 실행 안함 | `/work --loop --dry-run` |
 
 ### --auto 모드 상세
-
-`/work --auto`는 `/work-auto`와 동일하게 동작합니다:
 
 - 모든 Phase 자동 실행 (중간 확인 없음)
 - 7단계 E2E Strict Validation
@@ -301,4 +321,126 @@ $ /work API 응답 캐싱 추가
 
 ---
 
-**작업 지시를 입력해 주세요.**
+## --loop 모드 (자율 판단)
+
+`/work --loop`는 기존 `/auto` 커맨드와 동일합니다. Claude가 다음 작업을 스스로 판단하고 실행합니다.
+
+### 루프 서브커맨드
+
+```bash
+/work --loop                    # 자율 판단 루프 시작
+/work --loop resume [id]        # 세션 재개
+/work --loop status             # 현재 상태 확인
+/work --loop pause              # 일시 정지 (체크포인트 저장)
+/work --loop abort              # 세션 취소
+```
+
+### 루프 실행 흐름
+
+```
+/work --loop 실행
+    │
+    ├─ [1] 세션 초기화
+    │      - session_id 생성
+    │      - 로그 폴더 생성 (.claude/auto-logs/)
+    │
+    ├─ [2] 상태 분석
+    │      - Git 상태 (브랜치, 변경사항)
+    │      - 열린 이슈/PR
+    │      - 테스트 상태
+    │      - Todo 미완료 항목
+    │      - PRD 문서 상태
+    │
+    ├─ [3] 작업 판단 (우선순위)
+    │      1. 긴급: 빌드 깨짐, 테스트 실패
+    │      2. 진행중: 방금 하던 작업 완료
+    │      3. 대기중: PR 리뷰, 이슈 해결
+    │      4. PRD 필요: 새 기능 → PRD 작성/검토
+    │      5. 계획됨: Todo, PRD 체크박스
+    │
+    ├─ [4] 작업 실행
+    │      - 로그 기록
+    │      - Context 모니터링
+    │      - 80% 도달 시 체크포인트 저장
+    │
+    └─ [5] 반복 / 종료
+           - 할 일 있음 → [2]로 복귀
+           - 할 일 없음 → 종료
+           - Context 90% → /commit → 세션 종료
+```
+
+### Context 모니터링 (90% 임계값)
+
+| 사용량 | 상태 | 액션 |
+|--------|------|------|
+| 0-40% | safe | 정상 작업 |
+| 40-60% | monitor | 주의 |
+| 60-80% | prepare | 체크포인트 준비 |
+| 80-90% | warning | 체크포인트 저장 |
+| **90%+** | **critical** | **진행 중 작업 완료 → /commit → 세션 종료** |
+
+### Context 90% 도달 시
+
+```
+⚠️ Context 90% 도달
+   ▶ 진행 중인 작업 완료 중...
+   ✅ /commit 실행
+   ✅ 체크포인트 저장
+   ⏹️ 세션 종료
+
+💡 재개하려면: /work --loop resume
+```
+
+### 로그 및 체크포인트
+
+```
+.claude/auto-logs/active/session_YYYYMMDD_HHMMSS/
+├── state.json           # 세션 상태
+├── log_001.json         # 로그 청크 1 (50KB)
+├── log_002.json         # 로그 청크 2
+└── checkpoint.json      # 재개용 체크포인트
+```
+
+### 안전장치
+
+| 상황 | 동작 |
+|------|------|
+| main 브랜치 직접 수정 | 브랜치 생성 후 진행 |
+| 위험한 작업 (force push 등) | 스킵 + 알림 |
+| 3회 연속 실패 | 루프 중단 + 수동 확인 요청 |
+| 무한 루프 감지 | 자동 중단 |
+
+---
+
+## 공통 기능 (모든 모드)
+
+### PRD 관리
+
+| 단계 | 설명 |
+|------|------|
+| **PRD 탐색** | 기존 PRD 문서 확인 (`tasks/prds/`) |
+| **PRD 작성** | 없으면 `/create prd` 자동 실행 |
+| **PRD 검토** | 요구사항 완전성, 기술 실현 가능성 검토 |
+| **PRD 승인** | 사용자 확인 후 구현 진행 |
+
+### 로그 스키마
+
+```json
+{
+  "timestamp": "2025-12-30T10:30:00.000Z",
+  "sequence": 1,
+  "event_type": "action|decision|checkpoint",
+  "phase": "init|analysis|implementation|testing|complete",
+  "data": {
+    "action": "file_read|file_write|command|tool_use",
+    "target": "path/to/file",
+    "result": "success|fail"
+  },
+  "context_usage": 45,
+  "todo_state": [...]
+}
+```
+
+---
+
+**작업 지시를 입력해 주세요. 또는 `--loop`로 자율 판단 모드를 시작하세요.**
