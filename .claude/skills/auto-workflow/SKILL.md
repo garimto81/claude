@@ -1,9 +1,10 @@
 ---
 name: auto-workflow
 description: >
-  자율 판단 자동 완성 워크플로우. PRD 작성/검토, Context 모니터링, 로그 기록,
-  자동 저장 기능을 통해 대규모 작업을 체계적으로 수행합니다.
-version: 1.1.0
+  자율 판단 + 자율 발견 워크플로우 (Ralph Wiggum 철학 통합).
+  "할 일 없음 → 종료"가 아닌 "할 일 없음 → 스스로 발견".
+  2계층 우선순위, Context 모니터링, 로그 기록을 통해 무한 반복 실행.
+version: 2.0.0
 
 triggers:
   keywords:
@@ -11,10 +12,13 @@ triggers:
     - "auto"
     - "자율 작업"
     - "무중단"
+    - "ralph"
+    - "loop"
   file_patterns: []
   context:
     - "대규모 작업 자동화"
     - "Context 관리 자동화"
+    - "자율 발견"
 
 capabilities:
   - log_all_actions        # 모든 작업 로깅
@@ -23,6 +27,8 @@ capabilities:
   - auto_checkpoint        # 자동 체크포인트
   - prd_management         # PRD 작성/검토
   - auto_commit            # 90% 도달 시 자동 커밋
+  - autonomous_discovery   # 자율 발견 (Tier 2)
+  - completion_promise     # Ralph 스타일 종료 조건
 
 model_preference: opus
 
@@ -35,18 +41,25 @@ dependencies:
 token_budget: 3000
 ---
 
-# auto-workflow 스킬
+# auto-workflow 스킬 (v2.0 - Ralph Wiggum 통합)
 
 ## 개요
 
-`/auto` 커맨드의 핵심 기능을 제공하는 스킬입니다.
+`/auto` 및 `/work --loop` 커맨드의 핵심 기능을 제공하는 스킬입니다.
+**Ralph Wiggum 철학**을 통합하여 "할 일 없음 → 종료" 대신 **"할 일 없음 → 자율 발견"**을 구현합니다.
+
+### 핵심 원칙
+
+> **"Iteration > Perfection"** - 완벽보다 반복
+> **"Failures Are Data"** - 실패는 정보
+> **"Persistence Wins"** - 끈기가 승리
 
 ### 핵심 기능
 
-1. **PRD 관리**: 새 기능 시 PRD 탐색/작성/검토/승인
-2. **로그 기록**: JSON Lines 형식으로 모든 작업 실시간 기록
-3. **로그 청킹**: 50KB 초과 시 자동 분할
-4. **Context 모니터링**: 90% 도달 시 /commit → 세션 종료
+1. **2계층 우선순위**: Tier 1(명시적) → Tier 2(자율 발견)
+2. **자율 발견**: 명시적 작업 없을 때 스스로 개선점 탐색
+3. **종료 조건**: `--max`, `--promise`, Context 90%만 종료
+4. **로그 기록**: JSON Lines 형식으로 모든 작업 실시간 기록
 5. **체크포인트**: 작업 상태 자동 저장 및 복원
 
 ## 파일 구조
@@ -68,6 +81,69 @@ token_budget: 3000
 │       └── checkpoint.json     # 체크포인트
 └── archive/                    # 완료된 세션
 ```
+
+## 2계층 우선순위 체계
+
+### Tier 1: 명시적 작업
+
+| 우선순위 | 카테고리 | 트리거 |
+|:--------:|----------|--------|
+| 1 | 긴급 | 빌드 깨짐, 테스트 실패 |
+| 2 | 진행중 | 방금 하던 작업 완료 |
+| 3 | 대기중 | PR 리뷰, 이슈 해결 |
+| 4 | PRD 필요 | 새 기능 → PRD 작성/검토 |
+| 5 | 계획됨 | Todo, PRD 체크박스 |
+
+### Tier 2: 자율 발견 (Tier 1 없을 때)
+
+**⚠️ "할 일 없음"은 종료 조건이 아님** → 자율 발견 모드로 전환
+
+| 우선순위 | 카테고리 | 발견 방법 | 작업 예시 |
+|:--------:|----------|-----------|-----------|
+| 6 | 코드 품질 | `ruff check`, `tsc --noEmit` | 린트 경고 수정 |
+| 7 | 테스트 커버리지 | `pytest --cov` | 커버리지 80% 미달 파일 테스트 추가 |
+| 8 | 문서화 | 문서 없는 public API 탐지 | JSDoc/docstring 추가 |
+| 9 | 리팩토링 | 중복 코드, 긴 함수 탐지 | 함수 분리, 추상화 |
+| 10 | 의존성 | `npm audit`, `pip-audit` | 취약점 패치 |
+| 11 | 성능 | TODO 주석, 느린 패턴 탐지 | 최적화 |
+| 12 | 접근성 | Playwright a11y 스캔 | ARIA 라벨 추가 |
+
+### 자율 발견 실행 로직
+
+```python
+def discover_next_task():
+    """Tier 2: 자율 발견 - 스스로 개선점 탐색"""
+
+    # 6. 코드 품질
+    lint_issues = run_linter()
+    if lint_issues:
+        return create_issue("lint", lint_issues)
+
+    # 7. 테스트 커버리지
+    coverage = get_coverage()
+    uncovered = [f for f in coverage if f.percent < 80]
+    if uncovered:
+        return create_issue("coverage", uncovered[0])
+
+    # 8. 문서화
+    undocumented = find_undocumented_apis()
+    if undocumented:
+        return create_issue("docs", undocumented[0])
+
+    # 9-12. 기타 발견...
+
+    # 모든 검사 통과 → 대기 (종료 아님)
+    return wait_and_recheck()
+```
+
+## 종료 조건 (명시적으로만)
+
+| 조건 | 설명 |
+|------|------|
+| `--max N` | N회 반복 후 종료 |
+| `--promise TEXT` | `<promise>TEXT</promise>` 출력 시 종료 |
+| `pause` / `abort` | 사용자 명시적 중단 |
+| Context 90% | 체크포인트 저장 후 종료 (resume 가능) |
 
 ## Context 임계값
 
