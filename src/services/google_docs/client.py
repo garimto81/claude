@@ -206,9 +206,7 @@ class GoogleDocsClient:
                 # 테이블 처리 (간단히 텍스트만 추출)
                 for row in element["table"].get("tableRows", []):
                     for cell in row.get("tableCells", []):
-                        text_parts.append(
-                            self._extract_text(cell.get("content", []))
-                        )
+                        text_parts.append(self._extract_text(cell.get("content", [])))
 
         return "".join(text_parts)
 
@@ -367,9 +365,7 @@ class GoogleDocsClient:
             body["parents"] = [folder_id]
 
         copied_file = (
-            self.drive_service.files()
-            .copy(fileId=source_doc_id, body=body)
-            .execute()
+            self.drive_service.files().copy(fileId=source_doc_id, body=body).execute()
         )
 
         doc_id = copied_file["id"]
