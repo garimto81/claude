@@ -198,11 +198,146 @@ def analyze_all() -> AnalysisResult:
     )
 
 
+# ============================================
+# Tier 2: 자율 발견 함수들
+# ============================================
+
+def discover_lint_issues() -> tuple[int, str]:
+    """린트 이슈 탐색 (우선순위 6)"""
+    # ruff로 린트 이슈 확인
+    success, output = run_command(["ruff", "check", ".", "--output-format=json"])
+    if not success and output:
+        try:
+            issues = json.loads(output)
+            if issues:
+                return len(issues), issues[0].get("filename", "")
+        except (json.JSONDecodeError, TypeError):
+            pass
+    return 0, ""
+
+
+def discover_todo_comments() -> list[dict]:
+    """TODO/FIXME 코멘트 탐색 (우선순위 8)"""
+    todos = []
+    # git grep으로 TODO/FIXME 찾기
+    success, output = run_command(
+        ["git", "grep", "-n", "-E", "(TODO|FIXME|XXX|HACK):"]
+    )
+    if success and output:
+        for line in output.split("\n")[:10]:  # 상위 10개만
+            parts = line.split(":", 2)
+            if len(parts) >= 3:
+                todos.append({
+                    "file": parts[0],
+                    "line": parts[1],
+                    "content": parts[2].strip()[:50]
+                })
+    return todos
+
+
+def discover_dependency_updates() -> list[dict]:
+    """의존성 업데이트 확인 (우선순위 10)"""
+    updates = []
+
+    # Python: pip list --outdated
+    success, output = run_command(["pip", "list", "--outdated", "--format=json"])
+    if success and output:
+        try:
+            outdated = json.loads(output)
+            for pkg in outdated[:5]:  # 상위 5개만
+                updates.append({
+                    "name": pkg.get("name", ""),
+                    "current": pkg.get("version", ""),
+                    "latest": pkg.get("latest_version", "")
+                })
+        except (json.JSONDecodeError, TypeError):
+            pass
+
+    return updates
+
+
+def discover_security_vulns() -> list[dict]:
+    """보안 취약점 확인 (우선순위 11)"""
+    vulns = []
+
+    # npm audit (Node 프로젝트)
+    package_json = PROJECT_DIR / "package.json"
+    if package_json.exists():
+        success, output = run_command(["npm", "audit", "--json"])
+        if not success and output:
+            try:
+                audit = json.loads(output)
+                vuln_count = audit.get("metadata", {}).get("vulnerabilities", {})
+                total = sum(vuln_count.values()) if isinstance(vuln_count, dict) else 0
+                if total > 0:
+                    vulns.append({"type": "npm", "count": total})
+            except (json.JSONDecodeError, TypeError):
+                pass
+
+    return vulns
+
+
+def discover_next_task() -> Optional["NextAction"]:
+    """
+    Tier 2: 자율 발견 - 스스로 개선점 탐색
+    Ralph Wiggum 철학: "할 일 없음 → 스스로 발견"
+    """
+
+    # 6. 코드 품질 (린트 이슈)
+    lint_count, lint_file = discover_lint_issues()
+    if lint_count > 0:
+        return NextAction(
+            priority=6,
+            action_type="discover",
+            description=f"린트 이슈 수정 ({lint_count}개)",
+            command="/check --fix",
+            reason=f"자율 발견: {lint_file}에서 린트 이슈 발견"
+        )
+
+    # 8. TODO/FIXME 코멘트
+    todos = discover_todo_comments()
+    if todos:
+        first = todos[0]
+        return NextAction(
+            priority=8,
+            action_type="discover",
+            description=f"TODO 해결 ({len(todos)}개)",
+            command=f"/issue create \"TODO: {first['content']}\"",
+            reason=f"자율 발견: {first['file']}:{first['line']}에 TODO"
+        )
+
+    # 10. 의존성 업데이트
+    outdated = discover_dependency_updates()
+    if outdated:
+        pkg = outdated[0]
+        return NextAction(
+            priority=10,
+            action_type="discover",
+            description=f"의존성 업데이트 ({len(outdated)}개)",
+            command=f"/work \"의존성 업데이트: {pkg['name']}\"",
+            reason=f"자율 발견: {pkg['name']} {pkg['current']} → {pkg['latest']}"
+        )
+
+    # 11. 보안 취약점
+    vulns = discover_security_vulns()
+    if vulns:
+        return NextAction(
+            priority=11,
+            action_type="discover",
+            description=f"보안 취약점 수정 ({vulns[0]['count']}개)",
+            command="/check --security",
+            reason=f"자율 발견: 보안 취약점 발견"
+        )
+
+    # Tier 2에서도 발견 못함
+    return None
+
+
 @dataclass
 class NextAction:
     """다음 작업"""
-    priority: int  # 1=긴급, 2=진행중, 3=대기, 4=계획, 5=개선
-    action_type: str  # fix, commit, push, pr, issue, todo, refactor, none
+    priority: int  # 1=긴급, 2=진행중, 3=대기, 4=계획, 5=개선, 6-11=자율발견, 99=대기
+    action_type: str  # fix, commit, push, pr, issue, todo, refactor, discover, wait, none
     description: str
     command: str  # 실행할 명령
     reason: str  # 왜 이 작업인지
@@ -326,13 +461,21 @@ def decide_next_action(analysis: AnalysisResult) -> NextAction:
             reason=f"린트 경고 {code.lint_errors}개"
         )
 
-    # 11. 할 일 없음
+    # ============================================
+    # Tier 2: 자율 발견 (Tier 1 작업 없을 때)
+    # Ralph Wiggum: "할 일 없음 → 스스로 발견"
+    # ============================================
+    discovered = discover_next_task()
+    if discovered:
+        return discovered
+
+    # 모든 Tier에서 할 일 없음 -> 대기 상태 (재탐색 예정)
     return NextAction(
         priority=99,
-        action_type="none",
-        description="할 일 없음",
+        action_type="wait",
+        description="대기 중 (재탐색 예정)",
         command="",
-        reason="모든 작업이 완료되었습니다"
+        reason="Tier 1, 2 모두 완료. 잠시 후 재탐색합니다."
     )
 
 
@@ -374,7 +517,13 @@ def format_analysis(analysis: AnalysisResult) -> str:
 
 def format_decision(action: NextAction) -> str:
     """판단 결과 포맷팅"""
-    priority_map = {1: "🚨 긴급", 2: "⚡ 진행중", 3: "📋 대기", 4: "📝 계획", 5: "✨ 개선", 99: "✅ 완료"}
+    priority_map = {
+        1: "🚨 긴급", 2: "⚡ 진행중", 3: "📋 대기", 4: "📝 계획", 5: "✨ 개선",
+        # Tier 2: 자율 발견
+        6: "🔍 자율발견:품질", 7: "🔍 자율발견:커버리지", 8: "🔍 자율발견:TODO",
+        9: "🔍 자율발견:문서화", 10: "🔍 자율발견:의존성", 11: "🔍 자율발견:보안",
+        99: "⏸️ 대기중"
+    }
     lines = []
     lines.append("")
     lines.append(f"💭 판단: {action.description}")
