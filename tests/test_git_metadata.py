@@ -21,6 +21,8 @@ class TestGitMetadata:
     @pytest.fixture
     def analyzer(self, tmp_path):
         """Create analyzer instance with temporary repo root"""
+        # Ensure .claude directory exists for error logging
+        (tmp_path / ".claude").mkdir(parents=True, exist_ok=True)
         return AgentUsageAnalyzer(tmp_path)
 
     @pytest.fixture
