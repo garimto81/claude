@@ -3,21 +3,36 @@ name: work
 description: Execute work instructions with parallel analysis, issue creation, and strict validation
 ---
 
-# /work - 작업 지시 실행
+# /work - 통합 작업 실행
 
 작업 지시를 받아 **병렬 분석 → 이슈/문서 → Todo → E2E → TDD 보고**까지 자동 수행합니다.
+`--loop` 모드에서는 **자율 판단 기반 반복 실행**을 지원합니다.
 
 ## 사용법
 
-```
+```bash
+# 기본: 지시 기반 실행
 /work <작업 지시 내용>
 /work "API 성능 개선"
-/work "인증 시스템 리팩토링"
 
-# 에이전트 모드 (서브 에이전트 기반)
-/work agent "대규모 기능 구현"
-/work agent --template dev "인증 시스템"
+# 자동: 중간 확인 없이 실행
+/work --auto "인증 시스템 리팩토링"
+
+# 루프: 자율 판단 반복 실행 (기존 /auto)
+/work --loop
+/work --loop --max 5              # 최대 5개 작업
+/work --loop resume [session_id]  # 세션 재개
+/work --loop status               # 현재 상태
+/work --loop pause                # 일시 정지
 ```
+
+## 모드 비교
+
+| 모드 | 입력 | 실행 방식 | Context 관리 |
+|------|------|-----------|--------------|
+| **기본** | 작업 지시 필수 | 5단계 워크플로우 | - |
+| **--auto** | 작업 지시 필수 | 5단계 자동 실행 | - |
+| **--loop** | 없음 (자율 판단) | 우선순위 기반 루프 | 90% 임계값 |
 
 ## 실행 흐름
 
@@ -149,20 +164,30 @@ TodoWrite(todos=[
 
 ## Phase 4: E2E 엄격 검증
 
-### 검증 프로세스
+### 검증 프로세스 (가설-검증 기반)
 
 ```
 npx playwright test
     │
     ├─ 성공 → Phase 5 진행
     │
-    └─ 실패 → 자동 수정 시도 (최대 2회)
+    └─ 실패 → /debug 자동 트리거 (가설-검증 사이클)
                │
-               ├─ 수정 성공 → 재실행
+               ├─ [D0] 이슈 등록 (자동)
+               ├─ [D1] 원인 가설 작성 → 사용자 입력
+               ├─ [D2] 검증 계획 설계 → 사용자 입력
+               ├─ [D3] 가설 검증 실행 → 결과 입력
+               │       │
+               │       ├─ 확인 → [D4] 수정 허용 → 재검증
+               │       │
+               │       └─ 기각 → D1로 복귀 (최대 3회)
                │
-               └─ 3회 실패 → /issue-failed 호출
-                              └─ 수동 개입 요청
+               └─ 3회 가설 기각 → /issue failed
+                                  └─ 수동 개입 요청
 ```
+
+**변경점**: "자동 수정 시도 (최대 2회)" 삭제
+→ 분석 없는 수정 시도 금지. 반드시 가설-검증 사이클 통과 필요
 
 ### 검증 기준
 
@@ -260,8 +285,9 @@ $ /work API 응답 캐싱 추가
 | 커맨드 | 연동 시점 |
 |--------|----------|
 | `/research plan` | Phase 1 전 (선택) |
+| `/debug` | E2E 실패 시 (자동 트리거) |
 | `/tdd` | Phase 5 |
-| `/issue failed` | E2E 3회 실패 시 |
+| `/issue failed` | 3회 가설 기각 시 |
 | `/commit` | 완료 후 |
 | `/create pr` | 완료 후 |
 
@@ -279,13 +305,14 @@ $ /work API 응답 캐싱 추가
 | 옵션 | 설명 | 예시 |
 |------|------|------|
 | `--auto` | 완전 자동화 (최종 보고서만 확인) | `/work --auto "대규모 리팩토링"` |
+| `--loop` | 자율 판단 루프 (기존 `/auto`) | `/work --loop` |
 | `--skip-analysis` | Phase 1 스킵 | `/work --skip-analysis "빠른 수정"` |
 | `--no-issue` | 이슈 생성 안함 | `/work --no-issue "내부 리팩토링"` |
 | `--strict` | 엄격 모드 (E2E 1회 실패 시 중단) | `/work --strict "프로덕션 배포"` |
+| `--max N` | 최대 N개 작업 후 중단 (loop 모드) | `/work --loop --max 5` |
+| `--dry-run` | 판단만 보여주고 실행 안함 | `/work --loop --dry-run` |
 
 ### --auto 모드 상세
-
-`/work --auto`는 `/work-auto`와 동일하게 동작합니다:
 
 - 모든 Phase 자동 실행 (중간 확인 없음)
 - 7단계 E2E Strict Validation
@@ -294,137 +321,183 @@ $ /work API 응답 캐싱 추가
 
 ---
 
-## /work agent - 에이전트 기반 실행
+## --loop 모드 (자율 판단 + 자율 발견)
 
-**메인 에이전트(Supervisor)가 YAML만 관리하고, 서브 에이전트가 실제 작업을 수행합니다.**
+`/work --loop`는 **Ralph Wiggum 철학**을 통합한 자율 완성 모드입니다.
+**"할 일 없음 → 종료"가 아니라 "할 일 없음 → 스스로 발견"**합니다.
 
-### 사용법
+> **핵심 원칙**: 명시적인 종료 조건이 충족될 때까지 계속 반복
 
-```bash
-/work agent "대규모 기능 구현"
-/work agent --template dev "인증 시스템"
-/work agent --template research "프레임워크 비교"
-```
-
-### 기본 /work와의 차이
-
-| 항목 | `/work` (기본) | `/work agent` |
-|------|---------------|---------------|
-| 실행 주체 | 메인 에이전트가 직접 | 서브 에이전트가 작업 |
-| 상태 관리 | 메모리 기반 | YAML 파일 기반 |
-| 진행상황 공유 | O | X (결과만 공유) |
-| 확장성 | 단일 컨텍스트 | 독립 컨텍스트 (병렬) |
-| 용도 | 일반 작업 | 대규모/복잡한 작업 |
-
-### 실행 흐름
-
-```
-/work agent "사용자 인증 기능"
-    │
-    ├─ Step 1: 태스크 분해 (Supervisor)
-    │      │
-    │      └─ 작업을 독립적인 태스크로 분해
-    │           ├─ task-001: DB 스키마 설계
-    │           ├─ task-002: API 구현
-    │           ├─ task-003: 테스트 작성
-    │           └─ task-004: 문서화
-    │
-    ├─ Step 2: YAML 작성 (Supervisor)
-    │      │
-    │      └─ .agent/tasks/*.yaml 생성
-    │
-    ├─ Step 3: 에이전트 스폰 (병렬)
-    │      │
-    │      ├─ [Agent 1] database-specialist
-    │      ├─ [Agent 2] backend-dev
-    │      ├─ [Agent 3] test-engineer
-    │      └─ [Agent 4] docs-writer
-    │
-    │      ※ 각 에이전트는 독립 실행 (진행상황 공유 X)
-    │
-    ├─ Step 4: 결과 수집 (Supervisor)
-    │      │
-    │      └─ .agent/results/*.yaml 읽기
-    │           └─ 결과 검증 및 통합
-    │
-    └─ Step 5: 최종 보고
-           │
-           └─ E2E 검증 → TDD 검증 → 보고서
-```
-
-### YAML 파일 구조
-
-**각 레포의 로컬 폴더에 저장** (레포별 독립 관리)
-
-```
-{project-root}/
-└── .agent/                    # 레포별 에이전트 폴더
-    ├── tasks/                 # 태스크 정의
-    │   ├── task-001.yaml      # Supervisor → Agent
-    │   └── task-002.yaml
-    │
-    ├── results/               # 결과 저장
-    │   ├── result-001.yaml    # Agent → Supervisor
-    │   └── result-002.yaml
-    │
-    └── state.yaml             # 전체 상태 (Supervisor 관리)
-```
-
-### 템플릿
-
-| 템플릿 | 에이전트 구성 | 용도 |
-|--------|-------------|------|
-| `dev` | architect → coder, tester, docs | 기능 개발 |
-| `research` | 4x research (병렬) | 리서치 |
-| `review` | security, logic, style, perf | 코드 리뷰 |
-| `fix` | debugger → coder → tester | 버그 수정 |
-
-### 예시
+### 루프 서브커맨드
 
 ```bash
-$ /work agent --template dev "OAuth2 인증 구현"
-
-📋 Workflow 시작: OAuth2 인증 구현
-
-[Step 1] 태스크 분해
-   ├─ task-001: 아키텍처 설계 (architect)
-   ├─ task-002: OAuth2 라이브러리 연동 (coder)
-   ├─ task-003: 테스트 작성 (tester)
-   └─ task-004: API 문서화 (docs)
-
-[Step 2] YAML 작성
-   └─ .agent/tasks/ (4 files)
-
-[Step 3] 에이전트 스폰
-   ├─ [순차] architect (의존성: 없음)
-   │      └─ 완료 → result-001.yaml
-   │
-   └─ [병렬] coder, tester, docs (의존성: architect)
-          ├─ 완료 → result-002.yaml
-          ├─ 완료 → result-003.yaml
-          └─ 완료 → result-004.yaml
-
-[Step 4] 결과 수집
-   └─ 4/4 태스크 완료
-
-[Step 5] 검증 및 보고
-   ├─ E2E: 12/12 통과
-   ├─ TDD: 28/28 통과 (85% 커버리지)
-   └─ 문서: docs/oauth2.md 생성됨
-
-✅ 완료 | 총 소요: 8분 32초
+/work --loop                           # 자율 판단 루프 시작 (무한)
+/work --loop --max 10                  # 최대 10회 반복 후 종료
+/work --loop --promise "ALL_TESTS_PASS" # 조건 충족 시 종료
+/work --loop resume [id]               # 세션 재개
+/work --loop status                    # 현재 상태 확인
+/work --loop pause                     # 일시 정지 (체크포인트 저장)
+/work --loop abort                     # 세션 취소
 ```
 
-### 언제 사용?
+### 종료 조건 (명시적으로만 종료)
 
-| 상황 | 권장 |
+| 조건 | 설명 |
 |------|------|
-| 간단한 버그 수정 | `/work` (기본) |
-| 중간 규모 기능 | `/work` (기본) |
-| **대규모 기능 개발** | `/work agent` ✅ |
-| **병렬 리서치** | `/work agent --template research` ✅ |
-| **복잡한 리팩토링** | `/work agent --template dev` ✅ |
+| `--max N` | N회 반복 후 종료 |
+| `--promise TEXT` | `<promise>TEXT</promise>` 출력 시 종료 |
+| `pause` / `abort` | 사용자 명시적 중단 |
+| Context 90% | 체크포인트 저장 후 종료 (resume 가능) |
+
+**⚠️ "할 일 없음"은 종료 조건이 아님** → 자율 발견 모드로 전환
+
+### 루프 실행 흐름 (개선)
+
+```
+/work --loop 실행
+    │
+    ├─ [1] 세션 초기화
+    │      - session_id 생성
+    │      - 로그 폴더 생성 (.claude/auto-logs/)
+    │      - 종료 조건 설정 (max, promise)
+    │
+    ├─ [2] 상태 분석
+    │      - Git 상태 (브랜치, 변경사항)
+    │      - 열린 이슈/PR
+    │      - 테스트 상태
+    │      - Todo 미완료 항목
+    │      - PRD 문서 상태
+    │
+    ├─ [3] 작업 판단 (2계층 우선순위)
+    │      │
+    │      ├─ [Tier 1: 명시적 작업] ────────────────────
+    │      │   1. 긴급: 빌드 깨짐, 테스트 실패
+    │      │   2. 진행중: 방금 하던 작업 완료
+    │      │   3. 대기중: PR 리뷰, 이슈 해결
+    │      │   4. PRD 필요: 새 기능 → PRD 작성/검토
+    │      │   5. 계획됨: Todo, PRD 체크박스
+    │      │
+    │      └─ [Tier 2: 자율 발견] (Tier 1 없을 때) ────
+    │          6. 코드 품질: 린트 경고, 타입 오류
+    │          7. 테스트 커버리지: 미달 영역 보강
+    │          8. 문서화: README, API 문서 개선
+    │          9. 리팩토링: 중복 코드, 복잡도 개선
+    │         10. 의존성: 보안 취약점, 버전 업데이트
+    │         11. 성능: 느린 쿼리, 메모리 누수
+    │         12. 접근성: a11y 개선
+    │
+    ├─ [4] 작업 실행
+    │      - 로그 기록
+    │      - Context 모니터링
+    │      - 80% 도달 시 체크포인트 저장
+    │
+    └─ [5] 반복 (종료 조건 확인)
+           - 종료 조건 미충족 → [2]로 복귀
+           - --max 도달 → 종료
+           - --promise 충족 → 종료
+           - Context 90% → /commit → 세션 종료
+```
+
+### 자율 발견 체계 (Tier 2)
+
+명시적 작업이 없을 때 **스스로 개선점을 발견**합니다:
+
+| 우선순위 | 카테고리 | 발견 방법 | 작업 예시 |
+|:--------:|----------|-----------|-----------|
+| 6 | 코드 품질 | `ruff check`, `tsc --noEmit` | 린트 경고 수정 |
+| 7 | 테스트 커버리지 | `pytest --cov` | 커버리지 80% 미달 파일 테스트 추가 |
+| 8 | 문서화 | 문서 없는 public API 탐지 | JSDoc/docstring 추가 |
+| 9 | 리팩토링 | 중복 코드, 긴 함수 탐지 | 함수 분리, 추상화 |
+| 10 | 의존성 | `npm audit`, `pip-audit` | 취약점 패치 |
+| 11 | 성능 | TODO 주석, 느린 패턴 탐지 | 최적화 |
+| 12 | 접근성 | Playwright a11y 스캔 | ARIA 라벨 추가 |
+
+### 자율 발견 실행 예시
+
+```
+🔄 Iteration 3 | 명시적 작업 없음 → 자율 발견 모드
+
+📊 자율 분석 결과:
+   - ESLint 경고: 61개 (우선순위 6)
+   - 테스트 커버리지: 72% (우선순위 7)
+   - 문서 누락: src/api/auth.ts (우선순위 8)
+
+🎯 선택: ESLint 경고 수정 (61개 → 0개 목표)
+   └─ /issue fix #41 자동 시작...
+```
+
+### Context 모니터링 (90% 임계값)
+
+| 사용량 | 상태 | 액션 |
+|--------|------|------|
+| 0-40% | safe | 정상 작업 |
+| 40-60% | monitor | 주의 |
+| 60-80% | prepare | 체크포인트 준비 |
+| 80-90% | warning | 체크포인트 저장 |
+| **90%+** | **critical** | **진행 중 작업 완료 → /commit → 세션 종료** |
+
+### Context 90% 도달 시
+
+```
+⚠️ Context 90% 도달
+   ▶ 진행 중인 작업 완료 중...
+   ✅ /commit 실행
+   ✅ 체크포인트 저장
+   ⏹️ 세션 종료
+
+💡 재개하려면: /work --loop resume
+```
+
+### 로그 및 체크포인트
+
+```
+.claude/auto-logs/active/session_YYYYMMDD_HHMMSS/
+├── state.json           # 세션 상태
+├── log_001.json         # 로그 청크 1 (50KB)
+├── log_002.json         # 로그 청크 2
+└── checkpoint.json      # 재개용 체크포인트
+```
+
+### 안전장치
+
+| 상황 | 동작 |
+|------|------|
+| main 브랜치 직접 수정 | 브랜치 생성 후 진행 |
+| 위험한 작업 (force push 등) | 스킵 + 알림 |
+| 3회 연속 실패 | 루프 중단 + 수동 확인 요청 |
+| 무한 루프 감지 | 자동 중단 |
 
 ---
 
-**작업 지시를 입력해 주세요.**
+## 공통 기능 (모든 모드)
+
+### PRD 관리
+
+| 단계 | 설명 |
+|------|------|
+| **PRD 탐색** | 기존 PRD 문서 확인 (`tasks/prds/`) |
+| **PRD 작성** | 없으면 `/create prd` 자동 실행 |
+| **PRD 검토** | 요구사항 완전성, 기술 실현 가능성 검토 |
+| **PRD 승인** | 사용자 확인 후 구현 진행 |
+
+### 로그 스키마
+
+```json
+{
+  "timestamp": "2025-12-30T10:30:00.000Z",
+  "sequence": 1,
+  "event_type": "action|decision|checkpoint",
+  "phase": "init|analysis|implementation|testing|complete",
+  "data": {
+    "action": "file_read|file_write|command|tool_use",
+    "target": "path/to/file",
+    "result": "success|fail"
+  },
+  "context_usage": 45,
+  "todo_state": [...]
+}
+```
+
+---
+
+**작업 지시를 입력해 주세요. 또는 `--loop`로 자율 판단 모드를 시작하세요.**
