@@ -13,22 +13,86 @@ PRD, PR, 문서를 생성합니다.
 /create <target> [args]
 
 Targets:
-  prd [name] [--template]   PRD 문서 생성 (Phase 0)
-  pr [base-branch]          Pull Request 생성 (Phase 4)
-  docs [path] [--format]    API/코드 문서 생성
+  prd [name] [--template] [--local-only]   PRD 문서 생성 (Google Docs 마스터)
+  pr [base-branch]                          Pull Request 생성 (Phase 4)
+  docs [path] [--format]                    API/코드 문서 생성
 ```
 
 ---
 
-## /create prd - PRD 생성
+## /create prd - PRD 생성 (Google Docs 마스터)
+
+**기본 동작**: Google Docs에 PRD를 생성하고 로컬에는 읽기 전용 캐시를 저장합니다.
 
 ```bash
-/create prd user-authentication
-/create prd "검색 기능" --template=minimal
-/create prd --template=deep
+/create prd user-authentication            # Google Docs 생성 (기본)
+/create prd "검색 기능" --template=deep    # DEEP 템플릿으로 생성
+/create prd feature --local-only           # 로컬 Markdown만 (호환 모드)
 ```
 
-### 대화형 워크플로우
+### 아키텍처
+
+```
+┌─────────────────┐        ┌─────────────────┐        ┌─────────────────┐
+│   /create prd   │───────▶│   Google Docs   │───────▶│  Local Cache    │
+│   (대화형 질문) │        │   (마스터)      │        │  (읽기 전용)    │
+└─────────────────┘        └─────────────────┘        └─────────────────┘
+                                    │                          │
+                                    └──────────┬───────────────┘
+                                               ▼
+                                    ┌─────────────────┐
+                                    │ .prd-registry   │
+                                    │    .json        │
+                                    └─────────────────┘
+```
+
+### Google Docs 워크플로우
+
+```
+/create prd [name]
+      │
+      ▼
+┌─────────────────────────────────┐
+│ 1. 대화형 질문 (A/B/C/D 형식)   │
+│    - Target Users               │
+│    - Core Features              │
+│    - Technical Stack            │
+│    - Success Metrics            │
+└─────────────────────────────────┘
+      │
+      ▼
+┌─────────────────────────────────┐
+│ 2. PRD 번호 자동 할당           │
+│    .prd-registry.json에서       │
+│    next_prd_number 조회         │
+└─────────────────────────────────┘
+      │
+      ▼
+┌─────────────────────────────────┐
+│ 3. Google Docs 문서 생성        │
+│    - 템플릿 기반 문서 생성      │
+│    - 공유 폴더에 저장           │
+│    - 섹션별 내용 삽입           │
+└─────────────────────────────────┘
+      │
+      ▼
+┌─────────────────────────────────┐
+│ 4. 로컬 참조 파일 생성          │
+│    - .prd-registry.json 업데이트│
+│    - PRD-NNNN.cache.md 생성     │
+│    - docs/checklists/PRD-NNNN.md│
+└─────────────────────────────────┘
+      │
+      ▼
+┌─────────────────────────────────┐
+│ 5. 결과 출력                    │
+│    → Google Docs URL            │
+│    → 로컬 캐시 경로             │
+│    → Checklist 경로             │
+└─────────────────────────────────┘
+```
+
+### 대화형 질문
 
 Claude Code가 3-8개 명확화 질문 (A/B/C/D 형식):
 
@@ -49,6 +113,12 @@ B. Authentication Method
    C) SSO
    D) No auth needed
 
+C. Core Features
+   A) Login/Logout only
+   B) + Password reset
+   C) + MFA
+   D) Full auth suite
+
 ...
 ```
 
@@ -57,74 +127,88 @@ B. Authentication Method
 | 템플릿 | 소요 시간 | 토큰 | 대상 |
 |--------|----------|------|------|
 | `minimal` | 10분 | ~1270 | 숙련 개발자 |
-| `standard` | 20-30분 | ~2500 | 일반 프로젝트 |
+| `standard` | 20-30분 | ~2500 | 일반 프로젝트 (기본) |
 | `junior` | 40-60분 | ~4500 | 초보자 |
 | `deep` | 60+분 | ~6000 | 완벽한 기획서 |
 
-### DEEP 템플릿 출력 구조
-
-```
-tasks/prds/NNNN-feature-name/
-├── README.md              # 전체 기획서
-├── 01-requirements.md     # 요구사항 상세
-├── 02-architecture.md     # 아키텍처 설계
-├── 03-implementation.md   # 구현 계획
-├── 04-testing.md          # 테스트 전략
-└── 05-deployment.md       # 배포 계획
-```
-
-### PRD 출력 형식
-
-```markdown
-# PRD: [Feature Name]
-
-**Version**: 1.0
-**Date**: 2025-01-18
-**Status**: Draft
-
----
-
-## 1. Purpose
-[자동 생성]
-
-## 2. Target Users
-- Primary: [From question A]
-
-## 3. Core Features
-
-### 3.1 [Feature 1]
-**Priority**: High
-**Effort**: Medium
-
-## 4. Technical Requirements
-
-### 4.1 Authentication
-- Method: [From question B]
-
-## 5. Success Metrics
-[자동 생성 KPIs]
-
-## 6. Timeline
-- Phase 0: Requirements (1-2 days)
-- Phase 1: Implementation
-...
-
----
-
-**Next Steps**: Run `/todo` to generate task list
-```
-
-### 자동 번호 지정
+### 출력 예시
 
 ```bash
-# 기존 PRDs:
-tasks/prds/0001-prd-auth.md
-tasks/prds/0002-prd-dashboard.md
+/create prd user-authentication
 
-# 새 PRD:
-/create prd search-feature
-→ 0003-prd-search-feature.md
+# Output:
+# ✓ PRD 번호 할당: PRD-0002
+# ✓ Google Docs 생성 중...
+# ✓ 문서 생성 완료!
+#
+# PRD-0002: User Authentication
+# ├── Google Docs: https://docs.google.com/document/d/1abc.../edit
+# ├── Local Cache: tasks/prds/PRD-0002.cache.md
+# └── Checklist: docs/checklists/PRD-0002.md
+#
+# Next Steps:
+#   - 문서 편집: 위 Google Docs URL 클릭
+#   - 동기화: /prd-sync PRD-0002
+#   - Task 생성: /todo generate PRD-0002
 ```
+
+### 로컬 캐시 형식
+
+```markdown
+<!--
+  PRD-0002 Local Cache (Read-Only)
+  Master: https://docs.google.com/document/d/1abc.../edit
+  Last Synced: 2025-12-24T10:00:00Z
+  DO NOT EDIT - Changes will be overwritten
+-->
+
+# PRD-0002: User Authentication
+
+| 항목 | 값 |
+|------|---|
+| **Version** | 1.0 |
+| **Status** | Draft |
+| **Priority** | P1 |
+| **Created** | 2025-12-24 |
+...
+```
+
+### 메타데이터 레지스트리
+
+`.prd-registry.json`:
+
+```json
+{
+  "version": "1.0.0",
+  "last_sync": "2025-12-24T10:00:00Z",
+  "next_prd_number": 3,
+  "prds": {
+    "PRD-0001": {
+      "google_doc_id": "1abc...",
+      "google_doc_url": "https://docs.google.com/document/d/.../edit",
+      "title": "포커 핸드 자동 캡처",
+      "status": "In Progress",
+      "priority": "P0",
+      "local_cache": "PRD-0001.cache.md",
+      "checklist_path": "docs/checklists/PRD-0001.md"
+    }
+  }
+}
+```
+
+### 옵션
+
+| 옵션 | 설명 |
+|------|------|
+| `--template=TYPE` | 템플릿 선택 (minimal/standard/junior/deep) |
+| `--local-only` | 로컬 Markdown만 생성 (Google Docs 미사용) |
+| `--priority=P0-P3` | 우선순위 지정 |
+| `--status=STATUS` | 상태 지정 (Draft/In Progress/Review/Approved) |
+
+### 공유 폴더
+
+- **폴더 ID**: `1JwdlUe_v4Ug-yQ0veXTldFl6C24GH8hW`
+- **URL**: [Google AI Studio 폴더](https://drive.google.com/drive/folders/1JwdlUe_v4Ug-yQ0veXTldFl6C24GH8hW)
 
 ---
 
@@ -296,6 +380,7 @@ docs/
 
 ## Related
 
+- `/prd-sync` - PRD 동기화 (Google Docs → 로컬)
 - `/commit` - 커밋 생성
 - `/session changelog` - CHANGELOG 업데이트
 - `/todo` - PRD에서 Task 생성

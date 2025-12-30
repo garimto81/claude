@@ -2,7 +2,7 @@
 
 This file provides guidance to Claude Code (claude.ai/code) when working with code in this repository.
 
-**Version**: 11.3.0 | **Context**: Windows, PowerShell, Root: `D:\AI\claude01`
+**Version**: 11.6.0 | **Context**: Windows, PowerShell, Root: `D:\AI\claude01`
 
 **GitHub**: `garimto81/claude`
 
@@ -23,7 +23,6 @@ This file provides guidance to Claude Code (claude.ai/code) when working with co
 
 | 규칙 | 위반 시 | 해결 |
 |------|---------|------|
-| main 브랜치 수정 금지 | **차단** | `git checkout -b feat/issue-N-desc` |
 | 테스트 먼저 (TDD) | 경고 | Red → Green → Refactor |
 | 상대 경로 금지 | 경고 | 절대 경로 사용 |
 | **전체 프로세스 종료 금지** | **차단** | 해당 프로젝트 node만 종료 |
@@ -43,15 +42,6 @@ main 허용: `CLAUDE.md`, `README.md`, `.claude/`, `docs/`
 ruff check src/ --fix                    # 린트
 pytest tests/test_specific.py -v         # 개별 테스트 (권장)
 # pytest tests/ -v --cov=src             # 전체 (background 필수)
-```
-
-### VTC_Logger (React + Vite)
-
-```powershell
-cd D:\AI\claude01\VTC_Logger\vtc-app
-npm install && npm run dev               # 개발 서버
-npm run build                            # 빌드
-npm run lint                             # ESLint
 ```
 
 ### E2E (Playwright 필수)
@@ -82,32 +72,25 @@ npx playwright test tests/e2e/auth.spec.ts  # 개별 테스트
 
 ## 빠른 참조
 
-### 커맨드 (13개)
+### 주요 커맨드
 
 | 커맨드 | 용도 |
 |--------|------|
-| `/work` | 전체 워크플로우 |
-| `/issue` | 이슈 관리 |
-| `/commit` | 커밋 생성 |
-| `/check` | 린트/테스트 |
+| `/work` | 전체 워크플로우 (이슈→TDD→PR) |
+| `/auto` | 자율 판단 자동 완성 (로그/Context 관리) |
+| `/orchestrate` | 메인-서브 에이전트 오케스트레이션 |
+| `/check` | 린트/테스트/보안 검사 |
+| `/commit` | Conventional Commit 생성 |
+| `/debug` | 가설-검증 기반 디버깅 (D0-D4) |
+| `/issue` | GitHub 이슈 관리 (list/create/fix) |
 
-전체: `docs/COMMAND_REFERENCE.md`
+**전체 16개**: `docs/COMMAND_REFERENCE.md`
 
-### 에이전트 (19개)
+### 에이전트 & 스킬
 
-| Agent | 용도 |
-|-------|------|
-| `code-reviewer` | 코드 리뷰 |
-| `architect` | 설계 |
-| `debugger` | 버그 분석 |
-| `test-engineer` | 테스트 |
+**에이전트 23개** (커스텀 19 + 내장 4): `docs/AGENTS_REFERENCE.md`
 
-전체: `docs/AGENTS_REFERENCE.md`
-
-### 스킬 (15개)
-
-- 자동 트리거: 4개
-- 수동 트리거: 11개
+**스킬 16개**: `docs/AGENTS_REFERENCE.md`
 
 ---
 
@@ -161,6 +144,38 @@ npx playwright screenshot docs/mockups/feature-name.html docs/images/feature-nam
 
 ---
 
+## Checklist 표준 (Slack List 연동 필수)
+
+⚠️ **Slack List 연동을 위해 반드시 Checklist 문서를 작성해야 합니다.**
+
+### 문서 위치 (필수)
+
+| 순위 | 경로 | 설명 |
+|:----:|------|------|
+| 1 | `docs/checklists/PRD-NNNN.md` | **필수** - 전용 Checklist 폴더 |
+| 2 | `tasks/prds/NNNN-prd-*.md` | PRD 문서 내 Checklist 섹션 |
+| 3 | `docs/CHECKLIST.md` | 프로젝트 전체 Checklist |
+
+❌ **미작성 시**: PR 본문 Checklist로 Fallback (누적 진행률 추적 불가)
+
+### PR-Checklist 연결 (필수)
+
+```
+PR 제목: feat: add login [PRD-0001] #123
+브랜치: feat/PRD-0001-123-add-login
+```
+
+### 자동 체크 항목 작성
+
+```markdown
+- [ ] 기능 구현 (#101)     ← PR #101 머지 시 자동 체크
+- [ ] 테스트 작성         ← 수동 체크 (PR 번호 없음)
+```
+
+**상세**: `.github/CHECKLIST_STANDARD.md`
+
+---
+
 ## 참조
 
 | 문서 | 용도 |
@@ -170,3 +185,4 @@ npx playwright screenshot docs/mockups/feature-name.html docs/images/feature-nam
 | `docs/COMMAND_REFERENCE.md` | 커맨드 상세 |
 | `docs/AGENTS_REFERENCE.md` | 에이전트 상세 |
 | `docs/CHANGELOG-CLAUDE.md` | 변경 이력 |
+| `.github/CHECKLIST_STANDARD.md` | Checklist 작성 표준 |

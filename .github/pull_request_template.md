@@ -43,10 +43,12 @@
 ## 📝 Related Documents
 
 <!-- 관련 문서 링크 (자동 생성 시 채워짐) -->
+<!-- Slack List 자동 연동을 위해 Checklist 문서 경로를 정확히 입력해주세요 -->
 
-- [ ] PRD: `tasks/prds/NNNN-prd-*.md`
-- [ ] Task List: `tasks/NNNN-tasks-*.md`
-- [ ] Design Doc (있는 경우)
+- Checklist: `docs/checklists/PRD-NNNN.md` <!-- Slack List 연동용 -->
+- PRD: `tasks/prds/NNNN-prd-*.md`
+- Task List: `tasks/NNNN-tasks-*.md`
+- Design Doc (있는 경우)
 
 ---
 

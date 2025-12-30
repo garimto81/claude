@@ -1,53 +1,44 @@
 {
   "$schema": "https://json.schemastore.org/claude-code-settings.json",
-  "statusLine": {
-    "type": "command",
-    "command": "python D:\\AI\\claude01\\.claude\\statusline.py",
-    "padding": 0
-  },
   "hooks": {
     "PreToolUse": [
       {
-        "matcher": {
-          "tools": ["Edit", "Write"]
-        },
+        "matcher": "Edit|Write",
         "hooks": [
           {
             "type": "command",
-            "command": "python .claude/hooks/branch_guard.py"
+            "command": "python D:/AI/claude01/.claude/hooks/branch_guard.py"
           }
         ]
       },
       {
-        "matcher": {
-          "tools": ["Bash", "Write", "Edit"]
-        },
+        "matcher": "Bash|Write|Edit",
         "hooks": [
           {
             "type": "command",
-            "command": "python .claude/hooks/tool_validator.py"
+            "command": "python D:/AI/claude01/.claude/hooks/tool_validator.py"
           }
         ]
       }
     ],
     "SessionStart": [
       {
-        "matcher": {},
+        "matcher": "",
         "hooks": [
           {
             "type": "command",
-            "command": "python .claude/hooks/session_init.py"
+            "command": "python D:/AI/claude01/.claude/hooks/session_init.py"
           }
         ]
       }
     ],
     "SessionEnd": [
       {
-        "matcher": {},
+        "matcher": "",
         "hooks": [
           {
             "type": "command",
-            "command": "python .claude/hooks/session_cleanup.py"
+            "command": "python D:/AI/claude01/.claude/hooks/session_cleanup.py"
           }
         ]
       }

@@ -1,6 +1,6 @@
 # Command Reference
 
-**Version**: 1.0.0 | **Updated**: 2025-12-11
+**Version**: 1.2.0 | **Updated**: 2025-12-30
 
 이 문서는 모든 슬래시 커맨드의 사용법을 정리합니다.
 
@@ -10,7 +10,9 @@
 
 | 카테고리 | 커맨드 | 설명 |
 |----------|--------|------|
-| **핵심** | `/work` | 전체 워크플로우 자동화 |
+| **핵심** | `/work` | 통합 작업 실행 (지시 기반 + 자율 판단) |
+| | `/auto` | → `/work --loop` alias (자율 판단 모드) |
+| | `/orchestrate` | 메인-서브 에이전트 오케스트레이션 |
 | | `/commit` | Conventional Commit 생성 |
 | | `/check` | 코드 품질/보안 검사 |
 | | `/tdd` | TDD 워크플로우 |
@@ -26,22 +28,42 @@
 
 ---
 
-## 1. /work - 전체 워크플로우 자동화
+## 1. /work - 통합 작업 실행
 
 작업 지시를 받아 **분석 → 이슈 → 구현 → 테스트 → PR**까지 자동 수행합니다.
+`--loop` 모드에서는 **자율 판단 기반 반복 실행**을 지원합니다.
 
 ### 사용법
 
 ```bash
+# 기본: 지시 기반 실행
 /work "작업 지시 내용"
 /work "API 성능 개선"
+
+# 자동: 중간 확인 없이 실행
 /work --auto "완전 자동화"
+
+# 루프: 자율 판단 반복 실행 (기존 /auto)
+/work --loop
+/work --loop --max 5              # 최대 5개 작업
+/work --loop resume [session_id]  # 세션 재개
+/work --loop status               # 현재 상태
+
+# 기타 옵션
 /work --skip-analysis "빠른 수정"
 /work --no-issue "이슈 없이 작업"
 /work --strict "엄격 모드 (E2E 1회 실패 시 중단)"
 ```
 
-### 실행 흐름
+### 모드 비교
+
+| 모드 | 입력 | 실행 방식 | Context 관리 |
+|------|------|-----------|--------------|
+| **기본** | 작업 지시 필수 | 5단계 워크플로우 | - |
+| **--auto** | 작업 지시 필수 | 5단계 자동 실행 | - |
+| **--loop** | 없음 (자율 판단) | 우선순위 기반 루프 | 90% 임계값 |
+
+### 실행 흐름 (기본/--auto 모드)
 
 ```
 Phase 1: 병렬 분석
@@ -56,6 +78,51 @@ Phase 4: E2E 검증 (실패 시 자동 수정 2회)
      ↓
 Phase 5: TDD 검증 + 최종 보고서
 ```
+
+### 실행 흐름 (--loop 모드) - Ralph Wiggum 통합
+
+> **핵심**: "할 일 없음 → 종료"가 아닌 "할 일 없음 → 스스로 발견"
+
+```
+[1] 세션 초기화 → 로그 폴더 생성, 종료 조건 설정
+     ↓
+[2] 상태 분석 (Git, 이슈, 테스트, Todo)
+     ↓
+[3] 작업 판단 (2계층 우선순위)
+     │
+     ├─ Tier 1 (명시적 작업)
+     │   1. 테스트 실패 → 수정
+     │   2. PR CI 실패 → 수정
+     │   3. 커밋 안 됨 → /commit
+     │   4. 열린 이슈 → /issue fix
+     │   5. Todo 미완료 → 작업
+     │
+     └─ Tier 2 (자율 발견) ← Tier 1 없을 때
+         6. 린트 경고 → 수정
+         7. 커버리지 미달 → 테스트 추가
+         8. 문서 누락 → 문서화
+         9. 리팩토링 → 개선
+        10. 의존성/성능/a11y → 개선
+     ↓
+[4] 작업 실행 (로그 기록, Context 모니터링)
+     ↓
+[5] 반복 (종료 조건 확인)
+     - 종료 조건 미충족 → [2]로
+     - --max 도달 → 종료
+     - --promise 충족 → 종료
+     - Context 90% → /commit → 세션 종료
+```
+
+### 종료 조건 (명시적으로만)
+
+| 조건 | 설명 |
+|------|------|
+| `--max N` | N회 반복 후 종료 |
+| `--promise TEXT` | `<promise>TEXT</promise>` 출력 시 종료 |
+| `pause`/`abort` | 사용자 명시적 중단 |
+| Context 90% | 체크포인트 저장 후 종료 |
+
+**⚠️ "할 일 없음"은 종료 조건이 아님**
 
 ### 예시
 
@@ -72,7 +139,104 @@ $ /work API 응답 캐싱 추가
 
 ---
 
-## 2. /commit - Conventional Commit 생성
+## 2. /auto - 자율 판단 자동 완성 (Ralph Wiggum 통합)
+
+> **Note**: `/auto`는 `/work --loop`의 alias입니다. 동일한 기능을 수행합니다.
+
+Claude가 다음 작업을 스스로 판단하고 자동 실행합니다.
+**"할 일 없음"은 종료 조건이 아닙니다** → 스스로 개선점을 발견합니다.
+
+### 사용법
+
+```bash
+# /auto 사용 (기존 방식 - 하위 호환)
+/auto                         # 자율 판단 루프 시작 (무한)
+/auto --max 10                # 최대 10회 반복 후 종료
+/auto --promise "ALL_DONE"    # 조건 충족 시 종료
+/auto resume [id]             # 세션 재개
+/auto status                  # 현재 상태 확인
+/auto pause                   # 일시 정지
+
+# /work --loop 사용 (권장 - 통합 인터페이스)
+/work --loop                  # 자율 판단 루프 시작
+/work --loop --max 5          # 최대 5회 반복
+/work --loop resume           # 세션 재개
+```
+
+### 핵심 기능
+
+| 기능 | 설명 |
+|------|------|
+| **자율 발견** | 명시적 작업 없으면 스스로 개선점 탐색 (Tier 2) |
+| **2계층 우선순위** | Tier 1(명시적) → Tier 2(자율 발견) |
+| **로그 기록** | `.claude/auto-logs/`에 JSON Lines 형식 기록 |
+| **Context 관리** | 90% 도달 시 체크포인트 → 세션 종료 |
+| **체크포인트** | 80%에서 자동 저장, resume 지원 |
+
+### 상세 문서
+
+전체 기능은 `/work` 커맨드의 `--loop` 모드 섹션 참조:
+→ `.claude/commands/work.md` > `## --loop 모드 (자율 판단 + 자율 발견)`
+
+---
+
+## 3. /orchestrate - 메인-서브 에이전트 오케스트레이션
+
+YAML 기반으로 서브 에이전트를 백그라운드에서 격리 실행하고 결과를 수집합니다.
+
+### 사용법
+
+```bash
+/orchestrate "작업 지시 내용"
+/orchestrate "로그인 기능 만들어줘"
+/orchestrate --parallel "3개 API 만들어줘"
+/orchestrate --timeout=30 "대규모 작업"
+```
+
+### 실행 흐름
+
+```
+STEP 1: 지시 분석 (에이전트 매핑)
+    ↓
+STEP 2: YAML 업무 파일 생성
+    ↓
+STEP 3: 서브 에이전트 백그라운드 실행 (격리)
+    ↓
+STEP 4: 결과 수집 (TaskOutput 대기)
+    ↓
+STEP 5: 결과 보고 및 판단
+```
+
+### 핵심 원칙
+
+| 원칙 | 설명 |
+|------|------|
+| **YAML 기반** | 모든 업무와 결과를 YAML 파일로 관리 |
+| **진행 상황 비공유** | 서브 에이전트는 진행 상황을 공유하지 않음 |
+| **결과만 저장** | 서브 에이전트는 결과만 YAML에 저장 |
+| **메인 판단** | 메인 에이전트가 결과 확인 후 다음 단계 판단 |
+
+### 옵션
+
+| 옵션 | 설명 |
+|------|------|
+| `--parallel` | 독립 작업 병렬 실행 |
+| `--sequential` | 모든 작업 순차 실행 |
+| `--timeout=N` | 작업별 타임아웃 (분) |
+| `--retry=N` | 실패 시 재시도 횟수 |
+
+### 폴더 구조
+
+```
+.claude/workflow/
+├── jobs/           # 업무 정의
+├── results/        # 서브 에이전트 결과
+└── history/        # 완료된 워크플로우 아카이브
+```
+
+---
+
+## 4. /commit - Conventional Commit 생성
 
 Conventional Commits 형식으로 커밋을 생성하고 푸시합니다.
 
@@ -122,7 +286,7 @@ git push origin main
 
 ---
 
-## 3. /check - 코드 품질/보안 검사
+## 5. /check - 코드 품질/보안 검사
 
 정적 분석, E2E 테스트, 성능 분석, 보안 검사를 수행합니다.
 
@@ -192,7 +356,7 @@ Summary: 1 warning, 1 moderate issue
 
 ---
 
-## 4. /tdd - TDD 워크플로우
+## 6. /tdd - TDD 워크플로우
 
 Red-Green-Refactor 사이클로 TDD를 수행합니다.
 
@@ -252,7 +416,7 @@ git commit -m "refactor: Use User.authenticate method ♻️"
 
 ---
 
-## 5. /issue - GitHub 이슈 관리
+## 7. /issue - GitHub 이슈 관리
 
 이슈의 전체 생명주기를 관리합니다.
 
@@ -321,7 +485,7 @@ git commit -m "refactor: Use User.authenticate method ♻️"
 
 ---
 
-## 6. /pr - PR 리뷰/머지
+## 8. /pr - PR 리뷰/머지
 
 PR 리뷰, 개선 제안, 자동 머지를 수행합니다.
 
@@ -390,7 +554,7 @@ $ /pr auto
 
 ---
 
-## 7. /create - PRD/PR/문서 생성
+## 9. /create - PRD/PR/문서 생성
 
 PRD, PR, 문서를 생성합니다.
 
@@ -454,7 +618,7 @@ B. Authentication Method
 
 ---
 
-## 8. /research - 리서치
+## 10. /research - 리서치
 
 코드베이스 분석, 웹 검색, 구현 계획을 수행합니다.
 
@@ -509,7 +673,7 @@ B. Authentication Method
 
 ---
 
-## 9. /parallel - 병렬 멀티에이전트 실행
+## 11. /parallel - 병렬 멀티에이전트 실행
 
 4개의 전문 에이전트가 병렬로 작업합니다.
 
@@ -595,7 +759,7 @@ B. Authentication Method
 
 ---
 
-## 10. /todo - 작업 관리
+## 12. /todo - 작업 관리
 
 프로젝트 작업을 관리합니다.
 
@@ -642,7 +806,7 @@ B. Authentication Method
 
 ---
 
-## 11. /session - 세션 관리
+## 13. /session - 세션 관리
 
 컨텍스트 압축, 여정 기록, 변경 로그, 세션 이어가기를 관리합니다.
 
@@ -724,7 +888,7 @@ B. Authentication Method
 
 ---
 
-## 12. /deploy - 버전/Docker 배포
+## 14. /deploy - 버전/Docker 배포
 
 버전 업데이트와 Docker 재빌드를 수행합니다.
 
@@ -772,7 +936,7 @@ Version: 1.2.3 → 1.3.0
 
 ---
 
-## 13. /audit - 설정 점검
+## 15. /audit - 설정 점검
 
 CLAUDE.md, 커맨드, 에이전트, 스킬의 일관성을 점검합니다.
 
@@ -885,6 +1049,7 @@ CLAUDE.md, 커맨드, 에이전트, 스킬의 일관성을 점검합니다.
 
 ```bash
 /work --auto "기능 구현"      # 분석~PR까지 완전 자동화
+/work --loop                  # 자율 판단 반복 실행 (= /auto)
 ```
 
 ### 병렬 작업
