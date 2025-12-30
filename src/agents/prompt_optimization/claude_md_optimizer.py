@@ -74,10 +74,12 @@ class ClaudeMDOptimizer:
 
     def _shorten_examples(self, content: str) -> str:
         """긴 예시 축소"""
+
         def shorten_code_block(match):
             code = match.group(0)
             code = re.sub(r"#\s*.{50,}", lambda m: m.group(0)[:50] + "...", code)
             return code
+
         content = re.sub(r"```[\s\S]*?```", shorten_code_block, content)
         return content
 
@@ -126,6 +128,7 @@ class DSPyOptimizer:
         self.dspy_available = False
         try:
             import dspy
+
             self.dspy = dspy
             self.dspy_available = True
         except ImportError:
@@ -134,7 +137,9 @@ class DSPyOptimizer:
     def is_available(self) -> bool:
         return self.dspy_available
 
-    def optimize_with_dspy(self, content: str, model: str = "claude-3-5-sonnet-20241022") -> str:
+    def optimize_with_dspy(
+        self, content: str, model: str = "claude-3-5-sonnet-20241022"
+    ) -> str:
         """DSPy를 사용한 프롬프트 최적화"""
         if not self.dspy_available:
             raise ImportError("dspy-ai 필요: pip install dspy-ai")
@@ -144,6 +149,7 @@ class DSPyOptimizer:
 
         class OptimizePrompt(self.dspy.Signature):
             """프롬프트 최적화"""
+
             original_prompt: str = self.dspy.InputField()
             optimized_prompt: str = self.dspy.OutputField()
 
@@ -155,6 +161,7 @@ class DSPyOptimizer:
 def main():
     """CLI 진입점"""
     import argparse
+
     parser = argparse.ArgumentParser(description="CLAUDE.md 최적화")
     parser.add_argument("--input", default="CLAUDE.md")
     parser.add_argument("--output")
