@@ -50,6 +50,18 @@ youtube-dlp/
 archive-analyzer/
 archive-statistics/
 mad_framework/
+arreangement_web/
+automation_ae/
+automation_hub/
+automation_sub/
+automation_feature_table/
+ggp_fasion_01/
+ggp_showroom/
+hcl_poker_clips/
+pocketbase/
+pocketbase.zip
+project-showcase-hub/
+wsoptv_solution/
 
 # 로컬 에이전트 데이터
 .agent/
