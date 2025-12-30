@@ -14,6 +14,17 @@ sys.path.insert(0, str(Path(__file__).parent.parent / ".claude" / "scripts"))
 from analyze_agent_usage import AgentUsageAnalyzer
 
 
+def create_mock_anthropic():
+    """Create a mock anthropic module"""
+    mock_anthropic = MagicMock()
+    mock_client = Mock()
+    mock_response = Mock()
+    mock_response.content = [Mock(text="Improved prompt")]
+    mock_client.messages.create.return_value = mock_response
+    mock_anthropic.Anthropic.return_value = mock_client
+    return mock_anthropic, mock_client, mock_response
+
+
 class TestPromptOptimizer:
     """Test suite for prompt improvement"""
 
@@ -53,18 +64,14 @@ class TestPromptOptimizer:
         improvements = analyzer.generate_improvements(sample_failures)
         assert len(improvements) == 0
 
-    @patch('analyze_agent_usage.anthropic')
-    def test_generate_improvements_success(self, mock_anthropic, analyzer, sample_failures):
+    def test_generate_improvements_success(self, analyzer, sample_failures):
         """Test successful prompt improvement generation"""
-        # Mock the Anthropic client
-        mock_client = Mock()
-        mock_response = Mock()
+        # Mock the Anthropic module
+        mock_anthropic, mock_client, mock_response = create_mock_anthropic()
         mock_response.content = [Mock(text="Improved prompt: Verify the latest React 18 documentation from official sources")]
 
-        mock_client.messages.create.return_value = mock_response
-        mock_anthropic.Anthropic.return_value = mock_client
-
-        improvements = analyzer.generate_improvements(sample_failures)
+        with patch.dict('sys.modules', {'anthropic': mock_anthropic}):
+            improvements = analyzer.generate_improvements(sample_failures)
 
         assert len(improvements) > 0
         assert len(improvements) <= analyzer.config["improvement"]["max_suggestions"]
@@ -78,8 +85,7 @@ class TestPromptOptimizer:
             assert "improved_prompt" in improvement
             assert len(improvement["improved_prompt"]) > 0
 
-    @patch('analyze_agent_usage.anthropic')
-    def test_generate_improvements_respects_max_suggestions(self, mock_anthropic, analyzer):
+    def test_generate_improvements_respects_max_suggestions(self, analyzer):
         """Test that max_suggestions limit is respected"""
         # Create more failures than max_suggestions
         many_failures = [
@@ -92,28 +98,21 @@ class TestPromptOptimizer:
             for i in range(10)
         ]
 
-        mock_client = Mock()
-        mock_response = Mock()
-        mock_response.content = [Mock(text="Improved prompt")]
-        mock_client.messages.create.return_value = mock_response
-        mock_anthropic.Anthropic.return_value = mock_client
+        mock_anthropic, mock_client, _ = create_mock_anthropic()
 
         analyzer.config["improvement"]["max_suggestions"] = 3
-        improvements = analyzer.generate_improvements(many_failures)
+        with patch.dict('sys.modules', {'anthropic': mock_anthropic}):
+            improvements = analyzer.generate_improvements(many_failures)
 
         assert len(improvements) <= 3
 
-    @patch('analyze_agent_usage.anthropic')
-    def test_generate_improvements_uses_correct_model(self, mock_anthropic, analyzer, sample_failures):
+    def test_generate_improvements_uses_correct_model(self, analyzer, sample_failures):
         """Test that the configured model is used"""
-        mock_client = Mock()
-        mock_response = Mock()
-        mock_response.content = [Mock(text="Improved prompt")]
-        mock_client.messages.create.return_value = mock_response
-        mock_anthropic.Anthropic.return_value = mock_client
+        mock_anthropic, mock_client, _ = create_mock_anthropic()
 
         analyzer.config["improvement"]["model"] = "claude-sonnet-4-20250514"
-        analyzer.generate_improvements(sample_failures[:1])
+        with patch.dict('sys.modules', {'anthropic': mock_anthropic}):
+            analyzer.generate_improvements(sample_failures[:1])
 
         # Verify the model parameter
         mock_client.messages.create.assert_called_once()
@@ -126,14 +125,16 @@ class TestPromptOptimizer:
             improvements = analyzer.generate_improvements(sample_failures)
             assert len(improvements) == 0
 
-    @patch('analyze_agent_usage.anthropic')
-    def test_generate_improvements_api_error(self, mock_anthropic, analyzer, sample_failures, tmp_path):
+    def test_generate_improvements_api_error(self, analyzer, sample_failures, tmp_path):
         """Test handling of API errors"""
-        mock_client = Mock()
+        mock_anthropic, mock_client, _ = create_mock_anthropic()
         mock_client.messages.create.side_effect = Exception("API Error")
-        mock_anthropic.Anthropic.return_value = mock_client
 
-        improvements = analyzer.generate_improvements(sample_failures)
+        # Ensure .claude directory exists
+        (tmp_path / ".claude").mkdir(parents=True, exist_ok=True)
+
+        with patch.dict('sys.modules', {'anthropic': mock_anthropic}):
+            improvements = analyzer.generate_improvements(sample_failures)
 
         # Should return empty list and log error
         assert len(improvements) == 0
@@ -142,16 +143,12 @@ class TestPromptOptimizer:
         error_log = tmp_path / ".claude" / "optimizer-error.log"
         assert error_log.exists()
 
-    @patch('analyze_agent_usage.anthropic')
-    def test_generate_improvements_prompt_format(self, mock_anthropic, analyzer, sample_failures):
+    def test_generate_improvements_prompt_format(self, analyzer, sample_failures):
         """Test that the prompt sent to Claude API is correctly formatted"""
-        mock_client = Mock()
-        mock_response = Mock()
-        mock_response.content = [Mock(text="Improved prompt")]
-        mock_client.messages.create.return_value = mock_response
-        mock_anthropic.Anthropic.return_value = mock_client
+        mock_anthropic, mock_client, _ = create_mock_anthropic()
 
-        analyzer.generate_improvements(sample_failures[:1])
+        with patch.dict('sys.modules', {'anthropic': mock_anthropic}):
+            analyzer.generate_improvements(sample_failures[:1])
 
         # Check the prompt includes all necessary information
         call_args = mock_client.messages.create.call_args[1]
@@ -235,16 +232,12 @@ class TestPromptOptimizer:
         assert "**Improved Prompt**" in content
         assert "---" in content  # Separator
 
-    @patch('analyze_agent_usage.anthropic')
-    def test_generate_improvements_preserves_metadata(self, mock_anthropic, analyzer, sample_failures):
+    def test_generate_improvements_preserves_metadata(self, analyzer, sample_failures):
         """Test that all failure metadata is preserved in improvements"""
-        mock_client = Mock()
-        mock_response = Mock()
-        mock_response.content = [Mock(text="Improved prompt")]
-        mock_client.messages.create.return_value = mock_response
-        mock_anthropic.Anthropic.return_value = mock_client
+        mock_anthropic, _, _ = create_mock_anthropic()
 
-        improvements = analyzer.generate_improvements(sample_failures[:1])
+        with patch.dict('sys.modules', {'anthropic': mock_anthropic}):
+            improvements = analyzer.generate_improvements(sample_failures[:1])
 
         assert len(improvements) == 1
         improvement = improvements[0]

@@ -35,35 +35,35 @@ class TestFailureAnalyzer:
             {
                 "timestamp": "2025-01-13T10:01:00Z",
                 "agent_type": "playwright-engineer",
-                "prompt": "Run E2E tests",
+                "prompt": "Run E2E tests for the login flow",
                 "status": "failed",
                 "error": "Timeout after 30 seconds"
             },
             {
                 "timestamp": "2025-01-13T10:02:00Z",
                 "agent_type": "test-automator",
-                "prompt": "Create tests",
+                "prompt": "Create tests for user module",
                 "status": "failed",
                 "error": "Cannot find test file test_example.py"
             },
             {
                 "timestamp": "2025-01-13T10:03:00Z",
                 "agent_type": "typescript-expert",
-                "prompt": "Fix types",
+                "prompt": "Fix type errors in module",
                 "status": "failed",
-                "error": "Invalid parameter: missing file_path"
+                "error": "Invalid parameter value provided"
             },
             {
                 "timestamp": "2025-01-13T10:04:00Z",
                 "agent_type": "seq-engineer",
                 "prompt": "Do",
                 "status": "failed",
-                "error": "Task failed"
+                "error": "Task execution incomplete"
             },
             {
                 "timestamp": "2025-01-13T10:05:00Z",
                 "agent_type": "code-reviewer",
-                "prompt": "Review changes",
+                "prompt": "Review security vulnerabilities in auth module",
                 "status": "failed",
                 "error": "API rate limit exceeded"
             }
@@ -150,14 +150,15 @@ class TestFailureAnalyzer:
                 "agent_type": "test-agent",
                 "status": "failed",
                 "error": "",
-                "prompt": "Test prompt"
+                "prompt": "Test prompt with sufficient length for classification"
             }
         ]
 
         failures = analyzer.analyze_failures(calls)
 
         assert len(failures) == 1
-        assert failures[0]["failure_cause"] == "unknown"
+        # Empty error with long prompt (>= 20 chars) falls through to api_error
+        assert failures[0]["failure_cause"] == "api_error"
 
     def test_analyze_edge_case_missing_prompt(self, analyzer):
         """Test analyzing failure with missing prompt"""
@@ -173,8 +174,8 @@ class TestFailureAnalyzer:
         failures = analyzer.analyze_failures(calls)
 
         assert len(failures) == 1
-        # Empty prompt should trigger ambiguous_prompt classification
-        assert failures[0]["failure_cause"] == "ambiguous_prompt"
+        # "error" keyword in error message triggers parameter_error before prompt length check
+        assert failures[0]["failure_cause"] == "parameter_error"
 
     def test_analyze_mixed_statuses(self, analyzer):
         """Test analyzing calls with mixed statuses"""

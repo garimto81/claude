@@ -7,12 +7,23 @@ import pytest
 from pathlib import Path
 import sys
 import tempfile
-from unittest.mock import patch, Mock
+from unittest.mock import patch, Mock, MagicMock
 
 # Add parent directory to path
 sys.path.insert(0, str(Path(__file__).parent.parent / ".claude" / "scripts"))
 
 from analyze_agent_usage import AgentUsageAnalyzer
+
+
+def create_mock_anthropic():
+    """Create a mock anthropic module"""
+    mock_anthropic = MagicMock()
+    mock_client = Mock()
+    mock_response = Mock()
+    mock_response.content = [Mock(text="Improved prompt")]
+    mock_client.messages.create.return_value = mock_response
+    mock_anthropic.Anthropic.return_value = mock_client
+    return mock_anthropic, mock_client
 
 
 class TestIntegration:
@@ -84,23 +95,23 @@ description: "Review security vulnerabilities in auth module"
         # Test notification (should not raise)
         analyzer.notify(failures)
 
-    @patch('analyze_agent_usage.anthropic')
-    def test_full_pipeline_with_improvements(self, mock_anthropic, analyzer, complete_log_file, tmp_path):
+    def test_full_pipeline_with_improvements(self, analyzer, complete_log_file, tmp_path):
         """Test complete pipeline including improvement generation"""
         # Mock Claude API
-        mock_client = Mock()
+        mock_anthropic, mock_client = create_mock_anthropic()
         mock_response1 = Mock()
         mock_response1.content = [Mock(text="Improved: Run end-to-end authentication tests with explicit 60-second timeout and detailed element selectors")]
         mock_response2 = Mock()
         mock_response2.content = [Mock(text="Improved: Analyze the requirements for the user authentication feature and break down into sequential implementation steps")]
 
         mock_client.messages.create.side_effect = [mock_response1, mock_response2]
-        mock_anthropic.Anthropic.return_value = mock_client
 
         # Run full pipeline
         agent_calls = analyzer.parse_log_file(complete_log_file)
         failures = analyzer.analyze_failures(agent_calls)
-        improvements = analyzer.generate_improvements(failures)
+
+        with patch.dict('sys.modules', {'anthropic': mock_anthropic}):
+            improvements = analyzer.generate_improvements(failures)
         analyzer.save_improvements(improvements)
 
         # Verify improvements were generated
@@ -229,20 +240,15 @@ description: "Review security vulnerabilities in auth module"
         if os.name == 'nt' and os.getenv('APPDATA'):
             assert "Claude" in str(log_dir)
 
-    @patch('analyze_agent_usage.anthropic')
     @patch('subprocess.run')
-    def test_end_to_end_with_all_features(self, mock_run, mock_anthropic, complete_log_file, tmp_path):
+    def test_end_to_end_with_all_features(self, mock_run, complete_log_file, tmp_path):
         """Comprehensive E2E test with all features enabled"""
         # Setup
         analyzer = AgentUsageAnalyzer(tmp_path)
         analyzer.log_dir = complete_log_file.parent
 
         # Mock Claude API
-        mock_client = Mock()
-        mock_response = Mock()
-        mock_response.content = [Mock(text="Improved prompt")]
-        mock_client.messages.create.return_value = mock_response
-        mock_anthropic.Anthropic.return_value = mock_client
+        mock_anthropic, mock_client = create_mock_anthropic()
 
         # Mock git
         mock_log_result = Mock()
@@ -250,8 +256,9 @@ description: "Review security vulnerabilities in auth module"
         mock_log_result.returncode = 0
         mock_run.return_value = mock_log_result
 
-        # Run full workflow
-        analyzer.run()
+        # Run full workflow with patched anthropic
+        with patch.dict('sys.modules', {'anthropic': mock_anthropic}):
+            analyzer.run()
 
         # Verify all components were called
         # (Implicit: no exceptions raised means success)
