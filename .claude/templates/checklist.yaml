@@ -1,0 +1,72 @@
+# Checklist Template for Claude Code Projects
+# Usage: Copy to {project}/checklist.yaml
+
+version: "1.0"
+project: "${PROJECT_NAME}"
+created_at: "${TIMESTAMP}"
+updated_at: "${TIMESTAMP}"
+managed_by: "Claude Code (Orchestrator)"
+
+# Current active task
+current_task: null
+  # id: "TASK-001"
+  # title: "Task title"
+  # status: "in_progress"
+  # agent: "python-dev"
+  # started_at: "2025-12-19T14:00:00"
+
+# Pending tasks queue
+pending:
+  # - id: "TASK-001"
+  #   title: "Task description"
+  #   priority: "high"  # high, medium, low
+  #   category: "feature"  # feature, bugfix, refactor, test, docs
+  #   assigned_agent: null  # python-dev, test-engineer, etc.
+  #   target_files: []
+  #   acceptance_criteria:
+  #     - "Criteria 1"
+  #     - "Criteria 2"
+
+# Completed tasks history
+completed: []
+  # - id: "TASK-001"
+  #   title: "Completed task"
+  #   completed_at: "2025-12-19T15:00:00"
+  #   agent: "python-dev"
+  #   result:
+  #     success: true
+  #     files_changed: ["src/main.py"]
+  #     commits: ["abc1234"]
+  #     notes: "Optional notes"
+
+# Agent work logs
+agent_logs: []
+  # - timestamp: "2025-12-19T15:00:00"
+  #   agent: "python-dev"
+  #   task_id: "TASK-001"
+  #   action: "Code implementation"
+  #   status: "success"  # success, failed, skipped
+
+# Statistics (auto-updated)
+stats:
+  total: 0
+  completed: 0
+  in_progress: 0
+  pending: 0
+  by_category:
+    feature: 0
+    bugfix: 0
+    refactor: 0
+    test: 0
+    docs: 0
+
+# Agent mapping reference
+agent_mapping:
+  python: "python-dev"
+  typescript: "typescript-dev"
+  test: "test-engineer"
+  review: "code-reviewer"
+  docs: "docs-writer"
+  debug: "debugger"
+  security: "security-auditor"
+  database: "database-specialist"
