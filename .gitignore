@@ -148,3 +148,6 @@ test-results/
 coverage/
 dist/
 build/
+
+# Auto orchestrator logs
+.claude/auto-logs/
