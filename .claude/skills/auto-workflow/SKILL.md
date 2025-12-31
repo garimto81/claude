@@ -4,7 +4,7 @@ description: >
   자율 판단 + 자율 발견 워크플로우 (Ralph Wiggum 철학 통합).
   "할 일 없음 → 종료"가 아닌 "할 일 없음 → 스스로 발견".
   2계층 우선순위, Context 모니터링, 로그 기록을 통해 무한 반복 실행.
-version: 2.0.0
+version: 3.0.0
 
 triggers:
   keywords:
@@ -68,6 +68,9 @@ token_budget: 3000
 .claude/skills/auto-workflow/
 ├── SKILL.md                    # 이 파일
 ├── scripts/
+│   ├── auto_cli.py             # CLI 진입점 (python auto_cli.py)
+│   ├── auto_orchestrator.py    # 메인 루프 엔진
+│   ├── auto_discovery.py       # 2계층 자율 발견 로직
 │   ├── auto_logger.py          # 로그 관리
 │   └── auto_state.py           # 상태/체크포인트 관리
 └── references/
@@ -80,6 +83,56 @@ token_budget: 3000
 │       ├── log_001.json        # 로그 청크
 │       └── checkpoint.json     # 체크포인트
 └── archive/                    # 완료된 세션
+```
+
+## 오케스트레이터 실행 (권장)
+
+외부 Python 스크립트로 Claude Code를 호출하여 자율 루프를 실행합니다.
+
+```bash
+# 기본 경로
+cd D:\AI\claude01\.claude\skills\auto-workflow\scripts
+
+# 자율 루프 시작
+python auto_cli.py                    # 무한 루프
+python auto_cli.py --max 10           # 최대 10회
+python auto_cli.py --promise "DONE"   # "DONE" 출력 시 종료
+python auto_cli.py --dry-run          # 판단만, 실행 안함
+
+# 다음 작업 확인 (1회)
+python auto_cli.py discover
+python auto_cli.py discover --report  # 상세 리포트
+
+# 세션 관리
+python auto_cli.py status             # 현재 상태
+python auto_cli.py resume             # 마지막 세션 재개
+python auto_cli.py resume <session>   # 특정 세션 재개
+python auto_cli.py pause              # 일시 정지
+python auto_cli.py abort              # 세션 취소
+```
+
+### 오케스트레이터 아키텍처
+
+```
+┌─────────────────────────────────────────────────────────────┐
+│                   Auto Orchestrator                          │
+├─────────────────────────────────────────────────────────────┤
+│  1. auto_cli.py (CLI 진입점)                                │
+│     - 명령줄 인터페이스                                     │
+│     - run/resume/status/discover/pause/abort                │
+│                                                              │
+│  2. auto_orchestrator.py (루프 엔진)                        │
+│     - Claude Code 호출 (subprocess)                         │
+│     - 종료 조건 체크 (--max, --promise, Context)            │
+│     - 체크포인트 자동 저장                                  │
+│                                                              │
+│  3. auto_discovery.py (자율 발견)                           │
+│     - Tier 1: 명시적 작업 탐지                              │
+│     - Tier 2: 자율 발견 (린트, 커버리지, 문서화 등)         │
+│                                                              │
+│  4. auto_state.py / auto_logger.py                          │
+│     - 상태 관리 및 로깅                                     │
+└─────────────────────────────────────────────────────────────┘
 ```
 
 ## 2계층 우선순위 체계
