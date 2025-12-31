@@ -39,9 +39,13 @@ load_dotenv(Path(__file__).parent.parent / '.env')
 
 try:
     from langfuse import Langfuse
+    LANGFUSE_AVAILABLE = True
 except ImportError:
-    print("❌ langfuse 패키지가 설치되지 않았습니다.")
-    sys.exit(1)
+    LANGFUSE_AVAILABLE = False
+    Langfuse = None  # type: ignore
+    if __name__ == "__main__":
+        print("❌ langfuse 패키지가 설치되지 않았습니다.")
+        sys.exit(1)
 
 
 @dataclass
@@ -155,42 +159,124 @@ class AgentEvaluator:
         Returns:
             PerformanceMetrics
         """
-        # TODO: Langfuse API로 데이터 가져오기
-        # 현재는 시뮬레이션
+        from_timestamp = datetime.now() - timedelta(days=days)
 
-        # 실제 구현에서는:
-        # traces = self.client.get_traces(
-        #     filter={
-        #         "metadata.agent": agent_name,
-        #         "timestamp": f">{days}d"
-        #     }
-        # )
+        # Langfuse API로 데이터 가져오기
+        try:
+            traces_response = self.client.fetch_traces(
+                name=f"agent-{agent_name}",
+                from_timestamp=from_timestamp
+            )
+            traces = traces_response.data if traces_response else []
+        except Exception as e:
+            print(f"⚠️ Langfuse API 호출 실패: {e}")
+            traces = []
 
-        # 시뮬레이션 데이터
-        import random
+        # Phase 필터 적용
+        if phase and traces:
+            traces = [
+                t for t in traces
+                if t.metadata and t.metadata.get("phase") == phase
+            ]
 
-        total_runs = random.randint(10, 50)
-        success_count = int(total_runs * random.uniform(0.7, 0.98))
-        error_count = total_runs - success_count
+        # 데이터가 없으면 빈 메트릭 반환
+        if not traces:
+            return PerformanceMetrics(
+                agent_name=agent_name,
+                total_runs=0,
+                success_rate=0.0,
+                avg_duration=0.0,
+                error_rate=0.0,
+                avg_user_rating=None,
+                avg_effectiveness=None,
+                improvement_suggestions_count=0,
+                p95_duration=None,
+                retry_rate=None
+            )
 
-        durations = [random.uniform(0.5, 5.0) for _ in range(total_runs)]
-        ratings = [random.uniform(0.6, 1.0) for _ in range(int(total_runs * 0.8))]
-        effectiveness = [random.uniform(0.6, 0.95) for _ in range(int(total_runs * 0.7))]
+        # 메트릭 계산
+        total_runs = len(traces)
+        success_count = 0
+        error_count = 0
+        durations: List[float] = []
+        ratings: List[float] = []
+        effectiveness_scores: List[float] = []
+        suggestions_count = 0
+
+        for trace in traces:
+            # 상태 확인 (output에서 status 추출)
+            output = trace.output or {}
+            status = output.get("status", "unknown")
+
+            if status == "success":
+                success_count += 1
+            elif status == "error":
+                error_count += 1
+
+            # Duration 추출
+            duration = output.get("duration_seconds")
+            if duration is not None:
+                durations.append(float(duration))
+
+            # Score 데이터 가져오기
+            try:
+                scores = self._get_trace_scores(trace.id)
+                for score in scores:
+                    if score.name == "user_rating":
+                        ratings.append(score.value)
+                    elif score.name == "effectiveness":
+                        effectiveness_scores.append(score.value)
+                    elif score.name == "improvement_suggestion":
+                        suggestions_count += 1
+            except Exception:
+                pass  # Score 조회 실패는 무시
+
+        # 평균 계산
+        avg_duration = sum(durations) / len(durations) if durations else 0.0
+        avg_rating = sum(ratings) / len(ratings) if ratings else None
+        avg_effectiveness = sum(effectiveness_scores) / len(effectiveness_scores) if effectiveness_scores else None
+
+        # P95 duration 계산
+        p95_duration = None
+        if durations:
+            sorted_durations = sorted(durations)
+            p95_index = int(len(sorted_durations) * 0.95)
+            p95_duration = sorted_durations[min(p95_index, len(sorted_durations) - 1)]
+
+        # Success/Error rate 계산
+        success_rate = success_count / total_runs if total_runs > 0 else 0.0
+        error_rate = error_count / total_runs if total_runs > 0 else 0.0
 
         metrics = PerformanceMetrics(
             agent_name=agent_name,
             total_runs=total_runs,
-            success_rate=success_count / total_runs,
-            avg_duration=sum(durations) / len(durations),
-            error_rate=error_count / total_runs,
-            avg_user_rating=sum(ratings) / len(ratings) if ratings else None,
-            avg_effectiveness=sum(effectiveness) / len(effectiveness) if effectiveness else None,
-            improvement_suggestions_count=random.randint(0, 5),
-            p95_duration=sorted(durations)[int(len(durations) * 0.95)],
-            retry_rate=random.uniform(0, 0.1)
+            success_rate=success_rate,
+            avg_duration=avg_duration,
+            error_rate=error_rate,
+            avg_user_rating=avg_rating,
+            avg_effectiveness=avg_effectiveness,
+            improvement_suggestions_count=suggestions_count,
+            p95_duration=p95_duration,
+            retry_rate=None  # 추후 구현
         )
 
         return metrics
+
+    def _get_trace_scores(self, trace_id: str) -> List:
+        """
+        특정 trace의 score 목록 조회
+
+        Args:
+            trace_id: Trace ID
+
+        Returns:
+            Score 리스트
+        """
+        try:
+            scores_response = self.client.fetch_scores(trace_id=trace_id)
+            return scores_response.data if scores_response else []
+        except Exception:
+            return []
 
     def compare_agents(self, agents: List[str], phase: Optional[str] = None) -> Dict:
         """

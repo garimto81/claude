@@ -101,6 +101,7 @@ temp_*.py
 temp_*.txt
 temp_*.md
 test_*.py
+!tests/test_*.py
 test-diagram.*
 D*test-diagram.mmd
 *_checklist.yaml
