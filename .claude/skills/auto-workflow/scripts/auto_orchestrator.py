@@ -221,15 +221,21 @@ class AutoOrchestrator:
 
         try:
             # Claude Code 호출
-            # 주의: 실제 환경에서는 claude 명령어 경로 확인 필요
+            # Windows에서는 shell=True 필요 (PATH에서 claude.cmd 찾기)
+            import shutil
+            claude_path = shutil.which("claude")
+            if not claude_path:
+                claude_path = "claude"  # fallback
+
             result = subprocess.run(
-                ["claude", "-p", task.command],
+                [claude_path, "-p", task.command],
                 capture_output=True,
                 text=True,
                 timeout=600,  # 10분 타임아웃
                 cwd=self.project_root,
                 encoding="utf-8",
-                errors="replace"
+                errors="replace",
+                shell=(sys.platform == "win32")  # Windows에서만 shell=True
             )
 
             output = result.stdout + result.stderr
