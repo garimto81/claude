@@ -50,12 +50,32 @@ SENSITIVE_FILE_EXCEPTIONS = [
 ]
 
 
+def extract_commands(command: str) -> list[str]:
+    """명령어에서 실제 실행되는 부분만 추출 (heredoc, 문자열 리터럴 제외)"""
+    # heredoc 제거 (<<EOF ... EOF, <<'EOF' ... EOF 등)
+    command = re.sub(r"<<-?\s*['\"]?(\w+)['\"]?.*?\1", "", command, flags=re.DOTALL)
+
+    # 따옴표 내 문자열 제거 (python -c "..." 등)
+    command = re.sub(r'"[^"]*"', '""', command)
+    command = re.sub(r"'[^']*'", "''", command)
+
+    # 명령어 분리 (&&, ||, ;, |)
+    commands = re.split(r'\s*(?:&&|\|\||;|\|)\s*', command)
+
+    return [cmd.strip() for cmd in commands if cmd.strip()]
+
+
 def is_dangerous_bash(command: str) -> tuple[bool, str]:
     """위험한 Bash 명령인지 확인"""
-    command_lower = command.lower()
-    for pattern in DANGEROUS_BASH_PATTERNS:
-        if re.search(pattern, command_lower):
-            return True, pattern
+    # 실제 실행되는 명령어만 추출
+    commands = extract_commands(command)
+
+    for cmd in commands:
+        cmd_lower = cmd.lower()
+        for pattern in DANGEROUS_BASH_PATTERNS:
+            # 패턴이 명령어 시작 부분에서 매칭되는지 확인
+            if re.match(pattern, cmd_lower) or re.search(r'(^|/)\s*' + pattern, cmd_lower):
+                return True, pattern
     return False, ""
 
 
