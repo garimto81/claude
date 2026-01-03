@@ -23,7 +23,7 @@ DANGEROUS_BASH_PATTERNS = [
     r"shutdown",               # shutdown
     r"reboot",                 # reboot
     r"init\s+0",               # init 0
-    r"rm\s+.*\.git",           # rm .git
+    r"rm\s+(-[a-zA-Z]+\s+)*(\.git|[^\s]+[/\\]\.git)(\s|/|$)",  # rm .git (정확한 .git 디렉토리만)
     r"git\s+push.*--force\s+.*main", # force push to main
     r"git\s+push.*-f\s+.*main",      # force push to main
 ]
