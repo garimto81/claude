@@ -170,15 +170,15 @@ def get_context_display(context_info):
 
     percent = context_info.get('percent', 0)
 
-    # Context Engineering thresholds
-    if percent >= 80:
-        icon, color = "🚨", "\033[31;1m"  # Red
-    elif percent >= 60:
-        icon, color = "🟠", "\033[91m"    # Orange
-    elif percent >= 40:
-        icon, color = "🟡", "\033[33m"    # Yellow
+    # Context usage thresholds (conservative - warnings start at 80%)
+    if percent >= 95:
+        icon, color = "🚨", "\033[31;1m"  # Red - Critical (95-100%)
+    elif percent >= 90:
+        icon, color = "🟠", "\033[91m"    # Orange - Warning (90-95%)
+    elif percent >= 80:
+        icon, color = "🟡", "\033[33m"    # Yellow - Caution (80-90%)
     else:
-        icon, color = "🟢", "\033[32m"    # Green
+        icon, color = "🟢", "\033[32m"    # Green - Safe (0-80%)
 
     # Create progress bar
     segments = 8
