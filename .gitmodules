@@ -1,3 +1,0 @@
-[submodule ".claude-global"]
-	path = .claude-global
-	url = https://github.com/garimto81/claude-code-config.git
