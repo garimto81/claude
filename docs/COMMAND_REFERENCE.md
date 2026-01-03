@@ -1,6 +1,6 @@
 # Command Reference
 
-**Version**: 1.2.0 | **Updated**: 2025-12-30
+**Version**: 1.3.0 | **Updated**: 2026-01-03
 
 이 문서는 모든 슬래시 커맨드의 사용법을 정리합니다.
 
@@ -16,9 +16,11 @@
 | | `/commit` | Conventional Commit 생성 |
 | | `/check` | 코드 품질/보안 검사 |
 | | `/tdd` | TDD 워크플로우 |
+| | `/debug` | 가설-검증 기반 디버깅 (D0-D4) |
 | **이슈/PR** | `/issue` | GitHub 이슈 관리 |
 | | `/pr` | PR 리뷰/머지 |
 | | `/create` | PRD/PR/문서 생성 |
+| | `/prd-sync` | PRD 동기화 (Google Docs → 로컬) |
 | **분석** | `/research` | 코드베이스/웹 리서치 |
 | | `/parallel` | 병렬 멀티에이전트 실행 |
 | **관리** | `/todo` | 작업 관리 |
@@ -416,7 +418,55 @@ git commit -m "refactor: Use User.authenticate method ♻️"
 
 ---
 
-## 7. /issue - GitHub 이슈 관리
+## 7. /debug - 가설-검증 기반 디버깅
+
+원인 분석 없이 수정하는 것을 방지하고, 체계적인 디버깅 프로세스를 강제합니다.
+
+### 사용법
+
+```bash
+/debug [description]      # 반자동 진행 (D0→D1→D2→D3→D4)
+/debug status             # 현재 상태 확인
+/debug abort              # 디버깅 세션 취소
+```
+
+### Phase Gate 모델
+
+```
+문제 발생
+    ↓
+[D0: 이슈 등록] ─── 이슈 설명 필수
+    ↓ (자동)
+[D1: 원인 분석] ─── 가설 작성 필수 (최소 20자)
+    ↓ (자동)
+[D2: 검증 설계] ─── 검증 방법 기록 필수
+    ↓ (자동)
+[D3: 가설 검증] ─── 결과 기록 필수
+    │
+    ├─ 기각 → D1로 복귀 (3회 시 /issue failed)
+    │
+    └─ 확인 → [D4: 수정 허용]
+```
+
+### Phase별 동작
+
+| Phase | 질문 | Gate 조건 |
+|-------|------|----------|
+| D0 | "이슈를 설명해주세요" | 설명 필수 |
+| D1 | "원인 가설을 작성해주세요" | 최소 20자 |
+| D2 | "이 가설을 어떻게 검증할까요?" | 검증 계획 필수 |
+| D3 | "검증 결과를 입력해주세요" | confirmed/rejected |
+| D4 | (자동) 수정 허용 | - |
+
+### 통합 워크플로우
+
+- `/work` E2E 실패 시 자동 트리거
+- `/issue fix` confidence < 80% 시 자동 트리거
+- 3회 가설 기각 시 `/issue failed` 호출
+
+---
+
+## 8. /issue - GitHub 이슈 관리
 
 이슈의 전체 생명주기를 관리합니다.
 
@@ -485,7 +535,7 @@ git commit -m "refactor: Use User.authenticate method ♻️"
 
 ---
 
-## 8. /pr - PR 리뷰/머지
+## 9. /pr - PR 리뷰/머지
 
 PR 리뷰, 개선 제안, 자동 머지를 수행합니다.
 
@@ -554,7 +604,7 @@ $ /pr auto
 
 ---
 
-## 9. /create - PRD/PR/문서 생성
+## 10. /create - PRD/PR/문서 생성
 
 PRD, PR, 문서를 생성합니다.
 
@@ -618,7 +668,41 @@ B. Authentication Method
 
 ---
 
-## 10. /research - 리서치
+## 11. /prd-sync - PRD 동기화
+
+Google Docs 마스터 문서에서 로컬 캐시로 동기화합니다.
+
+### 사용법
+
+```bash
+/prd-sync PRD-0001           # 특정 PRD 동기화
+/prd-sync --all              # 모든 PRD 동기화
+/prd-sync --list             # PRD 목록 조회
+```
+
+### 동기화 흐름
+
+```
+Google Docs (마스터) → prd_manager.py → Local Cache (읽기 전용)
+```
+
+### 관련 파일
+
+| 파일 | 용도 |
+|------|------|
+| `.prd-registry.json` | PRD 메타데이터 레지스트리 |
+| `tasks/prds/PRD-NNNN.cache.md` | 로컬 캐시 (읽기 전용) |
+| `scripts/prd_manager.py` | PRD 관리 스크립트 |
+
+### 주의사항
+
+- 로컬 캐시 파일을 직접 수정하지 마세요
+- 수정은 항상 Google Docs에서 진행
+- 동기화 전 Google Docs 저장 확인
+
+---
+
+## 12. /research - 리서치
 
 코드베이스 분석, 웹 검색, 구현 계획을 수행합니다.
 
@@ -673,7 +757,7 @@ B. Authentication Method
 
 ---
 
-## 11. /parallel - 병렬 멀티에이전트 실행
+## 13. /parallel - 병렬 멀티에이전트 실행
 
 4개의 전문 에이전트가 병렬로 작업합니다.
 
@@ -759,7 +843,7 @@ B. Authentication Method
 
 ---
 
-## 12. /todo - 작업 관리
+## 14. /todo - 작업 관리
 
 프로젝트 작업을 관리합니다.
 
@@ -806,7 +890,7 @@ B. Authentication Method
 
 ---
 
-## 13. /session - 세션 관리
+## 15. /session - 세션 관리
 
 컨텍스트 압축, 여정 기록, 변경 로그, 세션 이어가기를 관리합니다.
 
@@ -888,7 +972,7 @@ B. Authentication Method
 
 ---
 
-## 14. /deploy - 버전/Docker 배포
+## 16. /deploy - 버전/Docker 배포
 
 버전 업데이트와 Docker 재빌드를 수행합니다.
 
@@ -936,7 +1020,7 @@ Version: 1.2.3 → 1.3.0
 
 ---
 
-## 15. /audit - 설정 점검
+## 17. /audit - 설정 점검
 
 CLAUDE.md, 커맨드, 에이전트, 스킬의 일관성을 점검합니다.
 
