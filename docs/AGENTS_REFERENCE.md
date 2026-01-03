@@ -2,7 +2,7 @@
 
 **목적**: 에이전트 분류 및 활용법
 
-**버전**: 6.7.0 | **업데이트**: 2025-12-20 | **PRD**: PRD-0031
+**버전**: 6.8.0 | **업데이트**: 2026-01-03 | **PRD**: PRD-0031
 
 ---
 
@@ -12,7 +12,7 @@
 |------|------|------|------|
 | **내장** | Claude Code | 4개 | 기본 subagent |
 | **커스텀** | `.claude/agents/` | 19개 | 전문 에이전트 |
-| **스킬** | `.claude/skills/` | 16개 | 자동/수동 트리거 |
+| **스킬** | `.claude/skills/` | 18개 | 자동/수동 트리거 |
 | **MCP** | `.claude.json` | 1개 | 외부 도구 연동 |
 
 ---
@@ -185,7 +185,8 @@ claude mcp remove <name>
 
 | 버전 | 날짜 | 변경 |
 |------|------|------|
-| 6.7.0 | 2025-12-20 | ACE-FCA 스킬 제거 (18개 → 16개: context-compaction, research-validation 삭제, 내장 기능 대체) |
+| 6.8.0 | 2026-01-03 | 스킬 개수 정정 (16개 → 18개: 실제 파일 개수와 동기화) |
+| 6.7.0 | 2025-12-20 | ACE-FCA 스킬 제거 시도 (context-compaction, research-validation) - 실제 미삭제 |
 | 6.6.0 | 2025-12-20 | ACE-FCA 스킬 추가 (17개 → 19개: context-compaction, research-validation) |
 | 6.5.0 | 2025-12-20 | 스킬 개수 수정 (15개 → 17개: command-analytics, google-workspace 추가) |
 | 6.4.0 | 2025-12-17 | 스킬 개수 수정 (13개 → 15개: supabase-integration, vercel-deployment 추가) |
