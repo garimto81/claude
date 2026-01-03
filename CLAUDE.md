@@ -84,13 +84,13 @@ npx playwright test tests/e2e/auth.spec.ts  # 개별 테스트
 | `/debug` | 가설-검증 기반 디버깅 (D0-D4) |
 | `/issue` | GitHub 이슈 관리 (list/create/fix) |
 
-**전체 16개**: `docs/COMMAND_REFERENCE.md`
+**전체 17개**: `docs/COMMAND_REFERENCE.md`
 
 ### 에이전트 & 스킬
 
 **에이전트 23개** (커스텀 19 + 내장 4): `docs/AGENTS_REFERENCE.md`
 
-**스킬 16개**: `docs/AGENTS_REFERENCE.md`
+**스킬 18개**: `docs/AGENTS_REFERENCE.md`
 
 ---
 
