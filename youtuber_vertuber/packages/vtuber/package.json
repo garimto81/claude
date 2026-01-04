@@ -1,0 +1,29 @@
+{
+  "name": "@youtuber/vtuber",
+  "version": "0.1.0",
+  "description": "VMC Protocol 클라이언트 및 아바타 컨트롤러",
+  "main": "dist/index.js",
+  "types": "dist/index.d.ts",
+  "scripts": {
+    "build": "tsc",
+    "dev": "tsc --watch",
+    "test": "vitest",
+    "test:ui": "vitest --ui",
+    "clean": "rm -rf dist"
+  },
+  "dependencies": {
+    "@youtuber/shared": "workspace:*",
+    "osc": "^2.4.4"
+  },
+  "devDependencies": {
+    "@types/node": "^20.11.5",
+    "typescript": "^5.3.3",
+    "vitest": "^1.2.0"
+  },
+  "exports": {
+    ".": {
+      "types": "./dist/index.d.ts",
+      "default": "./dist/index.js"
+    }
+  }
+}

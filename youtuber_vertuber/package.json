@@ -1,0 +1,35 @@
+{
+  "name": "@youtuber/vertuber",
+  "version": "0.1.0",
+  "private": true,
+  "description": "VSeeFace 버튜버 기능 통합 - AI 코딩 스트리밍",
+  "workspaces": [
+    "packages/*"
+  ],
+  "scripts": {
+    "dev": "pnpm --parallel --stream dev",
+    "build": "pnpm --recursive --stream build",
+    "test": "pnpm --recursive --stream test",
+    "lint": "pnpm --recursive --stream lint",
+    "clean": "pnpm --recursive exec rm -rf dist node_modules"
+  },
+  "engines": {
+    "node": ">=18.0.0",
+    "pnpm": ">=8.0.0"
+  },
+  "packageManager": "pnpm@8.15.0",
+  "repository": {
+    "type": "git",
+    "url": "https://github.com/garimto81/claude.git",
+    "directory": "youtuber_vertuber"
+  },
+  "keywords": [
+    "vtuber",
+    "vseface",
+    "vmc-protocol",
+    "obs",
+    "streaming"
+  ],
+  "author": "Claude (AI Assistant)",
+  "license": "MIT"
+}
