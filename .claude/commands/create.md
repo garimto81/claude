@@ -14,6 +14,7 @@ PRD, PR, 문서를 생성합니다.
 
 Targets:
   prd [name] [--template] [--local-only]   PRD 문서 생성 (Google Docs 마스터)
+  init [name] [--priority]                  PRD+Checklist+Task 통합 생성 (로컬 전용) ⭐ NEW
   pr [base-branch]                          Pull Request 생성 (Phase 4)
   docs [path] [--format]                    API/코드 문서 생성
 ```
@@ -375,6 +376,141 @@ docs/
 - **입출력 분석**: 함수 시그니처, 타입 힌트
 - **Edge Cases**: None 처리, 빈 문자열, 경계 조건
 - **Code Examples**: 기본 사용, 고급 패턴, 에러 처리
+
+---
+
+## /create init - PRD 통합 초기화 (로컬 전용) ⭐ NEW
+
+**목적**: 서브프로젝트에서 PRD, Checklist, Task를 한 번에 생성합니다.
+
+**사용 대상**:
+- `youtuber_chatbot` 등 독립 프로젝트
+- Google Docs 불필요한 경우
+- 빠른 로컬 기획서 작성
+
+### 사용법
+
+```bash
+/create init "YouTube 챗봇 확장"                     # 기본 (P1)
+/create init "실시간 번역 기능" --priority=P0        # 우선순위 지정
+```
+
+### 워크플로우
+
+```
+/create init [title]
+      │
+      ▼
+┌─────────────────────────────────┐
+│ 1. PRD 번호 자동 할당           │
+│    - 기존 PRD 스캔              │
+│    - .prd-registry.json 조회    │
+└─────────────────────────────────┘
+      │
+      ▼
+┌─────────────────────────────────┐
+│ 2. 폴더 구조 생성               │
+│    docs/checklists/             │
+│    tasks/prds/                  │
+└─────────────────────────────────┘
+      │
+      ▼
+┌─────────────────────────────────┐
+│ 3. 템플릿 기반 파일 생성        │
+│    - PRD-NNNN-{slug}.md         │
+│    - docs/checklists/PRD-NNNN.md│
+│    - tasks/NNNN-tasks-{slug}.md │
+└─────────────────────────────────┘
+      │
+      ▼
+┌─────────────────────────────────┐
+│ 4. .prd-registry.json 업데이트  │
+│    - 메타데이터 저장            │
+│    - next_prd_number 증가       │
+└─────────────────────────────────┘
+```
+
+### 생성 파일
+
+```
+youtuber_chatbot/
+├── .prd-registry.json                     # 메타데이터
+├── docs/
+│   ├── PRD-0003-youtube-bot-expansion.md  # PRD 본문
+│   └── checklists/
+│       └── PRD-0003.md                    # Checklist
+└── tasks/
+    └── 0003-tasks-youtube-bot-expansion.md # Task 목록
+```
+
+### 출력 예시
+
+```bash
+/create init "YouTube 챗봇 확장"
+
+# Output:
+# [1/6] PRD 번호 할당 중...
+# [OK] PRD-0003 할당됨 (slug: youtube-bot-expansion)
+#
+# [2/6] 폴더 구조 생성 중...
+# [OK] 폴더 생성 완료
+#
+# [3/6] PRD 본문 생성 중...
+# [OK] docs/PRD-0003-youtube-bot-expansion.md
+#
+# [4/6] Checklist 생성 중...
+# [OK] docs/checklists/PRD-0003.md
+#
+# [5/6] Task 목록 생성 중...
+# [OK] tasks/0003-tasks-youtube-bot-expansion.md
+#
+# [6/6] 레지스트리 업데이트 중...
+# [OK] .prd-registry.json 업데이트 완료
+#
+# ✅ PRD 초기화 완료!
+#    PRD ID: PRD-0003
+#    PRD: docs/PRD-0003-youtube-bot-expansion.md
+#    Checklist: docs/checklists/PRD-0003.md
+#    Tasks: tasks/0003-tasks-youtube-bot-expansion.md
+```
+
+### 기존 PRD와의 호환성
+
+**시나리오**: `youtuber_chatbot`에 이미 `PRD-0002-chatbot.md`가 존재
+
+**동작**:
+1. 기존 PRD 스캔 → 최대 번호 0002 발견
+2. 다음 번호 **PRD-0003** 할당
+3. `.prd-registry.json` 생성:
+   ```json
+   {
+     "version": "1.0.0",
+     "project_name": "youtuber_chatbot",
+     "next_prd_number": 4,
+     "prds": {
+       "PRD-0003": {
+         "title": "YouTube 챗봇 확장",
+         "slug": "youtube-bot-expansion",
+         ...
+       }
+     }
+   }
+   ```
+
+### 옵션
+
+| 옵션 | 설명 | 기본값 |
+|------|------|--------|
+| `--priority=P0-P3` | 우선순위 (P0=긴급, P1=높음, P2=보통, P3=낮음) | P1 |
+
+### Python 스크립트 직접 실행
+
+```bash
+python D:\AI\claude01\automation_ae\scripts\init_prd.py `
+  D:\AI\claude01\youtuber_chatbot `
+  "YouTube 챗봇 확장" `
+  --priority=P0
+```
 
 ---
 

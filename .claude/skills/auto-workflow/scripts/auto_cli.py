@@ -1,10 +1,11 @@
 #!/usr/bin/env python
 """
-Auto CLI - 자율 작업 루프 명령줄 인터페이스
+Auto CLI - 자율 작업 루프 명령줄 인터페이스 (E2E/TDD 검증 포함)
 
 사용법:
-    python auto_cli.py                    # 자율 루프 시작
-    python auto_cli.py --max 5            # 최대 5회 반복
+    python auto_cli.py                    # 자율 루프 시작 (E2E/TDD 검증 포함)
+    python auto_cli.py --max 5            # 최대 5회 반복 + 검증
+    python auto_cli.py --skip-validation  # 검증 생략 (빠른 반복)
     python auto_cli.py --dry-run          # 판단만, 실행 안함
     python auto_cli.py resume             # 마지막 세션 재개
     python auto_cli.py resume <session>   # 특정 세션 재개
@@ -31,18 +32,22 @@ def cmd_run(args):
     """루프 실행"""
     from auto_orchestrator import run_loop
 
-    print("""
+    validation_msg = "검증 생략" if args.skip_validation else "E2E/TDD 검증 포함"
+
+    print(f"""
     ╔═══════════════════════════════════════════════════════════╗
     ║          Auto Orchestrator - 자율 작업 루프                ║
     ║                                                            ║
     ║  Ralph Wiggum 철학: "할 일 없음 → 스스로 발견"             ║
+    ║  모드: {validation_msg:<44} ║
     ╚═══════════════════════════════════════════════════════════╝
     """)
 
     status = run_loop(
         max_iterations=args.max,
         promise=args.promise,
-        dry_run=args.dry_run
+        dry_run=args.dry_run,
+        skip_validation=args.skip_validation
     )
 
     return 0 if status.value in ["completed", "paused"] else 1
@@ -178,15 +183,17 @@ def main():
         formatter_class=argparse.RawDescriptionHelpFormatter,
         epilog="""
 예시:
-  python auto_cli.py                    # 자율 루프 시작 (무한)
-  python auto_cli.py --max 10           # 최대 10회 반복
-  python auto_cli.py --promise DONE     # "DONE" 출력 시 종료
-  python auto_cli.py --dry-run          # 판단만, 실행 안함
-  python auto_cli.py discover           # 다음 작업 1회 확인
-  python auto_cli.py resume             # 마지막 세션 재개
-  python auto_cli.py status             # 현재 상태 확인
-  python auto_cli.py pause              # 세션 일시 정지
-  python auto_cli.py abort              # 세션 취소
+  python auto_cli.py                         # 자율 루프 시작 (E2E/TDD 검증 포함)
+  python auto_cli.py --max 10                # 최대 10회 반복 + 검증
+  python auto_cli.py --promise DONE          # "DONE" 출력 시 종료
+  python auto_cli.py --dry-run               # 판단만, 실행 안함
+  python auto_cli.py --skip-validation       # 검증 생략 (빠른 반복)
+  python auto_cli.py --skip-validation --max 5  # 검증 없이 5회
+  python auto_cli.py discover                # 다음 작업 1회 확인
+  python auto_cli.py resume                  # 마지막 세션 재개
+  python auto_cli.py status                  # 현재 상태 확인
+  python auto_cli.py pause                   # 세션 일시 정지
+  python auto_cli.py abort                   # 세션 취소
         """
     )
 
@@ -196,6 +203,7 @@ def main():
     parser.add_argument("--max", type=int, help="최대 반복 횟수")
     parser.add_argument("--promise", type=str, help="종료 조건 (<promise>TEXT</promise>)")
     parser.add_argument("--dry-run", action="store_true", help="실행 없이 판단만")
+    parser.add_argument("--skip-validation", action="store_true", help="E2E/TDD 검증 생략")
     parser.add_argument("-v", "--verbose", action="store_true", default=True, help="상세 출력")
 
     # resume
