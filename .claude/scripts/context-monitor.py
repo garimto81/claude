@@ -19,6 +19,12 @@ from pathlib import Path
 def get_git_remote(project_dir):
     """Get GitHub remote repository (repo only, without owner)"""
     try:
+        # Normalize path for Windows (convert /d/path to D:/path)
+        if sys.platform == 'win32' and project_dir.startswith('/'):
+            parts = project_dir.split('/')
+            if len(parts) > 1 and len(parts[1]) == 1:  # /d/... format
+                project_dir = f"{parts[1].upper()}:/{'/'.join(parts[2:])}"
+
         git_dir = Path(project_dir) / '.git'
         if git_dir.exists():
             config_file = git_dir / 'config'
@@ -50,6 +56,12 @@ def get_git_remote(project_dir):
 def get_git_branch(project_dir):
     """Get current git branch name"""
     try:
+        # Normalize path for Windows (convert /d/path to D:/path)
+        if sys.platform == 'win32' and project_dir.startswith('/'):
+            parts = project_dir.split('/')
+            if len(parts) > 1 and len(parts[1]) == 1:  # /d/... format
+                project_dir = f"{parts[1].upper()}:/{'/'.join(parts[2:])}"
+
         git_dir = Path(project_dir) / '.git'
         if git_dir.exists():
             head_file = git_dir / 'HEAD'

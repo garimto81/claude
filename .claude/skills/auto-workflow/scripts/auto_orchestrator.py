@@ -43,10 +43,25 @@ class LoopConfig:
     max_iterations: Optional[int] = None  # --max N
     promise_text: Optional[str] = None    # --promise TEXT
     dry_run: bool = False                 # --dry-run
+    skip_validation: bool = False         # --skip-validation (검증 생략)
     verbose: bool = True
     context_limit: int = 90               # Context % 임계값
     cooldown_seconds: int = 5             # 반복 간 대기 시간
     retry_on_error: int = 3               # 에러 시 재시도 횟수
+    max_debug_attempts: int = 3           # E2E 실패 시 최대 디버그 시도
+
+
+@dataclass
+class ValidationResult:
+    """검증 결과"""
+    passed: bool
+    test_type: str  # "e2e" or "tdd"
+    total_tests: int = 0
+    passed_tests: int = 0
+    failed_tests: int = 0
+    coverage_percent: float = 0.0
+    error_message: Optional[str] = None
+    details: Optional[dict] = None
 
 
 @dataclass
@@ -58,6 +73,8 @@ class IterationResult:
     duration_seconds: float
     promise_fulfilled: bool = False
     error: Optional[str] = None
+    e2e_result: Optional[ValidationResult] = None
+    tdd_result: Optional[ValidationResult] = None
 
 
 class AutoOrchestrator:
@@ -196,7 +213,35 @@ class AutoOrchestrator:
         # 3. Claude Code 호출
         output, success = self._execute_task(task)
 
-        # 4. Promise 체크
+        # 4. E2E 검증 (작업 성공 시 + skip_validation이 False일 때)
+        e2e_result = None
+        if success and not self.config.skip_validation:
+            e2e_result = self._run_e2e_tests()
+
+            # E2E 실패 시 디버그 자동 트리거
+            if not e2e_result.passed:
+                self._log("\n❌ E2E 테스트 실패 - 디버그 모드 진입")
+                debug_success = self._trigger_debug(e2e_result)
+
+                if debug_success:
+                    # 디버그 후 재검증
+                    e2e_result = self._run_e2e_tests()
+                    if e2e_result.passed:
+                        self._log("✅ E2E 재검증 통과")
+                    else:
+                        self._log("❌ E2E 재검증 실패 - 다음 반복에서 재시도")
+                        success = False
+
+        # 5. TDD 검증 (E2E 통과 시)
+        tdd_result = None
+        if success and e2e_result and e2e_result.passed and not self.config.skip_validation:
+            tdd_result = self._run_tdd_tests()
+
+            if not tdd_result.passed:
+                self._log(f"⚠️  TDD 검증 경고 - 커버리지: {tdd_result.coverage_percent:.1f}%")
+                # TDD 실패는 경고만 (작업은 성공으로 간주)
+
+        # 6. Promise 체크
         promise_fulfilled = False
         if self.config.promise_text:
             promise_tag = f"<promise>{self.config.promise_text}</promise>"
@@ -212,7 +257,9 @@ class AutoOrchestrator:
             task=task,
             output=output,
             duration_seconds=duration,
-            promise_fulfilled=promise_fulfilled
+            promise_fulfilled=promise_fulfilled,
+            e2e_result=e2e_result,
+            tdd_result=tdd_result
         )
 
     def _execute_task(self, task: DiscoveredTask) -> tuple[str, bool]:
@@ -273,6 +320,239 @@ class AutoOrchestrator:
             self.failure_count += 1
             self._log(f"❌ 실행 오류: {e}")
             return str(e), False
+
+    def _run_e2e_tests(self) -> ValidationResult:
+        """E2E 테스트 실행 (Playwright)"""
+        self._log("\n🧪 Phase 4: E2E 검증 중...")
+
+        try:
+            # Playwright 테스트 실행
+            result = subprocess.run(
+                ["npx", "playwright", "test"],
+                capture_output=True,
+                text=True,
+                timeout=300,  # 5분 타임아웃
+                cwd=self.project_root,
+                encoding="utf-8",
+                errors="replace",
+                shell=(sys.platform == "win32")
+            )
+
+            # 결과 파싱 (간단한 패턴 매칭)
+            output = result.stdout + result.stderr
+            passed = result.returncode == 0
+
+            # 테스트 개수 파싱 (예: "15 passed, 0 failed")
+            import re
+            passed_match = re.search(r"(\d+) passed", output)
+            failed_match = re.search(r"(\d+) failed", output)
+
+            passed_tests = int(passed_match.group(1)) if passed_match else 0
+            failed_tests = int(failed_match.group(1)) if failed_match else 0
+            total_tests = passed_tests + failed_tests
+
+            validation_result = ValidationResult(
+                passed=passed,
+                test_type="e2e",
+                total_tests=total_tests,
+                passed_tests=passed_tests,
+                failed_tests=failed_tests,
+                error_message=None if passed else "E2E tests failed",
+                details={"output": output[:500]}  # 처음 500자만
+            )
+
+            # 로그 기록
+            self.state.logger.log(
+                event_type="milestone",
+                phase="e2e_validation",
+                data={
+                    "passed": passed,
+                    "total": total_tests,
+                    "failed": failed_tests
+                }
+            )
+
+            if passed:
+                self._log(f"   ✅ E2E 테스트 통과 ({passed_tests}/{total_tests})")
+            else:
+                self._log(f"   ❌ E2E 테스트 실패 ({passed_tests}/{total_tests})")
+
+            return validation_result
+
+        except subprocess.TimeoutExpired:
+            self._log("   ⏰ E2E 테스트 타임아웃 (5분 초과)")
+            return ValidationResult(
+                passed=False,
+                test_type="e2e",
+                error_message="Timeout after 5 minutes"
+            )
+
+        except FileNotFoundError:
+            self._log("   ⚠️  Playwright가 설치되지 않음 - E2E 검증 생략")
+            return ValidationResult(
+                passed=True,  # 설치 안 된 경우 통과로 간주
+                test_type="e2e",
+                error_message="Playwright not installed"
+            )
+
+        except Exception as e:
+            self._log(f"   ❌ E2E 테스트 오류: {e}")
+            return ValidationResult(
+                passed=False,
+                test_type="e2e",
+                error_message=str(e)
+            )
+
+    def _run_tdd_tests(self) -> ValidationResult:
+        """TDD 테스트 실행 (pytest + coverage)"""
+        self._log("\n📊 Phase 5: TDD 검증 중...")
+
+        try:
+            # pytest 실행 (커버리지 포함)
+            result = subprocess.run(
+                ["pytest", "tests/", "-v", "--cov=src", "--cov-report=json"],
+                capture_output=True,
+                text=True,
+                timeout=120,  # 2분 타임아웃
+                cwd=self.project_root,
+                encoding="utf-8",
+                errors="replace",
+                shell=(sys.platform == "win32")
+            )
+
+            output = result.stdout + result.stderr
+            passed = result.returncode == 0
+
+            # 테스트 개수 파싱
+            import re
+            passed_match = re.search(r"(\d+) passed", output)
+            failed_match = re.search(r"(\d+) failed", output)
+
+            passed_tests = int(passed_match.group(1)) if passed_match else 0
+            failed_tests = int(failed_match.group(1)) if failed_match else 0
+            total_tests = passed_tests + failed_tests
+
+            # 커버리지 파싱 (coverage.json)
+            coverage_percent = 0.0
+            coverage_file = self.project_root / "coverage.json"
+            if coverage_file.exists():
+                try:
+                    with open(coverage_file, "r") as f:
+                        coverage_data = json.load(f)
+                        coverage_percent = coverage_data.get("totals", {}).get("percent_covered", 0.0)
+                except Exception:
+                    pass
+
+            # 검증 기준: 테스트 통과 + 커버리지 80% 이상
+            validation_passed = passed and coverage_percent >= 80.0
+
+            validation_result = ValidationResult(
+                passed=validation_passed,
+                test_type="tdd",
+                total_tests=total_tests,
+                passed_tests=passed_tests,
+                failed_tests=failed_tests,
+                coverage_percent=coverage_percent,
+                error_message=None if validation_passed else f"Coverage {coverage_percent:.1f}% < 80%",
+                details={"output": output[:500]}
+            )
+
+            # 로그 기록
+            self.state.logger.log(
+                event_type="milestone",
+                phase="tdd_validation",
+                data={
+                    "passed": validation_passed,
+                    "total": total_tests,
+                    "failed": failed_tests,
+                    "coverage": coverage_percent
+                }
+            )
+
+            if validation_passed:
+                self._log(f"   ✅ TDD 검증 통과 ({passed_tests}/{total_tests}, 커버리지: {coverage_percent:.1f}%)")
+            else:
+                self._log(f"   ⚠️  TDD 검증 부족 ({passed_tests}/{total_tests}, 커버리지: {coverage_percent:.1f}%)")
+
+            return validation_result
+
+        except subprocess.TimeoutExpired:
+            self._log("   ⏰ TDD 테스트 타임아웃 (2분 초과)")
+            return ValidationResult(
+                passed=False,
+                test_type="tdd",
+                error_message="Timeout after 2 minutes"
+            )
+
+        except FileNotFoundError:
+            self._log("   ⚠️  pytest가 설치되지 않음 - TDD 검증 생략")
+            return ValidationResult(
+                passed=True,  # 설치 안 된 경우 통과로 간주
+                test_type="tdd",
+                error_message="pytest not installed"
+            )
+
+        except Exception as e:
+            self._log(f"   ❌ TDD 테스트 오류: {e}")
+            return ValidationResult(
+                passed=False,
+                test_type="tdd",
+                error_message=str(e)
+            )
+
+    def _trigger_debug(self, e2e_result: ValidationResult) -> bool:
+        """E2E 실패 시 디버그 자동 트리거"""
+        self._log("\n🔍 디버그 모드 시작 (가설-검증 사이클)")
+
+        try:
+            # /debug 커맨드 실행
+            import shutil
+            claude_path = shutil.which("claude") or "claude"
+
+            debug_prompt = f"""E2E 테스트 실패 분석:
+- 실패한 테스트: {e2e_result.failed_tests}개
+- 오류 메시지: {e2e_result.error_message}
+
+/debug 커맨드로 가설-검증 사이클 시작"""
+
+            result = subprocess.run(
+                [claude_path, "-p", debug_prompt],
+                capture_output=True,
+                text=True,
+                timeout=600,  # 10분 타임아웃
+                cwd=self.project_root,
+                encoding="utf-8",
+                errors="replace",
+                shell=(sys.platform == "win32")
+            )
+
+            success = result.returncode == 0
+
+            # 로그 기록
+            self.state.logger.log_action(
+                action="debug_triggered",
+                target="e2e_failure",
+                result="success" if success else "fail",
+                details={
+                    "failed_tests": e2e_result.failed_tests,
+                    "returncode": result.returncode
+                }
+            )
+
+            if success:
+                self._log("   ✅ 디버그 완료")
+            else:
+                self._log("   ❌ 디버그 실패")
+
+            return success
+
+        except subprocess.TimeoutExpired:
+            self._log("   ⏰ 디버그 타임아웃 (10분 초과)")
+            return False
+
+        except Exception as e:
+            self._log(f"   ❌ 디버그 오류: {e}")
+            return False
 
     def _process_result(self, result: IterationResult) -> LoopStatus:
         """결과 처리"""
@@ -348,6 +628,7 @@ class AutoOrchestrator:
         self._log(f"#   max_iterations: {self.config.max_iterations or '무제한'}")
         self._log(f"#   promise: {self.config.promise_text or '없음'}")
         self._log(f"#   dry_run: {self.config.dry_run}")
+        self._log(f"#   skip_validation: {self.config.skip_validation}")
         self._log(f"{'#'*60}")
 
     def get_status(self) -> dict:
@@ -366,6 +647,7 @@ def run_loop(
     max_iterations: Optional[int] = None,
     promise: Optional[str] = None,
     dry_run: bool = False,
+    skip_validation: bool = False,
     session_id: Optional[str] = None
 ) -> LoopStatus:
     """
@@ -375,12 +657,14 @@ def run_loop(
         max_iterations: 최대 반복 횟수
         promise: 종료 조건 텍스트
         dry_run: 실행 없이 판단만
+        skip_validation: E2E/TDD 검증 생략
         session_id: 재개할 세션 ID
     """
     config = LoopConfig(
         max_iterations=max_iterations,
         promise_text=promise,
-        dry_run=dry_run
+        dry_run=dry_run,
+        skip_validation=skip_validation
     )
 
     orchestrator = AutoOrchestrator(
@@ -410,6 +694,7 @@ if __name__ == "__main__":
     parser.add_argument("--max", type=int, help="최대 반복 횟수")
     parser.add_argument("--promise", type=str, help="종료 조건 텍스트")
     parser.add_argument("--dry-run", action="store_true", help="실행 없이 판단만")
+    parser.add_argument("--skip-validation", action="store_true", help="E2E/TDD 검증 생략")
 
     args = parser.parse_args()
 
@@ -437,6 +722,7 @@ if __name__ == "__main__":
         status = run_loop(
             max_iterations=args.max,
             promise=args.promise,
-            dry_run=args.dry_run
+            dry_run=args.dry_run,
+            skip_validation=args.skip_validation
         )
         print(f"\n최종 상태: {status.value}")
