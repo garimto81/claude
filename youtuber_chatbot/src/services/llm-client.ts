@@ -54,7 +54,7 @@ export class LLMClient {
         messages: [
           {
             role: 'system',
-            content: '메시지를 분류하세요. question/greeting/command/chitchat/spam 중 하나만 답변.'
+            content: '메시지를 분류하세요. question/greeting/command/chitchat/spam 중 하나만 답변.',
           },
           { role: 'user', content: message },
         ],

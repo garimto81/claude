@@ -14,7 +14,7 @@ export class PromptBuilder {
     options: {
       maxResponseLength?: number;
       includeProjects?: boolean;
-    } = {}
+    } = {},
   ): string {
     const { maxResponseLength = 200, includeProjects = true } = options;
 

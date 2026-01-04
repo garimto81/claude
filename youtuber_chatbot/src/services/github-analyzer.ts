@@ -2,6 +2,44 @@ import { Octokit } from 'octokit';
 import type { HostProject } from '../types/host.js';
 
 /**
+ * GraphQL Pinned Repository 응답 타입
+ */
+interface PinnedRepoNode {
+  name: string;
+  description: string | null;
+  owner: { login: string };
+  primaryLanguage: { name: string } | null;
+  stargazerCount: number;
+  repositoryTopics: {
+    nodes: Array<{ topic: { name: string } }>;
+  };
+  latestRelease: { tagName: string } | null;
+  homepageUrl: string | null;
+  pushedAt: string;
+}
+
+interface PinnedReposResponse {
+  user: {
+    pinnedItems: {
+      nodes: PinnedRepoNode[];
+    };
+  };
+}
+
+/**
+ * REST API Repository 응답 타입 (Octokit의 일부)
+ */
+interface RestRepoResponse {
+  name: string;
+  description: string | null;
+  full_name: string;
+  language: string | null;
+  stargazers_count: number;
+  topics?: string[];
+  homepage: string | null;
+}
+
+/**
  * GitHub 레포지토리 분석 서비스
  *
  * Octokit을 사용하여 GitHub API와 통신하고,
@@ -62,10 +100,10 @@ export class GitHubAnalyzer {
       }
     `;
 
-    const response: any = await this.octokit.graphql(query);
+    const response = await this.octokit.graphql<PinnedReposResponse>(query);
     const repos = response.user.pinnedItems.nodes;
 
-    return repos.map((repo: any) => ({
+    return repos.map((repo) => ({
       id: repo.name.toLowerCase(),
       name: repo.name,
       description: repo.description || 'No description',
@@ -76,7 +114,7 @@ export class GitHubAnalyzer {
       source: 'github' as const,
       lastSyncedAt: new Date().toISOString(),
       stars: repo.stargazerCount,
-      topics: repo.repositoryTopics.nodes.map((t: any) => t.topic.name),
+      topics: repo.repositoryTopics.nodes.map((t) => t.topic.name),
       homepage: repo.homepageUrl,
     }));
   }
@@ -100,7 +138,7 @@ export class GitHubAnalyzer {
   /**
    * GitHub Repo 객체를 HostProject로 변환
    */
-  private convertToHostProject(repo: any): HostProject {
+  private convertToHostProject(repo: RestRepoResponse): HostProject {
     return {
       id: repo.name.toLowerCase(),
       name: repo.name,
@@ -132,7 +170,7 @@ export class GitHubAnalyzer {
     cutoffDate.setDate(cutoffDate.getDate() - days);
 
     console.log(
-      `[GitHubAnalyzer] Fetching repositories with activity since ${cutoffDate.toISOString()}`
+      `[GitHubAnalyzer] Fetching repositories with activity since ${cutoffDate.toISOString()}`,
     );
 
     // 1. 모든 public repos 조회
@@ -145,24 +183,24 @@ export class GitHubAnalyzer {
       try {
         const hasActivity = await this.hasRecentActivity(
           repo.repository,
-          cutoffDate
+          cutoffDate,
         );
         if (hasActivity) {
           activeRepos.push(repo);
           console.log(
-            `[GitHubAnalyzer] ✅ Active: ${repo.repository}`
+            `[GitHubAnalyzer] ✅ Active: ${repo.repository}`,
           );
         }
       } catch (error) {
         console.error(
           `[GitHubAnalyzer] Error checking ${repo.repository}:`,
-          error
+          error,
         );
       }
     }
 
     console.log(
-      `[GitHubAnalyzer] ${activeRepos.length} repositories with recent activity`
+      `[GitHubAnalyzer] ${activeRepos.length} repositories with recent activity`,
     );
     return activeRepos;
   }
@@ -176,7 +214,7 @@ export class GitHubAnalyzer {
    */
   private async hasRecentActivity(
     repoFullName: string,
-    cutoffDate: Date
+    cutoffDate: Date,
   ): Promise<boolean> {
     const [owner, repo] = repoFullName.split('/');
 
@@ -193,7 +231,7 @@ export class GitHubAnalyzer {
     } catch (error) {
       console.error(
         `[GitHubAnalyzer] Error fetching repo data for ${repoFullName}:`,
-        error
+        error,
       );
       return false;
     }

@@ -32,7 +32,7 @@ export function buildCommandMap(): Record<string, () => string | Promise<string>
 
         const analyzer = new GitHubAnalyzer(
           profile.social.github,
-          process.env.GITHUB_TOKEN
+          process.env.GITHUB_TOKEN,
         );
 
         // 최근 5일간 활동이 있는 레포 조회
@@ -67,7 +67,7 @@ export function buildCommandMap(): Record<string, () => string | Promise<string>
         const loader = getHostProfileLoader();
         const analyzer = new GitHubAnalyzer(
           profile.social.github,
-          process.env.GITHUB_TOKEN
+          process.env.GITHUB_TOKEN,
         );
 
         // Pinned repos 조회
@@ -103,7 +103,7 @@ export async function handleCommand(command: string): Promise<string> {
   const handler = commands[command.toLowerCase()];
 
   if (!handler) {
-    return `알 수 없는 명령어입니다. !help를 입력해보세요.`;
+    return '알 수 없는 명령어입니다. !help를 입력해보세요.';
   }
 
   return await handler();
