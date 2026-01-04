@@ -1,5 +1,10 @@
 # YouTube Live Chat AI Chatbot
 
+[![Youtuber Chatbot CI](https://github.com/garimto81/claude/actions/workflows/youtuber-chatbot-ci.yml/badge.svg)](https://github.com/garimto81/claude/actions/workflows/youtuber-chatbot-ci.yml)
+[![Tests](https://img.shields.io/badge/tests-61%20passed-success)](https://github.com/garimto81/claude/actions)
+[![TypeScript](https://img.shields.io/badge/TypeScript-5.5-blue)](https://www.typescriptlang.org/)
+[![Node.js](https://img.shields.io/badge/Node.js-20%2B-green)](https://nodejs.org/)
+
 **버전**: 1.0.0
 **기반**: Ollama + Qwen 3
 **용도**: YouTube 방송 실시간 채팅 AI 챗봇
