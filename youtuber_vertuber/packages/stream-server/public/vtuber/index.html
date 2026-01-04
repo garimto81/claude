@@ -1,0 +1,31 @@
+<!DOCTYPE html>
+<html lang="ko">
+<head>
+  <meta charset="UTF-8">
+  <meta name="viewport" content="width=device-width, initial-scale=1.0">
+  <title>VTuber 아바타 오버레이</title>
+  <link rel="stylesheet" href="styles.css">
+</head>
+<body>
+  <!-- VTuber 아바타 프레임 (320x180) -->
+  <div class="vtuber-container">
+    <!-- VSeeFace Window Capture 영역 -->
+    <div class="avatar-placeholder">
+      <p class="placeholder-text">VSeeFace 아바타<br>OBS Window Capture로 배치</p>
+    </div>
+
+    <!-- 연결 상태 표시 -->
+    <div class="connection-status">
+      <span class="status-indicator" id="statusIndicator">🔴</span>
+      <span class="status-text" id="statusText">연결 대기중...</span>
+    </div>
+
+    <!-- 표정 인디케이터 (선택사항) -->
+    <div class="expression-indicator" id="expressionIndicator">
+      <span class="expression-icon" id="expressionIcon">😐</span>
+    </div>
+  </div>
+
+  <script src="app.js"></script>
+</body>
+</html>
