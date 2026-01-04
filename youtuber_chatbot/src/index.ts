@@ -1,0 +1,59 @@
+import express from 'express';
+import { loadHostProfile } from './config/index.js';
+
+async function main() {
+  try {
+    // 1. 호스트 프로필 로드 (앱 시작 시 최우선)
+    console.log('[App] Loading host profile...');
+    const profile = await loadHostProfile();
+    console.log(`[App] Host profile loaded: ${profile.host.name}`);
+    console.log(`[App] Projects: ${profile.projects.length}`);
+
+    // 2. Express 서버 시작
+    const app = express();
+    const PORT = parseInt(process.env.PORT || '3002', 10);
+
+    app.use(express.json());
+
+    // Health check endpoint
+    app.get('/health', (req, res) => {
+      res.json({
+        status: 'ok',
+        host: profile.host.name,
+        projects: profile.projects.length,
+      });
+    });
+
+    app.listen(PORT, () => {
+      console.log(`[App] Chatbot server running on http://localhost:${PORT}`);
+      console.log(`[App] Health check: http://localhost:${PORT}/health`);
+    });
+
+    // 3. GitHub 자동 동기화 (선택)
+    if (process.env.GITHUB_AUTO_SYNC === 'true' && profile.social.github) {
+      console.log('[App] Auto-sync enabled, syncing GitHub repos...');
+      const { GitHubAnalyzer } = await import('./services/github-analyzer.js');
+      const { getHostProfileLoader } = await import('./config/host-profile.js');
+
+      try {
+        const analyzer = new GitHubAnalyzer(profile.social.github, process.env.GITHUB_TOKEN);
+        const activityDays = parseInt(process.env.GITHUB_ACTIVITY_DAYS || '5', 10);
+
+        // 최근 N일간 활동이 있는 레포지토리만 동기화
+        const activeRepos = await analyzer.getRecentActiveRepositories(activityDays);
+        const loader = getHostProfileLoader();
+        await loader.mergeGitHubProjects(activeRepos);
+
+        console.log(`[App] Auto-synced ${activeRepos.length} active repos (last ${activityDays} days)`);
+      } catch (error) {
+        console.error('[App] Auto-sync failed:', error);
+      }
+    }
+
+  } catch (error) {
+    console.error('[App] Startup failed:', error);
+    process.exit(1);
+  }
+}
+
+main();
