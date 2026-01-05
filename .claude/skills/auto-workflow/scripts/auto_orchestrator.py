@@ -22,8 +22,8 @@ from typing import Callable, Optional
 SCRIPT_DIR = Path(__file__).parent
 sys.path.insert(0, str(SCRIPT_DIR))
 
-from auto_discovery import AutoDiscovery, DiscoveredTask
-from auto_state import AutoState
+from auto_discovery import AutoDiscovery, DiscoveredTask  # noqa: E402
+from auto_state import AutoState  # noqa: E402
 
 
 class LoopStatus(Enum):

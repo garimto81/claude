@@ -23,7 +23,7 @@ Usage:
 
 import os
 from dataclasses import dataclass
-from typing import Optional
+from typing import Dict, Optional
 from pathlib import Path
 
 from dotenv import load_dotenv
