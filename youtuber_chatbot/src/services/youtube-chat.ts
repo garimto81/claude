@@ -36,9 +36,19 @@ export class YouTubeChatService {
         for (const action of actions) {
           if (action.type === 'addChatItemAction') {
             const chatAction = action as AddChatItemAction;
+            // rawMessage가 string | YTRun[] 타입이므로 변환 필요
+            let messageText = '';
+            if (typeof chatAction.rawMessage === 'string') {
+              messageText = chatAction.rawMessage;
+            } else if (Array.isArray(chatAction.rawMessage)) {
+              messageText = chatAction.rawMessage
+                .map(run => ('text' in run ? run.text : ''))
+                .join('');
+            }
+
             messageHandler({
               author: chatAction.authorName || 'Anonymous',
-              message: chatAction.rawMessage || '',
+              message: messageText || '',
               timestamp: chatAction.timestamp || new Date(),
             });
           }
