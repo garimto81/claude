@@ -151,3 +151,14 @@ build/
 
 # Auto orchestrator logs
 .claude/auto-logs/
+
+# Ralph Wiggum loop state
+.claude/ralph-loop.local.md
+
+# Local utility scripts (personal use)
+chrome_mem.ps1
+claude-bypass.bat
+
+# Duplicate JS hooks (Python versions used)
+.claude/hooks/*.js
+.claude/statusline.js
