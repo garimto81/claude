@@ -21,12 +21,12 @@ from pathlib import Path
 project_root = Path(__file__).parent.parent
 sys.path.insert(0, str(project_root))
 
-from src.services.google_docs import (
+from src.services.google_docs import (  # noqa: E402
     GoogleDocsClient,
     MetadataManager,
     CacheManager,
 )
-from src.services.google_docs.migration import PRDMigrator, MigrationReport
+from src.services.google_docs.migration import PRDMigrator  # noqa: E402
 
 # 로깅 설정
 logging.basicConfig(
@@ -97,7 +97,7 @@ def cmd_migrate_all(args):
     report = migrator.migrate_all(args.source_dir)
 
     # 결과 출력
-    print(f"\n마이그레이션 완료!")
+    print("\n마이그레이션 완료!")
     print(f"  성공: {report.success_count}개")
     print(f"  실패: {report.failed_count}개")
     print(f"  총: {report.total_count}개")
@@ -140,11 +140,11 @@ def cmd_migrate_single(args):
     result = migrator.migrate_prd(prd_id, args.source_path)
 
     if result.success:
-        print(f"\n✓ 마이그레이션 성공!")
+        print("\n✓ 마이그레이션 성공!")
         print(f"  PRD ID: {result.prd_id}")
         print(f"  Google Docs: {result.google_doc_url}")
     else:
-        print(f"\n✗ 마이그레이션 실패")
+        print("\n✗ 마이그레이션 실패")
         print(f"  오류: {result.error}")
         return 1
 
@@ -164,7 +164,7 @@ def cmd_sync(args):
         success = cache.sync_prd(prd_id)
 
         if success:
-            print(f"✓ 동기화 완료")
+            print("✓ 동기화 완료")
             info = cache.get_cache_info(prd_id)
             if info:
                 print(f"  캐시: {info['path']}")

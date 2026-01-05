@@ -503,7 +503,7 @@ def create_google_doc(
             removeParents=previous_parents,
             fields='id, parents'
         ).execute()
-        print(f"     폴더로 이동됨")
+        print("     폴더로 이동됨")
     except Exception as e:
         print(f"     폴더 이동 실패: {e}")
 

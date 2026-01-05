@@ -19,7 +19,7 @@ import argparse
 import pathlib
 import re
 import subprocess
-from typing import Optional, List, Tuple
+from typing import List
 from enum import Enum
 
 
@@ -235,7 +235,7 @@ class Phase2Validator(PhaseValidator):
 
     def validate(self, min_coverage: int = 80) -> ValidationResult:
         """Validate Phase 2: Tests pass with minimum coverage"""
-        print(f"\n🔍 Validating Phase 2 (Tests & Coverage)...")
+        print("\n🔍 Validating Phase 2 (Tests & Coverage)...")
 
         # Detect project type
         if (pathlib.Path("package.json").exists()):
@@ -267,7 +267,7 @@ class Phase2Validator(PhaseValidator):
                 return self.result()
 
             # Check coverage (rough parsing)
-            if f"TOTAL" in result.stdout:
+            if "TOTAL" in result.stdout:
                 # Extract coverage percentage
                 match = re.search(r"TOTAL\s+\d+\s+\d+\s+(\d+)%", result.stdout)
                 if match:

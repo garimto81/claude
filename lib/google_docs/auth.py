@@ -4,7 +4,6 @@ OAuth 2.0 인증 모듈
 Google Docs/Drive API 인증을 처리합니다.
 """
 
-import os
 from pathlib import Path
 
 from google.oauth2.credentials import Credentials

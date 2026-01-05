@@ -17,8 +17,7 @@ import sys
 import json
 import argparse
 from pathlib import Path
-from typing import Dict, List, Optional
-import subprocess
+from typing import Dict
 
 
 class PluginManager:
@@ -80,14 +79,14 @@ class PluginManager:
 
             plugin_id = plugin["id"]
             current_version = plugin["version"]
-            upstream_repo = plugin["upstream"]["repository"]
+            _ = plugin["upstream"]["repository"]  # Reserved for GitHub API
 
             print(f"Checking {plugin_id}@{current_version}...")
 
             # Simulate version check (in real implementation, fetch from GitHub API)
             # For now, just report current version
             print(f"  Current: {current_version}")
-            print(f"  Status: Up to date (check skipped - implement GitHub API)")
+            print("  Status: Up to date (check skipped - implement GitHub API)")
 
         if plugins_with_updates:
             print(f"\n✅ {len(plugins_with_updates)} updates available")
@@ -119,7 +118,7 @@ class PluginManager:
         print(f"Upstream: {upstream_url}")
 
         if plugin.get("localChanges"):
-            print(f"\n📝 Local changes:")
+            print("\n📝 Local changes:")
             for change in plugin["localChanges"]:
                 print(f"  - {change}")
         else:
@@ -146,14 +145,14 @@ class PluginManager:
 
         if existing:
             print(f"⚠️  Plugin {plugin_id} is already installed (version {existing['version']})")
-            print(f"   Use 'update' command to upgrade")
+            print("   Use 'update' command to upgrade")
             return
 
-        print(f"❌ Installation not yet implemented")
-        print(f"   Manual installation:")
-        print(f"   1. Clone upstream repository")
+        print("❌ Installation not yet implemented")
+        print("   Manual installation:")
+        print("   1. Clone upstream repository")
         print(f"   2. Copy plugin to .claude/plugins/{plugin_id}")
-        print(f"   3. Update registry.json")
+        print("   3. Update registry.json")
 
     def info(self, plugin_id: str):
         """Show detailed info about a plugin"""
@@ -174,7 +173,7 @@ class PluginManager:
 
         if plugin.get("upstream"):
             upstream = plugin["upstream"]
-            print(f"\nUpstream:")
+            print("\nUpstream:")
             print(f"  Repository: {upstream['repository']}")
             print(f"  License: {upstream['license']}")
             print(f"  Author: {upstream['author']['name']}")
@@ -185,7 +184,7 @@ class PluginManager:
 
         if plugin.get("source"):
             source = plugin["source"]
-            print(f"\nSource:")
+            print("\nSource:")
             print(f"  Type: {source['type']}")
             if source.get("url"):
                 print(f"  URL: {source['url']}")
