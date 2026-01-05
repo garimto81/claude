@@ -1,26 +1,36 @@
 # YouTube Live Chat AI Chatbot
 
-[![Youtuber Chatbot CI](https://github.com/garimto81/claude/actions/workflows/youtuber-chatbot-ci.yml/badge.svg)](https://github.com/garimto81/claude/actions/workflows/youtuber-chatbot-ci.yml)
-[![Tests](https://img.shields.io/badge/tests-78%20passed-success)](https://github.com/garimto81/claude/actions)
+[![Tests](https://img.shields.io/badge/tests-163%20passed-success)](https://github.com/garimto81/youtuber_chatbot)
 [![TypeScript](https://img.shields.io/badge/TypeScript-5.5-blue)](https://www.typescriptlang.org/)
 [![Node.js](https://img.shields.io/badge/Node.js-20%2B-green)](https://nodejs.org/)
 
-**버전**: 1.0.0
+**버전**: 3.0.0
 **기반**: Ollama + Qwen 3
-**용도**: YouTube 방송 실시간 채팅 AI 챗봇
+**용도**: YouTube 채팅 전담 AI 챗봇
 
 ---
 
 ## 개요
 
-AI Coding YouTube 방송에서 시청자와 실시간 상호작용하는 지능형 챗봇입니다.
+> **이 프로젝트는 YouTube 채팅만 전담합니다.**
+
+YouTube Live 채팅에서 시청자와 실시간 상호작용하는 독립 AI 챗봇 서버입니다.
 
 ### 주요 기능
 
-- **시청자 질문 응답**: Qwen 3 AI가 프로그래밍 질문에 답변
-- **방송 정보 제공**: 현재 프로젝트, 세션 시간, TDD 상태
-- **명령어 처리**: `!help`, `!project`, `!status` 등
-- **인사/환영 메시지**: 첫 입장 시 자동 환영
+| 기능 | 설명 |
+|------|------|
+| **AI 질문 응답** | Qwen 3가 프로그래밍 질문에 답변 |
+| **명령어 처리** | `!help`, `!ai`, `!projects` 등 |
+| **인사 응답** | 자동 인사 응답 |
+| **호스트 정보** | 프로젝트, GitHub 정보 제공 |
+
+### 제외 범위
+
+- 메인 서버 연동 (별도 프로젝트)
+- VTuber/버튜버 연동 (youtuber_vertuber)
+- OBS 오버레이
+- 방송 세션 관리
 
 ---
 
@@ -30,8 +40,19 @@ AI Coding YouTube 방송에서 시청자와 실시간 상호작용하는 지능�
 |------|----------|
 | Node.js | 20 LTS 이상 |
 | Ollama | 최신 버전 |
-| VRAM | 8GB 이상 (qwen3:8b 기준) |
-| OS | Windows, macOS, Linux |
+| VRAM | 8GB 이상 (qwen3:8b) |
+
+---
+
+## 아키텍처
+
+```
+┌─────────────┐      ┌─────────────┐      ┌─────────────┐
+│   YouTube   │◀────▶│   Chatbot   │────▶│   Ollama    │
+│  Live Chat  │      │   Server    │      │  (Qwen 3)   │
+│ (masterchat)│      │ Port: 3002  │      │ Port: 11434 │
+└─────────────┘      └─────────────┘      └─────────────┘
+```
 
 ---
 
@@ -45,9 +66,6 @@ winget install Ollama.Ollama
 
 # macOS
 brew install ollama
-
-# Linux
-curl -fsSL https://ollama.com/install.sh | sh
 ```
 
 ### 2. Qwen 3 모델 다운로드
@@ -64,112 +82,38 @@ npm install
 
 # 환경 변수 설정
 copy .env.example .env
-# .env 파일을 열어 필요한 값 수정
-
-# Ollama 서버 실행 (별도 터미널)
-ollama serve
 ```
 
-### 4. YouTube Chat 연동 (선택)
-
-YouTube Live 채팅에 연결하려면 `.env` 파일에 다음 중 하나를 설정:
-
-```env
-# 옵션 1: 비디오 ID로 연결
-YOUTUBE_VIDEO_ID=your_video_id
-
-# 옵션 2: Live URL로 연결
-YOUTUBE_LIVE_URL=https://www.youtube.com/watch?v=your_video_id
-```
-
-**주의**:
-- YouTube Chat 연동 없이도 서버는 정상 작동합니다
-- 연동을 활성화하려면 반드시 Ollama 서버가 실행 중이어야 합니다
-- masterchat은 API 키 없이 작동합니다
-
-### 5. 개발 실행
+### 4. 실행
 
 ```powershell
-# 개발 모드 (핫 리로드)
+# 터미널 1: Ollama 서버
+ollama serve
+
+# 터미널 2: 챗봇 서버
 npm run dev
-
-# 프로덕션 빌드
-npm run build
-npm run start
 ```
-
-서버 시작 시 로그 확인:
-- `[App] YouTube Chat integration enabled` - 연동 활성화
-- `[App] YouTube Chat integration disabled` - 연동 비활성화
 
 ---
 
 ## 환경 변수
 
 ```env
-# 서버 설정
+# 서버
 PORT=3002
-HOST=localhost
 
-# Ollama 설정
+# Ollama
 OLLAMA_BASE_URL=http://localhost:11434
 OLLAMA_MODEL=qwen3:8b
 
-# 메인 서버 연결 (선택)
-MAIN_SERVER_URL=http://localhost:3001
+# YouTube Chat (선택)
+YOUTUBE_VIDEO_ID=your_video_id
 
-# YouTube Chat 연동 (선택 - 둘 중 하나 설정)
-YOUTUBE_VIDEO_ID=dQw4w9WgXcQ           # YouTube 비디오 ID
-# 또는
-YOUTUBE_LIVE_URL=https://www.youtube.com/watch?v=dQw4w9WgXcQ  # Live URL
-
-# 챗봇 설정
-BOT_NAME=CodingBot
-RESPONSE_DELAY_MS=500
+# 챗봇
 MAX_RESPONSE_LENGTH=200
-ENABLE_AUTO_GREETING=true
-```
 
----
-
-## 아키텍처
-
-```
-┌─────────────┐      ┌─────────────┐      ┌─────────────┐
-│   YouTube   │◀────▶│   Chatbot   │────▶│   Ollama    │
-│  Live Chat  │      │   Server    │      │  (Qwen 3)   │
-│ (masterchat)│      │ Port: 3002  │      │ Port: 11434 │
-└─────────────┘      └──────┬──────┘      └─────────────┘
-                           │ HTTP              (로컬)
-                           ▼
-                    ┌─────────────┐
-                    │ Main Server │
-                    │ Port: 3001  │
-                    └─────────────┘
-```
-
----
-
-## 프로젝트 구조
-
-```
-youtuber_chatbot/
-├── docs/
-│   └── PRD-0002-chatbot.md     # 요구사항 명세서
-├── src/
-│   ├── config/                  # 환경변수 로드
-│   ├── handlers/                # 메시지 라우팅, 명령어 처리
-│   ├── services/                # YouTube, LLM, 메인 서버 클라이언트
-│   ├── types/                   # TypeScript 타입 정의
-│   └── utils/                   # 유틸리티 함수
-├── shared/
-│   └── src/types/               # 공유 타입 (메인 서버와 공유)
-├── tests/                       # 테스트 코드
-├── package.json
-├── tsconfig.json
-├── .env.example
-├── CLAUDE.md                    # Claude Code 개발 가이드
-└── README.md                    # 이 파일
+# GitHub (선택)
+GITHUB_TOKEN=ghp_xxxxx
 ```
 
 ---
@@ -180,46 +124,60 @@ youtuber_chatbot/
 
 | 명령어 | 설명 |
 |--------|------|
-| `npm run dev` | 개발 서버 (tsx watch, 핫 리로드) |
+| `npm run dev` | 개발 서버 (핫 리로드) |
 | `npm run build` | TypeScript 빌드 |
-| `npm run start` | 프로덕션 서버 실행 |
+| `npm run test` | 테스트 실행 |
 | `npm run lint` | ESLint 검사 |
-| `npm run test` | Vitest 실행 |
 
-### 챗봇 명령어 (YouTube Chat)
+### 챗봇 (YouTube Chat)
 
 | 명령어 | 설명 |
 |--------|------|
-| `!help` | 사용 가능한 명령어 목록 |
-| `!project` | 현재 작업 프로젝트 정보 |
-| `!status` | TDD 상태 (Red/Green/Refactor) |
-| `!time` | 방송 경과 시간 |
-| `!github` | GitHub 링크 |
+| `!help` | 명령어 목록 |
 | `!ai` | AI 모델 정보 |
+| `!github` | GitHub 링크 |
+| `!projects` | 프로젝트 목록 |
+
+---
+
+## 프로젝트 구조
+
+```
+youtuber_chatbot/
+├── config/                 # 호스트 프로필
+├── src/
+│   ├── config/             # 환경변수
+│   ├── handlers/           # 메시지 라우팅
+│   ├── services/           # YouTube, LLM 클라이언트
+│   ├── routes/             # REST API
+│   └── utils/              # 유틸리티
+├── tests/                  # 테스트 (163개)
+└── docs/                   # PRD 문서
+```
 
 ---
 
 ## Qwen 3 모델 선택
 
-| 모델 | 크기 | VRAM | 용도 | 추천 |
-|------|------|------|------|------|
-| `qwen3:4b` | ~2.5GB | 4GB | 저사양 PC | |
-| `qwen3:8b` | ~5GB | 8GB | 균형잡힌 성능 | ✅ 추천 |
-| `qwen3:14b` | ~9GB | 12GB | 고품질 응답 | |
-| `qwen3:32b` | ~20GB | 24GB | 최고 성능 | |
+| 모델 | VRAM | 추천 |
+|------|------|------|
+| `qwen3:4b` | 4GB | 저사양 |
+| `qwen3:8b` | 8GB | **추천** |
+| `qwen3:14b` | 12GB | 고품질 |
 
 ---
 
-## 기술 스택
+## 호스트 커스터마이징
 
-| 영역 | 기술 |
-|------|------|
-| 런타임 | Node.js 20 LTS |
-| 언어 | TypeScript 5.x |
-| HTTP 서버 | Express 4.x |
-| YouTube Chat | @stu43005/masterchat |
-| AI | Ollama (Qwen 3) |
-| 테스트 | Vitest |
+```bash
+# 호스트 프로필 생성
+cp config/host-profile.example.json config/host-profile.json
+```
+
+수정 항목:
+- `host.name`: 닉네임
+- `social.github`: GitHub 사용자명
+- `projects`: 프로젝트 목록
 
 ---
 
@@ -227,7 +185,6 @@ youtuber_chatbot/
 
 - **PRD**: [docs/PRD-0002-chatbot.md](docs/PRD-0002-chatbot.md)
 - **개발 가이드**: [CLAUDE.md](CLAUDE.md)
-- **메인 프로젝트**: [youtuber](https://github.com/garimto81/youtuber)
 
 ---
 
@@ -237,50 +194,4 @@ MIT
 
 ---
 
-## 다른 스트리머를 위한 커스터마이징
-
-이 챗봇을 자신의 방송에 사용하려면:
-
-### 1. 호스트 프로필 생성
-
-```bash
-cp config/host-profile.example.json config/host-profile.json
-```
-
-### 2. 정보 수정
-
-`config/host-profile.json` 파일을 열어 수정:
-- `host.name`: 당신의 닉네임
-- `social.github`: GitHub 사용자명
-- `projects`: 당신의 프로젝트 목록 (최소 1개)
-- `persona`: 챗봇 페르소나 커스터마이징
-
-### 3. GitHub 동기화 (선택)
-
-Pinned repositories를 자동으로 프로젝트 목록에 추가:
-
-```bash
-# .env 파일에 GitHub Token 추가
-GITHUB_TOKEN=ghp_xxxxxxxxxxxxx
-GITHUB_AUTO_SYNC=false
-```
-
-- **수동 동기화**: YouTube 채팅에서 `!sync-repos` 명령어
-- **자동 동기화**: `GITHUB_AUTO_SYNC=true` 설정
-
-### 4. 테스트
-
-```bash
-npm run dev
-curl http://localhost:3002/health
-```
-
-**주의**: `config/host-profile.json`은 Git에 커밋되지 않습니다.
-
----
-
-## 저자
-
-저자 정보는 `config/host-profile.json`에서 설정합니다.
-
-원작자: [garimto81](https://github.com/garimto81)
+**원작자**: [garimto81](https://github.com/garimto81)

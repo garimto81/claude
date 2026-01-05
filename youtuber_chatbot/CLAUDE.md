@@ -4,7 +4,18 @@ This file provides guidance to Claude Code (claude.ai/code) when working with co
 
 ## 프로젝트 개요
 
-YouTube Live Chat AI 챗봇 - **Ollama + Qwen 3** 기반으로 시청자 질문에 응답하고, 방송 정보를 제공하며, 명령어를 처리하는 독립 서버입니다.
+> **이 프로젝트는 YouTube 채팅만 전담합니다.**
+
+YouTube Live Chat AI 챗봇 - **Ollama + Qwen 3** 기반으로 시청자 질문에 응답하고, 명령어를 처리하는 독립 서버입니다.
+
+### 역할 (Scope)
+
+| 포함 | 제외 |
+|------|------|
+| YouTube 채팅 수신/전송 | 메인 서버 연동 |
+| AI 질문 응답 | VTuber/버튜버 연동 |
+| 명령어 처리 | OBS 오버레이 |
+| 호스트 프로필 관리 | 방송 세션 관리 |
 
 ## 빌드/테스트 명령
 
@@ -47,29 +58,21 @@ ollama serve
 │   YouTube   │◀────▶│   Chatbot   │────▶│   Ollama    │
 │  Live Chat  │      │   Server    │      │  (Qwen 3)   │
 │ (masterchat)│      │ Port: 3002  │      │ Port: 11434 │
-└─────────────┘      └──────┬──────┘      └─────────────┘
-                           │ HTTP              (로컬)
-                           ▼
-                    ┌─────────────┐
-                    │ Main Server │
-                    │ Port: 3001  │
-                    └─────────────┘
+└─────────────┘      └─────────────┘      └─────────────┘
 ```
 
 ### 핵심 컴포넌트
 
 | 파일 | 역할 |
 |------|------|
-| `src/index.ts` | Express 서버 메인 엔트리, 초기화 순서 관리 |
-| `src/config/index.ts` | 호스트 프로필 로드/캐싱 (싱글톤) |
-| `src/config/host-profile.ts` | 프로필 로더, GitHub 프로젝트 병합 |
+| `src/index.ts` | Express 서버 메인 엔트리 |
+| `src/config/index.ts` | 호스트 프로필 로드/캐싱 |
 | `src/services/youtube-chat.ts` | masterchat 래퍼 (채팅 읽기/전송) |
 | `src/services/llm-client.ts` | Ollama + Qwen 3 클라이언트 |
-| `src/services/prompt-builder.ts` | 호스트 프로필 기반 시스템 프롬프트 생성 |
-| `src/services/github-analyzer.ts` | GitHub API (REST + GraphQL) 연동 |
+| `src/services/rate-limiter.ts` | 응답 제한 (LRU Cache) |
 | `src/handlers/message-router.ts` | 메시지 분류 및 라우팅 |
-| `src/handlers/command.ts` | 동적 명령어 맵 생성 (!help, !github 등) |
-| `src/types/host.ts` | HostProfile, HostProject 타입 정의 |
+| `src/handlers/command.ts` | 동적 명령어 맵 생성 |
+| `src/routes/api.ts` | REST API 엔드포인트 |
 
 ### 메시지 처리 파이프라인
 
@@ -77,27 +80,19 @@ ollama serve
 1. 채팅 수신: YouTube → masterchat → ChatMessage
 2. 메시지 분류: MessageRouter → LLMClient.classifyMessage()
    - question: LLM 응답 생성
-   - greeting: 랜덤 환영 메시지
-   - command: 명령어 핸들러 (!help, !github 등)
-   - chitchat: 랜덤 응답
+   - greeting: 환영 메시지
+   - command: 명령어 핸들러
+   - chitchat: 일반 응답
    - spam: 무시
 3. 응답 생성: Handler → Ollama (Qwen 3)
 4. 응답 전송: masterchat → YouTube Chat
 ```
 
-### 호스트 프로필 로딩 순서
-
-`loadHostProfile()` 호출 시 다음 순서로 프로필을 탐색:
-1. `HOST_PROFILE_JSON` 환경 변수 (JSON 문자열)
-2. `HOST_PROFILE_PATH` 환경 변수 (파일 경로)
-3. `config/host-profile.json` (기본 경로)
-4. 환경 변수 개별 필드 조합 (fallback)
-
 ### 명령어 동적 생성
 
-`buildCommandMap()` 함수가 호스트 프로필을 기반으로 명령어 맵 생성:
-- 기본 명령어: `!help`, `!github`, `!ai`, `!projects`, `!sync-repos`
-- 프로젝트별 명령어: `!{project.id}` (예: `!claude`, `!youtuber`)
+`buildCommandMap()` 함수가 호스트 프로필 기반으로 명령어 맵 생성:
+- 기본: `!help`, `!github`, `!ai`, `!projects`, `!sync-repos`
+- 프로젝트별: `!{project.id}`
 
 ## 환경 변수
 
@@ -107,14 +102,13 @@ OLLAMA_BASE_URL=http://localhost:11434 # Ollama 서버 URL
 OLLAMA_MODEL=qwen3:8b                  # 사용할 모델
 MAX_RESPONSE_LENGTH=200                # 최대 응답 길이
 
-# YouTube Chat (선택 - 둘 중 하나)
+# YouTube Chat (선택)
 YOUTUBE_VIDEO_ID=dQw4w9WgXcQ
-YOUTUBE_LIVE_URL=https://www.youtube.com/watch?v=...
 
 # GitHub 동기화 (선택)
-GITHUB_TOKEN=ghp_xxxxx                 # API 토큰
-GITHUB_AUTO_SYNC=true                  # 시작 시 자동 동기화
-GITHUB_ACTIVITY_DAYS=5                 # 최근 N일 활동 기준
+GITHUB_TOKEN=ghp_xxxxx
+GITHUB_AUTO_SYNC=false
+GITHUB_ACTIVITY_DAYS=5
 
 # 호스트 프로필 (선택)
 HOST_PROFILE_PATH=config/host-profile.json
@@ -126,11 +120,7 @@ HOST_PROFILE_PATH=config/host-profile.json
 # 터미널 1: Ollama 서버
 ollama serve
 
-# 터미널 2: 메인 서버 (선택)
-cd C:\claude\youtuber
-npm run dev
-
-# 터미널 3: 챗봇 서버
+# 터미널 2: 챗봇 서버
 cd C:\claude\youtuber_chatbot
 npm run dev
 ```
@@ -139,19 +129,25 @@ npm run dev
 
 ```
 tests/
+├── config/
+│   └── index.test.ts              # 설정 모듈 테스트
 ├── handlers/
-│   ├── command.test.ts         # 동적 명령어 맵 테스트
-│   └── message-router.test.ts  # 메시지 라우팅 테스트
-├── loaders/
-│   └── host-profile.test.ts    # 프로필 로더 테스트
-└── services/
-    ├── github-analyzer.test.ts # GitHub API 테스트
-    ├── llm-client.test.ts      # Ollama 클라이언트 테스트
-    ├── prompt-builder.test.ts  # 프롬프트 생성 테스트
-    └── youtube-chat.test.ts    # masterchat 래퍼 테스트
+│   ├── command.test.ts            # 명령어 테스트
+│   └── message-router.test.ts     # 라우팅 테스트
+├── routes/
+│   └── api.test.ts                # API 엔드포인트 테스트
+├── services/
+│   ├── github-analyzer.test.ts
+│   ├── llm-client.test.ts
+│   ├── prompt-builder.test.ts
+│   ├── rate-limiter.test.ts
+│   └── youtube-chat.test.ts
+└── utils/
+    ├── message-parser.test.ts
+    └── response-formatter.test.ts
 ```
 
-테스트는 `vi.mock()`으로 외부 의존성 (ollama, config 모듈) 모킹.
+현재 테스트: **163개** (12 파일)
 
 ## Qwen 3 모델 선택
 
@@ -164,4 +160,4 @@ tests/
 ## 관련 문서
 
 - PRD: `docs/PRD-0002-chatbot.md`
-- 메인 프로젝트: `C:\claude\youtuber`
+- GitHub: https://github.com/garimto81/youtuber_chatbot
