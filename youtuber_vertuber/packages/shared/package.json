@@ -1,6 +1,7 @@
 {
   "name": "@youtuber/shared",
   "version": "0.1.0",
+  "type": "module",
   "description": "공유 타입 정의 및 유틸리티",
   "main": "dist/index.js",
   "types": "dist/index.d.ts",

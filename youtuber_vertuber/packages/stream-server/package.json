@@ -1,6 +1,7 @@
 {
   "name": "@youtuber/stream-server",
   "version": "0.1.0",
+  "type": "module",
   "description": "WebSocket 서버 및 GitHub Webhook 핸들러",
   "main": "dist/index.js",
   "types": "dist/index.d.ts",
