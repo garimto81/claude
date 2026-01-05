@@ -1,184 +1,192 @@
 /**
  * Host Profile Loader
  *
- * 호스트 프로필을 파일 또는 환경 변수에서 로드합니다.
+ * 호스트 프로필을 파일에서 로드하고 관리합니다.
  */
 
-import { readFile, writeFile } from 'fs/promises';
-import { existsSync } from 'fs';
-import { join, dirname } from 'path';
-import { fileURLToPath } from 'url';
+import { readFile, writeFile } from 'node:fs/promises';
 import type { HostProfile, HostProject } from '../types/host.js';
 
-// ESM에서 __dirname 대체
-const __filename = fileURLToPath(import.meta.url);
-const __dirname = dirname(__filename);
-
-// 프로젝트 루트 기준 설정 파일 경로
-const CONFIG_DIR = join(__dirname, '..', '..', 'config');
-const PROFILE_PATH = join(CONFIG_DIR, 'host-profile.json');
-
 /**
- * 기본 호스트 프로필
- */
-const DEFAULT_PROFILE: HostProfile = {
-  host: {
-    name: 'Developer',
-    displayName: 'AI Coding Streamer',
-    bio: '코딩과 AI를 사랑하는 개발자입니다.',
-  },
-  persona: {
-    role: 'AI 코딩 방송 어시스턴트',
-    tone: '친절하고 전문적인 말투로 답변합니다.',
-    primaryLanguages: ['TypeScript', 'Python'],
-    expertise: ['웹 개발', 'AI/ML', '클라우드'],
-  },
-  social: {
-    github: undefined,
-    twitter: undefined,
-    website: undefined,
-  },
-  projects: [],
-  meta: {
-    version: '1.0.0',
-    lastUpdated: new Date().toISOString(),
-  },
-};
-
-/**
- * 호스트 프로필 로더 클래스
+ * 호스트 프로필 로더 클래스 (싱글톤)
  */
 export class HostProfileLoader {
+  private static instance: HostProfileLoader | null = null;
   private profile: HostProfile | null = null;
-  private profilePath: string;
+  private profilePath: string | null = null;
 
-  constructor(profilePath?: string) {
-    this.profilePath = profilePath || PROFILE_PATH;
+  /**
+   * 싱글톤 인스턴스 반환
+   */
+  static getInstance(): HostProfileLoader {
+    if (!HostProfileLoader.instance) {
+      HostProfileLoader.instance = new HostProfileLoader();
+    }
+    return HostProfileLoader.instance;
   }
 
   /**
    * 프로필 로드
+   * @param path 프로필 JSON 파일 경로
    */
-  async load(): Promise<HostProfile> {
-    // 1. 환경 변수에서 직접 로드 시도
-    if (process.env.HOST_PROFILE_JSON) {
-      try {
-        this.profile = JSON.parse(process.env.HOST_PROFILE_JSON);
-        console.log('[Config] Host profile loaded from environment variable');
-        return this.profile!;
-      } catch (error) {
-        console.warn('[Config] Failed to parse HOST_PROFILE_JSON:', error);
+  async load(path: string): Promise<HostProfile> {
+    this.profilePath = path;
+
+    try {
+      const content = await readFile(path, 'utf-8');
+      const profile = JSON.parse(content) as HostProfile;
+
+      this.validate(profile);
+      this.profile = profile;
+
+      return profile;
+    } catch (error) {
+      if ((error as NodeJS.ErrnoException).code === 'ENOENT') {
+        throw new Error(`호스트 프로필 파일을 찾을 수 없습니다: ${path}`);
       }
-    }
-
-    // 2. 설정 파일에서 로드
-    if (existsSync(this.profilePath)) {
-      try {
-        const content = await readFile(this.profilePath, 'utf-8');
-        this.profile = JSON.parse(content);
-        console.log(`[Config] Host profile loaded from ${this.profilePath}`);
-        return this.profile!;
-      } catch (error) {
-        console.warn('[Config] Failed to load profile file:', error);
+      if (error instanceof SyntaxError) {
+        throw new Error(`호스트 프로필 로드 실패: 잘못된 JSON 형식`);
       }
+      throw error;
     }
-
-    // 3. 환경 변수에서 개별 필드 조합
-    this.profile = this.buildFromEnv();
-    console.log('[Config] Host profile built from environment variables');
-
-    return this.profile;
   }
 
   /**
-   * 환경 변수에서 프로필 구성
+   * 프로필 리로드
    */
-  private buildFromEnv(): HostProfile {
-    const profile: HostProfile = {
-      ...DEFAULT_PROFILE,
-      host: {
-        name: process.env.HOST_NAME || DEFAULT_PROFILE.host.name,
-        displayName: process.env.HOST_DISPLAY_NAME || DEFAULT_PROFILE.host.displayName,
-        bio: process.env.HOST_BIO || DEFAULT_PROFILE.host.bio,
-      },
-      social: {
-        github: process.env.GITHUB_USERNAME || undefined,
-        twitter: process.env.TWITTER_HANDLE || undefined,
-        website: process.env.HOST_WEBSITE || undefined,
-      },
-    };
+  async reload(): Promise<HostProfile> {
+    if (!this.profilePath) {
+      throw new Error('프로필이 로드되지 않았습니다');
+    }
+    return this.load(this.profilePath);
+  }
 
-    return profile;
+  /**
+   * 프로필 검증
+   */
+  private validate(profile: HostProfile): void {
+    // 호스트 이름 필수
+    if (!profile.host?.name) {
+      throw new Error('호스트 이름(host.name)은 필수입니다');
+    }
+
+    // 프로젝트 배열 검증
+    if (profile.projects && !Array.isArray(profile.projects)) {
+      throw new Error('프로젝트 목록(projects)은 배열이어야 합니다');
+    }
+
+    if (profile.projects) {
+      // 프로젝트 ID 중복 검사
+      const ids = new Set<string>();
+      for (const project of profile.projects) {
+        // 필수 필드 검증
+        if (!project.id || !project.name || !project.repository) {
+          throw new Error('id, name, repository는 필수 필드입니다');
+        }
+
+        if (ids.has(project.id)) {
+          throw new Error(`중복된 프로젝트 ID: ${project.id}`);
+        }
+        ids.add(project.id);
+      }
+    }
   }
 
   /**
    * GitHub 프로젝트 병합
+   *
+   * - manual source 프로젝트는 덮어쓰지 않음
+   * - github source 프로젝트는 업데이트
+   * - 새 프로젝트는 추가
    */
   async mergeGitHubProjects(projects: HostProject[]): Promise<void> {
     if (!this.profile) {
-      await this.load();
+      throw new Error('프로필이 로드되지 않았습니다');
     }
 
-    // 기존 GitHub 프로젝트 제거 (수동 추가 유지)
-    const manualProjects = this.profile!.projects.filter(
-      (p) => p.source !== 'github',
-    );
+    const existingProjects = this.profile.projects || [];
+    const mergedProjects: HostProject[] = [];
 
-    // GitHub 프로젝트 추가
-    const githubProjects = projects.map((p) => ({
-      ...p,
-      source: 'github' as const,
-      lastSyncedAt: new Date().toISOString(),
-    }));
+    // 기존 manual 프로젝트 유지
+    for (const existing of existingProjects) {
+      if (existing.source === 'manual') {
+        mergedProjects.push(existing);
+      }
+    }
 
-    this.profile!.projects = [...manualProjects, ...githubProjects];
-    this.profile!.meta = {
-      ...this.profile!.meta,
-      version: this.profile!.meta?.version || '1.0.0',
+    // GitHub 프로젝트 병합/추가
+    for (const newProject of projects) {
+      const existingManual = mergedProjects.find(
+        (p) => p.id === newProject.id && p.source === 'manual'
+      );
+
+      // manual source가 있으면 스킵 (덮어쓰지 않음)
+      if (existingManual) {
+        continue;
+      }
+
+      // github source 프로젝트 추가/업데이트
+      mergedProjects.push({
+        ...newProject,
+        source: 'github',
+        lastSyncedAt: new Date().toISOString(),
+      });
+    }
+
+    this.profile.projects = mergedProjects;
+    this.profile.meta = {
+      ...this.profile.meta,
+      version: this.profile.meta?.version || '1.0.0',
       lastUpdated: new Date().toISOString(),
     };
 
     // 파일에 저장
-    await this.save();
-  }
-
-  /**
-   * 프로필 저장
-   */
-  async save(): Promise<void> {
-    if (!this.profile) {
-      throw new Error('No profile to save');
+    if (this.profilePath) {
+      await writeFile(
+        this.profilePath,
+        JSON.stringify(this.profile, null, 2),
+        'utf-8'
+      );
     }
-
-    // config 디렉토리 생성
-    const { mkdir } = await import('fs/promises');
-    await mkdir(dirname(this.profilePath), { recursive: true });
-
-    await writeFile(
-      this.profilePath,
-      JSON.stringify(this.profile, null, 2),
-      'utf-8',
-    );
-    console.log(`[Config] Profile saved to ${this.profilePath}`);
   }
 
   /**
-   * 현재 프로필 반환
+   * 현재 프로필 반환 (nullable)
    */
   getProfile(): HostProfile | null {
     return this.profile;
   }
+
+  /**
+   * 현재 프로필 반환 (에러 throw)
+   */
+  getProfileOrThrow(): HostProfile {
+    if (!this.profile) {
+      throw new Error('프로필이 로드되지 않았습니다');
+    }
+    return this.profile;
+  }
+
+  /**
+   * 특정 프로젝트 조회
+   */
+  getProject(id: string): HostProject | undefined {
+    return this.profile?.projects?.find((p) => p.id === id);
+  }
+
+  /**
+   * 활성 프로젝트 목록
+   */
+  getActiveProjects(): HostProject[] {
+    return (
+      this.profile?.projects?.filter((p) => p.isActive !== false) || []
+    );
+  }
 }
 
-// 싱글톤 인스턴스
-let loaderInstance: HostProfileLoader | null = null;
-
 /**
- * 호스트 프로필 로더 인스턴스 반환
+ * 호스트 프로필 로더 인스턴스 반환 (편의 함수)
  */
 export function getHostProfileLoader(): HostProfileLoader {
-  if (!loaderInstance) {
-    loaderInstance = new HostProfileLoader();
-  }
-  return loaderInstance;
+  return HostProfileLoader.getInstance();
 }
