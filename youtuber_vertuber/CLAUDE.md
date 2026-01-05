@@ -4,16 +4,13 @@ This file provides guidance to Claude Code (claude.ai/code) when working with co
 
 ## Project Overview
 
-VSeeFace VTuber 기능 통합 프로젝트 - AI 코딩 스트리밍에 버튜버 아바타 연동
-- VSeeFace → VMC Protocol → WebSocket → OBS Overlay 데이터 흐름
-- GitHub 이벤트 및 YouTube 채팅 감정 분석에 따른 아바타 반응 시스템
+VSeeFace 버튜버 아바타 활성화 프로젝트
+- VSeeFace → VMC Protocol (UDP:39539) → 표정 제어
+- 핵심: VSeeFace 연동 및 BlendShape 송수신
 
 ## Build & Test Commands
 
 ```powershell
-# 개발 서버 (모든 패키지)
-pnpm dev
-
 # 빌드
 pnpm build
 
@@ -32,9 +29,6 @@ pnpm lint
 ```powershell
 # packages/vtuber 개발
 cd packages/vtuber && pnpm dev
-
-# packages/stream-server 개발
-cd packages/stream-server && pnpm dev
 ```
 
 ## Architecture
@@ -44,24 +38,24 @@ cd packages/stream-server && pnpm dev
 ```
 packages/
 ├── shared/          # 공유 타입 정의 (@youtuber/shared)
-│   └── src/types/   # WebSocket 메시지 타입, VTuber 표정 타입
-├── vtuber/          # VMC Client 및 아바타 컨트롤러 (@youtuber/vtuber)
-│   └── src/
-│       ├── vmc-client.ts       # VSeeFace VMC Protocol UDP 클라이언트
-│       ├── avatar-controller.ts # 우선순위 큐 기반 표정 관리
-│       └── reaction-mapper.ts   # 이벤트→표정 매핑 테이블
-└── stream-server/   # WebSocket 서버 (@youtuber/stream-server)
-    └── public/
-        ├── overlay/ # 1920x1080 전체 OBS 오버레이
-        └── vtuber/  # 320x180 아바타 전용 프레임
+│   └── src/types/   # VTuber 표정 타입
+└── vtuber/          # VMC Client 및 아바타 컨트롤러 (@youtuber/vtuber)
+    └── src/
+        ├── vmc-client.ts        # VSeeFace VMC Protocol UDP 클라이언트
+        └── avatar-controller.ts # 우선순위 큐 기반 표정 관리
+
+VSeeFace/            # VSeeFace 바이너리 (git 제외)
+archive/             # 아카이빙된 코드 (git 제외)
 ```
 
 ### 데이터 흐름
 
-1. **VSeeFace** → VMC Protocol (UDP:39539) → **VMCClient** (BlendShape 수신)
-2. **VMCClient** → WebSocket → **Stream Server**
-3. **GitHub Webhook** / **YouTube Chat** → **Stream Server** → **AvatarController**
-4. **AvatarController** → WebSocket → **OBS Overlay**
+```
+VSeeFace.exe ──UDP:39539──▶ VMCClient ──▶ AvatarController
+                              │
+                              ▼
+                        BlendShape 송수신
+```
 
 ### 핵심 컴포넌트
 
@@ -69,32 +63,12 @@ packages/
 |--------|------|------|
 | `VMCClient` | `packages/vtuber/src/vmc-client.ts` | VSeeFace OSC 통신, BlendShape 수신 |
 | `AvatarController` | `packages/vtuber/src/avatar-controller.ts` | 우선순위 큐 기반 표정 제어 |
-| `ReactionMapper` | `packages/vtuber/src/reaction-mapper.ts` | GitHub 이벤트/채팅 감정 → 표정 매핑 |
 
 ### 표정 타입
 
 ```typescript
 type Expression = 'happy' | 'surprised' | 'neutral' | 'focused' | 'sorrow';
 type Priority = 'high' | 'medium' | 'low';
-```
-
-### 이벤트-표정 매핑
-
-| 이벤트 | 표정 | 우선순위 |
-|--------|------|----------|
-| `commit` | `happy` | medium |
-| `pr_merged` | `surprised` | high |
-| `test_passed` | `focused` → `happy` | high |
-| `test_failed` | `sorrow` | medium |
-
-## OBS Overlay URLs
-
-```
-# 전체 오버레이 (1920x1080)
-http://localhost:3001/overlay/?transparent=true
-
-# 아바타 프레임만 (320x180)
-http://localhost:3001/vtuber/?transparent=true
 ```
 
 ## VMC Protocol
@@ -110,6 +84,10 @@ http://localhost:3001/vtuber/?transparent=true
 @youtuber/shared (공유 타입)
      ↓
 @youtuber/vtuber (VMC Client)
-     ↓
-@youtuber/stream-server (WebSocket 서버)
 ```
+
+## Archived (2026-01-05)
+
+다음 기능들은 `archive/` 폴더로 이동됨:
+- stream-server (WebSocket, GitHub Webhook, OBS Overlay)
+- Phase 3-4 (GitHub 연동, YouTube 채팅)
