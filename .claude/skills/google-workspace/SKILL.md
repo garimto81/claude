@@ -27,6 +27,10 @@ triggers:
     - "스프레드시트 데이터 처리"
     - "문서 자동화"
     - "이메일 발송 자동화"
+  url_patterns:
+    - "drive.google.com"
+    - "docs.google.com"
+    - "sheets.google.com"
 
 capabilities:
   - setup_google_api
@@ -45,6 +49,39 @@ auto_trigger: true
 # Google Workspace Integration Skill
 
 Google Workspace API 통합을 위한 전문 스킬입니다.
+
+## ⚠️ 중요: Google Drive/Docs URL 접근 시
+
+**WebFetch로 Google Drive/Docs URL에 직접 접근 불가!** JavaScript 동적 로딩으로 외부에서 콘텐츠 조회 불가.
+
+```
+┌─────────────────────────────────────────────────────────────┐
+│  Google URL 접근 방법                                        │
+├─────────────────────────────────────────────────────────────┤
+│                                                              │
+│  ❌ 불가능:                                                   │
+│     WebFetch("https://drive.google.com/drive/folders/...")  │
+│     → 빈 페이지 또는 로그인 페이지만 반환                     │
+│                                                              │
+│  ✅ 정상 방법:                                                │
+│     1. 이 스킬의 Python 코드 사용 (API 인증 필요)            │
+│     2. 폴더 ID 추출 → list_files() 함수 호출                 │
+│                                                              │
+│  URL에서 ID 추출:                                            │
+│     drive.google.com/drive/folders/{FOLDER_ID}              │
+│     docs.google.com/document/d/{DOC_ID}/edit                │
+│     docs.google.com/spreadsheets/d/{SHEET_ID}/edit          │
+│                                                              │
+└─────────────────────────────────────────────────────────────┘
+```
+
+### URL → API 변환 예시
+
+| URL 유형 | 예시 URL | 추출 ID | API 호출 |
+|----------|----------|---------|----------|
+| Drive 폴더 | `drive.google.com/drive/folders/1Jwdl...` | `1Jwdl...` | `list_files(folder_id='1Jwdl...')` |
+| Google Doc | `docs.google.com/document/d/1tghl.../edit` | `1tghl...` | Docs API 사용 |
+| Spreadsheet | `docs.google.com/spreadsheets/d/1BxiM.../edit` | `1BxiM...` | `read_sheet('1BxiM...', 'Sheet1!A:E')` |
 
 ## Quick Start
 

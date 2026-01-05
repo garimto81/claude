@@ -12,6 +12,7 @@ from datetime import datetime
 from typing import Optional
 
 from auto_logger import AutoLogger, ACTIVE_DIR, ARCHIVE_DIR
+from context_predictor import ContextPredictor, predict_and_decide, TaskEstimate
 
 # Context 임계값
 CONTEXT_THRESHOLDS = {
@@ -21,6 +22,9 @@ CONTEXT_THRESHOLDS = {
     "warning": 85,
     "critical": 90
 }
+
+# 80% 예측 임계값 (다음 작업이 이 %를 초과하면 정리)
+PREDICTION_THRESHOLD = 20
 
 
 class AutoState:
@@ -117,6 +121,163 @@ class AutoState:
         elif percent >= CONTEXT_THRESHOLDS["monitor"]:
             return "monitor"
         return "safe"
+
+    # === Context 예측 (80% 판단) ===
+
+    def analyze_next_task(self, task: dict) -> dict:
+        """
+        다음 작업의 예상 Context 사용량 분석
+
+        Args:
+            task: {
+                "type": str,           # 작업 유형
+                "affected_files": int, # 영향받는 파일 수
+                "complexity": str,     # low | medium | high
+                "description": str     # 작업 설명
+            }
+
+        Returns:
+            {
+                "action": "continue" | "cleanup",
+                "estimate": TaskEstimate,
+                "message": str
+            }
+        """
+        current = self.state["context_stats"]["current_usage"]
+        return predict_and_decide(current, task, PREDICTION_THRESHOLD)
+
+    def should_cleanup_before_task(self, task: dict) -> tuple[bool, Optional[TaskEstimate]]:
+        """
+        작업 전 정리 필요 여부 판단 (80% 이상일 때 사용)
+
+        Returns:
+            (정리 필요 여부, TaskEstimate 또는 None)
+        """
+        current = self.state["context_stats"]["current_usage"]
+
+        # 80% 미만이면 정리 불필요
+        if current < CONTEXT_THRESHOLDS["prepare"]:
+            return False, None
+
+        predictor = ContextPredictor(current)
+        should_clean, estimate = predictor.should_cleanup(task, PREDICTION_THRESHOLD)
+
+        return should_clean, estimate
+
+    def handle_prepare(self, next_task: Optional[dict] = None) -> dict:
+        """
+        80% 도달 시 처리 로직
+
+        Args:
+            next_task: 다음 작업 정보 (없으면 기본 작업 가정)
+
+        Returns:
+            {
+                "action": "continue" | "cleanup",
+                "reason": str,
+                "estimate": TaskEstimate | None,
+                "instructions": list[str]  # 실행할 명령어 목록
+            }
+        """
+        current = self.state["context_stats"]["current_usage"]
+
+        # 기본 작업 (정보 없을 때)
+        if next_task is None:
+            next_task = {
+                "type": "default",
+                "affected_files": 1,
+                "complexity": "medium"
+            }
+
+        predictor = ContextPredictor(current)
+        should_clean, estimate = predictor.should_cleanup(next_task, PREDICTION_THRESHOLD)
+
+        if should_clean:
+            # 정리 필요
+            return {
+                "action": "cleanup",
+                "reason": f"예상 {estimate.adjusted_estimate}% > 임계값 {PREDICTION_THRESHOLD}%",
+                "estimate": estimate,
+                "instructions": [
+                    "1. 현재 작업 완료",
+                    "2. 세션 문서 업데이트",
+                    "3. /commit 실행",
+                    "4. /clear 실행",
+                    "5. /auto 재시작"
+                ]
+            }
+        else:
+            # 계속 진행
+            return {
+                "action": "continue",
+                "reason": f"예상 {estimate.adjusted_estimate}% <= 임계값 {PREDICTION_THRESHOLD}%",
+                "estimate": estimate,
+                "instructions": [
+                    f"다음 작업 진행: {next_task.get('type', 'default')}"
+                ]
+            }
+
+    def handle_critical(self) -> dict:
+        """
+        90% 도달 시 즉시 정리 처리
+
+        Returns:
+            {
+                "action": "immediate_cleanup",
+                "reason": str,
+                "instructions": list[str]
+            }
+        """
+        current = self.state["context_stats"]["current_usage"]
+
+        return {
+            "action": "immediate_cleanup",
+            "reason": f"Context {current}% >= 90% (임계값)",
+            "instructions": [
+                "1. 추가 작업 없이 현재 작업만 완료",
+                "2. 세션 문서 업데이트",
+                "3. /commit 실행",
+                "4. /clear 실행",
+                "5. /auto 재시작 (체크포인트에서 재개)"
+            ]
+        }
+
+    def get_context_action(self, next_task: Optional[dict] = None) -> dict:
+        """
+        현재 Context 상태에 따른 액션 결정
+
+        Returns:
+            {
+                "level": str,          # safe | monitor | prepare | warning | critical
+                "action": str,         # continue | cleanup | immediate_cleanup
+                "details": dict        # 상세 정보
+            }
+        """
+        current = self.state["context_stats"]["current_usage"]
+        level = self.update_context_usage(current)
+
+        if level == "critical":
+            return {
+                "level": level,
+                "action": "immediate_cleanup",
+                "details": self.handle_critical()
+            }
+        elif level in ["prepare", "warning"]:
+            prepare_result = self.handle_prepare(next_task)
+            return {
+                "level": level,
+                "action": prepare_result["action"],
+                "details": prepare_result
+            }
+        else:
+            return {
+                "level": level,
+                "action": "continue",
+                "details": {
+                    "reason": f"Context {current}% - 안전 구간",
+                    "instructions": ["정상 작업 계속"]
+                }
+            }
 
     def update_progress(
         self,

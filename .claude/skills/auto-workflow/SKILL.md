@@ -1,10 +1,10 @@
 ---
 name: auto-workflow
 description: >
-  자율 판단 + 자율 발견 워크플로우 (Ralph Wiggum 철학 통합).
+  자율 판단 + 자율 발견 워크플로우 (v2.0 - Ralph Wiggum 철학 통합).
   "할 일 없음 → 종료"가 아닌 "할 일 없음 → 스스로 발견".
-  2계층 우선순위, Context 모니터링, 로그 기록을 통해 무한 반복 실행.
-version: 3.0.0
+  5계층 우선순위, 9개 커맨드 자동 트리거, Context 예측 기반 관리.
+version: 4.0.0
 
 triggers:
   keywords:
@@ -19,19 +19,43 @@ triggers:
     - "대규모 작업 자동화"
     - "Context 관리 자동화"
     - "자율 발견"
+    - "9개 커맨드 통합"
 
 capabilities:
+  # 기본 기능
   - log_all_actions        # 모든 작업 로깅
   - chunk_logs             # 로그 자동 청킹
   - monitor_context        # Context 사용량 모니터링
   - auto_checkpoint        # 자동 체크포인트
   - prd_management         # PRD 작성/검토
-  - auto_commit            # 90% 도달 시 자동 커밋
-  - autonomous_discovery   # 자율 발견 (Tier 2)
   - completion_promise     # Ralph 스타일 종료 조건
-  - e2e_validation         # E2E 테스트 자동 실행 (Playwright)
+  - autonomous_discovery   # 자율 발견 (Tier 4)
+
+  # 9개 커맨드 자동 트리거
+  - auto_debug             # /debug 자동 트리거
+  - auto_check             # /check --fix 자동 실행
+  - auto_commit            # /commit 자동 실행 (100줄+)
+  - auto_issue_fix         # /issue fix 자동 실행
+  - auto_pr                # /pr auto 자동 실행
+  - auto_tdd               # /tdd 자동 트리거
+  - auto_research          # /research 자동 트리거
+  - auto_audit             # /audit quick 세션 시작 시
+  - auto_parallel          # 병렬 처리 자동 적용
+
+  # Context 예측 관리
+  - context_prediction     # 작업별 예상 Context 분석
+  - context_cleanup        # 80%/90% 도달 시 자동 정리
+  - context_restart        # /clear 후 자동 재시작
+
+  # 검증
+  - e2e_validation         # E2E 4방향 병렬 검증 (Playwright)
+  - e2e_parallel           # Functional/Visual/A11y/Perf 병렬
   - tdd_validation         # TDD 검증 (pytest + 커버리지)
-  - auto_debug             # E2E 실패 시 디버그 자동 트리거
+
+  # 자율 개선 (Tier 4+)
+  - prd_analysis           # PRD 분석하여 개선점 탐색
+  - solution_search        # 더 나은 솔루션 탐색
+  - solution_migrate       # 자동 마이그레이션
 
 model_preference: opus
 
@@ -40,11 +64,19 @@ auto_trigger: false
 dependencies:
   - journey-sharing
   - session
-  - create  # PRD 생성용
-token_budget: 3000
+  - create     # PRD 생성용
+  - check      # 린트/보안 검사
+  - debug      # 디버깅
+  - issue      # 이슈 관리
+  - pr         # PR 관리
+  - tdd        # TDD 가이드
+  - research   # 리서치
+  - audit      # 설정 점검
+  - parallel   # 병렬 처리
+token_budget: 4000
 ---
 
-# auto-workflow 스킬 (v2.0 - Ralph Wiggum 통합)
+# auto-workflow 스킬 (v4.0 - 9개 커맨드 통합)
 
 ## 개요
 
@@ -59,11 +91,12 @@ token_budget: 3000
 
 ### 핵심 기능
 
-1. **2계층 우선순위**: Tier 1(명시적) → Tier 2(자율 발견)
-2. **자율 발견**: 명시적 작업 없을 때 스스로 개선점 탐색
-3. **종료 조건**: `--max`, `--promise`, Context 90%만 종료
-4. **로그 기록**: JSON Lines 형식으로 모든 작업 실시간 기록
-5. **체크포인트**: 작업 상태 자동 저장 및 복원
+1. **5계층 우선순위**: Tier 0(세션) → Tier 1(긴급) → Tier 2(작업) → Tier 3(개발) → Tier 4(자율)
+2. **9개 커맨드 자동 트리거**: /check, /commit, /issue, /debug, /parallel, /tdd, /research, /pr, /audit
+3. **Context 예측 관리**: 80%에서 예측 분석, 90%에서 즉시 정리
+4. **병렬 처리**: 모든 Tier에서 2-4 에이전트 병렬 실행
+5. **E2E 4방향 검증**: Functional/Visual/Accessibility/Performance 병렬
+6. **자율 발견**: 명시적 작업 없을 때 PRD 분석 → 솔루션 탐색 → 마이그레이션
 
 ## 파일 구조
 
@@ -142,59 +175,70 @@ python auto_cli.py abort              # 세션 취소
 └─────────────────────────────────────────────────────────────┘
 ```
 
-## 2계층 우선순위 체계
+## 5계층 우선순위 체계
 
-### Tier 1: 명시적 작업
+### Tier 0: 세션 관리
 
-| 우선순위 | 카테고리 | 트리거 |
-|:--------:|----------|--------|
-| 1 | 긴급 | 빌드 깨짐, 테스트 실패 |
-| 2 | 진행중 | 방금 하던 작업 완료 |
-| 3 | 대기중 | PR 리뷰, 이슈 해결 |
-| 4 | PRD 필요 | 새 기능 → PRD 작성/검토 |
-| 5 | 계획됨 | Todo, PRD 체크박스 |
+| 우선순위 | 조건 | 트리거 커맨드 |
+|:--------:|------|--------------|
+| 0.1 | 세션 시작 | `/audit quick` |
+| 0.2 | Context 80% + 예상 20%↑ | `/commit` → `/clear` → `/auto` |
+| 0.3 | Context 90% | `/commit` → `/clear` → `/auto` |
 
-### Tier 2: 자율 발견 (Tier 1 없을 때)
+### Tier 1: 긴급 (즉시 처리)
+
+| 우선순위 | 조건 | 트리거 커맨드 |
+|:--------:|------|--------------|
+| 1.1 | 테스트 실패 + 원인 불명확 | `/debug` |
+| 1.2 | 빌드 실패 | `/debug` |
+| 1.3 | 린트/보안/타입 경고 10개+ | `/check --fix` |
+| 1.4 | 보안 취약점 (Critical/High) | `/check --security` |
+
+### Tier 2: 작업 처리
+
+| 우선순위 | 조건 | 트리거 커맨드 |
+|:--------:|------|--------------|
+| 2.1 | 커밋 안 된 변경 100줄+ | `/commit` |
+| 2.2 | 열린 이슈 존재 | `/issue fix #N` |
+| 2.3 | PR 생성 후 리뷰 대기 | `/pr auto` |
+
+### Tier 3: 개발 지원
+
+| 우선순위 | 조건 | 트리거 커맨드 |
+|:--------:|------|--------------|
+| 3.1 | 새 기능 구현 요청 | `/tdd <feature>` |
+| 3.2 | 코드 분석 필요 | `/research code` |
+| 3.3 | 오픈소스/솔루션 탐색 필요 | `/research web <keyword>` |
+
+### Tier 4: 자율 개선 (작업 없을 때)
 
 **⚠️ "할 일 없음"은 종료 조건이 아님** → 자율 발견 모드로 전환
 
 | 우선순위 | 카테고리 | 발견 방법 | 작업 예시 |
 |:--------:|----------|-----------|-----------|
-| 6 | 코드 품질 | `ruff check`, `tsc --noEmit` | 린트 경고 수정 |
-| 7 | 테스트 커버리지 | `pytest --cov` | 커버리지 80% 미달 파일 테스트 추가 |
-| 8 | 문서화 | 문서 없는 public API 탐지 | JSDoc/docstring 추가 |
-| 9 | 리팩토링 | 중복 코드, 긴 함수 탐지 | 함수 분리, 추상화 |
-| 10 | 의존성 | `npm audit`, `pip-audit` | 취약점 패치 |
-| 11 | 성능 | TODO 주석, 느린 패턴 탐지 | 최적화 |
-| 12 | 접근성 | Playwright a11y 스캔 | ARIA 라벨 추가 |
+| 4.1 | 코드 품질 | `ruff check`, `tsc --noEmit` | 린트 경고 수정 |
+| 4.2 | 테스트 커버리지 | `pytest --cov` | 커버리지 80% 미달 파일 테스트 추가 |
+| 4.3 | 문서화 | 문서 없는 public API 탐지 | JSDoc/docstring 추가 |
+| 4.4 | 리팩토링 | 중복 코드, 긴 함수 탐지 | 함수 분리, 추상화 |
+| 4.5 | 의존성 | `pip-audit` | 취약점 패치 |
 
-### 자율 발견 실행 로직
+### Tier 4+: 자율 발견 (PRD 분석)
 
-```python
-def discover_next_task():
-    """Tier 2: 자율 발견 - 스스로 개선점 탐색"""
+| 조건 | 동작 |
+|------|------|
+| Tier 1-4 모두 없음 | PRD 분석하여 개선점 탐색 |
+| 개선 키워드 발견 | `/research web` 실행 |
+| 더 나은 솔루션 발견 | 마이그레이션 제안 |
 
-    # 6. 코드 품질
-    lint_issues = run_linter()
-    if lint_issues:
-        return create_issue("lint", lint_issues)
+### 병렬 처리 (모든 Tier)
 
-    # 7. 테스트 커버리지
-    coverage = get_coverage()
-    uncovered = [f for f in coverage if f.percent < 80]
-    if uncovered:
-        return create_issue("coverage", uncovered[0])
-
-    # 8. 문서화
-    undocumented = find_undocumented_apis()
-    if undocumented:
-        return create_issue("docs", undocumented[0])
-
-    # 9-12. 기타 발견...
-
-    # 모든 검사 통과 → 대기 (종료 아님)
-    return wait_and_recheck()
-```
+| 작업 | Agent 수 | 역할 |
+|------|:--------:|------|
+| `/debug` | 3 | 가설 생성 / 코드 분석 / 로그 분석 |
+| `/check` | 3 | Lint / Type / Security |
+| `/check --e2e` | 4 | Functional / Visual / A11y / Perf |
+| `/issue fix` | 3 | Coder / Tester / Reviewer |
+| `/pr auto` | 4 | Security / Logic / Style / Perf |
 
 ## 종료 조건 (명시적으로만)
 

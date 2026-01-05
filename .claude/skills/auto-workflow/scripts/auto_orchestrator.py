@@ -1,11 +1,12 @@
 """
-Auto Orchestrator - 자율 작업 루프 엔진
+Auto Orchestrator - 자율 작업 루프 엔진 (v2.0)
 
 Claude Code를 외부에서 호출하여 자율적으로 작업을 반복 수행합니다.
-- 2계층 우선순위 기반 작업 발견
-- Claude Code subprocess 호출
-- 종료 조건 체크 (--max, --promise, Context)
-- 체크포인트 자동 저장
+- 5계층 우선순위 기반 작업 발견
+- 9개 커맨드 자동 트리거
+- Context 80%/90% 예측 기반 관리
+- 병렬 처리 지원
+- E2E 4방향 병렬 검증
 """
 
 import json
@@ -22,8 +23,9 @@ from typing import Callable, Optional
 SCRIPT_DIR = Path(__file__).parent
 sys.path.insert(0, str(SCRIPT_DIR))
 
-from auto_discovery import AutoDiscovery, DiscoveredTask  # noqa: E402
-from auto_state import AutoState  # noqa: E402
+from auto_discovery import AutoDiscovery, DiscoveredTask, CONTEXT_ESTIMATES  # noqa: E402
+from auto_state import AutoState, CONTEXT_THRESHOLDS  # noqa: E402
+from context_predictor import ContextPredictor, predict_and_decide  # noqa: E402
 
 
 class LoopStatus(Enum):
@@ -33,6 +35,7 @@ class LoopStatus(Enum):
     COMPLETED = "completed"
     FAILED = "failed"
     CONTEXT_LIMIT = "context_limit"
+    CONTEXT_CLEANUP = "context_cleanup"  # 80%/90% 도달 시 정리 후 재시작
 
 
 @dataclass
@@ -76,35 +79,42 @@ class IterationResult:
 
 
 class AutoOrchestrator:
-    """자율 작업 루프 오케스트레이터"""
+    """자율 작업 루프 오케스트레이터 (v2.0)"""
 
     def __init__(
         self,
         config: LoopConfig,
         project_root: str = "D:/AI/claude01",
-        session_id: Optional[str] = None
+        session_id: Optional[str] = None,
+        is_session_start: bool = True
     ):
         self.config = config
         self.project_root = Path(project_root)
-        self.discovery = AutoDiscovery(project_root)
+        self.is_session_start = is_session_start
+        self.discovery = AutoDiscovery(project_root, is_session_start=is_session_start)
 
         # 상태 관리
         self.state = AutoState(
             session_id=session_id,
-            original_request="자율 판단 루프"
+            original_request="자율 판단 루프 (v2.0)"
         )
         self.session_id = self.state.session_id
+
+        # Context 예측기
+        self.context_predictor = ContextPredictor(0)
 
         # 통계
         self.iteration_count = 0
         self.success_count = 0
         self.failure_count = 0
         self.start_time = datetime.now()
+        self.current_context_percent = 0
 
         # 콜백
         self.on_iteration_start: Optional[Callable] = None
         self.on_iteration_end: Optional[Callable] = None
         self.on_task_discovered: Optional[Callable] = None
+        self.on_context_cleanup: Optional[Callable] = None
 
     def run(self) -> LoopStatus:
         """메인 루프 실행"""
@@ -155,7 +165,133 @@ class AutoOrchestrator:
             self._log(f"연속 실패 {self.failure_count}회 - 중단")
             return LoopStatus.FAILED
 
+        # 3. Context 90% 체크 (즉시 정리)
+        if self.current_context_percent >= CONTEXT_THRESHOLDS["critical"]:
+            self._log(f"⚠️  Context {self.current_context_percent}% >= 90% (임계값)")
+            return LoopStatus.CONTEXT_CLEANUP
+
         return LoopStatus.RUNNING
+
+    def _check_context_before_task(self, task: DiscoveredTask) -> tuple[bool, Optional[dict]]:
+        """
+        작업 전 Context 체크 (80% 이상일 때)
+
+        Returns:
+            (진행 가능 여부, 예측 결과)
+        """
+        if self.current_context_percent < CONTEXT_THRESHOLDS["prepare"]:
+            return True, None  # 80% 미만 - 진행 가능
+
+        # 80% 이상 - 예측 분석
+        task_info = {
+            "type": task.task_type,
+            "affected_files": task.affected_files,
+            "complexity": task.complexity
+        }
+
+        result = predict_and_decide(
+            self.current_context_percent,
+            task_info,
+            threshold=20
+        )
+
+        self._log(f"\n📊 Context 예측 분석:")
+        self._log(f"   현재: {self.current_context_percent}%")
+        self._log(f"   예상 추가: {result['estimate'].adjusted_estimate}%")
+        self._log(f"   결정: {result['action']}")
+
+        if result["action"] == "cleanup":
+            self._log(f"   ⚠️  {result['message']}")
+            return False, result
+
+        return True, result
+
+    def _run_context_cleanup(self) -> bool:
+        """
+        Context 정리 실행 (commit → clear → auto 재시작)
+
+        Returns:
+            정리 성공 여부
+        """
+        self._log("\n🧹 Context 정리 시작...")
+
+        try:
+            import shutil
+            claude_path = shutil.which("claude") or "claude"
+
+            # 1. 세션 문서 업데이트
+            self._log("   [1/4] 세션 문서 업데이트...")
+            self._update_session_docs()
+
+            # 2. /commit 실행
+            self._log("   [2/4] /commit 실행...")
+            commit_result = subprocess.run(
+                [claude_path, "-p", "/commit"],
+                capture_output=True,
+                text=True,
+                timeout=120,
+                cwd=self.project_root,
+                encoding="utf-8",
+                errors="replace",
+                shell=(sys.platform == "win32")
+            )
+
+            if commit_result.returncode != 0:
+                self._log("   ⚠️  커밋 실패 (변경사항 없을 수 있음)")
+
+            # 3. 체크포인트 저장
+            self._log("   [3/4] 체크포인트 저장...")
+            self.state.create_checkpoint(
+                task_id=self.iteration_count,
+                task_content=f"Context 정리 후 재개 (Iteration {self.iteration_count})",
+                context_hint=f"Context {self.current_context_percent}% 도달로 정리",
+                todo_state=[]
+            )
+
+            # 4. /clear 실행은 외부에서 처리 (subprocess 종료 후)
+            self._log("   [4/4] 정리 완료 - /clear 후 재시작 필요")
+
+            # 상태 업데이트
+            self.state.increment_clear_count()
+            self.state.set_status("paused")
+
+            # 콜백 호출
+            if self.on_context_cleanup:
+                self.on_context_cleanup(self.current_context_percent)
+
+            return True
+
+        except Exception as e:
+            self._log(f"   ❌ 정리 실패: {e}")
+            return False
+
+    def _update_session_docs(self):
+        """세션 문서 업데이트 (진행 상황 기록)"""
+        # .claude/sessions/에 현재 상태 기록
+        sessions_dir = self.project_root / ".claude" / "sessions"
+        sessions_dir.mkdir(parents=True, exist_ok=True)
+
+        session_file = sessions_dir / f"{self.session_id}.md"
+
+        content = f"""# 세션: {self.session_id}
+
+## 상태
+- 반복 횟수: {self.iteration_count}
+- 성공: {self.success_count}
+- 실패: {self.failure_count}
+- Context: {self.current_context_percent}%
+- 마지막 업데이트: {datetime.now().isoformat()}
+
+## 진행 상황
+{self.state.get_resume_summary()}
+"""
+        session_file.write_text(content, encoding="utf-8")
+
+    def update_context_percent(self, percent: int):
+        """Context 사용량 업데이트 (외부에서 호출)"""
+        self.current_context_percent = percent
+        self.context_predictor.update_current(percent)
+        self.state.update_context_usage(percent)
 
     def _run_iteration(self) -> IterationResult:
         """단일 반복 실행"""
@@ -163,21 +299,26 @@ class AutoOrchestrator:
         start = time.time()
 
         self._log(f"\n{'='*60}")
-        self._log(f"[Iteration {self.iteration_count}] 시작")
+        self._log(f"[Iteration {self.iteration_count}] 시작 | Context: {self.current_context_percent}%")
         self._log(f"{'='*60}")
 
         if self.on_iteration_start:
             self.on_iteration_start(self.iteration_count)
 
+        # 세션 시작 후 is_session_start 플래그 해제
+        if self.is_session_start:
+            self.is_session_start = False
+            self.discovery.is_session_start = False
+
         # 1. 작업 발견
         task = self.discovery.discover_next_task()
 
         if not task:
-            self._log("✅ 모든 검사 통과 - 할 일 없음")
+            self._log("✅ 모든 검사 통과 - 자율 발견 모드 대기")
             return IterationResult(
                 success=True,
                 task=None,
-                output="No tasks found",
+                output="No tasks found - autonomous mode",
                 duration_seconds=time.time() - start
             )
 
@@ -187,6 +328,21 @@ class AutoOrchestrator:
         self._log(f"   제목: {task.title}")
         self._log(f"   설명: {task.description}")
         self._log(f"   명령: {task.command}")
+        self._log(f"   병렬 에이전트: {task.parallel_agents}")
+        self._log(f"   예상 Context: {CONTEXT_ESTIMATES.get(task.task_type, 15)}%")
+
+        # 2. Context 예측 체크 (80% 이상일 때)
+        can_proceed, prediction = self._check_context_before_task(task)
+        if not can_proceed:
+            self._log("\n⚠️  Context 예측 초과 - 정리 필요")
+            self._run_context_cleanup()
+            return IterationResult(
+                success=True,
+                task=task,
+                output="Context cleanup triggered",
+                duration_seconds=time.time() - start,
+                error="context_cleanup_needed"
+            )
 
         if self.on_task_discovered:
             self.on_task_discovered(task)
@@ -565,6 +721,10 @@ class AutoOrchestrator:
         if self.on_iteration_end:
             self.on_iteration_end(result)
 
+        # Context 정리 필요한 경우
+        if result.error == "context_cleanup_needed":
+            return LoopStatus.CONTEXT_CLEANUP
+
         # Promise 충족 시 완료
         if result.promise_fulfilled:
             return LoopStatus.COMPLETED
@@ -586,6 +746,7 @@ class AutoOrchestrator:
         self._log(f"총 반복: {self.iteration_count}")
         self._log(f"성공: {self.success_count}")
         self._log(f"실패: {self.failure_count}")
+        self._log(f"Context: {self.current_context_percent}%")
         self._log(f"총 소요 시간: {duration:.1f}초")
 
         # 상태 저장
@@ -601,11 +762,21 @@ class AutoOrchestrator:
             self._log("\n💾 체크포인트 저장됨")
             self._log(f"   재개: python auto_orchestrator.py resume {self.session_id}")
 
+        elif status == LoopStatus.CONTEXT_CLEANUP:
+            # Context 정리로 인한 종료
+            self._run_context_cleanup()
+            self._log("\n🔄 Context 정리 완료")
+            self._log("   재시작 명령:")
+            self._log("   1. /clear")
+            self._log(f"   2. python auto_orchestrator.py resume {self.session_id}")
+            self._log("   또는: /auto resume")
+
         elif status == LoopStatus.COMPLETED:
             self.state.complete({
                 "iterations": self.iteration_count,
                 "success": self.success_count,
-                "duration": duration
+                "duration": duration,
+                "context_peak": self.state.state["context_stats"]["peak_usage"]
             })
 
         elif status == LoopStatus.FAILED:
