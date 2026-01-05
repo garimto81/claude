@@ -3,6 +3,8 @@ import { loadHostProfile } from './config/index.js';
 import { YouTubeChatService } from './services/youtube-chat.js';
 import { LLMClient } from './services/llm-client.js';
 import { MessageRouter } from './handlers/message-router.js';
+import { getRateLimiter } from './services/rate-limiter.js';
+import { createApiRouter } from './routes/api.js';
 
 async function main() {
   try {
@@ -24,12 +26,17 @@ async function main() {
         status: 'ok',
         host: profile.host.name,
         projects: profile.projects.length,
+        uptime: process.uptime(),
       });
     });
+
+    // API 라우터 등록
+    app.use('/api', createApiRouter());
 
     app.listen(PORT, () => {
       console.log(`[App] Chatbot server running on http://localhost:${PORT}`);
       console.log(`[App] Health check: http://localhost:${PORT}/health`);
+      console.log(`[App] API endpoints: http://localhost:${PORT}/api/*`);
     });
 
     // 3. YouTube Chat 연동 (선택)
@@ -40,6 +47,7 @@ async function main() {
         // LLM 클라이언트 및 메시지 라우터 초기화
         const llmClient = new LLMClient(process.env.OLLAMA_MODEL);
         const messageRouter = new MessageRouter(llmClient);
+        const rateLimiter = getRateLimiter();
 
         // YouTube Chat 서비스 생성
         const chatService = process.env.YOUTUBE_LIVE_URL
@@ -49,6 +57,12 @@ async function main() {
         // 채팅 연결 및 메시지 처리
         await chatService.connect(async (message) => {
           console.log(`[Chat] ${message.author}: ${message.message}`);
+
+          // Rate limiting 확인
+          if (!rateLimiter.tryRespond(message.author)) {
+            console.log(`[Chat] Rate limited: ${message.author}`);
+            return;
+          }
 
           const response = await messageRouter.route(message);
           if (response) {
