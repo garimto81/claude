@@ -18,5 +18,9 @@ export type {
 } from './types';
 export { VMC_BLENDSHAPE_NAMES } from './types';
 
-// Avatar Controller는 Phase 3 #107에서 구현 예정
-// Reaction Mapper는 Phase 3 #107에서 구현 예정
+// Phase 3 #107: Avatar Controller & Reaction Mapper
+export { AvatarController, avatarController } from './avatar-controller.js';
+export type { Expression, ExpressionTask, Priority } from './avatar-controller.js';
+
+export { ReactionMapper } from './reaction-mapper.js';
+export type { ExpressionMapping } from './reaction-mapper.js';
