@@ -211,7 +211,7 @@ def main():
     resume_parser.add_argument("session_id", nargs="?", help="세션 ID")
 
     # status
-    status_parser = subparsers.add_parser("status", help="상태 확인")
+    _ = subparsers.add_parser("status", help="상태 확인")
 
     # discover
     discover_parser = subparsers.add_parser("discover", help="다음 작업 발견")

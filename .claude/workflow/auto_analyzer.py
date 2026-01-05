@@ -349,7 +349,7 @@ def decide_next_action(analysis: AnalysisResult) -> NextAction:
     git = analysis.git
     code = analysis.code
     project = analysis.project
-    session = analysis.session
+    _ = analysis.session  # Reserved for future use
 
     # 1. 긴급: 충돌 해결
     if git.has_conflicts:

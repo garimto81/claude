@@ -65,7 +65,7 @@ def demo_basic_tracking():
 
     # context7-engineer 추적
     with tracker.track("context7-engineer", phase="Phase 0", task="Verify React 18 docs"):
-        result = simulate_agent_execution(
+        _ = simulate_agent_execution(
             "context7-engineer",
             "Phase 0",
             "Verify React 18 docs",
@@ -100,7 +100,7 @@ def demo_multiple_agents():
 
     for agent_name, phase, task in agents:
         with tracker.track(agent_name, phase=phase, task=task):
-            result = simulate_agent_execution(agent_name, phase, task)
+            _ = simulate_agent_execution(agent_name, phase, task)
 
         # 랜덤 피드백
         tracker.collect_feedback(

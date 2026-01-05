@@ -1,3 +1,4 @@
+# ruff: noqa: F841
 """
 pytest 테스트 템플릿
 

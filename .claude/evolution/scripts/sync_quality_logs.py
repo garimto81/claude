@@ -264,7 +264,7 @@ def main():
         return
 
     # 동기화
-    results = syncer.sync_all(repo_configs)
+    _ = syncer.sync_all(repo_configs)
 
     # 종합 점수 생성 및 출력
     summary = syncer.generate_summary()

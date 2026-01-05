@@ -324,7 +324,7 @@ class AutoDiscovery:
 
     def _check_test_coverage(self) -> Optional[DiscoveredTask]:
         """테스트 커버리지 확인"""
-        coverage_file = self.project_root / ".coverage"
+        _ = self.project_root / ".coverage"  # Reserved for future use
         coverage_json = self.project_root / "coverage.json"
 
         # 기존 커버리지 데이터가 있으면 분석
