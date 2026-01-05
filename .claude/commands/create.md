@@ -29,6 +29,7 @@ Targets:
 /create prd user-authentication            # Google Docs 생성 (기본)
 /create prd "검색 기능" --template=deep    # DEEP 템플릿으로 생성
 /create prd feature --local-only           # 로컬 Markdown만 (호환 모드)
+/create prd feature --visualize            # 와이어프레임 목업 포함 ⭐ NEW
 ```
 
 ### 아키텍처
@@ -205,6 +206,68 @@ C. Core Features
 | `--local-only` | 로컬 Markdown만 생성 (Google Docs 미사용) |
 | `--priority=P0-P3` | 우선순위 지정 |
 | `--status=STATUS` | 상태 지정 (Draft/In Progress/Review/Approved) |
+| `--visualize` | ⭐ 와이어프레임 목업 자동 생성 + 스크린샷 + PRD 삽입 |
+
+### 시각화 워크플로우 (--visualize)
+
+`--visualize` 옵션 사용 시 자동 실행되는 흐름:
+
+```
+/create prd feature --visualize
+      │
+      ▼
+┌─────────────────────────────────┐
+│ 1. 기존 질문 응답 (A/B/C/D)     │
+│    + 추가 시각화 질문           │
+│    - 화면 종류 (1~5개 선택)     │
+│    - 레이아웃 스타일            │
+└─────────────────────────────────┘
+      │
+      ▼
+┌─────────────────────────────────┐
+│ 2. HTML 와이어프레임 생성       │
+│    docs/mockups/PRD-NNNN/       │
+│    ├── flow.html (전체 흐름)    │
+│    ├── screen-1.html            │
+│    └── screen-N.html            │
+└─────────────────────────────────┘
+      │
+      ▼
+┌─────────────────────────────────┐
+│ 3. Playwright 스크린샷 캡처     │
+│    docs/images/PRD-NNNN/        │
+│    ├── flow.png                 │
+│    ├── screen-1.png             │
+│    └── screen-N.png             │
+└─────────────────────────────────┘
+      │
+      ▼
+┌─────────────────────────────────┐
+│ 4. PRD에 자동 삽입              │
+│    ## 시각화                    │
+│    ### 전체 흐름                │
+│    ![flow](../images/PRD-NNNN/) │
+│    [HTML 원본](../mockups/...)  │
+└─────────────────────────────────┘
+```
+
+### 생성 파일 예시 (--visualize)
+
+```
+docs/
+├── mockups/
+│   └── PRD-0003/
+│       ├── flow.html           # 전체 흐름 다이어그램
+│       ├── login.html          # 로그인 화면
+│       └── dashboard.html      # 대시보드 화면
+├── images/
+│   └── PRD-0003/
+│       ├── flow.png            # 스크린샷
+│       ├── login.png
+│       └── dashboard.png
+└── prds/
+    └── PRD-0003-feature.md     # 이미지+링크 포함된 PRD
+```
 
 ### 공유 폴더
 

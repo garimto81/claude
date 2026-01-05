@@ -1,0 +1,280 @@
+<!DOCTYPE html>
+<html lang="ko">
+<head>
+  <meta charset="UTF-8">
+  <meta name="viewport" content="width=1000">
+  <title>{{title}} - Flow Diagram</title>
+  <style>
+    * {
+      box-sizing: border-box;
+      margin: 0;
+      padding: 0;
+    }
+    body {
+      font-family: -apple-system, BlinkMacSystemFont, 'Segoe UI', Roboto, sans-serif;
+      background: #fff;
+      padding: 40px;
+    }
+    .diagram {
+      max-width: 1000px;
+      margin: 0 auto;
+    }
+    .title {
+      font-size: 24px;
+      font-weight: bold;
+      text-align: center;
+      margin-bottom: 40px;
+      color: #333;
+    }
+
+    /* Flow Container */
+    .flow {
+      display: flex;
+      flex-direction: column;
+      gap: 24px;
+    }
+    .flow-row {
+      display: flex;
+      align-items: center;
+      justify-content: center;
+      gap: 16px;
+    }
+
+    /* Nodes */
+    .node {
+      display: flex;
+      align-items: center;
+      justify-content: center;
+      text-align: center;
+      font-size: 14px;
+      font-weight: 500;
+    }
+    .node-start, .node-end {
+      width: 80px;
+      height: 40px;
+      border-radius: 20px;
+      background: #333;
+      color: #fff;
+    }
+    .node-process {
+      width: 140px;
+      height: 60px;
+      border: 2px solid #333;
+      background: #fff;
+    }
+    .node-decision {
+      width: 100px;
+      height: 100px;
+      background: #fff;
+      border: 2px solid #333;
+      transform: rotate(45deg);
+    }
+    .node-decision span {
+      display: block;
+      transform: rotate(-45deg);
+    }
+    .node-data {
+      width: 140px;
+      height: 50px;
+      background: #f5f5f5;
+      border: 2px solid #333;
+      clip-path: polygon(10% 0%, 100% 0%, 90% 100%, 0% 100%);
+    }
+
+    /* Arrows */
+    .arrow {
+      display: flex;
+      align-items: center;
+      color: #333;
+    }
+    .arrow-line {
+      width: 60px;
+      height: 2px;
+      background: #333;
+    }
+    .arrow-head {
+      width: 0;
+      height: 0;
+      border-left: 8px solid #333;
+      border-top: 5px solid transparent;
+      border-bottom: 5px solid transparent;
+    }
+    .arrow-down {
+      flex-direction: column;
+    }
+    .arrow-down .arrow-line {
+      width: 2px;
+      height: 40px;
+    }
+    .arrow-down .arrow-head {
+      border-left: 5px solid transparent;
+      border-right: 5px solid transparent;
+      border-top: 8px solid #333;
+    }
+
+    /* Labels */
+    .arrow-label {
+      font-size: 11px;
+      color: #666;
+      margin: 0 8px;
+    }
+    .arrow-label-yes {
+      color: #2e7d32;
+    }
+    .arrow-label-no {
+      color: #c62828;
+    }
+
+    /* Branch Container */
+    .branch {
+      display: flex;
+      gap: 60px;
+      justify-content: center;
+    }
+    .branch-path {
+      display: flex;
+      flex-direction: column;
+      align-items: center;
+      gap: 16px;
+    }
+
+    /* Legend */
+    .legend {
+      margin-top: 40px;
+      padding-top: 20px;
+      border-top: 1px solid #ddd;
+      display: flex;
+      gap: 24px;
+      justify-content: center;
+      flex-wrap: wrap;
+    }
+    .legend-item {
+      display: flex;
+      align-items: center;
+      gap: 8px;
+      font-size: 12px;
+      color: #666;
+    }
+    .legend-icon {
+      width: 24px;
+      height: 24px;
+      display: flex;
+      align-items: center;
+      justify-content: center;
+    }
+    .legend-icon.start-end {
+      background: #333;
+      border-radius: 12px;
+    }
+    .legend-icon.process {
+      border: 1px solid #333;
+    }
+    .legend-icon.decision {
+      border: 1px solid #333;
+      transform: rotate(45deg) scale(0.7);
+    }
+
+    /* Footer */
+    .footer {
+      text-align: center;
+      margin-top: 40px;
+      color: #999;
+      font-size: 12px;
+    }
+  </style>
+</head>
+<body>
+  <div class="diagram">
+    <h1 class="title">{{title}}</h1>
+
+    <div class="flow">
+      <!-- Row 1: Start -->
+      <div class="flow-row">
+        <div class="node node-start">Start</div>
+      </div>
+
+      <!-- Arrow Down -->
+      <div class="flow-row">
+        <div class="arrow arrow-down">
+          <div class="arrow-line"></div>
+          <div class="arrow-head"></div>
+        </div>
+      </div>
+
+      <!-- Row 2: First Process -->
+      <div class="flow-row">
+        <div class="node node-process">{{step1}}</div>
+      </div>
+
+      <!-- Arrow Down -->
+      <div class="flow-row">
+        <div class="arrow arrow-down">
+          <div class="arrow-line"></div>
+          <div class="arrow-head"></div>
+        </div>
+      </div>
+
+      <!-- Row 3: Decision -->
+      <div class="flow-row">
+        <div class="node node-decision"><span>{{decision}}</span></div>
+      </div>
+
+      <!-- Branch -->
+      <div class="flow-row branch">
+        <!-- Yes Path -->
+        <div class="branch-path">
+          <span class="arrow-label arrow-label-yes">Yes</span>
+          <div class="arrow arrow-down">
+            <div class="arrow-line"></div>
+            <div class="arrow-head"></div>
+          </div>
+          <div class="node node-process">{{step2_yes}}</div>
+        </div>
+
+        <!-- No Path -->
+        <div class="branch-path">
+          <span class="arrow-label arrow-label-no">No</span>
+          <div class="arrow arrow-down">
+            <div class="arrow-line"></div>
+            <div class="arrow-head"></div>
+          </div>
+          <div class="node node-process">{{step2_no}}</div>
+        </div>
+      </div>
+
+      <!-- Merge Arrow -->
+      <div class="flow-row">
+        <div class="arrow arrow-down">
+          <div class="arrow-line"></div>
+          <div class="arrow-head"></div>
+        </div>
+      </div>
+
+      <!-- End -->
+      <div class="flow-row">
+        <div class="node node-end">End</div>
+      </div>
+    </div>
+
+    <!-- Legend -->
+    <div class="legend">
+      <div class="legend-item">
+        <div class="legend-icon start-end"></div>
+        <span>Start / End</span>
+      </div>
+      <div class="legend-item">
+        <div class="legend-icon process"></div>
+        <span>Process</span>
+      </div>
+      <div class="legend-item">
+        <div class="legend-icon decision"></div>
+        <span>Decision</span>
+      </div>
+    </div>
+
+    <div class="footer">
+      Generated by Claude Code | {{date}}
+    </div>
+  </div>
+</body>
+</html>

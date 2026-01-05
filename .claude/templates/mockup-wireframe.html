@@ -1,0 +1,273 @@
+<!DOCTYPE html>
+<html lang="ko">
+<head>
+  <meta charset="UTF-8">
+  <meta name="viewport" content="width=800">
+  <title>{{title}} - Wireframe</title>
+  <style>
+    * {
+      box-sizing: border-box;
+      margin: 0;
+      padding: 0;
+    }
+    body {
+      font-family: -apple-system, BlinkMacSystemFont, 'Segoe UI', Roboto, sans-serif;
+      background: #f5f5f5;
+      padding: 20px;
+      min-height: 600px;
+    }
+    .container {
+      max-width: 800px;
+      margin: 0 auto;
+      background: #fff;
+      border: 2px solid #333;
+      border-radius: 8px;
+      overflow: hidden;
+    }
+
+    /* Header */
+    .header {
+      display: flex;
+      justify-content: space-between;
+      align-items: center;
+      padding: 16px 24px;
+      border-bottom: 2px solid #333;
+      background: #e8e8e8;
+    }
+    .logo {
+      width: 100px;
+      height: 32px;
+      background: #ccc;
+      border: 1px dashed #999;
+      display: flex;
+      align-items: center;
+      justify-content: center;
+      font-size: 12px;
+      color: #666;
+    }
+    .nav {
+      display: flex;
+      gap: 16px;
+    }
+    .nav-item {
+      width: 60px;
+      height: 24px;
+      background: #ddd;
+      border: 1px dashed #999;
+    }
+
+    /* Sidebar Layout */
+    .layout-sidebar {
+      display: flex;
+    }
+    .sidebar {
+      width: 200px;
+      min-height: 400px;
+      border-right: 2px solid #333;
+      padding: 16px;
+      background: #f0f0f0;
+    }
+    .sidebar-item {
+      height: 32px;
+      background: #ddd;
+      border: 1px dashed #999;
+      margin-bottom: 8px;
+    }
+
+    /* Content */
+    .content {
+      flex: 1;
+      padding: 24px;
+    }
+    .content-full {
+      padding: 40px;
+    }
+
+    /* Form */
+    .form-group {
+      margin-bottom: 16px;
+    }
+    .label {
+      font-size: 12px;
+      color: #666;
+      margin-bottom: 4px;
+    }
+    .input {
+      width: 100%;
+      max-width: 320px;
+      height: 40px;
+      border: 2px solid #333;
+      background: #fff;
+      padding: 8px 12px;
+      font-size: 14px;
+    }
+    .input-placeholder {
+      color: #999;
+    }
+    .button {
+      display: inline-block;
+      padding: 12px 32px;
+      background: #333;
+      color: #fff;
+      border: none;
+      font-size: 14px;
+      cursor: pointer;
+      margin-top: 8px;
+    }
+    .button-outline {
+      background: #fff;
+      color: #333;
+      border: 2px solid #333;
+    }
+
+    /* Table */
+    .table {
+      width: 100%;
+      border-collapse: collapse;
+    }
+    .table th, .table td {
+      border: 1px solid #333;
+      padding: 12px;
+      text-align: left;
+    }
+    .table th {
+      background: #e8e8e8;
+    }
+    .table-row-placeholder {
+      background: #f5f5f5;
+    }
+
+    /* Cards */
+    .cards {
+      display: grid;
+      grid-template-columns: repeat(3, 1fr);
+      gap: 16px;
+    }
+    .card {
+      border: 2px solid #333;
+      padding: 16px;
+      background: #fff;
+    }
+    .card-image {
+      width: 100%;
+      height: 100px;
+      background: #ddd;
+      border: 1px dashed #999;
+      margin-bottom: 12px;
+      display: flex;
+      align-items: center;
+      justify-content: center;
+      color: #999;
+      font-size: 12px;
+    }
+    .card-title {
+      height: 20px;
+      background: #e0e0e0;
+      margin-bottom: 8px;
+    }
+    .card-text {
+      height: 40px;
+      background: #f0f0f0;
+    }
+
+    /* Modal */
+    .modal-overlay {
+      position: fixed;
+      top: 0;
+      left: 0;
+      right: 0;
+      bottom: 0;
+      background: rgba(0,0,0,0.5);
+      display: flex;
+      align-items: center;
+      justify-content: center;
+    }
+    .modal {
+      width: 400px;
+      background: #fff;
+      border: 2px solid #333;
+      padding: 24px;
+    }
+    .modal-title {
+      font-size: 18px;
+      font-weight: bold;
+      margin-bottom: 16px;
+      padding-bottom: 12px;
+      border-bottom: 1px solid #ddd;
+    }
+    .modal-actions {
+      display: flex;
+      gap: 8px;
+      justify-content: flex-end;
+      margin-top: 24px;
+    }
+
+    /* Utility */
+    .text-center {
+      text-align: center;
+    }
+    .mb-16 {
+      margin-bottom: 16px;
+    }
+    .mb-24 {
+      margin-bottom: 24px;
+    }
+    .title {
+      font-size: 24px;
+      font-weight: bold;
+      color: #333;
+    }
+    .subtitle {
+      font-size: 14px;
+      color: #666;
+    }
+
+    /* Annotation */
+    .annotation {
+      position: absolute;
+      background: #ffeb3b;
+      padding: 4px 8px;
+      font-size: 11px;
+      border: 1px solid #333;
+      transform: rotate(-3deg);
+    }
+  </style>
+</head>
+<body>
+  <div class="container">
+    <!-- HEADER: Remove if not needed -->
+    <div class="header">
+      <div class="logo">[Logo]</div>
+      <div class="nav">
+        <div class="nav-item"></div>
+        <div class="nav-item"></div>
+        <div class="nav-item"></div>
+      </div>
+    </div>
+
+    <!-- CONTENT: Customize based on screen type -->
+    <div class="content-full text-center">
+      <h1 class="title mb-16">{{title}}</h1>
+      <p class="subtitle mb-24">{{description}}</p>
+
+      <!-- FORM EXAMPLE -->
+      <div style="max-width: 320px; margin: 0 auto;">
+        <div class="form-group">
+          <div class="label">Email</div>
+          <div class="input"><span class="input-placeholder">example@email.com</span></div>
+        </div>
+        <div class="form-group">
+          <div class="label">Password</div>
+          <div class="input"><span class="input-placeholder">********</span></div>
+        </div>
+        <button class="button" style="width: 100%;">Login</button>
+        <button class="button button-outline" style="width: 100%; margin-top: 8px;">Sign Up</button>
+      </div>
+    </div>
+  </div>
+
+  <div style="text-align: center; margin-top: 16px; color: #999; font-size: 12px;">
+    Generated by Claude Code | {{date}}
+  </div>
+</body>
+</html>
