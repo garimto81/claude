@@ -1,5 +1,8 @@
 import express from 'express';
 import { loadHostProfile } from './config/index.js';
+import { YouTubeChatService } from './services/youtube-chat.js';
+import { LLMClient } from './services/llm-client.js';
+import { MessageRouter } from './handlers/message-router.js';
 
 async function main() {
   try {
@@ -29,7 +32,39 @@ async function main() {
       console.log(`[App] Health check: http://localhost:${PORT}/health`);
     });
 
-    // 3. GitHub 자동 동기화 (선택)
+    // 3. YouTube Chat 연동 (선택)
+    if (process.env.YOUTUBE_VIDEO_ID || process.env.YOUTUBE_LIVE_URL) {
+      console.log('[App] YouTube Chat integration enabled');
+
+      try {
+        // LLM 클라이언트 및 메시지 라우터 초기화
+        const llmClient = new LLMClient(process.env.OLLAMA_MODEL);
+        const messageRouter = new MessageRouter(llmClient);
+
+        // YouTube Chat 서비스 생성
+        const chatService = process.env.YOUTUBE_LIVE_URL
+          ? YouTubeChatService.fromLiveUrl(process.env.YOUTUBE_LIVE_URL)
+          : new YouTubeChatService(process.env.YOUTUBE_VIDEO_ID!);
+
+        // 채팅 연결 및 메시지 처리
+        await chatService.connect(async (message) => {
+          console.log(`[Chat] ${message.author}: ${message.message}`);
+
+          const response = await messageRouter.route(message);
+          if (response) {
+            await chatService.sendMessage(response);
+          }
+        });
+
+        console.log('[App] YouTube Chat connected successfully');
+      } catch (error) {
+        console.error('[App] YouTube Chat connection failed:', error);
+      }
+    } else {
+      console.log('[App] YouTube Chat integration disabled (set YOUTUBE_VIDEO_ID or YOUTUBE_LIVE_URL)');
+    }
+
+    // 4. GitHub 자동 동기화 (선택)
     if (process.env.GITHUB_AUTO_SYNC === 'true' && profile.social.github) {
       console.log('[App] Auto-sync enabled, syncing GitHub repos...');
       const { GitHubAnalyzer } = await import('./services/github-analyzer.js');
