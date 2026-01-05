@@ -45,7 +45,7 @@ export class HostProfileLoader {
         throw new Error(`호스트 프로필 파일을 찾을 수 없습니다: ${path}`);
       }
       if (error instanceof SyntaxError) {
-        throw new Error(`호스트 프로필 로드 실패: 잘못된 JSON 형식`);
+        throw new Error('호스트 프로필 로드 실패: 잘못된 JSON 형식');
       }
       throw error;
     }
@@ -117,7 +117,7 @@ export class HostProfileLoader {
     // GitHub 프로젝트 병합/추가
     for (const newProject of projects) {
       const existingManual = mergedProjects.find(
-        (p) => p.id === newProject.id && p.source === 'manual'
+        (p) => p.id === newProject.id && p.source === 'manual',
       );
 
       // manual source가 있으면 스킵 (덮어쓰지 않음)
@@ -145,7 +145,7 @@ export class HostProfileLoader {
       await writeFile(
         this.profilePath,
         JSON.stringify(this.profile, null, 2),
-        'utf-8'
+        'utf-8',
       );
     }
   }
