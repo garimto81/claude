@@ -5,7 +5,6 @@ Tests for log file parsing functionality
 
 import pytest
 from pathlib import Path
-import tempfile
 import sys
 
 # Add parent directory to path

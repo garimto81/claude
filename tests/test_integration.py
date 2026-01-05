@@ -6,7 +6,6 @@ Integration tests for Agent/Skill optimizer system
 import pytest
 from pathlib import Path
 import sys
-import tempfile
 from unittest.mock import patch, Mock, MagicMock
 
 # Add parent directory to path
@@ -138,7 +137,7 @@ description: "Review security vulnerabilities in auth module"
 
         # Run full pipeline
         agent_calls = analyzer.parse_log_file(complete_log_file)
-        failures = analyzer.analyze_failures(agent_calls)
+        _ = analyzer.analyze_failures(agent_calls)
         analyzer.add_git_metadata(agent_calls)
 
         # Verify git commands were called

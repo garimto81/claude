@@ -8,8 +8,7 @@ Langfuse API 통합 테스트
 
 import sys
 from pathlib import Path
-from datetime import datetime, timedelta
-from unittest.mock import Mock, patch, MagicMock
+from unittest.mock import patch, MagicMock
 from dataclasses import dataclass
 from typing import Optional, List
 

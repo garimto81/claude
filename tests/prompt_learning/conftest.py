@@ -16,7 +16,7 @@ sys.path.insert(0, os.path.join(os.path.dirname(__file__), '..', '..', 'src', 'a
 
 from prompt_learning.metrics import reset_collector
 from prompt_learning.failure_analyzer import FailureCause, FailureCategory, FailureAnalysis
-from prompt_learning.session_parser import SessionEvent, EventType, SessionParser
+from prompt_learning.session_parser import SessionParser
 from prompt_learning.pattern_detector import Pattern
 
 
