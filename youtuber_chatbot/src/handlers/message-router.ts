@@ -73,9 +73,9 @@ export class MessageRouter {
   /**
    * 명령어 처리
    */
-  private handleCommand(message: ChatMessage): string {
+  private async handleCommand(message: ChatMessage): Promise<string> {
     try {
-      return handleCommand(message.message);
+      return await handleCommand(message.message);
     } catch (error) {
       console.error('[MessageRouter] Error handling command:', error);
       return '명령어 처리 중 오류가 발생했습니다.';
