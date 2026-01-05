@@ -1,0 +1,106 @@
+<!DOCTYPE html>
+<html lang="ko">
+<head>
+  <meta charset="UTF-8">
+  <meta name="viewport" content="width=1920, height=1080">
+  <title>OBS 스트리밍 오버레이 - 1920x1080</title>
+  <link rel="stylesheet" href="styles.css">
+</head>
+<body>
+  <!-- 전체 1920x1080 레이아웃 -->
+  <div class="obs-overlay">
+
+    <!-- 메인 화면 영역 (1600x900) - OBS Window Capture -->
+    <div class="main-screen">
+      <div class="screen-placeholder">
+        <p>화면 캡처 영역<br>OBS Window Capture<br>(1600 x 900)</p>
+      </div>
+    </div>
+
+    <!-- 우측 상단: VTuber 아바타 프레임 (320x180) -->
+    <div class="vtuber-frame">
+      <iframe
+        src="../vtuber/index.html?transparent=true"
+        width="320"
+        height="180"
+        frameborder="0"
+        allow="autoplay"
+        title="VTuber Avatar Frame">
+      </iframe>
+    </div>
+
+    <!-- 하단: 멀티 프로젝트 활동 카드 (1600x180) -->
+    <div class="project-cards">
+      <!-- 프로젝트 1 -->
+      <div class="project-card" id="project1">
+        <div class="project-header">
+          <span class="project-icon">📦</span>
+          <h3 class="project-title">프로젝트 1</h3>
+        </div>
+        <div class="project-activity">
+          <p class="activity-text">대기 중...</p>
+        </div>
+        <div class="reaction-overlay" id="reaction1">
+          <span class="reaction-icon">🎉</span>
+        </div>
+      </div>
+
+      <!-- 프로젝트 2 -->
+      <div class="project-card" id="project2">
+        <div class="project-header">
+          <span class="project-icon">📦</span>
+          <h3 class="project-title">프로젝트 2</h3>
+        </div>
+        <div class="project-activity">
+          <p class="activity-text">대기 중...</p>
+        </div>
+        <div class="reaction-overlay" id="reaction2">
+          <span class="reaction-icon">🎉</span>
+        </div>
+      </div>
+
+      <!-- 프로젝트 3 -->
+      <div class="project-card" id="project3">
+        <div class="project-header">
+          <span class="project-icon">📦</span>
+          <h3 class="project-title">프로젝트 3</h3>
+        </div>
+        <div class="project-activity">
+          <p class="activity-text">대기 중...</p>
+        </div>
+        <div class="reaction-overlay" id="reaction3">
+          <span class="reaction-icon">🎉</span>
+        </div>
+      </div>
+    </div>
+
+    <!-- 우측: Active Projects 패널 (320x900) -->
+    <div class="active-projects-panel">
+      <div class="panel-header">
+        <h2>Active Projects</h2>
+      </div>
+      <div class="panel-content">
+        <ul class="project-list" id="activeProjectList">
+          <li class="project-item">
+            <span class="item-icon">💻</span>
+            <span class="item-name">youtuber_vertuber</span>
+            <span class="item-status active">●</span>
+          </li>
+          <li class="project-item">
+            <span class="item-icon">🤖</span>
+            <span class="item-name">youtuber_chatbot</span>
+            <span class="item-status">○</span>
+          </li>
+          <li class="project-item">
+            <span class="item-icon">🎮</span>
+            <span class="item-name">tft-assist</span>
+            <span class="item-status">○</span>
+          </li>
+        </ul>
+      </div>
+    </div>
+  </div>
+
+  <script src="app.js"></script>
+</body>
+</html>
