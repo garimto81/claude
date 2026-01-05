@@ -165,3 +165,4 @@ get_display_info.ps1
 # Duplicate JS hooks (Python versions used)
 .claude/hooks/*.js
 .claude/statusline.js
+iconik_parser/
