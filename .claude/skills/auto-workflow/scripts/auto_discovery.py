@@ -157,8 +157,8 @@ class AutoDiscovery:
 
             if result.returncode == 0 and result.stdout and result.stdout.strip():
                 lines = result.stdout.strip().split("\n")
-                modified_count = len([l for l in lines if l.startswith(" M") or l.startswith("M ")])
-                added_count = len([l for l in lines if l.startswith("??")])
+                modified_count = len([line for line in lines if line.startswith(" M") or line.startswith("M ")])
+                added_count = len([line for line in lines if line.startswith("??")])
 
                 if modified_count > 0:
                     return DiscoveredTask(
@@ -187,7 +187,7 @@ class AutoDiscovery:
                 issues = json.loads(result.stdout)
                 if issues:
                     # 버그 라벨 우선
-                    bug_issues = [i for i in issues if any(l.get("name") == "bug" for l in i.get("labels", []))]
+                    bug_issues = [i for i in issues if any(lbl.get("name") == "bug" for lbl in i.get("labels", []))]
                     target = bug_issues[0] if bug_issues else issues[0]
 
                     return DiscoveredTask(

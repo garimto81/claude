@@ -64,7 +64,7 @@ class FailedIssueHandler:
 
 ### 이슈 정보
 - **제목**: {issue.get('title', 'N/A')}
-- **라벨**: {', '.join(l.get('name', '') for l in issue.get('labels', []))}
+- **라벨**: {', '.join(lbl.get('name', '') for lbl in issue.get('labels', []))}
 
 ### 시도 내역
 """

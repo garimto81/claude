@@ -99,7 +99,7 @@ def analyze_git() -> GitStatus:
     # 커밋되지 않은 파일
     success, output = run_command(["git", "status", "--porcelain"])
     if success:
-        status.uncommitted_files = len([l for l in output.split("\n") if l.strip()])
+        status.uncommitted_files = len([line for line in output.split("\n") if line.strip()])
 
     # 푸시되지 않은 커밋
     success, output = run_command(["git", "rev-list", "--count", "@{u}..HEAD"])
@@ -133,7 +133,7 @@ def analyze_code() -> CodeStatus:
     else:
         # 에러 개수 추출 시도
         lines = output.split("\n")
-        status.lint_errors = len([l for l in lines if l.strip() and not l.startswith("Found")])
+        status.lint_errors = len([line for line in lines if line.strip() and not line.startswith("Found")])
 
     return status
 
@@ -427,7 +427,7 @@ def decide_next_action(analysis: AnalysisResult) -> NextAction:
         # 우선순위 높은 이슈 찾기
         issue = project.open_issues[0]
         for i in project.open_issues:
-            labels = [l.get("name", "") for l in i.get("labels", [])]
+            labels = [label.get("name", "") for label in i.get("labels", [])]
             if "priority-high" in labels or "urgent" in labels:
                 issue = i
                 break

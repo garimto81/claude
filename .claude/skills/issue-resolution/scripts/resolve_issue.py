@@ -97,7 +97,7 @@ class IssueResolver:
 
         try:
             data = json.loads(output)
-            labels = [l.get("name", "") for l in data.get("labels", [])]
+            labels = [lbl.get("name", "") for lbl in data.get("labels", [])]
 
             # 이슈 타입 결정
             issue_type = IssueType.UNKNOWN
