@@ -326,7 +326,7 @@ def discover_next_task() -> Optional["NextAction"]:
             action_type="discover",
             description=f"보안 취약점 수정 ({vulns[0]['count']}개)",
             command="/check --security",
-            reason=f"자율 발견: 보안 취약점 발견"
+            reason="자율 발견: 보안 취약점 발견"
         )
 
     # Tier 2에서도 발견 못함
@@ -494,7 +494,7 @@ def format_analysis(analysis: AnalysisResult) -> str:
     if git.unpushed_commits:
         lines.append(f"   - {git.unpushed_commits}개 커밋 미푸시")
     if git.has_conflicts:
-        lines.append(f"   - ⚠️ 충돌 발생")
+        lines.append("   - ⚠️ 충돌 발생")
 
     # Code
     code = analysis.code

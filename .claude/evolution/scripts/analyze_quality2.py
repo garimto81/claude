@@ -31,7 +31,7 @@ import json
 import argparse
 import sys
 import io
-from datetime import datetime, timedelta
+from datetime import datetime
 from pathlib import Path
 from typing import Dict, List, Optional
 from collections import defaultdict
@@ -148,7 +148,7 @@ def print_summary(logs: List[Dict]):
     total_success = sum(1 for log in logs if log['status'] == 'pass')
     overall_rate = total_success / total_attempts if total_attempts > 0 else 0
 
-    print(f"\n전체 통계:")
+    print("\n전체 통계:")
     print(f"  총 시도: {total_attempts}")
     print(f"  성공: {total_success}")
     print(f"  실패: {total_attempts - total_success}")

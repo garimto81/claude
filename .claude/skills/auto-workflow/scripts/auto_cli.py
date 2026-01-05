@@ -99,7 +99,7 @@ def cmd_status(args):
     latest = get_latest_active_session()
     if latest:
         print(f"\n🔄 마지막 세션: {latest}")
-        print(f"   재개: python auto_cli.py resume")
+        print("   재개: python auto_cli.py resume")
 
     return 0
 
@@ -116,13 +116,13 @@ def cmd_discover(args):
     if task:
         tier = "Tier 1 (명시적)" if task.priority.value <= 5 else "Tier 2 (자율)"
         print(f"📋 발견된 작업 [{tier}]")
-        print(f"")
+        print("")
         print(f"   우선순위: P{task.priority.value}")
         print(f"   카테고리: {task.category}")
         print(f"   제목: {task.title}")
         print(f"   설명: {task.description}")
-        print(f"")
-        print(f"   실행 명령:")
+        print("")
+        print("   실행 명령:")
         print(f"   {task.command}")
     else:
         print("✅ 모든 검사 통과 - 할 일 없음!")

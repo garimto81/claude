@@ -10,9 +10,8 @@ Usage:
 import argparse
 import json
 import subprocess
-import sys
 from dataclasses import dataclass
-from datetime import datetime, timedelta
+from datetime import datetime
 
 
 @dataclass

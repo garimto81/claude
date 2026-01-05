@@ -8,7 +8,6 @@ Auto Logger - /auto 워크플로우 로그 관리
 """
 
 import json
-import os
 from datetime import datetime
 from pathlib import Path
 from typing import Any, Optional

@@ -11,7 +11,6 @@ import re
 import sys
 from pathlib import Path
 from collections import Counter
-from datetime import datetime
 
 
 def parse_log_line(line: str) -> dict | None:
@@ -104,17 +103,17 @@ def print_report(results: dict, verbose: bool = False):
     print("📊 로그 분석 결과")
     print("=" * 60)
 
-    print(f"\n📈 요약")
+    print("\n📈 요약")
     print(f"   총 라인 수: {results['total_lines']}")
     print(f"   파싱된 라인: {results['parsed_lines']}")
 
-    print(f"\n📉 레벨별 분포")
+    print("\n📉 레벨별 분포")
     for level, count in results["level_counts"].most_common():
         emoji = {"ERROR": "🔴", "WARN": "🟡", "WARNING": "🟡", "INFO": "🔵", "DEBUG": "⚪"}.get(level, "⚫")
         print(f"   {emoji} {level}: {count}")
 
     if results["tag_counts"]:
-        print(f"\n🏷️  태그별 분포")
+        print("\n🏷️  태그별 분포")
         for tag, count in results["tag_counts"].most_common(10):
             print(f"   {tag}: {count}")
 

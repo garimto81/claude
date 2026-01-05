@@ -16,7 +16,6 @@ System Tools MCP Server
 import json
 import os
 import sys
-from typing import Any
 
 
 class SystemToolsServer:

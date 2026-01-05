@@ -158,6 +158,9 @@ build/
 # Local utility scripts (personal use)
 chrome_mem.ps1
 claude-bypass.bat
+check_display_detail.ps1
+check_monitor_detail.ps1
+get_display_info.ps1
 
 # Duplicate JS hooks (Python versions used)
 .claude/hooks/*.js
