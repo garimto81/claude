@@ -1,3 +1,4 @@
+import 'dotenv/config';
 import express from 'express';
 import { loadHostProfile } from './config/index.js';
 import { YouTubeChatService } from './services/youtube-chat.js';

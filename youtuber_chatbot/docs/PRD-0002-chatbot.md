@@ -1,6 +1,6 @@
 # PRD-0002: YouTube 채팅 AI 챗봇
 
-**버전**: 3.0.0
+**버전**: 3.1.0
 **작성일**: 2026-01-05
 **상태**: Active
 
@@ -143,6 +143,9 @@ youtuber_chatbot/
 | `/api/stats` | GET | 통계 |
 | `/api/test-message` | POST | 테스트 메시지 |
 | `/api/ollama/status` | GET | Ollama 연결 상태 |
+| `/api/live/detect` | GET | 현재 Live 방송 감지 |
+| `/api/live/auto-start` | POST | Live 감지 후 자동 시작 |
+| `/api/live/config` | GET | Live 감지 설정 상태 |
 
 ---
 
@@ -156,10 +159,22 @@ PORT=3002
 OLLAMA_BASE_URL=http://localhost:11434
 OLLAMA_MODEL=qwen3:8b
 
-# YouTube Chat (선택)
+# YouTube Chat (수동 - 둘 중 하나만 설정)
 YOUTUBE_VIDEO_ID=dQw4w9WgXcQ
 # 또는
 YOUTUBE_LIVE_URL=https://www.youtube.com/watch?v=...
+
+# YouTube 자동 감지 (권장)
+YOUTUBE_API_KEY=AIza...          # Google Cloud Console에서 발급
+YOUTUBE_CHANNEL_ID=UC...         # 채널 ID (UC로 시작)
+
+# YouTube 인증 쿠키 (채팅 전송에 필요)
+# 브라우저 개발자도구 → Application → Cookies → youtube.com 에서 복사
+YT_SAPISID=...
+YT_APISID=...
+YT_HSID=...
+YT_SID=...
+YT_SSID=...
 
 # 챗봇
 MAX_RESPONSE_LENGTH=200
@@ -172,6 +187,8 @@ GITHUB_ACTIVITY_DAYS=5
 # 호스트 프로필 (선택)
 HOST_PROFILE_PATH=config/host-profile.json
 ```
+
+> ⚠️ **채팅 전송 제한**: 쿠키 기반 인증은 YouTube 보안 정책으로 인해 불안정할 수 있습니다. 안정적인 채팅 전송이 필요하면 [OAuth 2.0 (공식 API)](https://developers.google.com/youtube/v3/live/docs/liveChatMessages/insert) 사용을 권장합니다.
 
 ---
 
@@ -292,7 +309,8 @@ npx vitest run tests/services/llm-client.test.ts
 | 1.0.0 | 2026-01-04 | 초안 작성 |
 | 2.0.0 | 2026-01-04 | 호스트 정보 관리 시스템 |
 | 2.1.0 | 2026-01-04 | 최근 활동 프로젝트 조회 |
-| **3.0.0** | **2026-01-05** | **역할 축소: 채팅 전담 프로젝트**<br/>- 메인 서버 연동 제거<br/>- VTuber 연동 제거<br/>- 아키텍처 단순화 |
+| 3.0.0 | 2026-01-05 | 역할 축소: 채팅 전담 프로젝트 |
+| **3.1.0** | **2026-01-05** | **YouTube Live 자동 감지 및 인증**<br/>- Live 방송 자동 감지 (`/api/live/detect`)<br/>- YouTube 쿠키 인증 지원<br/>- 에러 핸들링 개선<br/>- dotenv 설정 추가 |
 
 ---
 

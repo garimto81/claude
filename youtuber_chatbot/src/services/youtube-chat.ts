@@ -1,6 +1,37 @@
 import { Masterchat, AddChatItemAction } from '@stu43005/masterchat';
 
 /**
+ * YouTube 인증 정보
+ */
+interface YouTubeCredentials {
+  SAPISID: string;
+  APISID: string;
+  HSID: string;
+  SID: string;
+  SSID: string;
+}
+
+/**
+ * 환경 변수에서 YouTube 인증 정보 로드
+ */
+function loadCredentialsFromEnv(): YouTubeCredentials | undefined {
+  const { YT_SAPISID, YT_APISID, YT_HSID, YT_SID, YT_SSID } = process.env;
+
+  if (!YT_SAPISID || !YT_APISID || !YT_HSID || !YT_SID || !YT_SSID) {
+    console.warn('[YouTubeChat] Missing credentials in .env (YT_SAPISID, YT_APISID, YT_HSID, YT_SID, YT_SSID)');
+    return undefined;
+  }
+
+  return {
+    SAPISID: YT_SAPISID,
+    APISID: YT_APISID,
+    HSID: YT_HSID,
+    SID: YT_SID,
+    SSID: YT_SSID,
+  };
+}
+
+/**
  * YouTube Live Chat 서비스
  * masterchat을 래핑하여 간편한 인터페이스 제공
  */
@@ -8,9 +39,11 @@ export class YouTubeChatService {
   private videoId: string;
   private mc: Masterchat | null = null;
   private connected = false;
+  private credentials?: YouTubeCredentials;
 
-  constructor(videoId: string) {
+  constructor(videoId: string, credentials?: YouTubeCredentials) {
     this.videoId = videoId;
+    this.credentials = credentials || loadCredentialsFromEnv();
   }
 
   /**
@@ -29,7 +62,15 @@ export class YouTubeChatService {
    */
   async connect(messageHandler: (message: ChatMessage) => void): Promise<void> {
     try {
-      this.mc = await Masterchat.init(this.videoId);
+      this.mc = await Masterchat.init(this.videoId, {
+        credentials: this.credentials,
+      });
+
+      if (this.credentials) {
+        console.log('[YouTubeChat] Using authenticated mode');
+      } else {
+        console.log('[YouTubeChat] Using anonymous mode (read-only)');
+      }
 
       this.mc.listen();
       this.mc.on('actions', (actions) => {

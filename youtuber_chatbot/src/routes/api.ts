@@ -9,6 +9,7 @@ import { YouTubeChatService } from '../services/youtube-chat.js';
 import { LLMClient } from '../services/llm-client.js';
 import { MessageRouter } from '../handlers/message-router.js';
 import { getRateLimiter } from '../services/rate-limiter.js';
+import { getLiveDetector } from '../services/youtube-live-detector.js';
 import ollama from 'ollama';
 
 // 상태 관리 (간단한 인메모리)
@@ -91,8 +92,13 @@ export function createApiRouter(): Router {
 
         const response = await messageRouter.route(message);
         if (response) {
-          await chatService.sendMessage(response);
-          state.stats.responseSent++;
+          try {
+            await chatService.sendMessage(response);
+            state.stats.responseSent++;
+          } catch (sendError) {
+            console.error('[API] Failed to send message:', (sendError as Error).message);
+            state.stats.errors++;
+          }
         }
       });
 
@@ -264,6 +270,149 @@ export function createApiRouter(): Router {
         model: process.env.OLLAMA_MODEL || 'qwen3:8b',
       });
     }
+  });
+
+  /**
+   * GET /api/live/detect
+   * 현재 Live 방송 감지
+   */
+  router.get('/live/detect', async (req: Request, res: Response) => {
+    try {
+      const detector = getLiveDetector();
+
+      if (!detector.isConfigured()) {
+        res.status(400).json({
+          success: false,
+          error: 'YouTube API not configured',
+          hint: 'Set YOUTUBE_API_KEY and YOUTUBE_CHANNEL_ID in .env',
+          config: detector.getConfig(),
+        });
+        return;
+      }
+
+      const liveStream = await detector.detectLiveStream();
+
+      if (liveStream) {
+        res.json({
+          success: true,
+          isLive: true,
+          ...liveStream,
+        });
+      } else {
+        res.json({
+          success: true,
+          isLive: false,
+          message: 'No live stream found',
+        });
+      }
+    } catch (error) {
+      res.status(500).json({
+        success: false,
+        error: (error as Error).message,
+      });
+    }
+  });
+
+  /**
+   * POST /api/live/auto-start
+   * Live 방송 자동 감지 후 챗봇 시작
+   */
+  router.post('/live/auto-start', async (req: Request, res: Response) => {
+    try {
+      if (state.isRunning) {
+        res.status(400).json({
+          success: false,
+          error: 'Chatbot is already running',
+          videoId: state.videoId,
+        });
+        return;
+      }
+
+      const detector = getLiveDetector();
+
+      if (!detector.isConfigured()) {
+        res.status(400).json({
+          success: false,
+          error: 'YouTube API not configured',
+          hint: 'Set YOUTUBE_API_KEY and YOUTUBE_CHANNEL_ID in .env',
+        });
+        return;
+      }
+
+      const liveStream = await detector.detectLiveStream();
+
+      if (!liveStream) {
+        res.status(404).json({
+          success: false,
+          error: 'No live stream found',
+          message: 'Start a live stream first, then try again',
+        });
+        return;
+      }
+
+      // 채팅 서비스 생성
+      const chatService = new YouTubeChatService(liveStream.videoId);
+      const llmClient = new LLMClient(process.env.OLLAMA_MODEL);
+      const messageRouter = new MessageRouter(llmClient);
+      const rateLimiter = getRateLimiter();
+
+      // 채팅 연결
+      await chatService.connect(async (message) => {
+        state.stats.messagesReceived++;
+
+        if (!rateLimiter.tryRespond(message.author)) {
+          return;
+        }
+
+        const response = await messageRouter.route(message);
+        if (response) {
+          try {
+            await chatService.sendMessage(response);
+            state.stats.responseSent++;
+          } catch (sendError) {
+            console.error('[API] Failed to send message:', (sendError as Error).message);
+            state.stats.errors++;
+          }
+        }
+      });
+
+      // 상태 업데이트
+      state.isRunning = true;
+      state.startedAt = new Date();
+      state.videoId = liveStream.videoId;
+      state.chatService = chatService;
+      state.messageRouter = messageRouter;
+
+      res.json({
+        success: true,
+        message: 'Chatbot auto-started',
+        videoId: liveStream.videoId,
+        title: liveStream.title,
+        startedAt: state.startedAt,
+        viewerCount: liveStream.viewerCount,
+      });
+    } catch (error) {
+      state.stats.errors++;
+      res.status(500).json({
+        success: false,
+        error: (error as Error).message,
+      });
+    }
+  });
+
+  /**
+   * GET /api/live/config
+   * Live 감지 설정 상태
+   */
+  router.get('/live/config', (req: Request, res: Response) => {
+    const detector = getLiveDetector();
+    const config = detector.getConfig();
+
+    res.json({
+      configured: detector.isConfigured(),
+      ...config,
+      channelId: config.channelId ? `${config.channelId.slice(0, 4)}...` : null,
+    });
   });
 
   return router;
