@@ -17,7 +17,6 @@ from datetime import datetime
 from pathlib import Path
 from typing import Dict, List, Optional
 from collections import defaultdict
-import math
 
 
 class AgentQuality:

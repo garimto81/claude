@@ -105,10 +105,10 @@ def log_quality(agent, phase, task, status, error=None, duration=0):
 
     # 경고
     if score < 3.0:
-        print(f"⚠️  WARNING: Quality score below 3.0! Immediate improvement needed.")
+        print("⚠️  WARNING: Quality score below 3.0! Immediate improvement needed.")
 
     if score == 0.0:
-        print(f"💀 CRITICAL: Quality score is 0! Agent is completely broken.")
+        print("💀 CRITICAL: Quality score is 0! Agent is completely broken.")
 
     return score
 

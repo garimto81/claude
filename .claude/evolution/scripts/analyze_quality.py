@@ -150,7 +150,7 @@ class QualityAnalyzer:
 
         # 에러 분석
         if errors:
-            print(f"Common Errors:")
+            print("Common Errors:")
             for error, count in sorted(errors.items(), key=lambda x: x[1], reverse=True):
                 print(f"  - {error}: {count}회")
             print()
@@ -177,7 +177,7 @@ class QualityAnalyzer:
             print("  ✅ Quality is good, maintain current practices")
 
         if errors:
-            print(f"\n  Focus on fixing:")
+            print("\n  Focus on fixing:")
             for error, count in list(sorted(errors.items(), key=lambda x: x[1], reverse=True))[:3]:
                 print(f"    - {error}")
 

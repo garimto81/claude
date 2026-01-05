@@ -15,7 +15,6 @@ Jupyter 노트북 관련 도구를 제공하는 MCP 서버입니다.
 
 import json
 import sys
-from typing import Any
 
 
 class NotebookToolsServer:

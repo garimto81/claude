@@ -8,10 +8,8 @@ Auto State - /auto 워크플로우 상태 관리
 """
 
 import json
-import os
 from datetime import datetime
-from pathlib import Path
-from typing import Any, Optional
+from typing import Optional
 
 from auto_logger import AutoLogger, ACTIVE_DIR, ARCHIVE_DIR
 

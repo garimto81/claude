@@ -370,5 +370,4 @@ def calculate_total(items):
 
 
 if __name__ == "__main__":
-    from typing import Dict
     main()

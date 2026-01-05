@@ -51,7 +51,7 @@ def recover_test_failure(error_output: str) -> Tuple[bool, str]:
     if success:
         return True, "테스트 통과 (린트 수정 후)"
 
-    steps.append(f"Pytest: FAILED")
+    steps.append("Pytest: FAILED")
     return False, "\n".join(steps) + f"\n{output}"
 
 

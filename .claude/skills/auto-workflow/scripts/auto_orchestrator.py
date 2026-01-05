@@ -9,7 +9,6 @@ Claude Code를 외부에서 호출하여 자율적으로 작업을 반복 수행
 """
 
 import json
-import os
 import subprocess
 import sys
 import time
@@ -23,9 +22,8 @@ from typing import Callable, Optional
 SCRIPT_DIR = Path(__file__).parent
 sys.path.insert(0, str(SCRIPT_DIR))
 
-from auto_discovery import AutoDiscovery, DiscoveredTask, Priority
-from auto_state import AutoState, CONTEXT_THRESHOLDS
-from auto_logger import AutoLogger
+from auto_discovery import AutoDiscovery, DiscoveredTask
+from auto_state import AutoState
 
 
 class LoopStatus(Enum):
@@ -184,7 +182,7 @@ class AutoOrchestrator:
             )
 
         # 작업 발견 로깅
-        self._log(f"\n📋 발견된 작업:")
+        self._log("\n📋 발견된 작업:")
         self._log(f"   우선순위: P{task.priority.value} ({task.category})")
         self._log(f"   제목: {task.title}")
         self._log(f"   설명: {task.description}")
@@ -600,7 +598,7 @@ class AutoOrchestrator:
                 context_hint="루프 일시 정지",
                 todo_state=[]
             )
-            self._log(f"\n💾 체크포인트 저장됨")
+            self._log("\n💾 체크포인트 저장됨")
             self._log(f"   재개: python auto_orchestrator.py resume {self.session_id}")
 
         elif status == LoopStatus.COMPLETED:
@@ -622,9 +620,9 @@ class AutoOrchestrator:
     def _log_start(self):
         """시작 로깅"""
         self._log(f"\n{'#'*60}")
-        self._log(f"# Auto Orchestrator 시작")
+        self._log("# Auto Orchestrator 시작")
         self._log(f"# Session: {self.session_id}")
-        self._log(f"# 설정:")
+        self._log("# 설정:")
         self._log(f"#   max_iterations: {self.config.max_iterations or '무제한'}")
         self._log(f"#   promise: {self.config.promise_text or '없음'}")
         self._log(f"#   dry_run: {self.config.dry_run}")

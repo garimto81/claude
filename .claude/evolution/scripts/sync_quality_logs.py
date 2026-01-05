@@ -11,7 +11,6 @@ Usage:
 import json
 import shutil
 from pathlib import Path
-from datetime import datetime
 from typing import List, Dict
 
 class QualityLogSyncer:
@@ -86,7 +85,7 @@ class QualityLogSyncer:
             count = self.sync_repo(repo_name, repo_path)
             results[repo_name] = count
 
-        print(f"\n✅ Sync completed!")
+        print("\n✅ Sync completed!")
         return results
 
     def generate_summary(self) -> Dict:
