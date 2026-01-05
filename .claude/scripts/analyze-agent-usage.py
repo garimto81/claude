@@ -11,7 +11,6 @@ Usage:
 
 import json
 import os
-import re
 import sys
 from datetime import datetime
 from pathlib import Path
@@ -144,7 +143,7 @@ class AgentUsageAnalyzer:
         for failure in failures:
             print(f"  - Agent: {failure['agent_type']}")
             print(f"    Error: {failure['error']}")
-        print(f"\n💡 See improvement suggestions: .claude/improvement-suggestions.md\n")
+        print("\n💡 See improvement suggestions: .claude/improvement-suggestions.md\n")
 
     def run(self):
         """Main execution"""

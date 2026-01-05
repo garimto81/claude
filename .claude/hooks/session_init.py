@@ -7,7 +7,6 @@ SessionStart 이벤트에서 실행됩니다.
 
 import json
 import subprocess
-import sys
 import os
 from datetime import datetime
 from pathlib import Path
@@ -40,7 +39,7 @@ def get_uncommitted_changes() -> int:
             text=True,
             cwd=PROJECT_DIR
         )
-        return len([l for l in result.stdout.strip().split("\n") if l])
+        return len([line for line in result.stdout.strip().split("\n") if line])
     except Exception:
         return 0
 

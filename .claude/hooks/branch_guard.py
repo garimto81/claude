@@ -37,8 +37,10 @@ def get_current_branch() -> str:
 
 def is_allowed_file(file_path: str) -> bool:
     """main에서도 수정 허용되는 파일인지 확인"""
+    # Windows/Unix 경로 호환을 위해 슬래시로 통일
+    normalized_path = file_path.replace("\\", "/")
     for pattern in ALLOWED_PATTERNS:
-        if pattern in file_path:
+        if pattern in normalized_path:
             return True
     return False
 
