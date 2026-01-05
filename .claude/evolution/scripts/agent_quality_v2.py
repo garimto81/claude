@@ -180,19 +180,28 @@ class AgentQuality:
 
     def get_grade(self, rate: float) -> str:
         """성공률 → 등급"""
-        if rate >= 0.9: return "S"
-        if rate >= 0.8: return "A"
-        if rate >= 0.7: return "B"
-        if rate >= 0.6: return "C"
-        if rate >= 0.5: return "D"
+        if rate >= 0.9:
+            return "S"
+        if rate >= 0.8:
+            return "A"
+        if rate >= 0.7:
+            return "B"
+        if rate >= 0.6:
+            return "C"
+        if rate >= 0.5:
+            return "D"
         return "F"
 
     def get_status(self, rate: float) -> str:
         """성공률 → 상태"""
-        if rate >= 0.8: return "✅ Excellent"
-        if rate >= 0.7: return "✔️ Good"
-        if rate >= 0.6: return "⚠️ Acceptable"
-        if rate >= 0.5: return "⚠️ Poor"
+        if rate >= 0.8:
+            return "✅ Excellent"
+        if rate >= 0.7:
+            return "✔️ Good"
+        if rate >= 0.6:
+            return "⚠️ Acceptable"
+        if rate >= 0.5:
+            return "⚠️ Poor"
         return "❌ Critical"
 
     def get_score(self) -> Dict:
