@@ -87,7 +87,7 @@ def load_logs(
                             continue
 
                 logs.append(log)
-            except:
+            except Exception:
                 pass
 
     return logs

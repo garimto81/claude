@@ -92,7 +92,7 @@ def get_task_stats(agent: str, task: str) -> dict:
                 log = json.loads(line.strip())
                 if log['agent'] == agent and log['task'] == task:
                     attempts.append(log)
-            except:
+            except Exception:
                 pass
 
     if not attempts:

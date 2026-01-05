@@ -54,7 +54,7 @@ class QualityAnalyzer:
                         log = json.loads(line.strip())
                         log['repo'] = log_file.stem
                         logs.append(log)
-                    except:
+                    except Exception:
                         pass
 
         return logs
@@ -244,7 +244,7 @@ class QualityAnalyzer:
                 log_time = datetime.fromisoformat(log['timestamp'].replace('Z', '+00:00'))
                 if log_time >= cutoff:
                     recent_logs.append(log)
-            except:
+            except Exception:
                 pass
 
         if not recent_logs:

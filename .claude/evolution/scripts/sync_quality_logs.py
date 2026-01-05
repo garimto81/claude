@@ -41,7 +41,7 @@ class QualityLogSyncer:
                     try:
                         log = json.loads(line.strip())
                         existing_timestamps.add(log['timestamp'])
-                    except:
+                    except Exception:
                         pass
 
             # 새 로그만 추가
@@ -54,7 +54,7 @@ class QualityLogSyncer:
                             if log['timestamp'] not in existing_timestamps:
                                 dst.write(line)
                                 new_count += 1
-                        except:
+                        except Exception:
                             pass
 
             print(f"✅ {repo_name}: Synced {new_count} new logs")
@@ -125,7 +125,7 @@ class QualityLogSyncer:
                             agent_scores[agent]['passes'] += 1
                         else:
                             agent_scores[agent]['fails'] += 1
-                    except:
+                    except Exception:
                         pass
 
             # 평균 점수 계산 & set → list 변환

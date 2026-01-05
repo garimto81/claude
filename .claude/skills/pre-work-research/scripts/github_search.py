@@ -128,7 +128,7 @@ def evaluate_repository(repo: Repository) -> dict:
             notes.append("⚠️ 업데이트 확인 필요 (1년 이내)")
         else:
             notes.append("❌ 비활성 (1년 이상)")
-    except:
+    except Exception:
         notes.append("⚠️ 업데이트 날짜 확인 불가")
 
     # 이슈 수 평가

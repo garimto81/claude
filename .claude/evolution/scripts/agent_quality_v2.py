@@ -43,7 +43,7 @@ class AgentQuality:
                     if log['agent'] == self.agent:
                         task = log['task']
                         self.tasks[task]["attempts"].append(log)
-                except:
+                except Exception:
                     pass
 
     def record(

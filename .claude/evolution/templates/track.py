@@ -31,7 +31,7 @@ def get_previous_score(agent, task):
             log = json.loads(line.strip())
             if log['agent'] == agent and log['task'] == task:
                 return log['score']
-    except:
+    except Exception:
         pass
 
     return 5.0
@@ -48,7 +48,7 @@ def get_attempt_count(agent, task):
                 log = json.loads(line.strip())
                 if log['agent'] == agent and log['task'] == task:
                     count += 1
-    except:
+    except Exception:
         pass
 
     return count + 1
