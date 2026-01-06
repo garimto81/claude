@@ -73,7 +73,7 @@ export class YouTubeLiveDetector {
         return null;
       }
 
-      const searchData: YouTubeSearchResponse = await searchResponse.json();
+      const searchData = (await searchResponse.json()) as YouTubeSearchResponse;
 
       if (!searchData.items || searchData.items.length === 0) {
         console.log('[LiveDetector] No live stream found');
@@ -92,7 +92,7 @@ export class YouTubeLiveDetector {
       videoUrl.searchParams.set('key', this.apiKey);
 
       const videoResponse = await fetch(videoUrl.toString());
-      const videoData: YouTubeVideoResponse = await videoResponse.json();
+      const videoData = (await videoResponse.json()) as YouTubeVideoResponse;
 
       const liveDetails = videoData.items?.[0]?.liveStreamingDetails;
 

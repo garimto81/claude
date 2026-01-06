@@ -10,7 +10,18 @@ import { LLMClient } from '../services/llm-client.js';
 import { MessageRouter } from '../handlers/message-router.js';
 import { getRateLimiter } from '../services/rate-limiter.js';
 import { getLiveDetector } from '../services/youtube-live-detector.js';
+import { getOAuthService, OAuthService } from '../services/oauth.js';
 import ollama from 'ollama';
+
+// OAuth 서비스 (lazy 초기화)
+let oauthService: OAuthService | null = null;
+
+function getOAuth(): OAuthService {
+  if (!oauthService) {
+    oauthService = getOAuthService();
+  }
+  return oauthService;
+}
 
 // 상태 관리 (간단한 인메모리)
 interface ChatbotState {
@@ -71,10 +82,25 @@ export function createApiRouter(): Router {
         return;
       }
 
-      // 채팅 서비스 생성
-      const chatService = liveUrl
-        ? YouTubeChatService.fromLiveUrl(liveUrl)
-        : new YouTubeChatService(videoId!);
+      // OAuth 인증 확인
+      const oauth = getOAuth();
+      if (!oauth.hasValidToken()) {
+        res.status(401).json({
+          success: false,
+          error: 'OAuth authentication required',
+          authUrl: '/oauth/authorize',
+          hint: 'Visit /oauth/authorize to authenticate with YouTube',
+        });
+        return;
+      }
+
+      // 비디오 ID 추출
+      const targetVideoId = liveUrl
+        ? YouTubeChatService.extractVideoId(liveUrl)
+        : videoId!;
+
+      // 채팅 서비스 생성 (OAuth 서비스 주입)
+      const chatService = new YouTubeChatService(oauth);
 
       // LLM 클라이언트 및 메시지 라우터 초기화
       const llmClient = new LLMClient(process.env.OLLAMA_MODEL);
@@ -82,7 +108,7 @@ export function createApiRouter(): Router {
       const rateLimiter = getRateLimiter();
 
       // 채팅 연결
-      await chatService.connect(async (message) => {
+      await chatService.connect(targetVideoId, async (message) => {
         state.stats.messagesReceived++;
 
         // Rate limiting 확인
@@ -105,7 +131,7 @@ export function createApiRouter(): Router {
       // 상태 업데이트
       state.isRunning = true;
       state.startedAt = new Date();
-      state.videoId = videoId || extractVideoId(liveUrl!);
+      state.videoId = targetVideoId;
       state.chatService = chatService;
       state.messageRouter = messageRouter;
 
@@ -350,14 +376,26 @@ export function createApiRouter(): Router {
         return;
       }
 
-      // 채팅 서비스 생성
-      const chatService = new YouTubeChatService(liveStream.videoId);
+      // OAuth 인증 확인
+      const oauth = getOAuth();
+      if (!oauth.hasValidToken()) {
+        res.status(401).json({
+          success: false,
+          error: 'OAuth authentication required',
+          authUrl: '/oauth/authorize',
+          hint: 'Visit /oauth/authorize to authenticate with YouTube',
+        });
+        return;
+      }
+
+      // 채팅 서비스 생성 (OAuth 서비스 주입)
+      const chatService = new YouTubeChatService(oauth);
       const llmClient = new LLMClient(process.env.OLLAMA_MODEL);
       const messageRouter = new MessageRouter(llmClient);
       const rateLimiter = getRateLimiter();
 
       // 채팅 연결
-      await chatService.connect(async (message) => {
+      await chatService.connect(liveStream.videoId, async (message) => {
         state.stats.messagesReceived++;
 
         if (!rateLimiter.tryRespond(message.author)) {
@@ -415,15 +453,160 @@ export function createApiRouter(): Router {
     });
   });
 
-  return router;
-}
+  // ==========================================
+  // OAuth 2.0 엔드포인트
+  // ==========================================
 
-/**
- * YouTube URL에서 비디오 ID 추출
- */
-function extractVideoId(url: string): string | null {
-  const match = url.match(/[?&]v=([^&]+)/);
-  return match ? match[1] : null;
+  /**
+   * GET /oauth/authorize
+   * OAuth 인증 시작 (Google 로그인 페이지로 리다이렉트)
+   */
+  router.get('/oauth/authorize', (req: Request, res: Response) => {
+    try {
+      const oauth = getOAuth();
+      const authUrl = oauth.getAuthUrl();
+      res.redirect(authUrl);
+    } catch (error) {
+      res.status(500).json({
+        success: false,
+        error: (error as Error).message,
+        hint: 'Check GOOGLE_CLIENT_ID and GOOGLE_CLIENT_SECRET in .env',
+      });
+    }
+  });
+
+  /**
+   * GET /oauth/callback
+   * OAuth 콜백 (Google에서 리다이렉트)
+   */
+  router.get('/oauth/callback', async (req: Request, res: Response) => {
+    try {
+      const { code, error } = req.query as { code?: string; error?: string };
+
+      if (error) {
+        res.status(400).send(`
+          <html>
+            <head><title>OAuth Error</title></head>
+            <body>
+              <h1>Authentication Failed</h1>
+              <p>Error: ${error}</p>
+              <p><a href="/oauth/authorize">Try again</a></p>
+            </body>
+          </html>
+        `);
+        return;
+      }
+
+      if (!code) {
+        res.status(400).json({
+          success: false,
+          error: 'Authorization code not provided',
+        });
+        return;
+      }
+
+      const oauth = getOAuth();
+      await oauth.exchangeCode(code);
+
+      res.send(`
+        <html>
+          <head><title>OAuth Success</title></head>
+          <body style="font-family: sans-serif; padding: 40px; text-align: center;">
+            <h1>Authentication Successful!</h1>
+            <p>Your YouTube account has been connected.</p>
+            <p>You can now start the chatbot.</p>
+            <br>
+            <a href="/api/status" style="padding: 10px 20px; background: #4285f4; color: white; text-decoration: none; border-radius: 4px;">
+              Check Status
+            </a>
+          </body>
+        </html>
+      `);
+    } catch (error) {
+      console.error('[OAuth] Callback error:', error);
+      res.status(500).send(`
+        <html>
+          <head><title>OAuth Error</title></head>
+          <body>
+            <h1>Authentication Failed</h1>
+            <p>Error: ${(error as Error).message}</p>
+            <p><a href="/oauth/authorize">Try again</a></p>
+          </body>
+        </html>
+      `);
+    }
+  });
+
+  /**
+   * GET /oauth/status
+   * OAuth 토큰 상태 확인
+   */
+  router.get('/oauth/status', (req: Request, res: Response) => {
+    try {
+      const oauth = getOAuth();
+      const tokenInfo = oauth.getTokenInfo();
+
+      res.json({
+        authenticated: oauth.hasValidToken(),
+        hasToken: tokenInfo.hasToken,
+        expiresAt: tokenInfo.expiresAt?.toISOString() || null,
+        authUrl: oauth.hasValidToken() ? null : '/oauth/authorize',
+      });
+    } catch (error) {
+      res.status(500).json({
+        authenticated: false,
+        error: (error as Error).message,
+        hint: 'Check GOOGLE_CLIENT_ID and GOOGLE_CLIENT_SECRET in .env',
+      });
+    }
+  });
+
+  /**
+   * POST /oauth/refresh
+   * OAuth 토큰 강제 갱신
+   */
+  router.post('/oauth/refresh', async (req: Request, res: Response) => {
+    try {
+      const oauth = getOAuth();
+      await oauth.refreshToken();
+
+      const tokenInfo = oauth.getTokenInfo();
+      res.json({
+        success: true,
+        message: 'Token refreshed',
+        expiresAt: tokenInfo.expiresAt?.toISOString() || null,
+      });
+    } catch (error) {
+      res.status(500).json({
+        success: false,
+        error: (error as Error).message,
+      });
+    }
+  });
+
+  /**
+   * POST /oauth/revoke
+   * OAuth 토큰 삭제 (로그아웃)
+   */
+  router.post('/oauth/revoke', (req: Request, res: Response) => {
+    try {
+      const oauth = getOAuth();
+      oauth.revokeToken();
+
+      res.json({
+        success: true,
+        message: 'Token revoked. Please re-authenticate.',
+        authUrl: '/oauth/authorize',
+      });
+    } catch (error) {
+      res.status(500).json({
+        success: false,
+        error: (error as Error).message,
+      });
+    }
+  });
+
+  return router;
 }
 
 /**

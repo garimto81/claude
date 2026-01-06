@@ -16,6 +16,9 @@ dist/
 .env.local
 .env.production
 
+# OAuth Tokens (민감 정보)
+.tokens.json
+
 # IDE
 .vscode/
 .idea/

@@ -23,9 +23,10 @@
   "author": "garimto81",
   "license": "MIT",
   "dependencies": {
-    "@stu43005/masterchat": "^1.0.0",
     "dotenv": "^16.6.1",
     "express": "^4.22.1",
+    "google-auth-library": "^9.0.0",
+    "googleapis": "^140.0.0",
     "octokit": "^4.1.4",
     "ollama": "^0.5.18"
   },
