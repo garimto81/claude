@@ -9,13 +9,102 @@
 2. 문서 재조회 후 텍스트/스타일 삽입
 """
 
+import re
+from dataclasses import dataclass, field
 from typing import Any
 
 from .models import TableData
 
 
+@dataclass
+class CellInlineStyle:
+    """셀 내 인라인 스타일 정보"""
+    start: int  # 셀 내 상대 위치
+    end: int
+    bold: bool = False
+    italic: bool = False
+    code: bool = False
+
+
+@dataclass
+class ParsedCellContent:
+    """파싱된 셀 내용"""
+    plain_text: str  # 마크다운 기호 제거된 텍스트
+    styles: list[CellInlineStyle] = field(default_factory=list)
+
+
 class NativeTableRenderer:
     """마크다운 테이블을 Google Docs 네이티브 테이블로 변환 (2단계 방식)"""
+
+    # 본문 색상 (Premium Dark Text 스타일)
+    BODY_COLOR = {'red': 0.25, 'green': 0.25, 'blue': 0.25}  # #404040
+
+    def _parse_cell_inline_formatting(self, text: str) -> ParsedCellContent:
+        """
+        셀 내용에서 인라인 마크다운 파싱
+
+        **bold**, *italic*, `code` 등을 추출하고 plain text 반환
+        """
+        styles: list[CellInlineStyle] = []
+
+        # 정규식 패턴들 (순서 중요)
+        patterns = [
+            (r'\*\*(.+?)\*\*', 'bold'),      # **bold**
+            (r'__(.+?)__', 'bold'),          # __bold__
+            (r'\*(.+?)\*', 'italic'),        # *italic*
+            (r'_(.+?)_', 'italic'),          # _italic_
+            (r'`([^`]+)`', 'code'),          # `code`
+        ]
+
+        # 모든 매치 찾기
+        all_matches = []
+        for pattern, style in patterns:
+            for match in re.finditer(pattern, text):
+                all_matches.append((match.start(), match.end(), match.group(1), style))
+
+        # 위치순 정렬
+        all_matches.sort(key=lambda x: x[0])
+
+        # 겹치는 매치 제거
+        filtered_matches = []
+        last_end = 0
+        for match in all_matches:
+            if match[0] >= last_end:
+                filtered_matches.append(match)
+                last_end = match[1]
+
+        # plain text 생성 및 스타일 정보 수집
+        plain_parts = []
+        current_pos = 0
+        plain_offset = 0
+
+        for start, end, content, style in filtered_matches:
+            # 이전 일반 텍스트
+            if start > current_pos:
+                plain_parts.append(text[current_pos:start])
+                plain_offset += start - current_pos
+
+            # 스타일 정보 저장 (plain text 기준 위치)
+            style_info = CellInlineStyle(
+                start=plain_offset,
+                end=plain_offset + len(content),
+                bold=(style == 'bold'),
+                italic=(style == 'italic'),
+                code=(style == 'code'),
+            )
+            styles.append(style_info)
+
+            plain_parts.append(content)
+            plain_offset += len(content)
+            current_pos = end
+
+        # 남은 텍스트
+        if current_pos < len(text):
+            plain_parts.append(text[current_pos:])
+
+        plain_text = ''.join(plain_parts)
+
+        return ParsedCellContent(plain_text=plain_text, styles=styles)
 
     def parse_markdown_table(self, table_lines: list[str]) -> TableData:
         """
@@ -142,15 +231,21 @@ class NativeTableRenderer:
         # 모든 행 데이터 수집
         all_rows = [table_data.headers] + table_data.rows
 
-        # 셀 텍스트 삽입 (역순으로 - 인덱스 시프트 방지)
+        # 셀 내용 파싱 및 삽입 준비 (역순으로 - 인덱스 시프트 방지)
         insertions = []
         for row_idx, row in enumerate(all_rows):
             for col_idx, content in enumerate(row):
                 if content and row_idx < len(cell_indices) and col_idx < len(cell_indices[row_idx]):
                     cell_start = cell_indices[row_idx][col_idx]
+
+                    # 마크다운 파싱 (** 제거, 스타일 정보 추출)
+                    parsed = self._parse_cell_inline_formatting(content)
+
                     insertions.append({
                         'index': cell_start,
-                        'content': content,
+                        'content': parsed.plain_text,  # 마크다운 기호 제거된 텍스트
+                        'original': content,
+                        'styles': parsed.styles,       # 인라인 스타일 정보
                         'row_idx': row_idx,
                         'col_idx': col_idx,
                     })
@@ -158,6 +253,7 @@ class NativeTableRenderer:
         # 역순 정렬 (뒤에서부터 삽입)
         insertions.sort(key=lambda x: x['index'], reverse=True)
 
+        # 텍스트 삽입 요청
         for item in insertions:
             requests.append({
                 'insertText': {
@@ -166,27 +262,93 @@ class NativeTableRenderer:
                 }
             })
 
-        # 헤더 스타일 적용 (텍스트 삽입 후)
+        # 스타일 적용 (텍스트 삽입 후)
         # 주의: insertText 요청들이 먼저 실행된 후에 스타일이 적용됨
+
+        # 1. 헤더 행 스타일 (볼드 + 색상)
         for col_idx, content in enumerate(table_data.headers):
             if content and col_idx < len(cell_indices[0]):
                 cell_start = cell_indices[0][col_idx]
-                # SKILL.md 표준: 진한 회색 #404040
+                parsed = self._parse_cell_inline_formatting(content)
+                plain_len = len(parsed.plain_text)
+
+                # 헤더 전체에 볼드 + 색상 적용
                 requests.append({
                     'updateTextStyle': {
                         'range': {
                             'startIndex': cell_start,
-                            'endIndex': cell_start + len(content)
+                            'endIndex': cell_start + plain_len
                         },
                         'textStyle': {
                             'bold': True,
                             'foregroundColor': {
-                                'color': {'rgbColor': {'red': 0.25, 'green': 0.25, 'blue': 0.25}}
+                                'color': {'rgbColor': self.BODY_COLOR}
                             }
                         },
                         'fields': 'bold,foregroundColor'
                     }
                 })
+
+        # 2. 데이터 행 스타일 (본문 색상 + 인라인 스타일)
+        for insertion in insertions:
+            if insertion['row_idx'] == 0:  # 헤더는 위에서 처리
+                continue
+
+            cell_start = insertion['index']
+            plain_text = insertion['content']
+            styles = insertion['styles']
+
+            # 셀 전체에 본문 색상 적용
+            if plain_text:
+                requests.append({
+                    'updateTextStyle': {
+                        'range': {
+                            'startIndex': cell_start,
+                            'endIndex': cell_start + len(plain_text)
+                        },
+                        'textStyle': {
+                            'foregroundColor': {
+                                'color': {'rgbColor': self.BODY_COLOR}
+                            }
+                        },
+                        'fields': 'foregroundColor'
+                    }
+                })
+
+            # 인라인 스타일 적용 (볼드, 이탤릭, 코드)
+            for style in styles:
+                style_fields = []
+                text_style: dict[str, Any] = {}
+
+                if style.bold:
+                    text_style['bold'] = True
+                    style_fields.append('bold')
+
+                if style.italic:
+                    text_style['italic'] = True
+                    style_fields.append('italic')
+
+                if style.code:
+                    text_style['weightedFontFamily'] = {
+                        'fontFamily': 'Consolas',
+                        'weight': 400
+                    }
+                    text_style['backgroundColor'] = {
+                        'color': {'rgbColor': {'red': 0.95, 'green': 0.95, 'blue': 0.95}}
+                    }
+                    style_fields.extend(['weightedFontFamily', 'backgroundColor'])
+
+                if style_fields:
+                    requests.append({
+                        'updateTextStyle': {
+                            'range': {
+                                'startIndex': cell_start + style.start,
+                                'endIndex': cell_start + style.end
+                            },
+                            'textStyle': text_style,
+                            'fields': ','.join(style_fields)
+                        }
+                    })
 
         return requests
 
