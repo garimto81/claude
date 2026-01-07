@@ -29,7 +29,8 @@ Targets:
 /create prd user-authentication            # Google Docs 생성 (기본)
 /create prd "검색 기능" --template=deep    # DEEP 템플릿으로 생성
 /create prd feature --local-only           # 로컬 Markdown만 (호환 모드)
-/create prd feature --visualize            # 와이어프레임 목업 포함 ⭐ NEW
+/create prd feature --visualize            # PRD 설계 시 HTML 목업 + 스크린샷 ⭐
+/create prd feature --gdocs                # Google Docs + HTML 시각화 통합 ⭐ NEW
 ```
 
 ### 아키텍처
@@ -206,26 +207,40 @@ C. Core Features
 | `--local-only` | 로컬 Markdown만 생성 (Google Docs 미사용) |
 | `--priority=P0-P3` | 우선순위 지정 |
 | `--status=STATUS` | 상태 지정 (Draft/In Progress/Review/Approved) |
-| `--visualize` | ⭐ 와이어프레임 목업 자동 생성 + 스크린샷 + PRD 삽입 |
+| `--visualize` | ⭐ PRD 설계 시 ASCII 대신 HTML 목업 → 스크린샷 방식으로 시각화 |
+| `--gdocs` | ⭐ Google Docs에 PRD 생성 + HTML 시각화 통합 (visualize 포함) |
 
 ### 시각화 워크플로우 (--visualize)
 
-`--visualize` 옵션 사용 시 자동 실행되는 흐름:
+`--visualize` 옵션: **PRD 작성 단계에서** ASCII 다이어그램 대신 HTML 목업 → 스크린샷 방식으로 시각화합니다.
+
+**핵심 차이점**:
+- 기본: PRD 내 다이어그램을 ASCII 텍스트로 표현
+- `--visualize`: PRD 내 다이어그램을 **HTML 목업 → 스크린샷 이미지**로 표현
 
 ```
 /create prd feature --visualize
       │
       ▼
 ┌─────────────────────────────────┐
-│ 1. 기존 질문 응답 (A/B/C/D)     │
-│    + 추가 시각화 질문           │
-│    - 화면 종류 (1~5개 선택)     │
-│    - 레이아웃 스타일            │
+│ 1. PRD 섹션별 질문 응답         │
+│    (A/B/C/D 형식)               │
+│    + 시각화 대상 화면 선택      │
+│    - 어떤 화면을 시각화할지?    │
+│    - 레이아웃 스타일 선호?      │
 └─────────────────────────────────┘
       │
       ▼
 ┌─────────────────────────────────┐
-│ 2. HTML 와이어프레임 생성       │
+│ 2. PRD 문서 작성 시작           │
+│    각 섹션 작성하면서:          │
+│    ├── 텍스트 설명 작성         │
+│    └── 시각화 필요 부분 표시    │
+└─────────────────────────────────┘
+      │
+      ▼
+┌─────────────────────────────────┐
+│ 3. HTML 와이어프레임 생성       │
 │    docs/mockups/PRD-NNNN/       │
 │    ├── flow.html (전체 흐름)    │
 │    ├── screen-1.html            │
@@ -234,7 +249,7 @@ C. Core Features
       │
       ▼
 ┌─────────────────────────────────┐
-│ 3. Playwright 스크린샷 캡처     │
+│ 4. Playwright 스크린샷 캡처     │
 │    docs/images/PRD-NNNN/        │
 │    ├── flow.png                 │
 │    ├── screen-1.png             │
@@ -243,13 +258,21 @@ C. Core Features
       │
       ▼
 ┌─────────────────────────────────┐
-│ 4. PRD에 자동 삽입              │
+│ 5. PRD에 이미지 삽입            │
 │    ## 시각화                    │
 │    ### 전체 흐름                │
 │    ![flow](../images/PRD-NNNN/) │
 │    [HTML 원본](../mockups/...)  │
 └─────────────────────────────────┘
 ```
+
+**적용 예시** (ASCII vs 이미지):
+
+| 항목 | 기본 (ASCII) | --visualize (이미지) |
+|------|-------------|---------------------|
+| 화면 흐름 | 텍스트 박스/화살표 | flow.png |
+| UI 레이아웃 | 텍스트 설명 | screen-N.png |
+| 상태 다이어그램 | ASCII 그림 | state-diagram.png |
 
 ### 생성 파일 예시 (--visualize)
 
@@ -267,6 +290,94 @@ docs/
 │       └── dashboard.png
 └── prds/
     └── PRD-0003-feature.md     # 이미지+링크 포함된 PRD
+```
+
+### Google Docs 시각화 워크플로우 (--gdocs)
+
+`--gdocs` 옵션: Google Docs에 PRD를 생성하면서 **HTML 목업 → 스크린샷 → Google Docs 삽입**까지 통합 처리합니다.
+
+**`--visualize`와의 차이점**:
+| 옵션 | 출력 위치 | 이미지 삽입 |
+|------|----------|------------|
+| `--visualize` | 로컬 Markdown | 상대 경로 `![](../images/...)` |
+| `--gdocs` | Google Docs | Drive 업로드 + inline 삽입 |
+
+```
+/create prd feature --gdocs
+      │
+      ▼
+┌─────────────────────────────────┐
+│ 1. PRD 섹션별 질문 응답         │
+│    (A/B/C/D 형식)               │
+│    + 시각화 대상 화면 선택      │
+└─────────────────────────────────┘
+      │
+      ▼
+┌─────────────────────────────────┐
+│ 2. HTML 와이어프레임 생성       │
+│    docs/mockups/PRD-NNNN/       │
+│    (로컬에 임시 저장)           │
+└─────────────────────────────────┘
+      │
+      ▼
+┌─────────────────────────────────┐
+│ 3. Playwright 스크린샷 캡처     │
+│    docs/images/PRD-NNNN/        │
+│    (로컬에 임시 저장)           │
+└─────────────────────────────────┘
+      │
+      ▼
+┌─────────────────────────────────┐
+│ 4. Google Drive 이미지 업로드   │
+│    → 공유 폴더에 이미지 저장    │
+│    → 공유 링크 생성             │
+└─────────────────────────────────┘
+      │
+      ▼
+┌─────────────────────────────────┐
+│ 5. Google Docs PRD 문서 생성    │
+│    → 텍스트 섹션 작성           │
+│    → 이미지 inline 삽입         │
+│    → 목업 HTML 링크 첨부        │
+└─────────────────────────────────┘
+      │
+      ▼
+┌─────────────────────────────────┐
+│ 6. 로컬 캐시 + 레지스트리 업데이트│
+│    .prd-registry.json           │
+│    PRD-NNNN.cache.md            │
+└─────────────────────────────────┘
+```
+
+### 출력 예시 (--gdocs)
+
+```bash
+/create prd user-dashboard --gdocs
+
+# Output:
+# [1/6] PRD 섹션 질문 응답 중...
+# [OK] 4개 화면 시각화 선택됨
+#
+# [2/6] HTML 와이어프레임 생성 중...
+# [OK] docs/mockups/PRD-0004/ (4 files)
+#
+# [3/6] 스크린샷 캡처 중...
+# [OK] docs/images/PRD-0004/ (4 files)
+#
+# [4/6] Google Drive 업로드 중...
+# [OK] 4개 이미지 업로드 완료
+#
+# [5/6] Google Docs PRD 생성 중...
+# [OK] 문서 생성 + 이미지 삽입 완료
+#
+# [6/6] 로컬 캐시 업데이트 중...
+# [OK] .prd-registry.json 업데이트
+#
+# ✅ PRD 생성 완료!
+#    PRD ID: PRD-0004
+#    Google Docs: https://docs.google.com/document/d/1xyz.../edit
+#    이미지 폴더: https://drive.google.com/drive/folders/...
+#    로컬 캐시: tasks/prds/PRD-0004.cache.md
 ```
 
 ### 공유 폴더
