@@ -36,8 +36,12 @@ class ParsedCellContent:
 class NativeTableRenderer:
     """마크다운 테이블을 Google Docs 네이티브 테이블로 변환 (2단계 방식)"""
 
-    # 본문 색상 (Premium Dark Text 스타일)
+    # SKILL.md 2.3 표준 테이블 스타일
     BODY_COLOR = {'red': 0.25, 'green': 0.25, 'blue': 0.25}  # #404040
+    HEADER_BG_COLOR = {'red': 0.90, 'green': 0.90, 'blue': 0.90}  # #E6E6E6
+    BORDER_COLOR = {'red': 0.80, 'green': 0.80, 'blue': 0.80}  # #CCCCCC
+    CODE_BG_COLOR = {'red': 0.949, 'green': 0.949, 'blue': 0.949}  # #F2F2F2
+    CELL_PADDING_PT = 5  # 5pt 패딩
 
     def _parse_cell_inline_formatting(self, text: str) -> ParsedCellContent:
         """
@@ -265,90 +269,153 @@ class NativeTableRenderer:
         # 스타일 적용 (텍스트 삽입 후)
         # 주의: insertText 요청들이 먼저 실행된 후에 스타일이 적용됨
 
-        # 1. 헤더 행 스타일 (볼드 + 색상)
-        for col_idx, content in enumerate(table_data.headers):
-            if content and col_idx < len(cell_indices[0]):
-                cell_start = cell_indices[0][col_idx]
-                parsed = self._parse_cell_inline_formatting(content)
-                plain_len = len(parsed.plain_text)
+        # 테이블 시작 인덱스 (셀 스타일 적용용)
+        table_start_index = table_element.get('startIndex', 0)
 
-                # 헤더 전체에 볼드 + 색상 적용
+        # 1. 테이블 전체 셀 스타일 적용 (테두리, 패딩) - SKILL.md 2.3 표준
+        table = table_element.get('table', {})
+        table_rows = table.get('tableRows', [])
+        for row_idx, row in enumerate(table_rows):
+            cells = row.get('tableCells', [])
+            for col_idx, cell in enumerate(cells):
+                # 테두리 스타일 정의 (SKILL.md 2.3 표준: 1pt, #CCCCCC)
+                border_style = {
+                    'color': {'color': {'rgbColor': self.BORDER_COLOR}},
+                    'width': {'magnitude': 1, 'unit': 'PT'},
+                    'dashStyle': 'SOLID',
+                }
+
+                # 셀 스타일 요청 생성
+                cell_style: dict[str, Any] = {
+                    # 패딩 5pt (SKILL.md 표준)
+                    'contentAlignment': 'TOP',
+                    'paddingTop': {'magnitude': self.CELL_PADDING_PT, 'unit': 'PT'},
+                    'paddingBottom': {'magnitude': self.CELL_PADDING_PT, 'unit': 'PT'},
+                    'paddingLeft': {'magnitude': self.CELL_PADDING_PT, 'unit': 'PT'},
+                    'paddingRight': {'magnitude': self.CELL_PADDING_PT, 'unit': 'PT'},
+                    # 테두리 (SKILL.md 표준: 1pt, #CCCCCC)
+                    'borderTop': border_style,
+                    'borderBottom': border_style,
+                    'borderLeft': border_style,
+                    'borderRight': border_style,
+                }
+
+                # 헤더 행 배경색 (SKILL.md 표준: #E6E6E6)
+                if row_idx == 0:
+                    cell_style['backgroundColor'] = {
+                        'color': {'rgbColor': self.HEADER_BG_COLOR}
+                    }
+
                 requests.append({
-                    'updateTextStyle': {
-                        'range': {
-                            'startIndex': cell_start,
-                            'endIndex': cell_start + plain_len
+                    'updateTableCellStyle': {
+                        'tableRange': {
+                            'tableCellLocation': {
+                                'tableStartLocation': {'index': table_start_index},
+                                'rowIndex': row_idx,
+                                'columnIndex': col_idx,
+                            },
+                            'rowSpan': 1,
+                            'columnSpan': 1,
                         },
-                        'textStyle': {
-                            'bold': True,
-                            'foregroundColor': {
-                                'color': {'rgbColor': self.BODY_COLOR}
-                            }
-                        },
-                        'fields': 'bold,foregroundColor'
+                        'tableCellStyle': cell_style,
+                        'fields': 'contentAlignment,paddingTop,paddingBottom,paddingLeft,paddingRight,borderTop,borderBottom,borderLeft,borderRight,backgroundColor'
                     }
                 })
 
-        # 2. 데이터 행 스타일 (본문 색상 + 인라인 스타일)
-        for insertion in insertions:
-            if insertion['row_idx'] == 0:  # 헤더는 위에서 처리
-                continue
+        # NOTE: 텍스트 스타일은 render_table_text_styles()에서 별도 처리
+        # (인덱스 시프트 문제 방지를 위해 별도 batchUpdate 필요)
 
-            cell_start = insertion['index']
-            plain_text = insertion['content']
-            styles = insertion['styles']
+        return requests
 
-            # 셀 전체에 본문 색상 적용
-            if plain_text:
-                requests.append({
-                    'updateTextStyle': {
-                        'range': {
-                            'startIndex': cell_start,
-                            'endIndex': cell_start + len(plain_text)
-                        },
-                        'textStyle': {
-                            'foregroundColor': {
-                                'color': {'rgbColor': self.BODY_COLOR}
-                            }
-                        },
-                        'fields': 'foregroundColor'
-                    }
-                })
+    def render_table_text_styles(
+        self,
+        table_data: TableData,
+        table_element: dict[str, Any],
+    ) -> list[dict[str, Any]]:
+        """
+        3단계: 텍스트 삽입 후 텍스트 스타일 적용
 
-            # 인라인 스타일 적용 (볼드, 이탤릭, 코드)
-            for style in styles:
-                style_fields = []
-                text_style: dict[str, Any] = {}
+        insertText 실행 후 문서를 재조회한 뒤 호출해야 합니다.
+        이렇게 분리하면 인덱스 시프트 문제가 해결됩니다.
 
-                if style.bold:
-                    text_style['bold'] = True
-                    style_fields.append('bold')
+        Args:
+            table_data: 파싱된 테이블 데이터
+            table_element: 텍스트 삽입 후 재조회한 테이블 구조
 
-                if style.italic:
-                    text_style['italic'] = True
-                    style_fields.append('italic')
+        Returns:
+            list: updateTextStyle 요청 리스트
+        """
+        requests = []
 
-                if style.code:
-                    text_style['weightedFontFamily'] = {
-                        'fontFamily': 'Consolas',
-                        'weight': 400
-                    }
-                    text_style['backgroundColor'] = {
-                        'color': {'rgbColor': {'red': 0.95, 'green': 0.95, 'blue': 0.95}}
-                    }
-                    style_fields.extend(['weightedFontFamily', 'backgroundColor'])
+        # 테이블 구조에서 각 셀의 실제 인덱스 추출 (삽입 후 새 인덱스)
+        cell_indices = self._extract_cell_indices(table_element)
 
-                if style_fields:
+        if not cell_indices:
+            return requests
+
+        # 모든 행 데이터 수집
+        all_rows = [table_data.headers] + table_data.rows
+
+        for row_idx, row in enumerate(all_rows):
+            for col_idx, content in enumerate(row):
+                if content and row_idx < len(cell_indices) and col_idx < len(cell_indices[row_idx]):
+                    cell_start = cell_indices[row_idx][col_idx]
+
+                    # 마크다운 파싱
+                    parsed = self._parse_cell_inline_formatting(content)
+                    plain_text = parsed.plain_text
+
+                    if not plain_text:
+                        continue
+
+                    # 셀 스타일: 본문 색상만 (볼드는 마크다운 **...** 문법으로만 적용)
                     requests.append({
                         'updateTextStyle': {
                             'range': {
-                                'startIndex': cell_start + style.start,
-                                'endIndex': cell_start + style.end
+                                'startIndex': cell_start,
+                                'endIndex': cell_start + len(plain_text)
                             },
-                            'textStyle': text_style,
-                            'fields': ','.join(style_fields)
+                            'textStyle': {
+                                'foregroundColor': {'color': {'rgbColor': self.BODY_COLOR}}
+                            },
+                            'fields': 'foregroundColor'
                         }
                     })
+
+                    # 마크다운 인라인 스타일 적용 (**볼드**, *이탤릭*, `코드`)
+                    for style in parsed.styles:
+                        style_fields = []
+                        inline_style: dict[str, Any] = {}
+
+                        if style.bold:
+                            inline_style['bold'] = True
+                            style_fields.append('bold')
+
+                        if style.italic:
+                            inline_style['italic'] = True
+                            style_fields.append('italic')
+
+                        if style.code:
+                            inline_style['weightedFontFamily'] = {
+                                'fontFamily': 'Consolas',
+                                'weight': 400
+                            }
+                            inline_style['backgroundColor'] = {
+                                'color': {'rgbColor': self.CODE_BG_COLOR}
+                            }
+                            style_fields.extend(['weightedFontFamily', 'backgroundColor'])
+
+                        if style_fields:
+                            requests.append({
+                                'updateTextStyle': {
+                                    'range': {
+                                        'startIndex': cell_start + style.start,
+                                        'endIndex': cell_start + style.end
+                                    },
+                                    'textStyle': inline_style,
+                                    'fields': ','.join(style_fields)
+                                }
+                            })
 
         return requests
 
@@ -397,7 +464,7 @@ class NativeTableRenderer:
         return table_element.get('endIndex', 0)
 
     # =========================================================================
-    # 레거시 메서드 (하위 호환성)
+    # 레거시 메서드 (하위 호환성) - v2.4.0에서 제거 예정
     # =========================================================================
 
     def render(
@@ -406,10 +473,15 @@ class NativeTableRenderer:
         start_index: int,
     ) -> tuple[list[dict[str, Any]], int]:
         """
-        [레거시] 단일 batchUpdate용 테이블 렌더링
+        [DEPRECATED] 단일 batchUpdate용 테이블 렌더링
 
-        주의: 이 메서드는 인덱스 계산 문제로 실패할 수 있습니다.
-        가능하면 render_table_structure() + render_table_content()를 사용하세요.
+        .. deprecated:: 2.3.0
+            이 메서드는 인덱스 계산 문제로 자주 실패합니다.
+            대신 `render_table_structure()` + `render_table_content()`를 사용하세요.
+            v2.4.0에서 제거 예정입니다.
+
+        Warning:
+            이 메서드는 더 이상 사용하지 마세요.
 
         Args:
             table_data: 파싱된 테이블 데이터
@@ -418,6 +490,13 @@ class NativeTableRenderer:
         Returns:
             tuple: (API 요청 리스트, 새로운 끝 인덱스)
         """
+        import warnings
+        warnings.warn(
+            "render() is deprecated since v2.3.0 and will be removed in v2.4.0. "
+            "Use render_table_structure() + render_table_content() instead.",
+            DeprecationWarning,
+            stacklevel=2
+        )
         if table_data.column_count == 0 or table_data.row_count == 0:
             return [], start_index
 

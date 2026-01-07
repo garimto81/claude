@@ -25,7 +25,7 @@ class MarkdownToDocsConverter:
         include_toc: bool = False,
         use_native_tables: bool = True,
         code_font: str = "Consolas",
-        code_bg_color: tuple[float, float, float] = (0.95, 0.95, 0.95),
+        code_bg_color: tuple[float, float, float] | None = None,
         use_premium_style: bool = True,
         docs_service: Any = None,
         doc_id: str | None = None,
@@ -36,7 +36,7 @@ class MarkdownToDocsConverter:
             include_toc: 목차 포함 여부
             use_native_tables: 네이티브 테이블 사용 여부
             code_font: 코드 블록 폰트
-            code_bg_color: 코드 블록 배경색 (RGB 0-1)
+            code_bg_color: 코드 블록 배경색 (RGB 0-1), None이면 스타일에서 가져옴
             use_premium_style: 파랑 계열 전문 문서 스타일 사용 여부
             docs_service: Google Docs API 서비스 (2단계 테이블 처리용)
             doc_id: 문서 ID (2단계 테이블 처리용)
@@ -45,13 +45,21 @@ class MarkdownToDocsConverter:
         self.include_toc = include_toc
         self.use_native_tables = use_native_tables
         self.code_font = code_font
-        self.code_bg_color = code_bg_color
         self.use_premium_style = use_premium_style
         self.docs_service = docs_service
         self.doc_id = doc_id
 
         # 파랑 계열 전문 문서 스타일 시스템
         self.style = NotionStyle.default() if use_premium_style else None
+
+        # 코드 배경색: 명시적 지정 > 스타일 시스템 > 기본값
+        if code_bg_color is not None:
+            self.code_bg_color = code_bg_color
+        elif self.style:
+            bg = self.style.get_color('code_bg')
+            self.code_bg_color = (bg['red'], bg['green'], bg['blue'])
+        else:
+            self.code_bg_color = (0.949, 0.949, 0.949)  # #F2F2F2
 
         self.requests: list[dict[str, Any]] = []
         self.current_index = 1  # Google Docs는 1부터 시작
@@ -459,6 +467,22 @@ class MarkdownToDocsConverter:
                     'fields': 'foregroundColor,fontSize,bold'
                 }
             })
+
+            # H1 하단 구분선 적용 (SKILL.md 2.3 표준)
+            if level == 1 and heading_config.get('border_bottom'):
+                border_style = self.style.get_h1_border_style()
+                self.requests.append({
+                    'updateParagraphStyle': {
+                        'range': {
+                            'startIndex': start,
+                            'endIndex': self.current_index
+                        },
+                        'paragraphStyle': {
+                            'borderBottom': border_style
+                        },
+                        'fields': 'borderBottom'
+                    }
+                })
         else:
             # 기본 스타일 (레거시)
             space_settings = {
@@ -547,7 +571,7 @@ class MarkdownToDocsConverter:
         table_element = self._find_last_table(doc)
 
         if table_element:
-            # 테이블 내용 삽입
+            # 테이블 내용 삽입 (insertText + updateTableCellStyle)
             content_requests = self._table_renderer.render_table_content(
                 table_data, table_element
             )
@@ -556,6 +580,21 @@ class MarkdownToDocsConverter:
                     documentId=self.doc_id,
                     body={'requests': content_requests}
                 ).execute()
+
+            # 문서 재조회 (텍스트 삽입 후 인덱스 변경됨)
+            doc = self.docs_service.documents().get(documentId=self.doc_id).execute()
+            table_element = self._find_last_table(doc)
+
+            # 텍스트 스타일 적용 (헤더 볼드, 인라인 스타일)
+            if table_element:
+                style_requests = self._table_renderer.render_table_text_styles(
+                    table_data, table_element
+                )
+                if style_requests:
+                    self.docs_service.documents().batchUpdate(
+                        documentId=self.doc_id,
+                        body={'requests': style_requests}
+                    ).execute()
 
             # 문서 재조회하여 실제 끝 인덱스 확인
             doc = self.docs_service.documents().get(documentId=self.doc_id).execute()
@@ -802,38 +841,31 @@ class MarkdownToDocsConverter:
         })
 
     def _add_horizontal_rule(self):
-        """수평선 추가 (Premium Dark Text 스타일)"""
-        start = self._add_text('─' * 60)
+        """수평선 추가 (SKILL.md 2.3 표준: ─ 반복 금지, 하단 구분선 사용)"""
+        # 빈 단락 삽입 후 하단에 얇은 구분선 추가
+        start = self._add_text(' ')
 
-        # Premium Dark Text 스타일
         if self.style and self.use_premium_style:
             divider_color = self.style.get_color('divider')
 
-            self.requests.append({
-                'updateTextStyle': {
-                    'range': {
-                        'startIndex': start,
-                        'endIndex': self.current_index - 1
-                    },
-                    'textStyle': {
-                        'foregroundColor': {'color': {'rgbColor': divider_color}},
-                        'fontSize': {'magnitude': 8, 'unit': 'PT'},
-                    },
-                    'fields': 'foregroundColor,fontSize'
-                }
-            })
-
+            # 여백 + 하단 구분선 (SKILL.md 2.3 표준)
             self.requests.append({
                 'updateParagraphStyle': {
                     'range': {
                         'startIndex': start,
-                        'endIndex': self.current_index - 1
+                        'endIndex': self.current_index
                     },
                     'paragraphStyle': {
-                        'spaceAbove': {'magnitude': 16, 'unit': 'PT'},
-                        'spaceBelow': {'magnitude': 16, 'unit': 'PT'},
+                        'spaceAbove': {'magnitude': 12, 'unit': 'PT'},
+                        'spaceBelow': {'magnitude': 12, 'unit': 'PT'},
+                        'borderBottom': {
+                            'color': {'color': {'rgbColor': divider_color}},
+                            'width': {'magnitude': 0.5, 'unit': 'PT'},
+                            'padding': {'magnitude': 8, 'unit': 'PT'},
+                            'dashStyle': 'SOLID'
+                        }
                     },
-                    'fields': 'spaceAbove,spaceBelow'
+                    'fields': 'spaceAbove,spaceBelow,borderBottom'
                 }
             })
 
@@ -894,7 +926,8 @@ def create_google_doc(
     content: str,
     folder_id: Optional[str] = None,
     include_toc: bool = False,
-    use_native_tables: bool = True,  # 기본값: 네이티브 테이블 (2단계 방식으로 안정적)
+    use_native_tables: bool = True,
+    apply_page_style: bool = True,
 ) -> str:
     """
     Google Docs 문서 생성
@@ -905,6 +938,7 @@ def create_google_doc(
         folder_id: Google Drive 폴더 ID (None이면 기본 폴더)
         include_toc: 목차 포함 여부
         use_native_tables: 네이티브 테이블 사용 여부 (2단계 처리로 안정적)
+        apply_page_style: 페이지 스타일 적용 여부 (A4, 72pt 여백, 115% 줄간격)
 
     Returns:
         str: 생성된 문서의 URL
@@ -937,7 +971,20 @@ def create_google_doc(
     except Exception as e:
         print(f"     폴더 이동 실패: {e}")
 
-    # 3. 콘텐츠 변환 및 추가 (2단계 테이블 처리 지원)
+    # 3. 페이지 스타일 적용 (A4, 72pt 여백) - SKILL.md 전역 표준
+    if apply_page_style:
+        try:
+            style = NotionStyle.default()
+            page_style_request = style.get_page_style_request()
+            docs_service.documents().batchUpdate(
+                documentId=doc_id,
+                body={'requests': [page_style_request]}
+            ).execute()
+            print("     페이지 스타일 적용됨 (A4, 72pt 여백)")
+        except Exception as e:
+            print(f"     페이지 스타일 적용 실패: {e}")
+
+    # 4. 콘텐츠 변환 및 추가 (2단계 테이블 처리 지원)
     converter = MarkdownToDocsConverter(
         content,
         include_toc=include_toc,
@@ -961,6 +1008,29 @@ def create_google_doc(
     else:
         print("     콘텐츠 추가됨 (테이블 포함)")
 
-    # 4. 문서 URL 반환
+    # 5. 전체 문서 줄간격 적용 (115%)
+    if apply_page_style:
+        try:
+            doc = docs_service.documents().get(documentId=doc_id).execute()
+            end_index = max(el.get("endIndex", 1) for el in doc["body"]["content"])
+
+            if end_index > 2:
+                docs_service.documents().batchUpdate(
+                    documentId=doc_id,
+                    body={'requests': [{
+                        "updateParagraphStyle": {
+                            "range": {"startIndex": 1, "endIndex": end_index - 1},
+                            "paragraphStyle": {
+                                "lineSpacing": 115,
+                            },
+                            "fields": "lineSpacing"
+                        }
+                    }]}
+                ).execute()
+                print("     줄간격 적용됨 (115%)")
+        except Exception as e:
+            print(f"     줄간격 적용 실패: {e}")
+
+    # 6. 문서 URL 반환
     doc_url = f"https://docs.google.com/document/d/{doc_id}/edit"
     return doc_url
