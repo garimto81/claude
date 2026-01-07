@@ -419,6 +419,241 @@ class NativeTableRenderer:
 
         return requests
 
+    # =========================================================================
+    # 최적화된 통합 렌더링 (v2.3.2+)
+    # =========================================================================
+
+    def render_table_content_and_styles(
+        self,
+        table_data: TableData,
+        table_element: dict[str, Any],
+    ) -> list[dict[str, Any]]:
+        """
+        최적화된 2단계 통합 렌더링: 텍스트 삽입 + 셀 스타일 + 텍스트 스타일
+
+        기존 render_table_content() + render_table_text_styles() 통합 버전.
+        단일 batchUpdate로 모든 작업을 처리하여 API 호출을 최소화합니다.
+
+        Args:
+            table_data: 파싱된 테이블 데이터
+            table_element: Google Docs에서 조회한 실제 테이블 구조
+
+        Returns:
+            list: 통합된 API 요청 리스트 (insertText + updateTableCellStyle + updateTextStyle)
+        """
+        requests: list[dict[str, Any]] = []
+
+        # 테이블 구조에서 각 셀의 실제 인덱스 추출
+        cell_indices = self._extract_cell_indices(table_element)
+
+        if not cell_indices:
+            return requests
+
+        # 모든 행 데이터 수집
+        all_rows = [table_data.headers] + table_data.rows
+
+        # =====================================================================
+        # Phase 1: 텍스트 삽입 정보 수집 및 역순 삽입
+        # =====================================================================
+        insertions: list[dict[str, Any]] = []
+
+        for row_idx, row in enumerate(all_rows):
+            for col_idx, content in enumerate(row):
+                if content and row_idx < len(cell_indices) and col_idx < len(cell_indices[row_idx]):
+                    cell_start = cell_indices[row_idx][col_idx]
+
+                    # 마크다운 파싱 (** 제거, 스타일 정보 추출)
+                    parsed = self._parse_cell_inline_formatting(content)
+
+                    insertions.append({
+                        'index': cell_start,
+                        'content': parsed.plain_text,
+                        'parsed': parsed,
+                        'row_idx': row_idx,
+                        'col_idx': col_idx,
+                    })
+
+        # 역순 정렬 (뒤에서부터 삽입 - 인덱스 시프트 방지)
+        insertions.sort(key=lambda x: x['index'], reverse=True)
+
+        # 텍스트 삽입 요청
+        for item in insertions:
+            if item['content']:
+                requests.append({
+                    'insertText': {
+                        'location': {'index': item['index']},
+                        'text': item['content']
+                    }
+                })
+
+        # =====================================================================
+        # Phase 2: 셀 스타일 적용 (테두리, 패딩, 헤더 배경)
+        # =====================================================================
+        table_start_index = table_element.get('startIndex', 0)
+        table = table_element.get('table', {})
+        table_rows = table.get('tableRows', [])
+
+        for row_idx, row in enumerate(table_rows):
+            cells = row.get('tableCells', [])
+            for col_idx, cell in enumerate(cells):
+                # 테두리 스타일 정의 (SKILL.md 2.3 표준: 1pt, #CCCCCC)
+                border_style = {
+                    'color': {'color': {'rgbColor': self.BORDER_COLOR}},
+                    'width': {'magnitude': 1, 'unit': 'PT'},
+                    'dashStyle': 'SOLID',
+                }
+
+                # 셀 스타일 요청 생성
+                cell_style: dict[str, Any] = {
+                    'contentAlignment': 'TOP',
+                    'paddingTop': {'magnitude': self.CELL_PADDING_PT, 'unit': 'PT'},
+                    'paddingBottom': {'magnitude': self.CELL_PADDING_PT, 'unit': 'PT'},
+                    'paddingLeft': {'magnitude': self.CELL_PADDING_PT, 'unit': 'PT'},
+                    'paddingRight': {'magnitude': self.CELL_PADDING_PT, 'unit': 'PT'},
+                    'borderTop': border_style,
+                    'borderBottom': border_style,
+                    'borderLeft': border_style,
+                    'borderRight': border_style,
+                }
+
+                # 헤더 행 배경색 (SKILL.md 표준: #E6E6E6)
+                if row_idx == 0:
+                    cell_style['backgroundColor'] = {
+                        'color': {'rgbColor': self.HEADER_BG_COLOR}
+                    }
+
+                requests.append({
+                    'updateTableCellStyle': {
+                        'tableRange': {
+                            'tableCellLocation': {
+                                'tableStartLocation': {'index': table_start_index},
+                                'rowIndex': row_idx,
+                                'columnIndex': col_idx,
+                            },
+                            'rowSpan': 1,
+                            'columnSpan': 1,
+                        },
+                        'tableCellStyle': cell_style,
+                        'fields': 'contentAlignment,paddingTop,paddingBottom,paddingLeft,paddingRight,borderTop,borderBottom,borderLeft,borderRight,backgroundColor'
+                    }
+                })
+
+        # =====================================================================
+        # Phase 3: 텍스트 스타일 적용 (본문 색상 + 인라인 마크다운)
+        # 주의: insertText 후 인덱스가 변경되므로 시프트 계산 필요
+        # =====================================================================
+
+        # 인덱스 시프트 계산 (역순 삽입으로 인한 누적 오프셋)
+        # 역순 삽입이므로, 각 셀의 원래 인덱스 이후에 삽입된 텍스트 길이만큼 시프트
+        index_shifts = self._calculate_index_shifts(insertions)
+
+        for item in insertions:
+            if not item['content']:
+                continue
+
+            original_index = item['index']
+            shift = index_shifts.get(original_index, 0)
+            shifted_start = original_index + shift
+            parsed = item['parsed']
+            plain_text = parsed.plain_text
+            is_header = item['row_idx'] == 0
+
+            # 셀 전체에 본문 색상 적용
+            text_style: dict[str, Any] = {
+                'foregroundColor': {
+                    'color': {'rgbColor': self.BODY_COLOR}
+                }
+            }
+            fields = ['foregroundColor']
+
+            # 헤더 행은 볼드 추가
+            if is_header:
+                text_style['bold'] = True
+                fields.append('bold')
+
+            requests.append({
+                'updateTextStyle': {
+                    'range': {
+                        'startIndex': shifted_start,
+                        'endIndex': shifted_start + len(plain_text)
+                    },
+                    'textStyle': text_style,
+                    'fields': ','.join(fields)
+                }
+            })
+
+            # 인라인 스타일 적용 (**볼드**, *이탤릭*, `코드`)
+            for style in parsed.styles:
+                style_fields: list[str] = []
+                inline_style: dict[str, Any] = {}
+
+                if style.bold:
+                    inline_style['bold'] = True
+                    style_fields.append('bold')
+
+                if style.italic:
+                    inline_style['italic'] = True
+                    style_fields.append('italic')
+
+                if style.code:
+                    inline_style['weightedFontFamily'] = {
+                        'fontFamily': 'Consolas',
+                        'weight': 400
+                    }
+                    inline_style['backgroundColor'] = {
+                        'color': {'rgbColor': self.CODE_BG_COLOR}
+                    }
+                    style_fields.extend(['weightedFontFamily', 'backgroundColor'])
+
+                if style_fields:
+                    requests.append({
+                        'updateTextStyle': {
+                            'range': {
+                                'startIndex': shifted_start + style.start,
+                                'endIndex': shifted_start + style.end
+                            },
+                            'textStyle': inline_style,
+                            'fields': ','.join(style_fields)
+                        }
+                    })
+
+        return requests
+
+    def _calculate_index_shifts(
+        self,
+        insertions: list[dict[str, Any]]
+    ) -> dict[int, int]:
+        """
+        역순 텍스트 삽입으로 인한 인덱스 시프트 계산
+
+        역순 삽입 시, 뒤쪽 인덱스에 삽입된 텍스트는 앞쪽 인덱스에 영향을 주지 않음.
+        따라서 각 인덱스는 자신보다 앞에 있는 삽입 텍스트 길이만큼 시프트됨.
+
+        Args:
+            insertions: 역순 정렬된 삽입 정보 리스트
+
+        Returns:
+            dict: {원래_인덱스: 시프트_량}
+        """
+        shifts: dict[int, int] = {}
+
+        # 삽입 순서대로 (역순 = 인덱스 큰 것부터) 처리
+        # 자신보다 인덱스가 작은 삽입들의 텍스트 길이 합이 시프트량
+        for i, item in enumerate(insertions):
+            current_index = item['index']
+            shift = 0
+
+            # 자신보다 뒤에 있는 항목들 (이미 처리된 = 인덱스 더 큰 것들)은 영향 없음
+            # 자신보다 앞에 있는 항목들 (아직 처리 안 됨 = 인덱스 더 작은 것들)의 텍스트 길이 합
+            for j in range(i + 1, len(insertions)):
+                other = insertions[j]
+                if other['index'] < current_index:
+                    shift += len(other['content']) if other['content'] else 0
+
+            shifts[current_index] = shift
+
+        return shifts
+
     def _extract_cell_indices(self, table_element: dict[str, Any]) -> list[list[int]]:
         """
         테이블 요소에서 각 셀의 시작 인덱스 추출

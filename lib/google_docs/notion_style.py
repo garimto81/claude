@@ -134,7 +134,7 @@ NOTION_TYPOGRAPHY: dict[int | str, dict[str, Any]] = {
         'weight': 700,
         'line_height': 1.15,     # 115% 줄간격
         'space_before': 12,
-        'space_after': 8,
+        'space_after': 0,        # 0pt (줄바꿈 최소화)
         'font': 'heading',
         'color': 'heading_primary',  # 진한 파랑 #1A4D8C
     },
@@ -145,7 +145,7 @@ NOTION_TYPOGRAPHY: dict[int | str, dict[str, Any]] = {
         'weight': 700,
         'line_height': 1.15,     # 115% 줄간격
         'space_before': 18,
-        'space_after': 6,
+        'space_after': 0,        # 0pt (줄바꿈 최소화)
         'font': 'heading',
         'color': 'heading_primary',  # 진한 파랑 #1A4D8C
         'border_bottom': True,       # 하단 구분선
@@ -155,7 +155,7 @@ NOTION_TYPOGRAPHY: dict[int | str, dict[str, Any]] = {
         'weight': 700,
         'line_height': 1.15,
         'space_before': 14,
-        'space_after': 4,
+        'space_after': 0,        # 0pt (줄바꿈 최소화)
         'font': 'heading',
         'color': 'heading_secondary',  # 밝은 파랑 #3373B3
     },
@@ -164,7 +164,7 @@ NOTION_TYPOGRAPHY: dict[int | str, dict[str, Any]] = {
         'weight': 700,
         'line_height': 1.15,
         'space_before': 10,
-        'space_after': 4,
+        'space_after': 0,        # 0pt (줄바꿈 최소화)
         'font': 'heading',
         'color': 'heading_tertiary',   # 진한 회색 #404040
     },
@@ -173,7 +173,7 @@ NOTION_TYPOGRAPHY: dict[int | str, dict[str, Any]] = {
         'weight': 600,
         'line_height': 1.15,
         'space_before': 8,
-        'space_after': 4,
+        'space_after': 0,        # 0pt (줄바꿈 최소화)
         'font': 'heading',
         'color': 'text_primary',
     },
@@ -182,7 +182,7 @@ NOTION_TYPOGRAPHY: dict[int | str, dict[str, Any]] = {
         'weight': 600,
         'line_height': 1.15,
         'space_before': 6,
-        'space_after': 4,
+        'space_after': 0,        # 0pt (줄바꿈 최소화)
         'font': 'heading',
         'color': 'text_primary',
     },
@@ -191,7 +191,7 @@ NOTION_TYPOGRAPHY: dict[int | str, dict[str, Any]] = {
         'weight': 600,
         'line_height': 1.15,
         'space_before': 4,
-        'space_after': 4,
+        'space_after': 0,        # 0pt (줄바꿈 최소화)
         'font': 'heading',
         'color': 'text_secondary',
     },
@@ -201,7 +201,7 @@ NOTION_TYPOGRAPHY: dict[int | str, dict[str, Any]] = {
         'size': 11,              # 11pt
         'weight': 400,
         'line_height': 1.15,     # 115% 줄간격 (전역 표준)
-        'space_after': 4,        # 문단 아래 여백 4pt
+        'space_after': 0,        # 0pt (줄바꿈 최소화)
         'font': 'body',
         'color': 'text_primary',
     },
@@ -230,7 +230,7 @@ NOTION_TYPOGRAPHY: dict[int | str, dict[str, Any]] = {
         'weight': 400,
         'line_height': 1.55,
         'indent': 20,
-        'item_spacing': 6,
+        'item_spacing': 0,       # 0pt (줄바꿈 최소화)
         'font': 'body',
         'color': 'text_primary',
     },
