@@ -3,6 +3,10 @@
 
 마크다운 테이블을 Google Docs API의 insertTable을 사용하여
 실제 테이블로 변환합니다.
+
+2단계 렌더링 방식:
+1. 테이블 구조 생성 (insertTable)
+2. 문서 재조회 후 텍스트/스타일 삽입
 """
 
 from typing import Any
@@ -11,7 +15,7 @@ from .models import TableData
 
 
 class NativeTableRenderer:
-    """마크다운 테이블을 Google Docs 네이티브 테이블로 변환"""
+    """마크다운 테이블을 Google Docs 네이티브 테이블로 변환 (2단계 방식)"""
 
     def parse_markdown_table(self, table_lines: list[str]) -> TableData:
         """
@@ -86,13 +90,164 @@ class NativeTableRenderer:
             column_alignments=alignments[:column_count]
         )
 
+    def render_table_structure(
+        self,
+        table_data: TableData,
+        start_index: int,
+    ) -> dict[str, Any] | None:
+        """
+        1단계: 테이블 구조만 생성하는 요청 반환
+
+        Args:
+            table_data: 파싱된 테이블 데이터
+            start_index: 테이블 삽입 시작 인덱스
+
+        Returns:
+            dict: insertTable 요청 또는 None
+        """
+        if table_data.column_count == 0 or table_data.row_count == 0:
+            return None
+
+        return {
+            'insertTable': {
+                'rows': table_data.row_count,
+                'columns': table_data.column_count,
+                'location': {'index': start_index}
+            }
+        }
+
+    def render_table_content(
+        self,
+        table_data: TableData,
+        table_element: dict[str, Any],
+    ) -> list[dict[str, Any]]:
+        """
+        2단계: 실제 테이블 구조를 기반으로 텍스트/스타일 요청 생성
+
+        Args:
+            table_data: 파싱된 테이블 데이터
+            table_element: Google Docs에서 조회한 실제 테이블 구조
+
+        Returns:
+            list: insertText 및 updateTextStyle 요청 리스트
+        """
+        requests = []
+
+        # 테이블 구조에서 각 셀의 실제 인덱스 추출
+        cell_indices = self._extract_cell_indices(table_element)
+
+        if not cell_indices:
+            return requests
+
+        # 모든 행 데이터 수집
+        all_rows = [table_data.headers] + table_data.rows
+
+        # 셀 텍스트 삽입 (역순으로 - 인덱스 시프트 방지)
+        insertions = []
+        for row_idx, row in enumerate(all_rows):
+            for col_idx, content in enumerate(row):
+                if content and row_idx < len(cell_indices) and col_idx < len(cell_indices[row_idx]):
+                    cell_start = cell_indices[row_idx][col_idx]
+                    insertions.append({
+                        'index': cell_start,
+                        'content': content,
+                        'row_idx': row_idx,
+                        'col_idx': col_idx,
+                    })
+
+        # 역순 정렬 (뒤에서부터 삽입)
+        insertions.sort(key=lambda x: x['index'], reverse=True)
+
+        for item in insertions:
+            requests.append({
+                'insertText': {
+                    'location': {'index': item['index']},
+                    'text': item['content']
+                }
+            })
+
+        # 헤더 스타일 적용 (텍스트 삽입 후)
+        # 주의: insertText 요청들이 먼저 실행된 후에 스타일이 적용됨
+        for col_idx, content in enumerate(table_data.headers):
+            if content and col_idx < len(cell_indices[0]):
+                cell_start = cell_indices[0][col_idx]
+                # SKILL.md 표준: 진한 회색 #404040
+                requests.append({
+                    'updateTextStyle': {
+                        'range': {
+                            'startIndex': cell_start,
+                            'endIndex': cell_start + len(content)
+                        },
+                        'textStyle': {
+                            'bold': True,
+                            'foregroundColor': {
+                                'color': {'rgbColor': {'red': 0.25, 'green': 0.25, 'blue': 0.25}}
+                            }
+                        },
+                        'fields': 'bold,foregroundColor'
+                    }
+                })
+
+        return requests
+
+    def _extract_cell_indices(self, table_element: dict[str, Any]) -> list[list[int]]:
+        """
+        테이블 요소에서 각 셀의 시작 인덱스 추출
+
+        Args:
+            table_element: Google Docs 테이블 구조 요소
+
+        Returns:
+            list[list[int]]: 행/열별 셀 시작 인덱스
+        """
+        cell_indices = []
+
+        table = table_element.get('table')
+        if not table:
+            return cell_indices
+
+        table_rows = table.get('tableRows', [])
+        for row in table_rows:
+            row_indices = []
+            cells = row.get('tableCells', [])
+            for cell in cells:
+                # 셀 내 첫 번째 문단의 시작 인덱스
+                content = cell.get('content', [])
+                if content:
+                    first_para = content[0]
+                    if 'paragraph' in first_para:
+                        para_start = first_para.get('startIndex', 0)
+                        row_indices.append(para_start)
+            cell_indices.append(row_indices)
+
+        return cell_indices
+
+    def get_table_end_index(self, table_element: dict[str, Any]) -> int:
+        """
+        테이블의 끝 인덱스 반환
+
+        Args:
+            table_element: Google Docs 테이블 구조 요소
+
+        Returns:
+            int: 테이블 끝 인덱스
+        """
+        return table_element.get('endIndex', 0)
+
+    # =========================================================================
+    # 레거시 메서드 (하위 호환성)
+    # =========================================================================
+
     def render(
         self,
         table_data: TableData,
         start_index: int,
     ) -> tuple[list[dict[str, Any]], int]:
         """
-        Google Docs API 요청 생성
+        [레거시] 단일 batchUpdate용 테이블 렌더링
+
+        주의: 이 메서드는 인덱스 계산 문제로 실패할 수 있습니다.
+        가능하면 render_table_structure() + render_table_content()를 사용하세요.
 
         Args:
             table_data: 파싱된 테이블 데이터
@@ -119,8 +274,6 @@ class NativeTableRenderer:
         all_rows = [table_data.headers] + table_data.rows
 
         # 3. 셀 내용 삽입 (역순으로 - 인덱스 시프트 방지)
-        # Google Docs에서 텍스트 삽입 시 인덱스가 밀리므로
-        # 뒤에서부터 삽입해야 앞의 인덱스가 변하지 않음
         cell_insertions = []
 
         for row_idx in range(len(all_rows)):
@@ -161,14 +314,20 @@ class NativeTableRenderer:
                 header_index = self._calc_cell_index(
                     start_index, 0, col_idx, table_data.column_count
                 )
+                # SKILL.md 표준: 진한 회색 #404040
                 requests.append({
                     'updateTextStyle': {
                         'range': {
                             'startIndex': header_index,
                             'endIndex': header_index + len(header_content)
                         },
-                        'textStyle': {'bold': True},
-                        'fields': 'bold'
+                        'textStyle': {
+                            'bold': True,
+                            'foregroundColor': {
+                                'color': {'rgbColor': {'red': 0.25, 'green': 0.25, 'blue': 0.25}}
+                            }
+                        },
+                        'fields': 'bold,foregroundColor'
                     }
                 })
 
@@ -185,62 +344,29 @@ class NativeTableRenderer:
         col_count: int,
     ) -> int:
         """
-        테이블 셀의 삽입 인덱스 계산
+        [레거시] 테이블 셀의 삽입 인덱스 계산 (추정값)
 
         Google Docs 테이블 구조:
         - 테이블 요소: 1
         - 각 행: 1
         - 각 셀: 2 (셀 요소 + 단락)
-
-        공식: table_start + 2 + row_idx * (1 + col_count * 2) + col_idx * 2 + 1
-
-        Args:
-            table_start: 테이블 시작 인덱스
-            row_idx: 행 인덱스 (0부터)
-            col_idx: 열 인덱스 (0부터)
-            col_count: 총 열 수
-
-        Returns:
-            int: 셀 내 텍스트 삽입 인덱스
         """
-        # 테이블 시작 + 테이블 요소(1) + 첫 행 요소(1)
         base = table_start + 2
-
-        # 이전 행들의 크기 (각 행 = 1 + 열수 * 2)
         row_offset = row_idx * (1 + col_count * 2)
-
-        # 현재 행 내 셀 위치 (각 셀 = 2, 단락 위치는 +1)
         col_offset = col_idx * 2 + 1
-
         return base + row_offset + col_offset
 
     def _calc_table_end_index(self, table_start: int, table_data: TableData) -> int:
         """
-        테이블 끝 인덱스 계산
-
-        테이블 전체 크기:
-        - 테이블 요소: 1
-        - 각 행: 1 + (열수 * 2)
-        - 마지막 줄바꿈: 1
-
-        Args:
-            table_start: 테이블 시작 인덱스
-            table_data: 테이블 데이터
-
-        Returns:
-            int: 테이블 끝 다음 인덱스
+        [레거시] 테이블 끝 인덱스 계산 (추정값)
         """
-        # 테이블 요소
         size = 1
-
-        # 각 행
         row_size = 1 + table_data.column_count * 2
         size += table_data.row_count * row_size
 
-        # 셀 내용 길이 (각 셀의 텍스트 + 줄바꿈)
         all_rows = [table_data.headers] + table_data.rows
         for row in all_rows:
             for cell in row:
                 size += len(cell)
 
-        return table_start + size + 1  # +1 for trailing newline
+        return table_start + size + 1

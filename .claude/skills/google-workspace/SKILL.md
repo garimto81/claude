@@ -3,7 +3,8 @@ name: google-workspace
 description: >
   Google Workspace 통합 스킬. Docs, Sheets, Drive, Gmail, Calendar API 연동.
   OAuth 2.0 인증, 서비스 계정 설정, 데이터 읽기/쓰기 자동화 지원.
-version: 2.1.0
+  파랑 계열 전문 문서 스타일, 2단계 네이티브 테이블 렌더링 포함.
+version: 2.3.0
 
 triggers:
   keywords:
@@ -16,6 +17,9 @@ triggers:
     - "스프레드시트"
     - "구글 문서"
     - "구글 드라이브"
+    - "gdocs"
+    - "--gdocs"
+    - "prd gdocs"
   file_patterns:
     - "**/credentials.json"
     - "**/token.json"
@@ -616,6 +620,217 @@ create_event('팀 미팅', start, end, description='주간 진행 상황 공유'
 2. 지수 백오프 재시도
 3. 캐싱 적용
 
+---
+
+## Google Docs 문서 스타일 가이드 (파랑 계열 전문 문서)
+
+모든 Google Docs 문서 생성/수정 시 아래 스타일을 적용합니다.
+
+### 페이지 설정
+
+| 항목 | 값 | 비고 |
+|------|-----|------|
+| **페이지 크기** | A4 (595.28pt x 841.89pt) | 210mm x 297mm |
+| **여백** | 72pt (1인치) | 상하좌우 동일 |
+| **줄간격** | 115% | 가독성 최적화 |
+| **문단 간격** | 상: 0pt, 하: 4pt | 헤딩 제외 |
+
+### 헤딩 스타일
+
+| 레벨 | 색상 | 크기 | 추가 스타일 |
+|------|------|------|-------------|
+| **제목 (Title)** | 진한 파랑 `#1A4D8C` | 26pt | Bold |
+| **H1** | 진한 파랑 `#1A4D8C` | 18pt | Bold + 하단 구분선 (1pt, 파랑) |
+| **H2** | 밝은 파랑 `#3373B3` | 14pt | Bold |
+| **H3** | 진한 회색 `#404040` | 12pt | Bold |
+
+### 색상 팔레트 (파랑 계열 전문 문서)
+
+```python
+# lib/google_docs/notion_style.py
+NOTION_COLORS = {
+    # 텍스트 계층
+    'text_primary': '#404040',      # 진한 회색 - 본문
+    'text_secondary': '#666666',    # 중간 회색 - 메타/캡션
+    'text_muted': '#999999',        # 연한 회색 - 힌트 텍스트
+
+    # 제목 색상 (파랑 계열)
+    'heading_primary': '#1A4D8C',   # 진한 파랑 - Title, H1
+    'heading_secondary': '#3373B3', # 밝은 파랑 - H2
+    'heading_tertiary': '#404040',  # 진한 회색 - H3 이하
+    'heading_accent': '#3373B3',    # 밝은 파랑 - 강조/구분선
+
+    # 배경 색상
+    'background_gray': '#F2F2F2',   # 연한 회색 - 코드/테이블
+
+    # 테이블
+    'table_header_bg': '#E6E6E6',   # 연한 회색 헤더 배경
+    'table_header_text': '#404040', # 진한 회색 헤더 텍스트
+    'table_border': '#CCCCCC',      # 1pt 회색 테두리
+}
+```
+
+### 테이블 스타일
+
+| 항목 | 값 |
+|------|-----|
+| **너비** | 페이지 컨텐츠 영역에 맞춤 (451pt) |
+| **헤더 배경** | 연한 회색 `#E6E6E6` |
+| **헤더 텍스트** | 진한 회색 `#404040`, Bold |
+| **셀 패딩** | 5pt |
+| **테두리** | 1pt, 회색 `#CCCCCC` |
+
+### 네이티브 테이블 렌더링 (2단계 방식)
+
+Google Docs API의 인덱스 계산 문제를 해결하기 위해 2단계 방식을 사용합니다.
+
+```
+┌─────────────────────────────────────────────────────────────┐
+│  네이티브 테이블 2단계 렌더링                                 │
+├─────────────────────────────────────────────────────────────┤
+│                                                              │
+│  1단계: 테이블 구조 생성                                     │
+│     ├── 지금까지의 요청 실행 (batchUpdate)                  │
+│     ├── 문서 끝 인덱스 조회                                 │
+│     └── insertTable 실행                                    │
+│                                                              │
+│  2단계: 테이블 내용 삽입                                     │
+│     ├── 문서 재조회하여 실제 테이블 구조 확인               │
+│     ├── 각 셀의 실제 인덱스 추출                            │
+│     ├── 텍스트 삽입 (역순 - 인덱스 시프트 방지)             │
+│     └── 헤더 스타일 적용 (Bold, 색상)                       │
+│                                                              │
+└─────────────────────────────────────────────────────────────┘
+```
+
+**관련 모듈**:
+- `lib/google_docs/table_renderer.py` - 2단계 렌더링 메서드
+- `lib/google_docs/converter.py` - 테이블 처리 로직
+
+### 줄바꿈 정책
+
+| 항목 | 정책 |
+|------|------|
+| **단락 사이** | 줄바꿈 허용 |
+| **테이블 앞뒤** | 줄바꿈 제거 (불필요) |
+| **헤딩 뒤** | 줄바꿈 제거 |
+| **코드 블록 앞뒤** | 줄바꿈 1개만 |
+
+### 금지 사항
+
+| 항목 | 사유 |
+|------|------|
+| 구분선 (─ 반복) | 시각적 노이즈, H1 하단 구분선으로 대체 |
+| **불필요한 빈 줄** | 가독성 저하, 단락 전환 시에만 허용 |
+| 150% 이상 줄간격 | 페이지 낭비, 115% 권장 |
+| Letter 용지 | A4로 통일 |
+| Slate 계열 색상 | 파랑 계열로 통일 |
+
+### 스타일 적용 코드 템플릿
+
+```python
+def apply_standard_style(service, doc_id):
+    """표준 문서 스타일 적용"""
+
+    # A4 페이지 설정
+    requests = [{
+        "updateDocumentStyle": {
+            "documentStyle": {
+                "pageSize": {
+                    "width": {"magnitude": 595.28, "unit": "PT"},
+                    "height": {"magnitude": 841.89, "unit": "PT"}
+                },
+                "marginTop": {"magnitude": 72, "unit": "PT"},
+                "marginBottom": {"magnitude": 72, "unit": "PT"},
+                "marginLeft": {"magnitude": 72, "unit": "PT"},
+                "marginRight": {"magnitude": 72, "unit": "PT"},
+            },
+            "fields": "pageSize,marginTop,marginBottom,marginLeft,marginRight"
+        }
+    }]
+
+    # 본문 줄간격 설정 (문서 전체)
+    doc = service.documents().get(documentId=doc_id).execute()
+    end_index = max(el.get("endIndex", 1) for el in doc["body"]["content"])
+
+    requests.append({
+        "updateParagraphStyle": {
+            "range": {"startIndex": 1, "endIndex": end_index - 1},
+            "paragraphStyle": {
+                "lineSpacing": 115,
+                "spaceAbove": {"magnitude": 0, "unit": "PT"},
+                "spaceBelow": {"magnitude": 4, "unit": "PT"},
+            },
+            "fields": "lineSpacing,spaceAbove,spaceBelow"
+        }
+    })
+
+    service.documents().batchUpdate(
+        documentId=doc_id,
+        body={"requests": requests}
+    ).execute()
+```
+
+### 헤딩 스타일 적용 코드
+
+```python
+def apply_heading_style(service, doc_id, start_idx, end_idx, heading_level):
+    """헤딩에 표준 스타일 적용"""
+
+    COLORS = {
+        "primary_blue": {"red": 0.10, "green": 0.30, "blue": 0.55},
+        "accent_blue": {"red": 0.20, "green": 0.45, "blue": 0.70},
+        "dark_gray": {"red": 0.25, "green": 0.25, "blue": 0.25},
+    }
+
+    HEADING_STYLES = {
+        "TITLE": {"color": "primary_blue", "size": 26},
+        "HEADING_1": {"color": "primary_blue", "size": 18, "border": True},
+        "HEADING_2": {"color": "accent_blue", "size": 14},
+        "HEADING_3": {"color": "dark_gray", "size": 12},
+    }
+
+    style = HEADING_STYLES.get(heading_level)
+    if not style:
+        return
+
+    requests = [{
+        "updateTextStyle": {
+            "range": {"startIndex": start_idx, "endIndex": end_idx},
+            "textStyle": {
+                "foregroundColor": {"color": {"rgbColor": COLORS[style["color"]]}},
+                "bold": True,
+                "fontSize": {"magnitude": style["size"], "unit": "PT"}
+            },
+            "fields": "foregroundColor,bold,fontSize"
+        }
+    }]
+
+    # H1에 하단 구분선 추가
+    if style.get("border"):
+        requests.append({
+            "updateParagraphStyle": {
+                "range": {"startIndex": start_idx, "endIndex": end_idx + 1},
+                "paragraphStyle": {
+                    "borderBottom": {
+                        "color": {"color": {"rgbColor": COLORS["accent_blue"]}},
+                        "width": {"magnitude": 1, "unit": "PT"},
+                        "padding": {"magnitude": 4, "unit": "PT"},
+                        "dashStyle": "SOLID"
+                    }
+                },
+                "fields": "borderBottom"
+            }
+        })
+
+    service.documents().batchUpdate(
+        documentId=doc_id,
+        body={"requests": requests}
+    ).execute()
+```
+
+---
+
 ## 연동
 
 | 스킬/에이전트 | 연동 시점 |
@@ -703,7 +918,16 @@ PRD(Product Requirements Document)를 Google Docs로 관리하는 통합 시스�
 ### 모듈 구조
 
 ```
-src/services/google_docs/
+lib/google_docs/                    # 핵심 변환 라이브러리
+├── __init__.py
+├── auth.py                 # OAuth 2.0 인증 (토큰 관리)
+├── converter.py            # Markdown → Google Docs 변환 (2단계 테이블)
+├── table_renderer.py       # 네이티브 테이블 렌더링 (2단계 방식)
+├── notion_style.py         # 파랑 계열 전문 문서 스타일
+├── models.py               # 데이터 모델 (TableData 등)
+└── cli.py                  # CLI 인터페이스
+
+src/services/google_docs/           # PRD 관리 서비스
 ├── __init__.py
 ├── client.py              # Google Docs API 클라이언트
 ├── prd_service.py         # PRD CRUD 서비스
@@ -724,6 +948,36 @@ src/services/google_docs/
 | `/prd-sync stats` | PRD 통계 |
 
 ### 사용 예시
+
+#### 네이티브 테이블 포함 문서 생성
+
+```python
+from lib.google_docs.converter import create_google_doc
+
+# 마크다운 콘텐츠 (네이티브 테이블 포함)
+markdown = '''
+# 프로젝트 현황
+
+## 모듈 상태
+| 모듈 | 상태 | 담당자 |
+|------|------|--------|
+| 인증 | 완료 | 김개발 |
+| API | 진행중 | 이백엔드 |
+
+## 결론
+모든 모듈이 정상 진행 중입니다.
+'''
+
+# Google Docs 생성 (네이티브 테이블 자동 적용)
+url = create_google_doc(
+    title='프로젝트 현황 보고서',
+    content=markdown,
+    use_native_tables=True  # 기본값
+)
+print(f'문서 URL: {url}')
+```
+
+#### PRD 서비스 사용
 
 ```python
 from src.services.google_docs import GoogleDocsClient, PRDService

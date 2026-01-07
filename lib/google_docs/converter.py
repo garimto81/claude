@@ -2,6 +2,7 @@
 Markdown to Google Docs 변환기
 
 마크다운을 Google Docs 네이티브 형식으로 변환합니다.
+Premium Dark Text 스타일 시스템 연동.
 """
 
 import re
@@ -12,6 +13,7 @@ from googleapiclient.discovery import build
 from .auth import get_credentials, DEFAULT_FOLDER_ID
 from .models import TextSegment, InlineParseResult
 from .table_renderer import NativeTableRenderer
+from .notion_style import NotionStyle
 
 
 class MarkdownToDocsConverter:
@@ -24,6 +26,9 @@ class MarkdownToDocsConverter:
         use_native_tables: bool = True,
         code_font: str = "Consolas",
         code_bg_color: tuple[float, float, float] = (0.95, 0.95, 0.95),
+        use_premium_style: bool = True,
+        docs_service: Any = None,
+        doc_id: str | None = None,
     ):
         """
         Args:
@@ -32,18 +37,77 @@ class MarkdownToDocsConverter:
             use_native_tables: 네이티브 테이블 사용 여부
             code_font: 코드 블록 폰트
             code_bg_color: 코드 블록 배경색 (RGB 0-1)
+            use_premium_style: 파랑 계열 전문 문서 스타일 사용 여부
+            docs_service: Google Docs API 서비스 (2단계 테이블 처리용)
+            doc_id: 문서 ID (2단계 테이블 처리용)
         """
         self.content = content
         self.include_toc = include_toc
         self.use_native_tables = use_native_tables
         self.code_font = code_font
         self.code_bg_color = code_bg_color
+        self.use_premium_style = use_premium_style
+        self.docs_service = docs_service
+        self.doc_id = doc_id
+
+        # 파랑 계열 전문 문서 스타일 시스템
+        self.style = NotionStyle.default() if use_premium_style else None
 
         self.requests: list[dict[str, Any]] = []
         self.current_index = 1  # Google Docs는 1부터 시작
         self.headings: list[dict[str, Any]] = []
 
         self._table_renderer = NativeTableRenderer()
+
+        # 참조 링크 저장소
+        self._reference_links: dict[str, str] = {}
+
+        # YAML frontmatter 제거 및 참조 링크 파싱
+        self._preprocess_content()
+
+    def _preprocess_content(self):
+        """
+        콘텐츠 전처리
+        - YAML frontmatter 제거
+        - 참조 링크 추출
+        - 각주 추출
+        """
+        lines = self.content.split('\n')
+        processed_lines = []
+        i = 0
+
+        # 1. YAML frontmatter 제거 (--- ... --- 로 감싸진 부분)
+        if lines and lines[0].strip() == '---':
+            i = 1
+            while i < len(lines) and lines[i].strip() != '---':
+                i += 1
+            i += 1  # 닫는 --- 건너뛰기
+
+        # 2. 참조 링크 및 각주 추출
+        while i < len(lines):
+            line = lines[i]
+
+            # 참조 링크: [ref]: url
+            ref_match = re.match(r'^\[([^\]]+)\]:\s*(.+)$', line.strip())
+            if ref_match:
+                ref_id = ref_match.group(1).lower()
+                ref_url = ref_match.group(2).strip()
+                self._reference_links[ref_id] = ref_url
+                i += 1
+                continue
+
+            # 각주 정의: [^1]: note
+            footnote_match = re.match(r'^\[\^([^\]]+)\]:\s*(.+)$', line.strip())
+            if footnote_match:
+                # 각주는 문서 끝에 추가하도록 별도 저장
+                # (현재는 간단히 제거, 추후 구현 시 확장 가능)
+                i += 1
+                continue
+
+            processed_lines.append(line)
+            i += 1
+
+        self.content = '\n'.join(processed_lines)
 
     def parse(self) -> list[dict[str, Any]]:
         """
@@ -134,10 +198,57 @@ class MarkdownToDocsConverter:
 
         return self.requests
 
+    def parse_batched(self) -> list[list[dict[str, Any]]]:
+        """
+        마크다운 파싱 및 단계별 요청 배치 생성
+
+        insertTable 요청을 기준으로 요청을 분리합니다.
+        테이블 삽입 후 인덱스가 변경되므로, 각 배치는 순차적으로 실행해야 합니다.
+
+        Returns:
+            list[list]: 순차적으로 실행할 요청 배치 리스트
+        """
+        # 먼저 전체 요청 생성
+        self.parse()
+
+        # insertTable 요청을 기준으로 분리
+        batches = []
+        current_batch = []
+
+        for req in self.requests:
+            if 'insertTable' in req:
+                # 현재 배치 저장 (비어있지 않으면)
+                if current_batch:
+                    batches.append(current_batch)
+                    current_batch = []
+
+                # insertTable은 단독 배치로
+                batches.append([req])
+            else:
+                current_batch.append(req)
+
+        # 마지막 배치 저장
+        if current_batch:
+            batches.append(current_batch)
+
+        return batches
+
     def _parse_inline_formatting(self, text: str) -> InlineParseResult:
         """인라인 포맷팅 파싱 (볼드, 이탤릭, 코드, 링크)"""
         segments: list[TextSegment] = []
         plain_text = ""
+
+        # 참조 링크 치환 [text][ref] → [text](url)
+        def replace_ref_link(match):
+            text_part = match.group(1)
+            ref_part = match.group(2) if match.group(2) else text_part
+            ref_url = self._reference_links.get(ref_part.lower(), '')
+            if ref_url:
+                return f'[{text_part}]({ref_url})'
+            return match.group(0)  # 참조 못 찾으면 원본 유지
+
+        # 참조 링크 패턴: [text][ref] 또는 [text][]
+        text = re.sub(r'\[([^\]]+)\]\[([^\]]*)\]', replace_ref_link, text)
 
         # 정규식 패턴들 (순서 중요)
         patterns = [
@@ -227,12 +338,67 @@ class MarkdownToDocsConverter:
         return start_index
 
     def _add_paragraph_with_inline_styles(self, text: str):
-        """인라인 스타일이 적용된 단락 추가"""
+        """인라인 스타일이 적용된 단락 추가 (Premium Dark Text 스타일)"""
         result = self._parse_inline_formatting(text)
 
         # 전체 텍스트 먼저 삽입
         full_text = ''.join(seg.text for seg in result.segments)
         start = self._add_text(full_text)
+
+        # Premium Dark Text 스타일 사용
+        if self.style and self.use_premium_style:
+            body_config = self.style.typography.get('body', {})
+            color_name = body_config.get('color', 'text_primary')
+            color = self.style.get_color(color_name)
+            line_height = body_config.get('line_height', 1.65) * 100
+            space_after = body_config.get('space_after', 10)
+            font_size = body_config.get('size', 11)
+
+            # NORMAL_TEXT Named Style + 커스텀 스타일
+            self.requests.append({
+                'updateParagraphStyle': {
+                    'range': {
+                        'startIndex': start,
+                        'endIndex': self.current_index - 1
+                    },
+                    'paragraphStyle': {
+                        'namedStyleType': 'NORMAL_TEXT',
+                        'lineSpacing': line_height,
+                        'spaceBelow': {'magnitude': space_after, 'unit': 'PT'}
+                    },
+                    'fields': 'namedStyleType,lineSpacing,spaceBelow'
+                }
+            })
+
+            # 본문 색상 적용
+            self.requests.append({
+                'updateTextStyle': {
+                    'range': {
+                        'startIndex': start,
+                        'endIndex': self.current_index - 1
+                    },
+                    'textStyle': {
+                        'foregroundColor': {'color': {'rgbColor': color}},
+                        'fontSize': {'magnitude': font_size, 'unit': 'PT'},
+                    },
+                    'fields': 'foregroundColor,fontSize'
+                }
+            })
+        else:
+            # 기본 스타일 (레거시)
+            self.requests.append({
+                'updateParagraphStyle': {
+                    'range': {
+                        'startIndex': start,
+                        'endIndex': self.current_index - 1
+                    },
+                    'paragraphStyle': {
+                        'lineSpacing': 150,
+                        'spaceBelow': {'magnitude': 8, 'unit': 'PT'}
+                    },
+                    'fields': 'lineSpacing,spaceBelow'
+                }
+            })
 
         # 각 세그먼트에 스타일 적용
         current_pos = start
@@ -242,26 +408,85 @@ class MarkdownToDocsConverter:
             current_pos = end_pos
 
     def _add_heading(self, text: str, level: int):
-        """제목 추가"""
+        """제목 추가 (Premium Dark Text 스타일 적용)"""
         # 목차용 헤딩 수집
         self.headings.append({'text': text, 'level': level, 'index': self.current_index})
 
         start = self._add_text(text)
 
-        # 제목 스타일 적용
-        heading_style = f'HEADING_{min(level, 6)}'
-        self.requests.append({
-            'updateParagraphStyle': {
-                'range': {
-                    'startIndex': start,
-                    'endIndex': self.current_index - 1
-                },
-                'paragraphStyle': {
-                    'namedStyleType': heading_style
-                },
-                'fields': 'namedStyleType'
+        # Premium Dark Text 스타일 사용
+        if self.style and self.use_premium_style:
+            heading_config = self.style.get_heading_style(level)
+            color_name = heading_config.get('color', 'heading_primary')
+            color = self.style.get_color(color_name)
+
+            space_before = heading_config.get('space_before', 24)
+            space_after = heading_config.get('space_after', 8)
+            font_size = heading_config.get('size', 16)
+            font_weight = heading_config.get('weight', 600)
+            line_height = heading_config.get('line_height', 1.3) * 100
+
+            # 제목 스타일 적용 (Named Style + Custom)
+            heading_style = f'HEADING_{min(level, 6)}'
+            self.requests.append({
+                'updateParagraphStyle': {
+                    'range': {
+                        'startIndex': start,
+                        'endIndex': self.current_index - 1
+                    },
+                    'paragraphStyle': {
+                        'namedStyleType': heading_style,
+                        'spaceAbove': {'magnitude': space_before, 'unit': 'PT'},
+                        'spaceBelow': {'magnitude': space_after, 'unit': 'PT'},
+                        'lineSpacing': line_height,
+                    },
+                    'fields': 'namedStyleType,spaceAbove,spaceBelow,lineSpacing'
+                }
+            })
+
+            # 색상 및 폰트 스타일 적용
+            self.requests.append({
+                'updateTextStyle': {
+                    'range': {
+                        'startIndex': start,
+                        'endIndex': self.current_index - 1
+                    },
+                    'textStyle': {
+                        'foregroundColor': {'color': {'rgbColor': color}},
+                        'fontSize': {'magnitude': font_size, 'unit': 'PT'},
+                        'bold': font_weight >= 600,
+                    },
+                    'fields': 'foregroundColor,fontSize,bold'
+                }
+            })
+        else:
+            # 기본 스타일 (레거시)
+            space_settings = {
+                1: {'before': 48, 'after': 16},
+                2: {'before': 36, 'after': 12},
+                3: {'before': 28, 'after': 8},
+                4: {'before': 20, 'after': 6},
+                5: {'before': 16, 'after': 4},
+                6: {'before': 12, 'after': 4},
             }
-        })
+            spacing = space_settings.get(level, {'before': 16, 'after': 8})
+
+            heading_style = f'HEADING_{min(level, 6)}'
+            self.requests.append({
+                'updateParagraphStyle': {
+                    'range': {
+                        'startIndex': start,
+                        'endIndex': self.current_index - 1
+                    },
+                    'paragraphStyle': {
+                        'namedStyleType': heading_style,
+                        'spaceAbove': {'magnitude': spacing['before'], 'unit': 'PT'},
+                        'spaceBelow': {'magnitude': spacing['after'], 'unit': 'PT'},
+                        'lineSpacing': 120,
+                    },
+                    'fields': 'namedStyleType,spaceAbove,spaceBelow,lineSpacing'
+                }
+            })
 
     def _add_table(self, table_lines: list[str]):
         """테이블 추가"""
@@ -271,22 +496,102 @@ class MarkdownToDocsConverter:
             self._add_text_table(table_lines)
 
     def _add_native_table(self, table_lines: list[str]):
-        """네이티브 Google Docs 테이블 추가"""
+        """네이티브 Google Docs 테이블 추가 (2단계 방식)"""
         table_data = self._table_renderer.parse_markdown_table(table_lines)
 
         if table_data.column_count == 0:
             return
 
-        # 테이블 앞 줄바꿈
-        self._add_text('')
+        # 2단계 처리 (docs_service가 있는 경우)
+        if self.docs_service and self.doc_id:
+            self._add_native_table_two_phase(table_data)
+        else:
+            # 레거시 단일 batchUpdate 방식 (실패 가능)
+            requests, new_index = self._table_renderer.render(table_data, self.current_index)
+            self.requests.extend(requests)
+            self.current_index = new_index
 
-        # 테이블 렌더링
-        requests, new_index = self._table_renderer.render(table_data, self.current_index)
-        self.requests.extend(requests)
-        self.current_index = new_index
+    def _add_native_table_two_phase(self, table_data):
+        """2단계 네이티브 테이블 처리 (안정적)"""
+        # 1단계: 지금까지의 요청이 있으면 먼저 실행
+        if self.requests:
+            self.docs_service.documents().batchUpdate(
+                documentId=self.doc_id,
+                body={'requests': self.requests}
+            ).execute()
+            self.requests = []
 
-        # 테이블 뒤 줄바꿈
-        self._add_text('')
+        # 문서 조회하여 현재 끝 인덱스 확인
+        doc = self.docs_service.documents().get(documentId=self.doc_id).execute()
+        body = doc.get('body', {})
+        content = body.get('content', [])
+        doc_end_index = content[-1].get('endIndex', 1) if content else 1
+
+        # 테이블 삽입 위치 (문서 끝 - 1)
+        table_start_index = doc_end_index - 1
+
+        # 테이블 구조 생성
+        structure_request = self._table_renderer.render_table_structure(
+            table_data, table_start_index
+        )
+        if structure_request:
+            self.docs_service.documents().batchUpdate(
+                documentId=self.doc_id,
+                body={'requests': [structure_request]}
+            ).execute()
+
+        # 2단계: 문서 재조회하여 실제 테이블 구조 확인
+        doc = self.docs_service.documents().get(documentId=self.doc_id).execute()
+
+        # 마지막 테이블 요소 찾기
+        table_element = self._find_last_table(doc)
+
+        if table_element:
+            # 테이블 내용 삽입
+            content_requests = self._table_renderer.render_table_content(
+                table_data, table_element
+            )
+            if content_requests:
+                self.docs_service.documents().batchUpdate(
+                    documentId=self.doc_id,
+                    body={'requests': content_requests}
+                ).execute()
+
+            # 문서 재조회하여 실제 끝 인덱스 확인
+            doc = self.docs_service.documents().get(documentId=self.doc_id).execute()
+            body = doc.get('body', {})
+            content = body.get('content', [])
+            # 문서 끝 - 1 (Google Docs는 끝 인덱스에 삽입 불가)
+            doc_end = content[-1].get('endIndex', 1) if content else 1
+            self.current_index = doc_end - 1
+        else:
+            # 테이블을 찾지 못한 경우 추정값 사용
+            self.current_index = table_start_index + self._estimate_table_size(table_data) - 1
+
+    def _find_last_table(self, doc: dict) -> dict | None:
+        """문서에서 마지막 테이블 요소 찾기"""
+        body = doc.get('body', {})
+        content = body.get('content', [])
+
+        # 뒤에서부터 검색하여 첫 번째 테이블 반환
+        for element in reversed(content):
+            if 'table' in element:
+                return element
+
+        return None
+
+    def _estimate_table_size(self, table_data) -> int:
+        """테이블 크기 추정 (폴백용)"""
+        size = 1  # 테이블 요소
+        row_size = 1 + table_data.column_count * 2
+        size += table_data.row_count * row_size
+
+        all_rows = [table_data.headers] + table_data.rows
+        for row in all_rows:
+            for cell in row:
+                size += len(cell)
+
+        return size + 1
 
     def _add_text_table(self, table_lines: list[str]):
         """텍스트 기반 테이블 추가 (폴백)"""
@@ -329,11 +634,42 @@ class MarkdownToDocsConverter:
                 self._add_text(line_text)
 
     def _add_code_block(self, code: str, lang: str = ''):
-        """코드 블록 추가"""
-        # 언어 표시
-        if lang:
-            self._add_text(f'[{lang}]')
+        """코드 블록 추가 (GitHub 스타일)"""
+        block_start = self.current_index
 
+        # 언어 레이블 (있을 경우)
+        if lang:
+            lang_start = self._add_text(f'📄 {lang.upper()}')
+            self.requests.append({
+                'updateTextStyle': {
+                    'range': {
+                        'startIndex': lang_start,
+                        'endIndex': self.current_index - 1
+                    },
+                    'textStyle': {
+                        'fontSize': {'magnitude': 9, 'unit': 'PT'},
+                        'foregroundColor': {
+                            'color': {'rgbColor': {'red': 0.4, 'green': 0.4, 'blue': 0.4}}
+                        },
+                        'bold': True,
+                    },
+                    'fields': 'fontSize,foregroundColor,bold'
+                }
+            })
+            self.requests.append({
+                'updateParagraphStyle': {
+                    'range': {
+                        'startIndex': lang_start,
+                        'endIndex': self.current_index - 1
+                    },
+                    'paragraphStyle': {
+                        'spaceBelow': {'magnitude': 4, 'unit': 'PT'},
+                    },
+                    'fields': 'spaceBelow'
+                }
+            })
+
+        # 코드 내용
         start = self._add_text(code)
 
         # 코드 스타일 (고정폭 폰트 + 배경색)
@@ -348,7 +684,10 @@ class MarkdownToDocsConverter:
                         'fontFamily': self.code_font,
                         'weight': 400
                     },
-                    'fontSize': {'magnitude': 10, 'unit': 'PT'},
+                    'fontSize': {'magnitude': 11, 'unit': 'PT'},
+                    'foregroundColor': {
+                        'color': {'rgbColor': {'red': 0.15, 'green': 0.15, 'blue': 0.15}}
+                    },
                     'backgroundColor': {
                         'color': {'rgbColor': {
                             'red': self.code_bg_color[0],
@@ -357,16 +696,75 @@ class MarkdownToDocsConverter:
                         }}
                     }
                 },
-                'fields': 'weightedFontFamily,fontSize,backgroundColor'
+                'fields': 'weightedFontFamily,fontSize,foregroundColor,backgroundColor'
+            }
+        })
+
+        # 코드 블록 단락 스타일 (들여쓰기, 줄간격)
+        self.requests.append({
+            'updateParagraphStyle': {
+                'range': {
+                    'startIndex': start,
+                    'endIndex': self.current_index - 1
+                },
+                'paragraphStyle': {
+                    'indentStart': {'magnitude': 16, 'unit': 'PT'},
+                    'indentEnd': {'magnitude': 16, 'unit': 'PT'},
+                    'lineSpacing': 140,
+                    'spaceAbove': {'magnitude': 8, 'unit': 'PT'},
+                    'spaceBelow': {'magnitude': 12, 'unit': 'PT'},
+                },
+                'fields': 'indentStart,indentEnd,lineSpacing,spaceAbove,spaceBelow'
             }
         })
 
     def _add_bullet_item(self, text: str):
-        """불릿 리스트 아이템 추가"""
+        """불릿 리스트 아이템 추가 (Premium Dark Text 스타일)"""
         result = self._parse_inline_formatting(text)
         full_text = ''.join(seg.text for seg in result.segments)
 
         start = self._add_text(f"• {full_text}")
+
+        # Premium Dark Text 스타일 적용
+        if self.style and self.use_premium_style:
+            list_config = self.style.typography.get('list', {})
+            color_name = list_config.get('color', 'text_primary')
+            color = self.style.get_color(color_name)
+            line_height = list_config.get('line_height', 1.55) * 100
+            font_size = list_config.get('size', 11)
+            indent = list_config.get('indent', 20)
+
+            # 단락 스타일
+            self.requests.append({
+                'updateParagraphStyle': {
+                    'range': {
+                        'startIndex': start,
+                        'endIndex': self.current_index - 1
+                    },
+                    'paragraphStyle': {
+                        'namedStyleType': 'NORMAL_TEXT',
+                        'lineSpacing': line_height,
+                        'indentStart': {'magnitude': indent, 'unit': 'PT'},
+                        'spaceBelow': {'magnitude': 6, 'unit': 'PT'},
+                    },
+                    'fields': 'namedStyleType,lineSpacing,indentStart,spaceBelow'
+                }
+            })
+
+            # 텍스트 스타일
+            self.requests.append({
+                'updateTextStyle': {
+                    'range': {
+                        'startIndex': start,
+                        'endIndex': self.current_index - 1
+                    },
+                    'textStyle': {
+                        'foregroundColor': {'color': {'rgbColor': color}},
+                        'fontSize': {'magnitude': font_size, 'unit': 'PT'},
+                    },
+                    'fields': 'foregroundColor,fontSize'
+                }
+            })
 
         # 인라인 스타일 적용 (bullet 문자 다음부터)
         current_pos = start + 2  # "• " 건너뛰기
@@ -404,8 +802,40 @@ class MarkdownToDocsConverter:
         })
 
     def _add_horizontal_rule(self):
-        """수평선 추가"""
-        self._add_text('─' * 50)
+        """수평선 추가 (Premium Dark Text 스타일)"""
+        start = self._add_text('─' * 60)
+
+        # Premium Dark Text 스타일
+        if self.style and self.use_premium_style:
+            divider_color = self.style.get_color('divider')
+
+            self.requests.append({
+                'updateTextStyle': {
+                    'range': {
+                        'startIndex': start,
+                        'endIndex': self.current_index - 1
+                    },
+                    'textStyle': {
+                        'foregroundColor': {'color': {'rgbColor': divider_color}},
+                        'fontSize': {'magnitude': 8, 'unit': 'PT'},
+                    },
+                    'fields': 'foregroundColor,fontSize'
+                }
+            })
+
+            self.requests.append({
+                'updateParagraphStyle': {
+                    'range': {
+                        'startIndex': start,
+                        'endIndex': self.current_index - 1
+                    },
+                    'paragraphStyle': {
+                        'spaceAbove': {'magnitude': 16, 'unit': 'PT'},
+                        'spaceBelow': {'magnitude': 16, 'unit': 'PT'},
+                    },
+                    'fields': 'spaceAbove,spaceBelow'
+                }
+            })
 
     def _apply_segment_style(self, segment: TextSegment, start: int, end: int):
         """세그먼트에 스타일 적용"""
@@ -464,7 +894,7 @@ def create_google_doc(
     content: str,
     folder_id: Optional[str] = None,
     include_toc: bool = False,
-    use_native_tables: bool = False,  # 기본값: 텍스트 테이블 (더 안정적)
+    use_native_tables: bool = True,  # 기본값: 네이티브 테이블 (2단계 방식으로 안정적)
 ) -> str:
     """
     Google Docs 문서 생성
@@ -474,7 +904,7 @@ def create_google_doc(
         content: 마크다운 콘텐츠
         folder_id: Google Drive 폴더 ID (None이면 기본 폴더)
         include_toc: 목차 포함 여부
-        use_native_tables: 네이티브 테이블 사용 여부
+        use_native_tables: 네이티브 테이블 사용 여부 (2단계 처리로 안정적)
 
     Returns:
         str: 생성된 문서의 URL
@@ -507,14 +937,17 @@ def create_google_doc(
     except Exception as e:
         print(f"     폴더 이동 실패: {e}")
 
-    # 3. 콘텐츠 변환 및 추가
+    # 3. 콘텐츠 변환 및 추가 (2단계 테이블 처리 지원)
     converter = MarkdownToDocsConverter(
         content,
         include_toc=include_toc,
-        use_native_tables=use_native_tables
+        use_native_tables=use_native_tables,
+        docs_service=docs_service if use_native_tables else None,
+        doc_id=doc_id if use_native_tables else None,
     )
     requests = converter.parse()
 
+    # 남은 요청들 실행 (테이블 처리 중 일부 요청이 이미 실행되었을 수 있음)
     if requests:
         try:
             docs_service.documents().batchUpdate(
@@ -525,6 +958,8 @@ def create_google_doc(
         except Exception as e:
             print(f"     콘텐츠 추가 실패: {e}")
             raise
+    else:
+        print("     콘텐츠 추가됨 (테이블 포함)")
 
     # 4. 문서 URL 반환
     doc_url = f"https://docs.google.com/document/d/{doc_id}/edit"
