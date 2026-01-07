@@ -380,6 +380,55 @@ docs/
 #    로컬 캐시: tasks/prds/PRD-0004.cache.md
 ```
 
+### API 연동 (프로그래매틱 사용)
+
+`--gdocs` 옵션은 내부적으로 다음 라이브러리를 사용합니다:
+
+| 모듈 | 역할 |
+|------|------|
+| `lib/google_docs/converter.py` | Markdown → Google Docs 네이티브 변환 |
+| `lib/google_docs/image_inserter.py` | Drive 업로드 + Docs 이미지 삽입 |
+| `lib/google_docs/notion_style.py` | Notion 스타일 (색상, 타이포그래피) |
+| `src/services/google_docs/prd_service.py` | PRD 통합 서비스 |
+
+**Python 코드로 직접 호출:**
+
+```python
+from pathlib import Path
+from src.services.google_docs import PRDService, PRDTemplate
+
+# 서비스 초기화
+service = PRDService()
+
+# 시각화 이미지 매핑 (섹션명 → 이미지 경로)
+images = {
+    "Technical Design": Path("docs/images/PRD-0004/architecture.png"),
+    "Requirements": Path("docs/images/PRD-0004/flow.png"),
+}
+
+# PRD 생성 (시각화 + Notion 스타일)
+metadata = service.create_prd_with_visualization(
+    title="User Dashboard",
+    images=images,
+    priority="P1",
+    apply_notion_style=True,  # Notion 스타일 적용
+    image_width=450,          # 이미지 너비 (PT)
+)
+
+print(f"PRD URL: {metadata.google_doc_url}")
+```
+
+**기존 PRD에 이미지 추가:**
+
+```python
+# 기존 PRD에 시각화 이미지 추가
+service.insert_visualization(
+    prd_id="PRD-0004",
+    section_name="Technical Design",
+    image_path=Path("docs/images/new-diagram.png"),
+)
+```
+
 ### 공유 폴더
 
 - **폴더 ID**: `1JwdlUe_v4Ug-yQ0veXTldFl6C24GH8hW`
