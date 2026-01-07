@@ -1,0 +1,87 @@
+{
+  "name": "home",
+  "description": "집용 - YouTube/콘텐츠 프로젝트",
+  "version": "1.0",
+  "monitors": {
+    "detected": "3840x2160",
+    "virtualScreen": { "width": 3840, "height": 2120 }
+  },
+  "projects": [
+    {
+      "name": "youtuber_chatbot",
+      "path": "C:/claude/youtuber_chatbot",
+      "enabled": true,
+      "layout": {
+        "position": { "x": 0, "y": 0 },
+        "size": { "width": 960, "height": 1032 },
+        "location": "top-left"
+      }
+    },
+    {
+      "name": "youtuber",
+      "path": "C:/claude/youtuber",
+      "enabled": true,
+      "layout": {
+        "position": { "x": 960, "y": 0 },
+        "size": { "width": 960, "height": 1032 },
+        "location": "top-center-left"
+      }
+    },
+    {
+      "name": "youtuber_vertuber",
+      "path": "C:/claude/youtuber_vertuber",
+      "enabled": true,
+      "layout": {
+        "position": { "x": 1920, "y": 0 },
+        "size": { "width": 960, "height": 1032 },
+        "location": "top-center"
+      }
+    },
+    {
+      "name": "shorts-generator",
+      "path": "C:/claude/shorts-generator",
+      "enabled": true,
+      "layout": {
+        "position": { "x": 2880, "y": 0 },
+        "size": { "width": 960, "height": 1032 },
+        "location": "top-right"
+      }
+    },
+    {
+      "name": "project-showcase-hub",
+      "path": "C:/claude/project-showcase-hub",
+      "enabled": true,
+      "layout": {
+        "position": { "x": 0, "y": 1084 },
+        "size": { "width": 960, "height": 1032 },
+        "location": "bottom-left"
+      }
+    },
+    {
+      "name": "iconik_parser",
+      "path": "C:/claude/iconik_parser",
+      "enabled": true,
+      "layout": {
+        "position": { "x": 960, "y": 1084 },
+        "size": { "width": 960, "height": 1032 },
+        "location": "bottom-center-left"
+      }
+    },
+    {
+      "name": "project_master",
+      "path": "C:/claude/project_master",
+      "enabled": true,
+      "layout": {
+        "position": { "x": 1920, "y": 1084 },
+        "size": { "width": 960, "height": 1032 },
+        "location": "bottom-center"
+      }
+    }
+  ],
+  "settings": {
+    "terminalLayout": "custom",
+    "autoExecuteClaude": true,
+    "claudeArgs": "--dangerously-skip-permissions",
+    "startupDelayMs": 500
+  }
+}

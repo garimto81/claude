@@ -1,0 +1,53 @@
+{
+  "$schema": "./vscode-projects.schema.json",
+  "version": "1.0",
+  "projects": [
+    {
+      "name": "frontend",
+      "path": "D:/projects/frontend",
+      "enabled": true
+    },
+    {
+      "name": "backend",
+      "path": "D:/projects/backend",
+      "enabled": true
+    },
+    {
+      "name": "api-gateway",
+      "path": "D:/projects/api-gateway",
+      "enabled": true
+    },
+    {
+      "name": "worker-service",
+      "path": "D:/projects/worker-service",
+      "enabled": true
+    },
+    {
+      "name": "admin-panel",
+      "path": "D:/projects/admin-panel",
+      "enabled": true
+    },
+    {
+      "name": "shared-lib",
+      "path": "D:/projects/shared-lib",
+      "enabled": true
+    },
+    {
+      "name": "mobile-app",
+      "path": "D:/projects/mobile-app",
+      "enabled": true
+    },
+    {
+      "name": "legacy-system",
+      "path": "D:/projects/legacy",
+      "enabled": false
+    }
+  ],
+  "settings": {
+    "terminalLayout": "grid",
+    "autoExecuteClaude": true,
+    "claudeArgs": "--dangerously-skip-permissions",
+    "startupDelayMs": 500,
+    "maxRetries": 3
+  }
+}

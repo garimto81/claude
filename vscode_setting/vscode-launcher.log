@@ -1,0 +1,67 @@
+[10:20:02] [INFO] Starting VSCode Launcher v2.0...
+[10:20:02] [ERROR] Configuration file not found: C:\claude\vscode_setting\vscode-projects.json
+[10:20:02] [OK] Created C:\claude\vscode_setting\vscode-projects.json from example. Please edit and re-run.
+[10:20:09] [INFO] Starting VSCode Launcher v2.0...
+[10:20:09] [OK] Loaded configuration from C:\claude\vscode_setting\vscode-projects.json
+[10:20:09] [INFO] Found 7 enabled projects
+[10:20:09] [INFO] Screen resolution: 3840x2164
+[10:20:09] [INFO] Grid layout: 3x3 (1280x721 per window)
+[10:20:09] [INFO] Phase 1: Launching VSCode instances...
+[10:20:09] [ERROR] Project path does not exist: D:/projects/frontend
+[10:20:09] [ERROR] Project path does not exist: D:/projects/backend
+[10:20:09] [ERROR] Project path does not exist: D:/projects/api-gateway
+[10:20:09] [ERROR] Project path does not exist: D:/projects/worker-service
+[10:20:09] [ERROR] Project path does not exist: D:/projects/admin-panel
+[10:20:09] [ERROR] Project path does not exist: D:/projects/shared-lib
+[10:20:09] [ERROR] Project path does not exist: D:/projects/mobile-app
+[10:20:09] [INFO] [DRY-RUN] Would execute 'claude --dangerously-skip-permissions' in 'frontend'
+[10:20:09] [INFO] [DRY-RUN] Would execute 'claude --dangerously-skip-permissions' in 'backend'
+[10:20:09] [INFO] [DRY-RUN] Would execute 'claude --dangerously-skip-permissions' in 'api-gateway'
+[10:20:09] [INFO] [DRY-RUN] Would execute 'claude --dangerously-skip-permissions' in 'worker-service'
+[10:20:09] [INFO] [DRY-RUN] Would execute 'claude --dangerously-skip-permissions' in 'admin-panel'
+[10:20:09] [INFO] [DRY-RUN] Would execute 'claude --dangerously-skip-permissions' in 'shared-lib'
+[10:20:09] [INFO] [DRY-RUN] Would execute 'claude --dangerously-skip-permissions' in 'mobile-app'
+[10:20:09] [OK] Launcher complete!
+[10:20:28] [INFO] Starting VSCode Launcher v2.0...
+[10:20:28] [OK] Loaded configuration from C:\claude\vscode_setting\vscode-projects.json
+[10:20:28] [INFO] Found 2 enabled projects
+[10:20:28] [INFO] Screen resolution: 3840x2164
+[10:20:28] [INFO] Grid layout: 2x1 (1920x2164 per window)
+[10:20:28] [INFO] Phase 1: Launching VSCode instances...
+[10:20:28] [INFO] [DRY-RUN] Would launch VSCode for 'vscode_setting' at C:/claude/vscode_setting
+[10:20:28] [ERROR] Project path does not exist: D:/AI/claude01
+[10:20:28] [INFO] [DRY-RUN] Would execute 'claude --dangerously-skip-permissions' in 'vscode_setting'
+[10:20:28] [INFO] [DRY-RUN] Would execute 'claude --dangerously-skip-permissions' in 'claude01'
+[10:20:28] [OK] Launcher complete!
+[10:20:58] [INFO] Starting VSCode Launcher v2.0...
+[10:20:58] [OK] Loaded configuration from C:\claude\vscode_setting\vscode-projects.json
+[10:20:58] [INFO] Found  enabled projects
+[10:20:58] [INFO] Screen resolution: 3840x2164
+[10:20:58] [INFO] Grid layout: 0xNaN (InfinityxNaN per window)
+[10:20:58] [INFO] Phase 1: Launching VSCode instances...
+[10:20:58] [INFO] [DRY-RUN] Would launch VSCode for 'vscode_setting' at C:/claude/vscode_setting
+[10:20:58] [OK] Launcher complete!
+[10:21:36] [INFO] Starting VSCode Launcher v2.0...
+[10:21:36] [OK] Loaded configuration from C:\claude\vscode_setting\vscode-projects.json
+[10:21:36] [INFO] Found 1 enabled projects
+[10:21:36] [INFO] Screen resolution: 3840x2164
+[10:21:36] [INFO] Grid layout: 0xNaN (InfinityxNaN per window)
+[10:21:36] [INFO] Phase 1: Launching VSCode instances...
+[10:21:36] [INFO] [DRY-RUN] Would launch VSCode for 'vscode_setting' at C:/claude/vscode_setting
+[10:21:36] [OK] Launcher complete!
+[10:22:25] [INFO] Starting VSCode Launcher v2.0...
+[10:22:25] [OK] Loaded configuration from C:\claude\vscode_setting\vscode-projects.json
+[10:22:25] [INFO] Found 1 enabled projects
+[10:22:25] [INFO] Screen resolution: 3840x2164
+[10:22:25] [INFO] Grid layout: 1x1 (3840x2164 per window)
+[10:22:25] [INFO] Phase 1: Launching VSCode instances...
+[10:22:25] [INFO] [DRY-RUN] Would launch VSCode for 'vscode_setting' at C:/claude/vscode_setting
+[10:22:25] [OK] Launcher complete!
+[10:22:37] [INFO] Starting VSCode Launcher v2.0...
+[10:22:37] [OK] Loaded configuration from C:\claude\vscode_setting\vscode-projects.json
+[10:22:37] [INFO] Found 1 enabled projects
+[10:22:37] [INFO] Screen resolution: 3840x2164
+[10:22:37] [INFO] Grid layout: 1x1 (3840x2164 per window)
+[10:22:37] [INFO] Phase 1: Launching VSCode instances...
+[10:22:37] [OK] Launched VSCode for 'vscode_setting' (PID: 8972)
+[10:22:38] [OK] Launcher complete!
