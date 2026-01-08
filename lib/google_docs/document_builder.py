@@ -20,7 +20,7 @@ from .notion_style import NotionStyle, PAGE_SETTINGS
 class GoogleDocsBuilder:
     """Google Docs 문서 빌더 - 테이블 포함 문서 안정적 생성"""
 
-    DEFAULT_TOKEN_PATH = Path("C:/claude/json/token_docs.json")
+    DEFAULT_TOKEN_PATH = _get_project_root() / "json" / "token.json"
 
     # 전역 표준 색상
     COLORS = {
