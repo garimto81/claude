@@ -7,6 +7,7 @@ Google Docs → 로컬 Markdown 캐시 동기화.
 import logging
 import re
 from datetime import datetime
+import os
 from pathlib import Path
 from typing import Any, Dict, List, Optional
 
@@ -20,7 +21,7 @@ class CacheManager:
     """로컬 캐시 관리자"""
 
     # 기본 캐시 디렉토리
-    DEFAULT_CACHE_DIR = Path("D:/AI/claude01/tasks/prds")
+    DEFAULT_CACHE_DIR = _get_project_root() / "tasks" / "prds"
 
     # 캐시 파일 헤더 템플릿
     CACHE_HEADER_TEMPLATE = """<!--

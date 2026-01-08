@@ -4,24 +4,44 @@ OAuth 2.0 인증 모듈
 Google Docs/Drive API 인증을 처리합니다.
 """
 
+import os
 from pathlib import Path
 
 from google.oauth2.credentials import Credentials
 from google_auth_oauthlib.flow import InstalledAppFlow
 from google.auth.transport.requests import Request
 
-# 인증 파일 경로 (절대 경로 - 포워드슬래시로 통일)
-CREDENTIALS_FILE = Path("C:/claude/json/desktop_credentials.json")
-TOKEN_FILE = Path("C:/claude/json/token.json")
+
+def _get_project_root() -> Path:
+    """프로젝트 루트 경로 반환 (환경변수 > 자동 탐지)"""
+    # 1. 환경변수 확인
+    env_root = os.environ.get("CLAUDE_PROJECT_ROOT")
+    if env_root:
+        return Path(env_root)
+
+    # 2. 현재 파일 기준으로 프로젝트 루트 탐지
+    current = Path(__file__).resolve()
+    for parent in current.parents:
+        if (parent / "CLAUDE.md").exists() or (parent / ".git").exists():
+            return parent
+
+    # 3. 기본값 (fallback)
+    return Path("C:/claude")
+
+
+# 프로젝트 루트 기반 경로 설정
+PROJECT_ROOT = _get_project_root()
+CREDENTIALS_FILE = PROJECT_ROOT / "json" / "desktop_credentials.json"
+TOKEN_FILE = PROJECT_ROOT / "json" / "token.json"
 
 # Google Docs + Drive 권한
 SCOPES = [
-    'https://www.googleapis.com/auth/documents',
-    'https://www.googleapis.com/auth/drive'
+    "https://www.googleapis.com/auth/documents",
+    "https://www.googleapis.com/auth/drive"
 ]
 
 # 공유 폴더 ID (Google AI Studio 폴더)
-DEFAULT_FOLDER_ID = '1JwdlUe_v4Ug-yQ0veXTldFl6C24GH8hW'
+DEFAULT_FOLDER_ID = "1JwdlUe_v4Ug-yQ0veXTldFl6C24GH8hW"
 
 
 def get_credentials() -> Credentials:
@@ -46,8 +66,7 @@ def get_credentials() -> Credentials:
             # 새로운 인증 플로우
             if not CREDENTIALS_FILE.exists():
                 raise FileNotFoundError(
-                    f"OAuth 자격증명 파일을 찾을 수 없습니다: {CREDENTIALS_FILE}\n"
-                    "Google Cloud Console에서 다운로드하세요."
+                    f"OAuth credentials file not found: {CREDENTIALS_FILE}\nDownload from Google Cloud Console."
                 )
 
             flow = InstalledAppFlow.from_client_secrets_file(
@@ -57,7 +76,7 @@ def get_credentials() -> Credentials:
 
         # 토큰 저장
         TOKEN_FILE.parent.mkdir(parents=True, exist_ok=True)
-        with open(TOKEN_FILE, 'w') as token:
+        with open(TOKEN_FILE, "w") as token:
             token.write(creds.to_json())
 
     return creds
