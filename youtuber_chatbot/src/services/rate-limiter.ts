@@ -14,6 +14,10 @@ interface RateLimitConfig {
   maxPerHour: number;
   /** 사용자별 쿨다운 (ms) */
   userCooldownMs: number;
+  /** 최대 추적 사용자 수 (메모리 제한) */
+  maxTrackedUsers: number;
+  /** 비활성 사용자 정리 주기 (ms) */
+  cleanupIntervalMs: number;
 }
 
 interface RateLimitStats {
@@ -31,6 +35,8 @@ const DEFAULT_CONFIG: RateLimitConfig = {
   maxPerMinute: 30,
   maxPerHour: 500,
   userCooldownMs: 5000, // 5초
+  maxTrackedUsers: 10000, // 최대 10,000명
+  cleanupIntervalMs: 5 * 60 * 1000, // 5분마다 정리
 };
 
 export class RateLimiter {
@@ -42,10 +48,18 @@ export class RateLimiter {
   private userLastResponse: Map<string, number> = new Map();
   private minuteResetTimer: NodeJS.Timeout | null = null;
   private hourResetTimer: NodeJS.Timeout | null = null;
+  private cleanupTimer: NodeJS.Timeout | null = null;
 
   constructor(config: Partial<RateLimitConfig> = {}) {
     this.config = { ...DEFAULT_CONFIG, ...config };
     this.startTimers();
+  }
+
+  /**
+   * 추적 중인 사용자 수
+   */
+  getTrackedUserCount(): number {
+    return this.userLastResponse.size;
   }
 
   /**
@@ -98,7 +112,18 @@ export class RateLimiter {
     this.minuteCount++;
     this.hourCount++;
     this.totalCount++;
+
+    // LRU: 기존 항목 삭제 후 재삽입 (최신으로 이동)
+    this.userLastResponse.delete(userId);
     this.userLastResponse.set(userId, Date.now());
+
+    // 최대 사용자 수 초과 시 가장 오래된 항목 제거
+    if (this.userLastResponse.size > this.config.maxTrackedUsers) {
+      const oldestKey = this.userLastResponse.keys().next().value;
+      if (oldestKey) {
+        this.userLastResponse.delete(oldestKey);
+      }
+    }
   }
 
   /**
@@ -162,6 +187,9 @@ export class RateLimiter {
     if (this.hourResetTimer) {
       clearInterval(this.hourResetTimer);
     }
+    if (this.cleanupTimer) {
+      clearInterval(this.cleanupTimer);
+    }
   }
 
   private startTimers(): void {
@@ -174,6 +202,25 @@ export class RateLimiter {
     this.hourResetTimer = setInterval(() => {
       this.hourCount = 0;
     }, 60 * 60 * 1000);
+
+    // 주기적으로 비활성 사용자 정리
+    this.cleanupTimer = setInterval(() => {
+      this.cleanupInactiveUsers();
+    }, this.config.cleanupIntervalMs);
+  }
+
+  /**
+   * 비활성 사용자 정리 (쿨다운 시간의 10배 이상 비활성)
+   */
+  private cleanupInactiveUsers(): void {
+    const now = Date.now();
+    const inactiveThreshold = this.config.userCooldownMs * 10; // 쿨다운의 10배
+
+    for (const [userId, lastResponse] of this.userLastResponse.entries()) {
+      if (now - lastResponse > inactiveThreshold) {
+        this.userLastResponse.delete(userId);
+      }
+    }
   }
 
   private getTimeUntilMinuteReset(): number {

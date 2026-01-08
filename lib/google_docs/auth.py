@@ -10,9 +10,9 @@ from google.oauth2.credentials import Credentials
 from google_auth_oauthlib.flow import InstalledAppFlow
 from google.auth.transport.requests import Request
 
-# 인증 파일 경로 (절대 경로)
-CREDENTIALS_FILE = Path(r'D:\AI\claude01\json\desktop_credentials.json')
-TOKEN_FILE = Path(r'D:\AI\claude01\json\token.json')
+# 인증 파일 경로 (절대 경로 - 포워드슬래시로 통일)
+CREDENTIALS_FILE = Path("C:/claude/json/desktop_credentials.json")
+TOKEN_FILE = Path("C:/claude/json/token.json")
 
 # Google Docs + Drive 권한
 SCOPES = [

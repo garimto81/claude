@@ -39,3 +39,10 @@ Thumbs.db
 *.tmp
 tmp/
 temp/
+
+# Archived packages
+packages/stream-server/
+archive/
+
+# VSeeFace binary
+VSeeFace/

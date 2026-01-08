@@ -1,3 +1,4 @@
+import 'dotenv/config';
 import express from 'express';
 import { loadHostProfile } from './config/index.js';
 import { YouTubeChatService } from './services/youtube-chat.js';
@@ -5,6 +6,7 @@ import { LLMClient } from './services/llm-client.js';
 import { MessageRouter } from './handlers/message-router.js';
 import { getRateLimiter } from './services/rate-limiter.js';
 import { createApiRouter } from './routes/api.js';
+import { getOAuthService } from './services/oauth.js';
 
 async function main() {
   try {
@@ -40,42 +42,56 @@ async function main() {
     });
 
     // 3. YouTube Chat 연동 (선택)
+    // OAuth 인증이 필요하므로, 서버 시작 후 /oauth/authorize로 인증
     if (process.env.YOUTUBE_VIDEO_ID || process.env.YOUTUBE_LIVE_URL) {
       console.log('[App] YouTube Chat integration enabled');
 
       try {
-        // LLM 클라이언트 및 메시지 라우터 초기화
-        const llmClient = new LLMClient(process.env.OLLAMA_MODEL);
-        const messageRouter = new MessageRouter(llmClient);
-        const rateLimiter = getRateLimiter();
+        // OAuth 서비스 초기화
+        const oauthService = getOAuthService();
 
-        // YouTube Chat 서비스 생성
-        const chatService = process.env.YOUTUBE_LIVE_URL
-          ? YouTubeChatService.fromLiveUrl(process.env.YOUTUBE_LIVE_URL)
-          : new YouTubeChatService(process.env.YOUTUBE_VIDEO_ID!);
+        if (!oauthService.hasValidToken()) {
+          console.log('[App] OAuth token not found. Please visit /oauth/authorize to authenticate.');
+          console.log(`[App] Auth URL: http://localhost:${PORT}/oauth/authorize`);
+        } else {
+          // LLM 클라이언트 및 메시지 라우터 초기화
+          const llmClient = new LLMClient(process.env.OLLAMA_MODEL);
+          const messageRouter = new MessageRouter(llmClient);
+          const rateLimiter = getRateLimiter();
 
-        // 채팅 연결 및 메시지 처리
-        await chatService.connect(async (message) => {
-          console.log(`[Chat] ${message.author}: ${message.message}`);
+          // YouTube Chat 서비스 생성
+          const videoId = process.env.YOUTUBE_LIVE_URL
+            ? YouTubeChatService.extractVideoId(process.env.YOUTUBE_LIVE_URL)
+            : process.env.YOUTUBE_VIDEO_ID!;
 
-          // Rate limiting 확인
-          if (!rateLimiter.tryRespond(message.author)) {
-            console.log(`[Chat] Rate limited: ${message.author}`);
-            return;
-          }
+          const chatService = new YouTubeChatService(oauthService);
 
-          const response = await messageRouter.route(message);
-          if (response) {
-            await chatService.sendMessage(response);
-          }
-        });
+          // 채팅 연결 및 메시지 처리
+          await chatService.connect(videoId, async (message) => {
+            console.log(`[Chat] ${message.author}: ${message.message}`);
 
-        console.log('[App] YouTube Chat connected successfully');
+            // Rate limiting 확인
+            if (!rateLimiter.tryRespond(message.author)) {
+              console.log(`[Chat] Rate limited: ${message.author}`);
+              return;
+            }
+
+            const response = await messageRouter.route(message);
+            if (response) {
+              await chatService.sendMessage(response);
+            }
+          });
+
+          console.log('[App] YouTube Chat connected successfully');
+        }
       } catch (error) {
         console.error('[App] YouTube Chat connection failed:', error);
+        console.log('[App] You can start the chatbot manually via POST /api/start');
       }
     } else {
-      console.log('[App] YouTube Chat integration disabled (set YOUTUBE_VIDEO_ID or YOUTUBE_LIVE_URL)');
+      console.log('[App] YouTube Chat integration disabled');
+      console.log('[App] Use POST /api/start with videoId or liveUrl to start');
+      console.log('[App] Or set YOUTUBE_VIDEO_ID or YOUTUBE_LIVE_URL in .env');
     }
 
     // 4. GitHub 자동 동기화 (선택)

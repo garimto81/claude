@@ -2,9 +2,11 @@
 
 **번호**: PRD-0001
 **작성일**: 2026-01-04
+**최종 수정**: 2026-01-06
 **작성자**: Claude (AI Assistant)
 **우선순위**: High
-**상태**: Draft
+**상태**: In Progress
+**버전**: 2.0.0
 
 ---
 
@@ -14,7 +16,9 @@
 현재 youtuber 프로젝트의 OBS 오버레이에서 "얼굴 캠" 영역(320x180)이 비어있어 방송에 개성과 생동감이 부족합니다. AI 코딩 스트리밍이라는 독특한 컨셉에도 불구하고, 시청자가 스트리머와 감정적으로 연결되기 어렵습니다.
 
 ### 제안 솔루션
-VSeeFace와 VMC Protocol을 활용하여 웹캠 기반 버튜버 아바타를 실시간으로 표시하고, GitHub 이벤트(Commit, PR, CI)와 YouTube 채팅에 반응하는 인터랙티브 아바타 시스템을 구현합니다.
+VSeeFace와 VMC Protocol을 활용하여 웹캠 기반 버튜버 아바타를 실시간으로 표시하고, 프로그래밍 방식으로 표정을 제어할 수 있는 아바타 시스템을 구현합니다.
+
+> **v2.0.0 범위 축소**: GitHub Webhook 연동과 YouTube 채팅 연동은 `archive/` 폴더로 이동되었습니다. 현재 버전은 VSeeFace 아바타 활성화 및 VMC Protocol 연동에 집중합니다.
 
 ### 예상 효과
 - 시청자 몰입도 30% 향상 (평균 시청 시간 증가)
@@ -119,22 +123,11 @@ Acceptance Criteria:
   - [x] 1920x1080 레이아웃에서 깨짐 없이 표시
   - [x] OBS Browser Source로 반응 아이콘 오버레이
 
-#### 3. GitHub Webhook 연동 (아바타 표정 변경)
-- 설명: Commit, PR, CI 이벤트 발생 시 아바타 표정 자동 변경
-- 수락 기준:
-  - [x] handlePush, handlePullRequest, handleCheckRun 함수에 아바타 반응 추가
-  - [x] GitHub 이벤트별 표정 매핑 (Commit → happy, PR Merged → surprised, CI Success → focused → happy)
-  - [x] WebSocket 브로드캐스트 ('vtuber' 채널)
-  - [x] 반응 지연시간 < 1초
+#### ~~3. GitHub Webhook 연동 (아바타 표정 변경)~~ → `archive/`
+> **아카이빙됨 (v2.0.0)**: 이 기능은 범위 축소로 인해 `archive/stream-server/`로 이동되었습니다.
 
-#### 4. youtuber_chatbot 연동 (채팅 감정 분석)
-- 설명: YouTube 채팅 메시지 감정 분석 후 아바타 표정 변경
-- 수락 기준:
-  - [x] youtuber_chatbot API 연동 (POST /api/chat/analyze)
-  - [x] 감정 → 표정 매핑 (positive → happy, curious → surprised, neutral → neutral)
-  - [x] 채팅 WebSocket 메시지 핸들링
-  - [x] 반응 지연시간 < 2초
-  - [x] 스팸 방지 (동일 감정 최소 5초 간격)
+#### ~~4. youtuber_chatbot 연동 (채팅 감정 분석)~~ → `archive/`
+> **아카이빙됨 (v2.0.0)**: 이 기능은 범위 축소로 인해 `archive/stream-server/`로 이동되었습니다.
 
 ### 5.2 선택 기능 (Nice to Have)
 
@@ -238,30 +231,31 @@ Acceptance Criteria:
 | **채팅 분석** | youtuber_chatbot | 1.0.0 | Ollama + Qwen 3 |
 | **OBS 연동** | obs-websocket-js | 5.0.6 | 기존 시스템 활용 |
 
-### 9.2 패키지 구조 (Monorepo)
+### 9.2 패키지 구조 (Monorepo) - v2.0.0 현재
 
 ```
-youtuber/
+youtuber_vertuber/
   packages/
-    vtuber/                    # 신규 패키지
+    vtuber/                        # VMC Client 패키지
       src/
-        vmc-client.ts          # VMC Protocol UDP 클라이언트
-        avatar-controller.ts   # 아바타 상태 관리, 표정 제어
-        reaction-mapper.ts     # GitHub 이벤트 → 표정 매핑 로직
-        types.ts               # VTuber 전용 타입 정의
+        vmc-client.ts              # VMC Protocol UDP 클라이언트
+        avatar-controller.ts       # 우선순위 큐 기반 표정 제어
+        reaction-mapper.ts         # 이벤트 → 표정 매핑 로직
+        types.ts                   # VTuber 전용 타입 정의
+        index.ts                   # 패키지 엔트리포인트
       tests/
-        vmc-client.test.ts     # VMC 클라이언트 단위 테스트
-      package.json             # 의존성: osc, @youtuber/shared
+        vmc-client.test.ts         # VMC 클라이언트 단위 테스트
+        avatar-controller.test.ts  # AvatarController 단위 테스트
+        reaction-mapper.test.ts    # ReactionMapper 단위 테스트
+      package.json                 # 의존성: osc, @youtuber/shared
 
-    shared/
+    shared/                        # 공유 타입 정의
       src/
         types/
-          index.ts             # VTuber 메시지 타입 추가
+          index.ts                 # VTuber 메시지 타입
 
-    stream-server/
-      src/
-        github-webhook.ts      # 아바타 반응 로직 추가
-        vtuber-routes.ts       # VTuber API 엔드포인트 (신규)
+  archive/                         # 아카이빙된 코드 (git 제외)
+    stream-server/                 # WebSocket, GitHub Webhook, OBS Overlay
 ```
 
 ### 9.3 WebSocket 메시지 타입 확장
@@ -518,18 +512,26 @@ export class ReactionMapper {
 
 ## 11. 마일스톤
 
-| Phase | 설명 | 완료 기준 | 기한 | 담당 |
-|-------|------|----------|------|------|
-| **Phase 1** | VSeeFace 기본 연동 | VMC 데이터 수신 확인, packages/vtuber 패키지 생성 | D+3 (2026-01-07) | Claude |
-| **Phase 2** | OBS 오버레이 | 아바타 320x180 영역 표시, 배경 투명 처리 | D+5 (2026-01-09) | Claude |
-| **Phase 3** | GitHub 연동 | Commit/PR/CI 이벤트 시 표정 변경 동작 | D+8 (2026-01-12) | Claude |
-| **Phase 4** | 채팅 상호작용 | youtuber_chatbot 감정 분석 → 표정 변경 | D+12 (2026-01-16) | Claude |
+| Phase | 설명 | 상태 | 완료 기준 |
+|-------|------|------|----------|
+| **Phase 1** | VSeeFace 기본 연동 | ✅ 완료 | VMC 데이터 수신 확인, packages/vtuber 패키지 생성 |
+| **Phase 2** | 표정 제어 및 OBS | 🔄 진행중 | AvatarController, VSeeFace 연결 테스트 |
+| ~~Phase 3~~ | ~~GitHub 연동~~ | ⏸️ 아카이빙 | `archive/stream-server/`로 이동 |
+| ~~Phase 4~~ | ~~채팅 상호작용~~ | ⏸️ 아카이빙 | `archive/stream-server/`로 이동 |
 
-**완료 기준 상세**:
-- Phase 1: VMC Client 단위 테스트 통과, BlendShape 데이터 수신 30fps
-- Phase 2: OBS에서 아바타 표시, 레이아웃 깨짐 없음
-- Phase 3: handlePush, handlePullRequest, handleCheckRun 함수에 아바타 반응 추가, 통합 테스트 통과
-- Phase 4: E2E 테스트 (채팅 → 감정 분석 → 표정 변경), 문서화 완료
+**Phase 1 완료 항목**:
+- [x] packages/vtuber 패키지 생성
+- [x] VMCClient 클래스 구현 (connect, disconnect, sendExpression)
+- [x] BlendShape 데이터 송수신
+- [x] 단위 테스트 커버리지 > 80%
+- [x] WebSocket 메시지 타입 추가 (shared)
+
+**Phase 2 진행 항목**:
+- [x] AvatarController 클래스 구현
+- [x] ReactionMapper 클래스 구현
+- [x] VSeeFace Window Capture 가이드 작성
+- [ ] VSeeFace 실행 연동 테스트
+- [ ] VRoid Hub 아바타 선택
 
 ---
 
@@ -570,6 +572,7 @@ export class ReactionMapper {
 | 날짜 | 버전 | 변경 내용 | 작성자 |
 |------|------|----------|--------|
 | 2026-01-04 | 1.0.0 | 초안 작성 (Draft) | Claude |
+| 2026-01-06 | 2.0.0 | **범위 축소**: Phase 3-4 아카이빙, VSeeFace 활성화 집중 | Claude |
 
 ---
 

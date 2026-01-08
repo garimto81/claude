@@ -7,7 +7,7 @@
 export const VERSION = '0.1.0';
 
 // Phase 1 #77: VMC Protocol 클라이언트
-export { VMCClient } from './vmc-client';
+export { VMCClient } from './vmc-client.js';
 export type {
   BlendShapeData,
   VMCStatus,
@@ -15,8 +15,8 @@ export type {
   BlendShapeUpdateCallback,
   ConnectionStatusCallback,
   ExpressionType,
-} from './types';
-export { VMC_BLENDSHAPE_NAMES } from './types';
+} from './types.js';
+export { VMC_BLENDSHAPE_NAMES } from './types.js';
 
 // Phase 3 #107: Avatar Controller & Reaction Mapper
 export { AvatarController, avatarController } from './avatar-controller.js';

@@ -59,6 +59,46 @@ export interface HostPersona {
   expertise: string[];
 }
 
+/** FAQ 항목 */
+export interface FAQItem {
+  /** 질문 (여러 변형 가능) */
+  questions: string[];
+  /** 답변 */
+  answer: string;
+  /** 카테고리 (선택) */
+  category?: string;
+}
+
+/** 방송 일정 */
+export interface StreamSchedule {
+  /** 요일 (월, 화, 수, 목, 금, 토, 일) */
+  days: string[];
+  /** 시작 시간 (HH:MM 형식) */
+  startTime: string;
+  /** 종료 시간 (HH:MM 형식) */
+  endTime?: string;
+  /** 타임존 */
+  timezone?: string;
+  /** 설명 */
+  description?: string;
+}
+
+/** 호스트 상세 정보 */
+export interface HostDetails {
+  /** 상세 자기소개 */
+  aboutMe?: string;
+  /** 경력/배경 */
+  background?: string;
+  /** 현재 하고 있는 일 */
+  currentWork?: string;
+  /** 관심사/취미 */
+  interests?: string[];
+  /** 사용하는 장비/도구 */
+  equipment?: string[];
+  /** 목표/비전 */
+  goals?: string;
+}
+
 export interface HostProfile {
   /** 호스트 기본 정보 */
   host: {
@@ -78,6 +118,15 @@ export interface HostProfile {
 
   /** 활성 프로젝트 목록 */
   projects: HostProject[];
+
+  /** 호스트 상세 정보 (선택) */
+  details?: HostDetails;
+
+  /** 자주 묻는 질문 (선택) */
+  faq?: FAQItem[];
+
+  /** 방송 일정 (선택) */
+  schedule?: StreamSchedule;
 
   /** 메타데이터 */
   meta?: {

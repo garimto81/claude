@@ -4,7 +4,12 @@
 export type MessageType =
   | 'vtuber:expression'    // 아바타 표정 변경 트리거
   | 'vtuber:status'        // VSeeFace 연결 상태
-  | 'vtuber:tracking';     // 웹캠 추적 데이터 (선택사항)
+  | 'vtuber:tracking'      // 웹캠 추적 데이터 (선택사항)
+  | 'github:commit'        // GitHub Commit 이벤트
+  | 'github:pr'            // GitHub Pull Request 이벤트
+  | 'github:check'         // GitHub Check Run (CI) 이벤트
+  | 'subscribe'            // 채널 구독 요청
+  | 'unsubscribe';         // 채널 구독 해제
 
 /**
  * WebSocket 구독 채널
@@ -55,4 +60,45 @@ export interface WebSocketMessage<T = unknown> {
   type: MessageType;
   payload: T;
   timestamp: string;
+}
+
+/**
+ * GitHub Commit 페이로드
+ */
+export interface GitHubCommitPayload {
+  repo: string;
+  message: string;
+  author: string;
+  sha: string;
+  url?: string;
+}
+
+/**
+ * GitHub Pull Request 페이로드
+ */
+export interface GitHubPRPayload {
+  repo: string;
+  title: string;
+  action: 'opened' | 'closed' | 'merged' | 'reopened';
+  number: number;
+  author: string;
+  url?: string;
+}
+
+/**
+ * GitHub Check Run (CI) 페이로드
+ */
+export interface GitHubCheckPayload {
+  repo: string;
+  name: string;
+  status: 'queued' | 'in_progress' | 'completed';
+  conclusion?: 'success' | 'failure' | 'cancelled' | 'skipped';
+  url?: string;
+}
+
+/**
+ * 채널 구독 요청 페이로드
+ */
+export interface SubscribePayload {
+  channels: SubscriptionChannel[];
 }

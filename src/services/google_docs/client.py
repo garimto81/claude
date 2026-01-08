@@ -19,17 +19,17 @@ logger = logging.getLogger(__name__)
 class GoogleDocsClient:
     """Google Docs API 클라이언트"""
 
-    # 기본 경로 설정
-    DEFAULT_TOKEN_PATH = Path("D:/AI/claude01/json/token_docs.json")
-    DEFAULT_CREDENTIALS_PATH = Path("D:/AI/claude01/json/desktop_credentials.json")
+    # 기본 경로 설정 - lib/google_docs/auth.py와 통합
+    DEFAULT_TOKEN_PATH = Path("C:/claude/json/token.json")
+    DEFAULT_CREDENTIALS_PATH = Path("C:/claude/json/desktop_credentials.json")
 
     # PRD 저장 폴더 ID (Google AI Studio 폴더)
     DEFAULT_FOLDER_ID = "1JwdlUe_v4Ug-yQ0veXTldFl6C24GH8hW"
 
-    # API 스코프
+    # API 스코프 - lib/google_docs/auth.py와 통합 (drive.file → drive)
     SCOPES = [
         "https://www.googleapis.com/auth/documents",
-        "https://www.googleapis.com/auth/drive.file",
+        "https://www.googleapis.com/auth/drive",
     ]
 
     def __init__(

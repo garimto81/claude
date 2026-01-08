@@ -168,9 +168,15 @@ describe('VMCClient', () => {
  * 통합 테스트 (VSeeFace 실행 필요)
  *
  * 아래 테스트는 VSeeFace가 실행 중이고 VMC Protocol이 활성화되어 있을 때만 통과합니다.
- * CI/CD에서는 스킵됩니다.
+ * 환경 변수 VSEFACE_TEST=true 로 활성화합니다.
+ *
+ * 실행 방법:
+ * VSEFACE_TEST=true pnpm --filter @youtuber/vtuber test
  */
-describe.skip('VMCClient 통합 테스트 (VSeeFace 필요)', () => {
+const runIntegrationTests = process.env.VSEFACE_TEST === 'true';
+const describeIntegration = runIntegrationTests ? describe : describe.skip;
+
+describeIntegration('VMCClient 통합 테스트 (VSeeFace 필요)', () => {
   let client: VMCClient;
 
   beforeEach(() => {

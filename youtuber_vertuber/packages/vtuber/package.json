@@ -1,6 +1,7 @@
 {
   "name": "@youtuber/vtuber",
   "version": "0.1.0",
+  "type": "module",
   "description": "VMC Protocol 클라이언트 및 아바타 컨트롤러",
   "main": "dist/index.js",
   "types": "dist/index.d.ts",

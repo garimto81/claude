@@ -11,7 +11,7 @@ import type {
   VMCClientOptions,
   BlendShapeUpdateCallback,
   ConnectionStatusCallback,
-} from './types';
+} from './types.js';
 
 /**
  * VMC Protocol 클라이언트 클래스

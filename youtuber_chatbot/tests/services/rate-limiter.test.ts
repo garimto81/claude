@@ -190,3 +190,113 @@ describe('Singleton', () => {
     expect(limiter2.getStats().totalResponses).toBe(0);
   });
 });
+
+describe('LRU Cache & Memory Management', () => {
+  let limiter: RateLimiter;
+
+  beforeEach(() => {
+    vi.useFakeTimers();
+    limiter = new RateLimiter({
+      maxPerMinute: 1000,
+      maxPerHour: 10000,
+      userCooldownMs: 1000,
+      maxTrackedUsers: 5,
+      cleanupIntervalMs: 5000,
+    });
+  });
+
+  afterEach(() => {
+    limiter.destroy();
+    vi.useRealTimers();
+  });
+
+  describe('getTrackedUserCount', () => {
+    it('추적 중인 사용자 수를 반환해야 함', () => {
+      expect(limiter.getTrackedUserCount()).toBe(0);
+
+      limiter.recordResponse('user1');
+      expect(limiter.getTrackedUserCount()).toBe(1);
+
+      limiter.recordResponse('user2');
+      expect(limiter.getTrackedUserCount()).toBe(2);
+    });
+  });
+
+  describe('maxTrackedUsers', () => {
+    it('최대 사용자 수를 초과하면 가장 오래된 사용자를 제거해야 함', () => {
+      // 5명의 사용자 기록
+      for (let i = 1; i <= 5; i++) {
+        limiter.recordResponse(`user${i}`);
+      }
+      expect(limiter.getTrackedUserCount()).toBe(5);
+
+      // 6번째 사용자 기록 - user1이 제거되어야 함
+      limiter.recordResponse('user6');
+      expect(limiter.getTrackedUserCount()).toBe(5);
+
+      // user1은 제거되었으므로 쿨다운 없이 응답 가능
+      const result = limiter.canRespond('user1');
+      expect(result.allowed).toBe(true);
+    });
+
+    it('같은 사용자가 다시 응답하면 LRU 순서가 갱신되어야 함', () => {
+      // 5명의 사용자 기록
+      for (let i = 1; i <= 5; i++) {
+        limiter.recordResponse(`user${i}`);
+      }
+
+      // user1이 다시 응답 - LRU 순서 갱신 (가장 최근으로)
+      vi.advanceTimersByTime(1001); // 쿨다운 지남
+      limiter.recordResponse('user1');
+
+      // 새 사용자 추가 - user2가 가장 오래되었으므로 제거됨
+      limiter.recordResponse('user6');
+
+      // user1은 여전히 추적 중 (쿨다운 적용됨)
+      const result1 = limiter.canRespond('user1');
+      expect(result1.allowed).toBe(false);
+      expect(result1.reason).toBe('user_cooldown');
+
+      // user2는 제거되어 쿨다운 없음
+      const result2 = limiter.canRespond('user2');
+      expect(result2.allowed).toBe(true);
+    });
+  });
+
+  describe('cleanupInactiveUsers', () => {
+    it('비활성 사용자가 정리되어야 함', () => {
+      limiter.recordResponse('user1');
+      limiter.recordResponse('user2');
+      expect(limiter.getTrackedUserCount()).toBe(2);
+
+      // 비활성 임계값: 쿨다운 * 10 = 10초
+      // cleanupInterval: 5초
+      vi.advanceTimersByTime(5000); // 첫 번째 정리 실행 (5초 경과)
+      expect(limiter.getTrackedUserCount()).toBe(2); // 아직 비활성 아님
+
+      vi.advanceTimersByTime(5000); // 두 번째 정리 실행 (10초 경과)
+      expect(limiter.getTrackedUserCount()).toBe(2); // 정확히 10초라 아직 유지
+
+      vi.advanceTimersByTime(5000); // 세 번째 정리 실행 (15초 경과)
+      expect(limiter.getTrackedUserCount()).toBe(0); // 비활성으로 제거됨
+    });
+
+    it('활성 사용자는 정리되지 않아야 함', () => {
+      limiter.recordResponse('user1');
+
+      // 4초 후 user1이 다시 응답
+      vi.advanceTimersByTime(4000);
+      limiter.recordResponse('user1');
+
+      // cleanupInterval 대기 (5초 간격이므로 5초씩 진행)
+      vi.advanceTimersByTime(5000); // 총 9초, cleanup 실행 (user1: 5초 경과)
+      expect(limiter.getTrackedUserCount()).toBe(1);
+
+      vi.advanceTimersByTime(5000); // 총 14초, cleanup 실행 (user1: 10초 경과)
+      expect(limiter.getTrackedUserCount()).toBe(1); // 정확히 10초라 아직 유지
+
+      vi.advanceTimersByTime(5000); // 총 19초, cleanup 실행 (user1: 15초 경과)
+      expect(limiter.getTrackedUserCount()).toBe(0); // 비활성으로 제거
+    });
+  });
+});

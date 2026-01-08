@@ -1,10 +1,13 @@
 import type { ChatMessage } from '../services/youtube-chat.js';
 import type { LLMClient } from '../services/llm-client.js';
 import { handleCommand } from './command.js';
+import { getHostProfile } from '../config/index.js';
+import { PromptBuilder } from '../services/prompt-builder.js';
 
 /**
  * 메시지 라우터
  * - 메시지를 분류하고 적절한 핸들러로 라우팅
+ * - FAQ 자동 응답 지원
  */
 export class MessageRouter {
   constructor(private llmClient: LLMClient) {}
@@ -14,6 +17,13 @@ export class MessageRouter {
    */
   async route(message: ChatMessage): Promise<string | null> {
     try {
+      // 0. FAQ 매칭 먼저 시도 (LLM 호출 없이 빠른 응답)
+      const faqResponse = this.tryFaqMatch(message.message);
+      if (faqResponse) {
+        console.log(`[MessageRouter] FAQ matched for: ${message.message}`);
+        return faqResponse;
+      }
+
       // 1. 메시지 분류
       const messageType = await this.llmClient.classifyMessage(message.message);
 
@@ -94,5 +104,27 @@ export class MessageRouter {
     ];
 
     return responses[Math.floor(Math.random() * responses.length)];
+  }
+
+  /**
+   * FAQ 매칭 시도
+   * 호스트 프로필의 FAQ와 매칭되면 해당 답변 반환
+   */
+  private tryFaqMatch(message: string): string | null {
+    try {
+      const profile = getHostProfile();
+      if (!profile.faq || profile.faq.length === 0) {
+        return null;
+      }
+
+      const matchedFaq = PromptBuilder.matchFaq(message, profile.faq);
+      if (matchedFaq) {
+        return matchedFaq.answer;
+      }
+
+      return null;
+    } catch {
+      return null;
+    }
   }
 }
