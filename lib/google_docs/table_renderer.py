@@ -51,8 +51,16 @@ class NativeTableRenderer:
         """
         styles: list[CellInlineStyle] = []
 
-        # 정규식 패턴들 (순서 중요)
+        # 정규식 패턴들 (순서 중요 - 긴 패턴 먼저)
         patterns = [
+            # 중첩 포맷 (bold + italic)
+            (r'\*\*\*(.+?)\*\*\*', 'bold_italic'),     # ***bold italic***
+            (r'___(.+?)___', 'bold_italic'),          # ___bold italic___
+            (r'\*\*_(.+?)_\*\*', 'bold_italic'),      # **_bold italic_**
+            (r'__\*(.+?)\*__', 'bold_italic'),        # __*bold italic*__
+            (r'\*__(.+?)__\*', 'bold_italic'),        # *__bold italic__*
+            (r'_\*\*(.+?)\*\*_', 'bold_italic'),      # _**bold italic**_
+            # 단일 포맷
             (r'\*\*(.+?)\*\*', 'bold'),      # **bold**
             (r'__(.+?)__', 'bold'),          # __bold__
             (r'\*(.+?)\*', 'italic'),        # *italic*
@@ -92,8 +100,8 @@ class NativeTableRenderer:
             style_info = CellInlineStyle(
                 start=plain_offset,
                 end=plain_offset + len(content),
-                bold=(style == 'bold'),
-                italic=(style == 'italic'),
+                bold=(style == 'bold' or style == 'bold_italic'),
+                italic=(style == 'italic' or style == 'bold_italic'),
                 code=(style == 'code'),
             )
             styles.append(style_info)

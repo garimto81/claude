@@ -258,9 +258,17 @@ class MarkdownToDocsConverter:
         # 참조 링크 패턴: [text][ref] 또는 [text][]
         text = re.sub(r'\[([^\]]+)\]\[([^\]]*)\]', replace_ref_link, text)
 
-        # 정규식 패턴들 (순서 중요)
+        # 정규식 패턴들 (순서 중요 - 긴 패턴 먼저)
         patterns = [
             (r'\[([^\]]+)\]\(([^)]+)\)', 'link'),      # [text](url)
+            # 중첩 포맷 (bold + italic)
+            (r'\*\*\*(.+?)\*\*\*', 'bold_italic'),     # ***bold italic***
+            (r'___(.+?)___', 'bold_italic'),          # ___bold italic___
+            (r'\*\*_(.+?)_\*\*', 'bold_italic'),      # **_bold italic_**
+            (r'__\*(.+?)\*__', 'bold_italic'),        # __*bold italic*__
+            (r'\*__(.+?)__\*', 'bold_italic'),        # *__bold italic__*
+            (r'_\*\*(.+?)\*\*_', 'bold_italic'),      # _**bold italic**_
+            # 단일 포맷
             (r'\*\*(.+?)\*\*', 'bold'),                # **bold** (non-greedy, 내부 * 허용)
             (r'__(.+?)__', 'bold'),                    # __bold__ (non-greedy, 내부 _ 허용)
             (r'(?<!\*)\*(?!\*)(.+?)(?<!\*)\*(?!\*)', 'italic'),  # *italic* (** 제외)
@@ -303,6 +311,9 @@ class MarkdownToDocsConverter:
             if style == 'bold':
                 segment.bold = True
             elif style == 'italic':
+                segment.italic = True
+            elif style == 'bold_italic':
+                segment.bold = True
                 segment.italic = True
             elif style == 'code':
                 segment.code = True
