@@ -64,6 +64,7 @@ class MarkdownToDocsConverter:
         self.requests: list[dict[str, Any]] = []
         self.current_index = 1  # Google Docs는 1부터 시작
         self.headings: list[dict[str, Any]] = []
+        self._is_first_h1 = True  # First H1 uses TITLE style
 
         self._table_renderer = NativeTableRenderer()
 
@@ -445,8 +446,12 @@ class MarkdownToDocsConverter:
             font_weight = heading_config.get('weight', 600)
             line_height = heading_config.get('line_height', 1.3) * 100
 
-            # 제목 스타일 적용 (Named Style + Custom)
-            heading_style = f'HEADING_{min(level, 6)}'
+            # 제목 스타일 적용 (첫 H1은 TITLE, 나머지는 HEADING_N)
+            if level == 1 and self._is_first_h1:
+                heading_style = 'TITLE'
+                self._is_first_h1 = False
+            else:
+                heading_style = f'HEADING_{min(level, 6)}' 
             self.requests.append({
                 'updateParagraphStyle': {
                     'range': {
@@ -506,7 +511,12 @@ class MarkdownToDocsConverter:
             }
             spacing = space_settings.get(level, {'before': 16, 'after': 8})
 
-            heading_style = f'HEADING_{min(level, 6)}'
+            # 첫 H1은 TITLE 스타일 적용
+            if level == 1 and self._is_first_h1:
+                heading_style = 'TITLE'
+                self._is_first_h1 = False
+            else:
+                heading_style = f'HEADING_{min(level, 6)}'
             self.requests.append({
                 'updateParagraphStyle': {
                     'range': {
@@ -739,7 +749,7 @@ class MarkdownToDocsConverter:
             }
         })
 
-        # 코드 블록 단락 스타일 (들여쓰기, 줄간격)
+        # 코드 블록 단락 스타일 (NORMAL_TEXT로 명시 + 들여쓰기, 줄간격)
         self.requests.append({
             'updateParagraphStyle': {
                 'range': {
@@ -747,13 +757,14 @@ class MarkdownToDocsConverter:
                     'endIndex': self.current_index - 1
                 },
                 'paragraphStyle': {
+                    'namedStyleType': 'NORMAL_TEXT',
                     'indentStart': {'magnitude': 16, 'unit': 'PT'},
                     'indentEnd': {'magnitude': 16, 'unit': 'PT'},
                     'lineSpacing': 140,
                     'spaceAbove': {'magnitude': 8, 'unit': 'PT'},
                     'spaceBelow': {'magnitude': 12, 'unit': 'PT'},
                 },
-                'fields': 'indentStart,indentEnd,lineSpacing,spaceAbove,spaceBelow'
+                'fields': 'namedStyleType,indentStart,indentEnd,lineSpacing,spaceAbove,spaceBelow'
             }
         })
 
