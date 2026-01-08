@@ -6,6 +6,7 @@ OAuth 2.0 인증 기반 Google Docs/Drive API 클라이언트.
 
 import json
 import logging
+import os
 from pathlib import Path
 from typing import Any, Dict, List, Optional
 
@@ -16,12 +17,27 @@ from googleapiclient.discovery import build, Resource
 logger = logging.getLogger(__name__)
 
 
+def _get_project_root() -> Path:
+    """프로젝트 루트 경로 반환 (환경변수 > 자동 탐지)"""
+    env_root = os.environ.get("CLAUDE_PROJECT_ROOT")
+    if env_root:
+        return Path(env_root)
+
+    current = Path(__file__).resolve()
+    for parent in current.parents:
+        if (parent / "CLAUDE.md").exists() or (parent / ".git").exists():
+            return parent
+
+    return Path("C:/claude")
+
+
 class GoogleDocsClient:
     """Google Docs API 클라이언트"""
 
-    # 기본 경로 설정 - lib/google_docs/auth.py와 통합
-    DEFAULT_TOKEN_PATH = Path("C:/claude/json/token.json")
-    DEFAULT_CREDENTIALS_PATH = Path("C:/claude/json/desktop_credentials.json")
+    # 프로젝트 루트 기반 경로 설정
+    _PROJECT_ROOT = _get_project_root()
+    DEFAULT_TOKEN_PATH = _PROJECT_ROOT / "json" / "token.json"
+    DEFAULT_CREDENTIALS_PATH = _PROJECT_ROOT / "json" / "desktop_credentials.json"
 
     # PRD 저장 폴더 ID (Google AI Studio 폴더)
     DEFAULT_FOLDER_ID = "1JwdlUe_v4Ug-yQ0veXTldFl6C24GH8hW"
