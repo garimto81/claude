@@ -1,11 +1,12 @@
 """
-Notion 스타일 시스템
+Google Docs 스타일 시스템 (파랑 계열 전문 문서)
 
-Google Docs PRD 변환에 사용되는 Notion 스타일 색상, 타이포그래피, 컴포넌트 스타일을 정의합니다.
+Google Docs PRD 변환에 사용되는 전역 표준 스타일을 정의합니다.
+SKILL.md (google-workspace) 표준을 따릅니다.
 
 Features:
-- 부드러운 파스텔 색상 팔레트
-- 넉넉한 여백과 줄간격
+- 파랑 계열 색상 팔레트 (#1A4D8C, #3373B3, #404040)
+- 115% 줄간격, A4 용지, 72pt 여백
 - 섹션별 아이콘
 - Callout 박스 스타일
 """
@@ -15,7 +16,7 @@ from typing import Any
 
 
 # ============================================================================
-# Notion 색상 팔레트 (RGB 0-1 범위)
+# 색상 팔레트 (SKILL.md 표준 - 파랑 계열 전문 문서)
 # ============================================================================
 
 def hex_to_rgb(hex_color: str) -> dict[str, float]:
@@ -29,53 +30,58 @@ def hex_to_rgb(hex_color: str) -> dict[str, float]:
 
 
 NOTION_COLORS = {
-    # 텍스트 색상
-    'text_primary': hex_to_rgb('#1a1a1a'),      # 거의 검정
-    'text_secondary': hex_to_rgb('#555555'),    # 중간 회색
-    'text_muted': hex_to_rgb('#888888'),        # 연한 회색
+    # ============================================
+    # 파랑 계열 전문 문서 팔레트 (SKILL.md 표준)
+    # ============================================
 
-    # 제목 색상 (강조)
-    'heading_primary': hex_to_rgb('#0969DA'),   # GitHub Blue - H1용
-    'heading_secondary': hex_to_rgb('#1F2328'), # 진한 검정 - H2용
-    'heading_accent': hex_to_rgb('#0550AE'),    # 진한 파랑 - 링크/강조
+    # 텍스트 계층 (SKILL.md 표준)
+    'text_primary': hex_to_rgb('#404040'),      # 진한 회색 - 본문
+    'text_secondary': hex_to_rgb('#666666'),    # 중간 회색 - 메타/캡션
+    'text_muted': hex_to_rgb('#999999'),        # 연한 회색 - 힌트 텍스트
 
-    # 배경 색상
-    'background': hex_to_rgb('#FFFFFF'),         # 흰색
-    'background_gray': hex_to_rgb('#F6F8FA'),    # GitHub 스타일 배경
-    'background_warm': hex_to_rgb('#FFFBEB'),    # 따뜻한 노랑 배경
+    # 제목 색상 (전역 표준 - google-workspace 스킬 정의)
+    'heading_primary': hex_to_rgb('#1A4D8C'),   # 진한 파랑 - Title, H1
+    'heading_secondary': hex_to_rgb('#3373B3'), # 밝은 파랑 - H2
+    'heading_tertiary': hex_to_rgb('#404040'),  # 진한 회색 - H3
+    'heading_accent': hex_to_rgb('#3373B3'),    # 밝은 파랑 - 강조/구분선
 
-    # 선명한 액센트 색상
-    'red': hex_to_rgb('#CF222E'),               # 진한 빨강
-    'orange': hex_to_rgb('#BF8700'),            # 진한 주황
-    'yellow': hex_to_rgb('#9A6700'),            # 진한 노랑
-    'green': hex_to_rgb('#1A7F37'),             # 진한 초록
-    'blue': hex_to_rgb('#0969DA'),              # 진한 파랑
-    'purple': hex_to_rgb('#8250DF'),            # 진한 보라
-    'pink': hex_to_rgb('#BF3989'),              # 진한 핑크
+    # 배경 색상 (SKILL.md 표준)
+    'background': hex_to_rgb('#FFFFFF'),         # 순백
+    'background_gray': hex_to_rgb('#F2F2F2'),    # 연한 회색 - 코드/테이블
+    'background_warm': hex_to_rgb('#FFF9E6'),    # 연한 노랑 - 경고 배경
 
-    # 하이라이트 배경 (연한 버전)
-    'highlight_red': hex_to_rgb('#FFEBE9'),
-    'highlight_orange': hex_to_rgb('#FFF8C5'),
-    'highlight_yellow': hex_to_rgb('#FFF8C5'),
-    'highlight_green': hex_to_rgb('#DAFBE1'),
-    'highlight_blue': hex_to_rgb('#DDF4FF'),
-    'highlight_purple': hex_to_rgb('#FBEFFF'),
-    'highlight_gray': hex_to_rgb('#F6F8FA'),
+    # 강조 색상 (SKILL.md 표준)
+    'red': hex_to_rgb('#DC2626'),               # Red
+    'orange': hex_to_rgb('#D97706'),            # Orange
+    'yellow': hex_to_rgb('#CA8A04'),            # Yellow
+    'green': hex_to_rgb('#059669'),             # Green
+    'blue': hex_to_rgb('#1A4D8C'),              # 진한 파랑 (Primary)
+    'purple': hex_to_rgb('#7C3AED'),            # Purple
+    'pink': hex_to_rgb('#DB2777'),              # Pink
 
-    # 코드 블록 (더 명확한 배경)
-    'code_bg': hex_to_rgb('#F6F8FA'),           # GitHub 코드 배경
-    'code_text': hex_to_rgb('#CF222E'),         # 빨간 코드 텍스트
-    'code_border': hex_to_rgb('#D0D7DE'),       # 코드 테두리
+    # 하이라이트 배경
+    'highlight_red': hex_to_rgb('#FEE2E2'),     # Red 100
+    'highlight_orange': hex_to_rgb('#FEF3C7'),  # Orange 100
+    'highlight_yellow': hex_to_rgb('#FEF9C3'),  # Yellow 100
+    'highlight_green': hex_to_rgb('#D1FAE5'),   # Green 100
+    'highlight_blue': hex_to_rgb('#DBEAFE'),    # Blue 100
+    'highlight_purple': hex_to_rgb('#EDE9FE'),  # Purple 100
+    'highlight_gray': hex_to_rgb('#F2F2F2'),    # Gray
 
-    # 테두리 및 구분선
-    'border': hex_to_rgb('#D0D7DE'),
-    'divider': hex_to_rgb('#D8DEE4'),
+    # 코드 블록 (SKILL.md 표준)
+    'code_bg': hex_to_rgb('#F2F2F2'),           # 연한 회색
+    'code_text': hex_to_rgb('#404040'),         # 진한 회색
+    'code_border': hex_to_rgb('#E6E6E6'),       # 테두리 회색
 
-    # 테이블 (더 눈에 띄는 헤더)
-    'table_header_bg': hex_to_rgb('#F6F8FA'),   # 헤더 배경
-    'table_header_text': hex_to_rgb('#1F2328'), # 헤더 텍스트
-    'table_border': hex_to_rgb('#D0D7DE'),
-    'table_row_alt': hex_to_rgb('#F6F8FA'),
+    # 테두리 및 구분선 (SKILL.md 표준)
+    'border': hex_to_rgb('#E6E6E6'),            # 연한 회색 테두리
+    'divider': hex_to_rgb('#3373B3'),           # 밝은 파랑 (H1 구분선용)
+
+    # 테이블 (SKILL.md 표준)
+    'table_header_bg': hex_to_rgb('#E6E6E6'),   # 연한 회색 헤더 배경
+    'table_header_text': hex_to_rgb('#404040'), # 진한 회색 헤더 텍스트
+    'table_border': hex_to_rgb('#CCCCCC'),      # 1pt 회색 테두리
+    'table_row_alt': hex_to_rgb('#F9F9F9'),     # 교대 행 배경
 }
 
 
@@ -84,10 +90,32 @@ NOTION_COLORS = {
 # ============================================================================
 
 NOTION_FONTS = {
-    'heading': 'Georgia',           # 세리프 (Notion 기본)
+    'heading': 'Arial',             # 산세리프 (가독성)
     'body': 'Arial',                # 산세리프 (가독성)
     'code': 'Consolas',             # 고정폭
     'ui': 'Segoe UI',               # UI 요소
+}
+
+# ============================================================================
+# 페이지 설정 (전역 표준 - google-workspace 스킬 기준)
+# ============================================================================
+
+PAGE_SETTINGS = {
+    # A4 크기 (포인트 단위)
+    'page_width': 595.28,           # 210mm = 595.28pt
+    'page_height': 841.89,          # 297mm = 841.89pt
+
+    # 여백 (1인치 = 72pt)
+    'margin_top': 72,
+    'margin_bottom': 72,
+    'margin_left': 72,
+    'margin_right': 72,
+
+    # 컨텐츠 영역 너비
+    'content_width': 451.28,        # 595.28 - 72*2
+
+    # 줄간격
+    'line_spacing': 115,            # 115%
 }
 
 
@@ -96,111 +124,136 @@ NOTION_FONTS = {
 # ============================================================================
 
 NOTION_TYPOGRAPHY: dict[int | str, dict[str, Any]] = {
-    # Heading 스타일 (넉넉한 여백)
-    1: {
-        'size': 32,
+    # ============================================
+    # 파랑 계열 전문 문서 타이포그래피 (SKILL.md 표준)
+    # ============================================
+
+    # Title 스타일 (제목)
+    'title': {
+        'size': 26,              # 26pt (전역 표준)
         'weight': 700,
-        'line_height': 1.3,
-        'space_before': 48,
-        'space_after': 16,
-        'font': 'heading',
-        'color': 'text_primary',
-    },
-    2: {
-        'size': 24,
-        'weight': 600,
-        'line_height': 1.4,
-        'space_before': 36,
-        'space_after': 12,
-        'font': 'heading',
-        'color': 'text_primary',
-    },
-    3: {
-        'size': 18,
-        'weight': 600,
-        'line_height': 1.4,
-        'space_before': 28,
-        'space_after': 8,
-        'font': 'heading',
-        'color': 'text_primary',
-    },
-    4: {
-        'size': 16,
-        'weight': 600,
-        'line_height': 1.5,
-        'space_before': 20,
-        'space_after': 6,
-        'font': 'heading',
-        'color': 'text_secondary',
-    },
-    5: {
-        'size': 14,
-        'weight': 600,
-        'line_height': 1.5,
-        'space_before': 16,
-        'space_after': 4,
-        'font': 'heading',
-        'color': 'text_secondary',
-    },
-    6: {
-        'size': 13,
-        'weight': 600,
-        'line_height': 1.5,
+        'line_height': 1.15,     # 115% 줄간격
         'space_before': 12,
-        'space_after': 4,
+        'space_after': 0,        # 0pt (줄바꿈 최소화)
         'font': 'heading',
-        'color': 'text_muted',
+        'color': 'heading_primary',  # 진한 파랑 #1A4D8C
     },
 
-    # Body 스타일
+    # Heading 스타일 (전역 표준)
+    1: {
+        'size': 18,              # H1: 18pt (전역 표준)
+        'weight': 700,
+        'line_height': 1.15,     # 115% 줄간격
+        'space_before': 18,
+        'space_after': 0,        # 0pt (줄바꿈 최소화)
+        'font': 'heading',
+        'color': 'heading_primary',  # 진한 파랑 #1A4D8C
+        'border_bottom': True,       # 하단 구분선
+    },
+    2: {
+        'size': 14,              # H2: 14pt (전역 표준)
+        'weight': 700,
+        'line_height': 1.15,
+        'space_before': 14,
+        'space_after': 0,        # 0pt (줄바꿈 최소화)
+        'font': 'heading',
+        'color': 'heading_secondary',  # 밝은 파랑 #3373B3
+    },
+    3: {
+        'size': 12,              # H3: 12pt (전역 표준)
+        'weight': 700,
+        'line_height': 1.15,
+        'space_before': 10,
+        'space_after': 0,        # 0pt (줄바꿈 최소화)
+        'font': 'heading',
+        'color': 'heading_tertiary',   # 진한 회색 #404040
+    },
+    4: {
+        'size': 11,
+        'weight': 600,
+        'line_height': 1.15,
+        'space_before': 8,
+        'space_after': 0,        # 0pt (줄바꿈 최소화)
+        'font': 'heading',
+        'color': 'text_primary',
+    },
+    5: {
+        'size': 11,
+        'weight': 600,
+        'line_height': 1.15,
+        'space_before': 6,
+        'space_after': 0,        # 0pt (줄바꿈 최소화)
+        'font': 'heading',
+        'color': 'text_primary',
+    },
+    6: {
+        'size': 10,
+        'weight': 600,
+        'line_height': 1.15,
+        'space_before': 4,
+        'space_after': 0,        # 0pt (줄바꿈 최소화)
+        'font': 'heading',
+        'color': 'text_secondary',
+    },
+
+    # Body 스타일 (전역 표준)
     'body': {
-        'size': 14,
+        'size': 11,              # 11pt
         'weight': 400,
-        'line_height': 1.7,      # Notion의 넉넉한 줄간격
-        'space_after': 8,
+        'line_height': 1.15,     # 115% 줄간격 (전역 표준)
+        'space_after': 0,        # 0pt (줄바꿈 최소화)
         'font': 'body',
         'color': 'text_primary',
     },
 
-    # 코드 스타일
+    # 코드 스타일 (미니멀)
     'code_inline': {
-        'size': 13,
+        'size': 10.5,
         'weight': 400,
         'font': 'code',
         'color': 'code_text',
         'background': 'code_bg',
     },
     'code_block': {
-        'size': 13,
+        'size': 10.5,
         'weight': 400,
         'line_height': 1.5,
         'font': 'code',
         'color': 'text_primary',
         'background': 'code_bg',
-        'padding': 16,
+        'padding': 12,
     },
 
     # 리스트 스타일
     'list': {
-        'size': 14,
+        'size': 11,
         'weight': 400,
-        'line_height': 1.6,
-        'indent': 24,
-        'item_spacing': 4,
+        'line_height': 1.55,
+        'indent': 20,
+        'item_spacing': 0,       # 0pt (줄바꿈 최소화)
         'font': 'body',
         'color': 'text_primary',
     },
 
-    # 인용문 스타일
+    # 인용문 스타일 (세련된)
     'quote': {
-        'size': 14,
+        'size': 11,
         'weight': 400,
         'line_height': 1.6,
         'font': 'body',
         'color': 'text_secondary',
-        'border_color': 'text_muted',
+        'border_color': 'blue',    # Royal Blue 왼쪽 테두리
         'border_width': 3,
-        'padding': 16,
+        'padding': 12,
+    },
+
+    # 메타데이터 스타일 (새로 추가)
+    'meta': {
+        'size': 10,
+        'weight': 400,
+        'line_height': 1.4,
+        'font': 'body',
+        'color': 'text_muted',
     },
 }
 
@@ -306,22 +359,24 @@ CALLOUT_STYLES: dict[str, dict[str, Any]] = {
 
 @dataclass
 class NotionStyle:
-    """Notion 스타일 설정 컨테이너"""
+    """Notion 스타일 설정 컨테이너 (WSOPTV 전역 표준)"""
     colors: dict[str, dict[str, float]]
     typography: dict[int | str, dict[str, Any]]
     fonts: dict[str, str]
     icons: dict[str, str]
     callouts: dict[str, dict[str, Any]]
+    page: dict[str, float]
 
     @classmethod
     def default(cls) -> 'NotionStyle':
-        """기본 Notion 스타일 반환"""
+        """기본 WSOPTV 전역 표준 스타일 반환"""
         return cls(
             colors=NOTION_COLORS,
             typography=NOTION_TYPOGRAPHY,
             fonts=NOTION_FONTS,
             icons=SECTION_ICONS,
             callouts=CALLOUT_STYLES,
+            page=PAGE_SETTINGS,
         )
 
     def get_color(self, name: str) -> dict[str, float]:
@@ -348,6 +403,33 @@ class NotionStyle:
     def get_callout_style(self, callout_type: str) -> dict[str, Any]:
         """Callout 타입별 스타일 반환"""
         return self.callouts.get(callout_type, self.callouts['note'])
+
+    def get_page_style_request(self) -> dict[str, Any]:
+        """페이지 스타일 설정 요청 반환 (A4, 72pt 여백)"""
+        return {
+            "updateDocumentStyle": {
+                "documentStyle": {
+                    "pageSize": {
+                        "width": {"magnitude": self.page['page_width'], "unit": "PT"},
+                        "height": {"magnitude": self.page['page_height'], "unit": "PT"}
+                    },
+                    "marginTop": {"magnitude": self.page['margin_top'], "unit": "PT"},
+                    "marginBottom": {"magnitude": self.page['margin_bottom'], "unit": "PT"},
+                    "marginLeft": {"magnitude": self.page['margin_left'], "unit": "PT"},
+                    "marginRight": {"magnitude": self.page['margin_right'], "unit": "PT"},
+                },
+                "fields": "pageSize,marginTop,marginBottom,marginLeft,marginRight"
+            }
+        }
+
+    def get_h1_border_style(self) -> dict[str, Any]:
+        """H1 하단 구분선 스타일 반환"""
+        return {
+            "color": {"color": {"rgbColor": self.colors['heading_accent']}},
+            "width": {"magnitude": 1, "unit": "PT"},
+            "padding": {"magnitude": 4, "unit": "PT"},
+            "dashStyle": "SOLID"
+        }
 
 
 class NotionStyleMixin:
