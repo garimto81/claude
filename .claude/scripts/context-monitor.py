@@ -15,6 +15,20 @@ if sys.platform == 'win32':
     sys.stdout = io.TextIOWrapper(sys.stdout.buffer, encoding='utf-8', errors='replace')
 
 from pathlib import Path
+import subprocess
+
+def get_claude_version():
+    """Get Claude Code version"""
+    try:
+        # Windows에서 claude.cmd 실행을 위해 shell=True 필요
+        result = subprocess.run('claude --version', capture_output=True, text=True, timeout=5, shell=True)
+        if result.returncode == 0:
+            # 출력에서 버전 추출 (예: "2.1.2 (Claude Code)" -> "2.1.2")
+            parts = result.stdout.strip().split()
+            return parts[0] if parts else "?"
+        return "?"
+    except Exception:
+        return "?"
 
 def get_git_remote(project_dir):
     """Get GitHub remote repository (repo only, without owner)"""
@@ -176,21 +190,21 @@ def parse_context_from_transcript(transcript_path):
         return None
 
 def get_context_display(context_info):
-    """Generate context display with progress bar only (no text alerts)."""
+    """Generate context display with progress bar only (no icons)."""
     if not context_info:
-        return "🔵▁▁▁▁▁▁▁▁ ???"
+        return "\033[90m▁▁▁▁▁▁▁▁\033[0m ???"
 
     percent = context_info.get('percent', 0)
 
     # Context usage thresholds (conservative - warnings start at 80%)
     if percent >= 95:
-        icon, color = "🚨", "\033[31;1m"  # Red - Critical (95-100%)
+        color = "\033[31;1m"  # Red - Critical (95-100%)
     elif percent >= 90:
-        icon, color = "🟠", "\033[91m"    # Orange - Warning (90-95%)
+        color = "\033[91m"    # Orange - Warning (90-95%)
     elif percent >= 80:
-        icon, color = "🟡", "\033[33m"    # Yellow - Caution (80-90%)
+        color = "\033[33m"    # Yellow - Caution (80-90%)
     else:
-        icon, color = "🟢", "\033[32m"    # Green - Safe (0-80%)
+        color = "\033[32m"    # Green - Safe (0-80%)
 
     # Create progress bar
     segments = 8
@@ -199,7 +213,7 @@ def get_context_display(context_info):
 
     reset = "\033[0m"
 
-    return f"{icon}{color}{bar}{reset} {percent:.0f}%"
+    return f"{color}{bar}{reset} {percent:.0f}%"
 
 def get_directory_display(workspace_data):
     """Get directory display name."""
@@ -237,24 +251,24 @@ def main():
 
         # Build status components
         context_display = get_context_display(context_info)
-        directory = get_directory_display(workspace)
+        version = get_claude_version()
         git_remote = get_git_remote(project_dir)
         git_branch = get_git_branch(project_dir)
 
-        # GitHub remote display (repo only)
-        github_display = f" \033[36m🔗 {git_remote}\033[0m" if git_remote else ""
+        # GitHub remote display (no icon)
+        github_display = f"  \033[36m{git_remote}\033[0m" if git_remote else ""
 
-        # Git branch display
-        branch_display = f" \033[35m🌿 {git_branch}\033[0m" if git_branch else ""
+        # Git branch display (no icon)
+        branch_display = f"  \033[35m{git_branch}\033[0m" if git_branch else ""
 
-        # Combine all components (model removed, lines removed)
-        status_line = f"\033[93m📁 {directory}\033[0m{github_display}{branch_display} {context_display}"
+        # Combine all components (version instead of directory, no icons)
+        status_line = f"\033[93m{version}\033[0m{github_display}{branch_display}  {context_display}"
 
         print(status_line)
 
     except Exception as e:
         # Fallback display on any error
-        print(f"\033[93m📁 {os.path.basename(os.getcwd())}\033[0m 🧠 \033[31m[Error: {str(e)[:20]}]\033[0m")
+        print(f"\033[93m?\033[0m \033[31m[Error: {str(e)[:20]}]\033[0m")
 
 if __name__ == "__main__":
     main()
