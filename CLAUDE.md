@@ -2,7 +2,7 @@
 
 This file provides guidance to Claude Code (claude.ai/code) when working with code in this repository.
 
-**Version**: 11.6.0 | **Context**: Windows, PowerShell, Root: `D:\AI\claude01`
+**Version**: 11.7.0 | **Context**: Windows, PowerShell, Root: `C:\claude`
 
 **GitHub**: `garimto81/claude`
 
@@ -13,7 +13,7 @@ This file provides guidance to Claude Code (claude.ai/code) when working with co
 | 규칙 | 내용 |
 |------|------|
 | **언어** | 한글 출력. 기술 용어(code, GitHub)는 영어 |
-| **경로** | 절대 경로만. `D:\AI\claude01\...` |
+| **경로** | 절대 경로만. `C:\claude\...` |
 | **충돌** | 사용자에게 질문 (임의 판단 금지) |
 | **응답** | 상세: `docs/RESPONSE_STYLE.md` |
 
@@ -84,13 +84,40 @@ npx playwright test tests/e2e/auth.spec.ts  # 개별 테스트
 | `/debug` | 가설-검증 기반 디버깅 (D0-D4) |
 | `/issue` | GitHub 이슈 관리 (list/create/fix) |
 
-**전체 17개**: `docs/COMMAND_REFERENCE.md`
+**전체 18개**: `docs/COMMAND_REFERENCE.md`
 
 ### 에이전트 & 스킬
 
 **에이전트 23개** (커스텀 19 + 내장 4): `docs/AGENTS_REFERENCE.md`
 
 **스킬 18개**: `docs/AGENTS_REFERENCE.md`
+
+---
+
+## 코드 아키텍처
+
+```
+C:\claude\
+├── src/
+│   ├── agents/              # 워크플로우 자동화 (Python)
+│   │   ├── prompt_learning/ # 프롬프트 최적화
+│   │   └── prompt_optimization/
+│   └── services/
+│       └── google_docs/     # Google Docs PRD 연동
+├── .claude/
+│   ├── commands/            # 슬래시 커맨드 (18개)
+│   ├── agents/              # 커스텀 에이전트 (19개)
+│   └── skills/              # 자동화 스킬 (18개)
+└── scripts/                 # 유틸리티 스크립트
+```
+
+### 핵심 모듈
+
+| 모듈 | 위치 | 역할 |
+|------|------|------|
+| **PRD 연동** | `src/services/google_docs/` | Google Docs ↔ 로컬 동기화 |
+| **워크플로우** | `src/agents/` | 병렬 실행, Phase 검증 |
+| **프롬프트 학습** | `src/agents/prompt_learning/` | 세션 분석, 패턴 감지 |
 
 ---
 
