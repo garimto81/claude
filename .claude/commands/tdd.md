@@ -140,5 +140,5 @@ Follow TDD best practices with Red-Green-Refactor workflow and git integration.
 
 - `/check` - Quality checks
 - `/check --perf` - Performance
-- `scripts/validate-phase-1.sh` - 1:1 test pairing
+- `scripts/validate-phase-1.ps1` - 1:1 test pairing
 - Phase 2 validation

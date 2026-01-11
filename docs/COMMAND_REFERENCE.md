@@ -1,6 +1,6 @@
 # Command Reference
 
-**Version**: 1.3.0 | **Updated**: 2026-01-03
+**Version**: 1.4.0 | **Updated**: 2026-01-11
 
 이 문서는 모든 슬래시 커맨드의 사용법을 정리합니다.
 
@@ -27,6 +27,7 @@
 | | `/session` | 세션 관리 |
 | | `/deploy` | 버전/Docker 배포 |
 | | `/audit` | 설정 점검 및 개선 |
+| **시각화** | `/mockup` | HTML 와이어프레임 목업 생성 |
 
 ---
 
@@ -1142,6 +1143,56 @@ CLAUDE.md, 커맨드, 에이전트, 스킬의 일관성을 점검합니다.
 /parallel dev --branch "대규모 기능"  # 브랜치 격리 병렬 개발
 /parallel review                      # 병렬 코드 리뷰
 ```
+
+---
+
+## 18. /mockup - 와이어프레임 목업 생성
+
+HTML 와이어프레임을 생성하고 Playwright로 스크린샷을 캡처합니다.
+
+### 사용법
+
+```bash
+/mockup [name]                      # 단일 화면 목업
+/mockup "대시보드" --screens=3      # 3개 화면
+/mockup "인증" --flow --prd=PRD-0003  # 흐름 + PRD 연결
+```
+
+### 옵션
+
+| 옵션 | 설명 |
+|------|------|
+| `--style=TYPE` | wireframe (기본) / detailed |
+| `--screens=N` | 생성할 화면 수 (1-5) |
+| `--prd=PRD-NNNN` | 연결할 PRD 번호 |
+| `--flow` | 전체 흐름 다이어그램 포함 |
+
+### 워크플로우
+
+```
+/mockup [name]
+    │
+    ├─ 1. 질문 (화면 요소, 레이아웃)
+    │
+    ├─ 2. HTML 와이어프레임 생성
+    │      docs/mockups/{name}.html
+    │
+    ├─ 3. Playwright 스크린샷
+    │      docs/images/{name}.png
+    │
+    └─ 4. 결과 출력 + Markdown 삽입 코드
+```
+
+### 화면 요소
+
+| 요소 | 설명 |
+|------|------|
+| `header` | 상단 네비게이션 |
+| `sidebar` | 좌측 사이드바 |
+| `form` | 입력 폼 |
+| `table` | 데이터 테이블 |
+| `cards` | 카드 그리드 |
+| `modal` | 팝업 모달 |
 
 ---
 

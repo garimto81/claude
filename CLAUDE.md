@@ -2,7 +2,7 @@
 
 This file provides guidance to Claude Code (claude.ai/code) when working with code in this repository.
 
-**Version**: 11.7.0 | **Context**: Windows, PowerShell, Root: `C:\claude`
+**Version**: 11.7.1 | **Context**: Windows, PowerShell, Root: `C:\claude`
 
 **GitHub**: `garimto81/claude`
 
@@ -90,7 +90,7 @@ npx playwright test tests/e2e/auth.spec.ts  # 개별 테스트
 
 **에이전트 23개** (커스텀 19 + 내장 4): `docs/AGENTS_REFERENCE.md`
 
-**스킬 18개**: `docs/AGENTS_REFERENCE.md`
+**스킬 19개**: `docs/AGENTS_REFERENCE.md`
 
 ---
 
@@ -107,7 +107,7 @@ C:\claude\
 ├── .claude/
 │   ├── commands/            # 슬래시 커맨드 (18개)
 │   ├── agents/              # 커스텀 에이전트 (19개)
-│   └── skills/              # 자동화 스킬 (18개)
+│   └── skills/              # 자동화 스킬 (19개)
 └── scripts/                 # 유틸리티 스크립트
 ```
 
