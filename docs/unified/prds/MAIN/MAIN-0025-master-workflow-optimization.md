@@ -1,4 +1,4 @@
-# PRD-0025: 전역 워크플로우 최적화 (Master)
+﻿# PRD-0025: 전역 워크플로우 최적화 (Master)
 
 **Version**: 1.0.0 | **Date**: 2025-12-06 | **Status**: Draft
 
@@ -30,10 +30,10 @@ Claude Code의 전역 지침과 워크플로우를 최적화하여 **토큰 효�
 
 | PRD | 제목 | 우선순위 | 상태 |
 |-----|------|----------|------|
-| [PRD-0026](./PRD-0026-token-management.md) | 토큰 관리 계획 | P0 | Draft |
-| [PRD-0027](./PRD-0027-skills-migration.md) | Skills 마이그레이션 | P0 | Draft |
-| [PRD-0028](./PRD-0028-tdd-enhancement.md) | TDD 워크플로우 강화 | P1 | Draft |
-| [PRD-0029](./PRD-0029-github-actions.md) | GitHub Actions 통합 | P1 | Draft |
+| [PRD-0026](./MAIN-0026-token-management.md) | 토큰 관리 계획 | P0 | Draft |
+| [PRD-0027](./MAIN-0027-skills-migration.md) | Skills 마이그레이션 | P0 | Draft |
+| [PRD-0028](./MAIN-0028-tdd-enhancement.md) | TDD 워크플로우 강화 | P1 | Draft |
+| [PRD-0029](./MAIN-0029-github-actions.md) | GitHub Actions 통합 | P1 | Draft |
 
 ---
 
@@ -81,3 +81,4 @@ Claude Code의 전역 지침과 워크플로우를 최적화하여 **토큰 효�
 ---
 
 **Next**: PRD-0026 (토큰 관리) → PRD-0027 (Skills) 순서로 구현
+

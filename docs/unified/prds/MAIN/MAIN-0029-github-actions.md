@@ -1,7 +1,7 @@
-# PRD-0029: GitHub Actions 통합
+﻿# PRD-0029: GitHub Actions 통합
 
 **Version**: 1.0.0 | **Date**: 2025-12-06 | **Status**: Draft
-**Parent**: [PRD-0025](./PRD-0025-master-workflow-optimization.md)
+**Parent**: [PRD-0025](./MAIN-0025-master-workflow-optimization.md)
 **Priority**: P1
 
 ---
@@ -186,3 +186,4 @@ Rules:
 
 **Dependencies**: PRD-0027 (Skills 완료 후 권장)
 **Next**: 모니터링 및 최적화
+

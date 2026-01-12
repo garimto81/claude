@@ -1,7 +1,7 @@
-# PRD-0030: 전역 지침 및 워크플로우 문서 동기화
+﻿# PRD-0030: 전역 지침 및 워크플로우 문서 동기화
 
 **Version**: 3.0.0 | **Date**: 2025-12-11 | **Status**: In Progress
-**Priority**: P0 | **Parent**: [PRD-0025](./PRD-0025-master-workflow-optimization.md)
+**Priority**: P0 | **Parent**: [PRD-0025](./MAIN-0025-master-workflow-optimization.md)
 
 ---
 
@@ -724,3 +724,4 @@ PRD v2.0.0 작성 시 `.claude/plugins/` 구조가 완전히 누락됨:
 3. **CLAUDE.md v8.1.0** 플러그인 참조 추가
 4. PR #2 업데이트
 5. 머지
+

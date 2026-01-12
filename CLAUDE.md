@@ -203,6 +203,40 @@ PR 제목: feat: add login [PRD-0001] #123
 
 ---
 
+## 통합 문서 구조
+
+5개 프로젝트의 PRD가 `docs/unified/`에 통합 관리됩니다.
+
+### 네임스페이스
+
+| 접두어 | 프로젝트 | 위치 |
+|--------|----------|------|
+| **MAIN** | 루트 (Claude Root) | `docs/unified/prds/MAIN/` |
+| **HUB** | automation_hub | `docs/unified/prds/HUB/` |
+| **FT** | automation_feature_table | `docs/unified/prds/FT/` |
+| **SUB** | automation_sub | `docs/unified/prds/SUB/` |
+| **AE** | automation_ae | `docs/unified/prds/AE/` |
+
+### 새 PRD 생성
+
+```powershell
+# 1. PRD 문서 생성
+docs/unified/prds/{NS}/{NS}-{NNNN}-{slug}.md
+
+# 2. 체크리스트 생성
+docs/unified/checklists/{NS}/{NS}-{NNNN}.md
+
+# 3. 레지스트리 업데이트
+docs/unified/registry.json
+```
+
+### 참조
+
+- [통합 인덱스](docs/unified/index.md) - 전체 PRD 목록
+- [통합 레지스트리](docs/unified/registry.json) - PRD 메타데이터
+
+---
+
 ## 참조
 
 | 문서 | 용도 |

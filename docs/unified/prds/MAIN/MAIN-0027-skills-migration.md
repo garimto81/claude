@@ -1,7 +1,7 @@
-# PRD-0027: Skills 마이그레이션
+﻿# PRD-0027: Skills 마이그레이션
 
 **Version**: 1.0.0 | **Date**: 2025-12-06 | **Status**: Draft
-**Parent**: [PRD-0025](./PRD-0025-master-workflow-optimization.md)
+**Parent**: [PRD-0025](./MAIN-0025-master-workflow-optimization.md)
 **Priority**: P0
 
 ---
@@ -189,3 +189,4 @@ This command will be removed in v5.0.0.
 
 **Dependencies**: PRD-0026 (토큰 전략)
 **Next**: PRD-0028 (TDD), PRD-0029 (GitHub Actions)
+

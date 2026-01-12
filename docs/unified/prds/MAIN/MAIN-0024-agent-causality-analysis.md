@@ -1,4 +1,4 @@
-# PRD-0024: 에이전트 인과관계 분석 및 정리
+﻿# PRD-0024: 에이전트 인과관계 분석 및 정리
 
 **Version**: 1.2.0 | **Created**: 2025-12-05 | **Updated**: 2025-12-05 | **Status**: In Progress
 **Issue**: [#24](https://github.com/garimto81/archive-analyzer/issues/24)
@@ -333,3 +333,4 @@ mv .claude/plugins/meta-development/agents/agent-expert.md .claude/plugins.archi
 - [CrewAI Documentation](https://docs.crewai.com/)
 - [CLAUDE.md v3.5.0](D:\AI\claude01\CLAUDE.md)
 - [docs/AGENTS_REFERENCE.md](D:\AI\claude01\docs\AGENTS_REFERENCE.md)
+

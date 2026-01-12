@@ -1,7 +1,7 @@
-# PRD-0028: TDD 워크플로우 강화
+﻿# PRD-0028: TDD 워크플로우 강화
 
 **Version**: 1.0.0 | **Date**: 2025-12-06 | **Status**: Draft
-**Parent**: [PRD-0025](./PRD-0025-master-workflow-optimization.md)
+**Parent**: [PRD-0025](./MAIN-0025-master-workflow-optimization.md)
 **Priority**: P1
 
 ---
@@ -146,3 +146,4 @@ if iteration == 5 && failed:
 
 **Dependencies**: PRD-0027 (`tdd-workflow` Skill)
 **Next**: PRD-0029 (GitHub Actions)
+

@@ -1,7 +1,7 @@
-# PRD-0026: 토큰 관리 계획
+﻿# PRD-0026: 토큰 관리 계획
 
 **Version**: 1.0.0 | **Date**: 2025-12-06 | **Status**: Draft
-**Parent**: [PRD-0025](./PRD-0025-master-workflow-optimization.md)
+**Parent**: [PRD-0025](./MAIN-0025-master-workflow-optimization.md)
 **Priority**: P0
 
 ---
@@ -128,3 +128,4 @@ session_metrics = {
 
 **Dependencies**: 없음 (독립 실행 가능)
 **Next**: PRD-0027 (Skills 마이그레이션)
+
