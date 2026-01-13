@@ -128,7 +128,7 @@ uv add google-api-python-client google-auth-httplib2 google-auth-oauthlib
 ### 이 프로젝트의 인증 파일 위치 (중요!)
 
 ```
-D:\AI\claude01\json\
+C:\claude\json\
 ├── desktop_credentials.json   # OAuth 2.0 클라이언트 (업로드용) ⭐
 ├── token.json                 # OAuth 토큰 (자동 생성)
 └── service_account_key.json   # 서비스 계정 (읽기 전용)
@@ -151,18 +151,18 @@ D:\AI\claude01\json\
 
 ```bash
 # OAuth 2.0 (업로드 필요시 - 권장)
-GOOGLE_OAUTH_CREDENTIALS=D:\AI\claude01\json\desktop_credentials.json
-GOOGLE_OAUTH_TOKEN=D:\AI\claude01\json\token.json
+GOOGLE_OAUTH_CREDENTIALS=C:\claude\json\desktop_credentials.json
+GOOGLE_OAUTH_TOKEN=C:\claude\json\token.json
 
 # 서비스 계정 (읽기 전용 자동화)
-GOOGLE_SERVICE_ACCOUNT_FILE=D:\AI\claude01\json\service_account_key.json
-GOOGLE_APPLICATION_CREDENTIALS=D:\AI\claude01\json\service_account_key.json
+GOOGLE_SERVICE_ACCOUNT_FILE=C:\claude\json\service_account_key.json
+GOOGLE_APPLICATION_CREDENTIALS=C:\claude\json\service_account_key.json
 ```
 
 ### 파일 구조
 
 ```
-D:\AI\claude01\
+C:\claude\
 ├── json/
 │   ├── desktop_credentials.json   # OAuth 클라이언트 ID (업로드용)
 │   ├── token.json                 # OAuth 토큰 (자동 생성)
@@ -208,8 +208,8 @@ import os
 SCOPES = ['https://www.googleapis.com/auth/drive']  # 전체 Drive 접근
 
 # 절대 경로 사용 (서브 레포에서도 동작)
-CREDENTIALS_FILE = r'D:\AI\claude01\json\desktop_credentials.json'
-TOKEN_FILE = r'D:\AI\claude01\json\token.json'
+CREDENTIALS_FILE = r'C:\claude\json\desktop_credentials.json'
+TOKEN_FILE = r'C:\claude\json\token.json'
 
 def get_credentials():
     creds = None
@@ -249,7 +249,7 @@ from google.oauth2 import service_account
 SCOPES = ['https://www.googleapis.com/auth/spreadsheets']
 
 # 절대 경로 사용 (서브 레포에서도 동작)
-SERVICE_ACCOUNT_FILE = r'D:\AI\claude01\json\service_account_key.json'
+SERVICE_ACCOUNT_FILE = r'C:\claude\json\service_account_key.json'
 
 def get_service_credentials():
     return service_account.Credentials.from_service_account_file(
@@ -1049,8 +1049,8 @@ if os.path.exists('credentials/token.json'):
 
 ```python
 # 서비스 계정 대신 OAuth 사용
-CREDENTIALS_FILE = r'D:\AI\claude01\json\desktop_credentials.json'
-TOKEN_FILE = r'D:\AI\claude01\json\token.json'
+CREDENTIALS_FILE = r'C:\claude\json\desktop_credentials.json'
+TOKEN_FILE = r'C:\claude\json\token.json'
 ```
 
 ### 할당량 초과 (429)
@@ -1219,8 +1219,8 @@ python scripts/migrate_prds_to_gdocs.py PRD-0001  # 단일 마이그레이션
 
 | 파일 | 용도 |
 |------|------|
-| `D:\AI\claude01\json\token_docs.json` | Google Docs OAuth 토큰 |
-| `D:\AI\claude01\json\desktop_credentials.json` | OAuth 클라이언트 자격증명 |
+| `C:\claude\json\token_docs.json` | Google Docs OAuth 토큰 |
+| `C:\claude\json\desktop_credentials.json` | OAuth 클라이언트 자격증명 |
 
 ---
 

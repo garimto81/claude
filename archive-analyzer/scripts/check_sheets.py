@@ -12,7 +12,7 @@ def check_google_sheets():
         print("설치: pip install google-api-python-client google-auth")
         return
 
-    SERVICE_ACCOUNT_FILE = r'D:\AI\claude01\json\service_account_key.json'
+    SERVICE_ACCOUNT_FILE = r'C:\claude\json\service_account_key.json'
     SCOPES = ['https://www.googleapis.com/auth/spreadsheets.readonly']
 
     if not os.path.exists(SERVICE_ACCOUNT_FILE):

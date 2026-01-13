@@ -244,7 +244,7 @@ claude --resume
 
 ### 5.1 설정 파일
 
-**경로**: `D:\AI\claude01\.mcp.json`
+**경로**: `C:\claude\.mcp.json`
 
 ```json
 {

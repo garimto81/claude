@@ -206,7 +206,7 @@ MCP Servers:
 
 2. `.mcp.json` 확인
    ```powershell
-   cat D:\AI\claude01\.mcp.json
+   cat C:\claude\.mcp.json
    ```
 
 3. Node.js 설치 확인
