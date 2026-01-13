@@ -101,6 +101,9 @@ temp_*.txt
 temp_*.md
 test_*.py
 !tests/test_*.py
+tmpclaude-*
+ralph-counter.txt
+ralph-test-*.md
 test-diagram.*
 D*test-diagram.mmd
 *_checklist.yaml

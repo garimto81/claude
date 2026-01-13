@@ -4,7 +4,7 @@ description: >
   Google Workspace 통합 스킬. Docs, Sheets, Drive, Gmail, Calendar API 연동.
   OAuth 2.0 인증, 서비스 계정 설정, 데이터 읽기/쓰기 자동화 지원.
   파랑 계열 전문 문서 스타일, 2단계 네이티브 테이블 렌더링 포함.
-version: 2.3.2
+version: 2.4.0
 
 triggers:
   keywords:
@@ -863,6 +863,153 @@ def apply_heading_style(service, doc_id, start_idx, end_idx, heading_level):
 
 ---
 
+## Markdown → Google Docs 변환
+
+### 지원 문법
+
+| 문법 | 예시 | 변환 결과 |
+|------|------|----------|
+| 제목 | `# H1` ~ `###### H6` | 스타일링된 제목 |
+| 볼드 | `**bold**` | **굵은 글씨** |
+| 이탤릭 | `*italic*` | *기울임* |
+| 코드 | `` `code` `` | 인라인 코드 (배경 `#F2F2F2`) |
+| 취소선 | `~~strike~~` | ~~취소선~~ |
+| 링크 | `[text](url)` | 파란 밑줄 링크 |
+| 불릿 | `- item` | • 불릿 리스트 |
+| 번호 | `1. item` | 번호 리스트 |
+| 체크박스 | `- [ ]` / `- [x]` | ☐ / ☑ |
+| 인용문 | `> quote` | 왼쪽 테두리 + 배경 |
+| 코드블록 | ` ``` ` | 언어 표시 + 코드 스타일 |
+| 테이블 | `\| a \| b \|` | 네이티브 테이블 |
+| 이미지 | `![alt](path)` | Drive 업로드 후 삽입 |
+| 수평선 | `---` | H1 하단 구분선 스타일 |
+
+### CLI 변환 도구
+
+```powershell
+# 기본 변환
+python scripts/prd_to_google_docs.py tasks/prds/PRD-0001-feature.md
+
+# 옵션 사용
+python scripts/prd_to_google_docs.py --toc tasks/prds/PRD-0001.md   # 목차 포함
+python scripts/prd_to_google_docs.py --folder FOLDER_ID file.md     # 특정 폴더
+python scripts/prd_to_google_docs.py --no-folder file.md            # 내 드라이브
+
+# 배치 변환
+python scripts/prd_to_google_docs.py tasks/prds/*.md
+```
+
+---
+
+## HTML 목업 → 이미지 워크플로우
+
+PRD 문서에 다이어그램/UI를 포함하기 위한 워크플로우입니다.
+
+```
+┌─────────────────┐     ┌─────────────────┐     ┌─────────────────┐
+│  HTML 목업      │────▶│  Playwright     │────▶│  Google Docs    │
+│  작성           │     │  스크린샷       │     │  이미지 삽입    │
+└─────────────────┘     └─────────────────┘     └─────────────────┘
+      │                                               ▲
+      ▼                                               │
+┌─────────────────┐                                   │
+│  docs/mockups/  │                                   │
+│  feature.html   │─────────────────────────────────►─┘
+└─────────────────┘        (자동 처리)
+```
+
+### HTML 목업 규격
+
+| 항목 | 값 | 비고 |
+|------|-----|------|
+| **가로 너비** | 540px | Google Docs 삽입 기준 |
+| **최소 폰트** | 16px | 가독성 보장 |
+| **캡처 대상** | `#capture-area` | 선택자 지정 |
+| **저장 위치** | `docs/mockups/` | 프로젝트별 |
+
+### 캡처 명령
+
+```powershell
+# 특정 요소만 캡처 (권장)
+npx playwright screenshot docs/mockups/architecture.html docs/images/architecture.png --selector="#capture-area"
+
+# 전체 페이지 캡처
+npx playwright screenshot docs/mockups/ui.html docs/images/ui.png --full-page
+```
+
+### 템플릿 종류
+
+| 템플릿 | 경로 | 용도 |
+|--------|------|------|
+| **base** | `lib/google_docs/templates/base.html` | 기본 레이아웃 |
+| **architecture** | `lib/google_docs/templates/architecture.html` | 시스템 아키텍처 |
+| **flowchart** | `lib/google_docs/templates/flowchart.html` | 프로세스 흐름도 |
+| **erd** | `lib/google_docs/templates/erd.html` | 데이터베이스 ERD |
+| **ui-mockup** | `lib/google_docs/templates/ui-mockup.html` | UI 목업 |
+
+---
+
+## 이미지 삽입 (ImageInserter)
+
+### 기본 사용법
+
+```python
+from lib.google_docs.image_inserter import ImageInserter
+from lib.google_docs.auth import get_credentials
+from pathlib import Path
+
+creds = get_credentials()
+inserter = ImageInserter(creds)
+
+# Drive에 업로드
+file_id, image_url = inserter.upload_to_drive(Path('diagram.png'))
+
+# 특정 위치에 삽입
+inserter.insert_image_at_position(doc_id, image_url, position=100, width=400)
+
+# 텍스트 다음에 삽입
+inserter.insert_image_after_text(doc_id, image_url, "## 아키텍처")
+
+# 제목 다음에 삽입
+inserter.insert_image_after_heading(doc_id, image_url, "기술 아키텍처")
+```
+
+### 지원 이미지 형식
+
+| 확장자 | MIME Type |
+|--------|-----------|
+| `.png` | image/png |
+| `.jpg`, `.jpeg` | image/jpeg |
+| `.gif` | image/gif |
+| `.webp` | image/webp |
+| `.svg` | image/svg+xml |
+
+---
+
+## 다이어그램 생성기
+
+```python
+from lib.google_docs.diagram_generator import DiagramGenerator
+
+generator = DiagramGenerator()
+
+# 아키텍처 다이어그램 생성
+html = generator.create_architecture_diagram(
+    title="시스템 아키텍처",
+    components=[
+        {"name": "Frontend", "type": "client"},
+        {"name": "API Gateway", "type": "gateway"},
+        {"name": "Backend", "type": "server"},
+    ]
+)
+
+# 파일로 저장
+with open("docs/mockups/system-arch.html", "w") as f:
+    f.write(html)
+```
+
+---
+
 ## 연동
 
 | 스킬/에이전트 | 연동 시점 |
@@ -1078,6 +1225,19 @@ python scripts/migrate_prds_to_gdocs.py PRD-0001  # 단일 마이그레이션
 ---
 
 ## 변경 로그
+
+### v2.4.0 (2026-01-13)
+
+**Features:**
+- Markdown → Google Docs 변환 문법 지원표 추가
+- HTML 목업 → 이미지 워크플로우 문서화
+- ImageInserter 클래스 상세 사용법 추가
+- DiagramGenerator 클래스 문서화
+- CLI 변환 도구 옵션 상세화 (--toc, --folder, --no-folder)
+
+**Integration:**
+- `automation_feature_table/docs/GOOGLE_DOCS_GUIDE.md` 장점 통합
+- 해당 가이드 파일 deprecate (중복 제거)
 
 ### v2.3.2 (2026-01-07)
 
