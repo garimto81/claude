@@ -1,15 +1,14 @@
-# FT-0011: NAS JSON → Supabase 최적화 동기화
+# FT-0011: NAS 중앙 관리 GFX Sync 시스템 (v3.0)
 
 ## 문서 정보
 
 | 항목 | 내용 |
 |------|------|
 | **PRD ID** | FT-0011 |
-| **제목** | NAS JSON → Supabase 최적화 동기화 시스템 |
-| **버전** | 1.1 |
+| **제목** | NAS 중앙 관리 GFX JSON → Supabase 동기화 시스템 |
+| **버전** | 3.0 (전면 재설계) |
 | **작성일** | 2026-01-13 |
 | **상태** | Draft |
-| **상위 문서** | [FT-0010](./FT-0010-nas-smb-integration.md) |
 | **관련 이슈** | TBD |
 
 ---
@@ -18,567 +17,68 @@
 
 ### 1.1 목적
 
-NAS에 저장되는 PokerGFX JSON 파일을 Supabase로 동기화하는 **하이브리드 전송 시스템** 구현.
-- **실시간 경로**: 새 파일 즉시 동기화 (지연 최소화)
-- **배치 경로**: 수정/큐 처리 효율화 (6배 성능 향상)
-- **네이티브 감지**: watchfiles (Rust 기반) 사용으로 폴링 제거
+여러 대의 GFX PC에서 생성되는 PokerGFX JSON 파일을 **NAS에서 중앙 집중식으로 수집**하여 Supabase로 동기화.
 
-### 1.2 배경
+### 1.2 핵심 변경 (v2.0 → v3.0)
 
-| 문제 | 설명 |
-|------|------|
-| **현재 상황** | PollingObserver로 2초마다 폴링 |
-| **성능 병목** | 폴링 방식으로 감지 지연 ~2초 + CPU 낭비 |
-| **장애 복구** | 오프라인 큐 순차 처리로 비효율 |
+| 항목 | v2.0 | v3.0 |
+|------|------|------|
+| **배포 모드** | PC 로컬 + NAS 중앙 | **NAS 중앙만** |
+| **코드베이스** | 이중화 (SyncService / CentralSyncService) | **단일화** |
+| **설정 클래스** | 3개 (AppConfig, SyncAgent, Central) | **1개 (Settings)** |
+| **SQLite** | 동기 (`sqlite3`) | **비동기 (`aiosqlite`)** |
+| **Supabase 클라이언트** | `supabase` 패키지 | **`httpx` 직접 호출** |
+| **GUI** | System Tray (pystray) | **제거** |
 
 ### 1.3 목표
 
-| 지표 | 현재 | 목표 |
-|------|------|------|
-| 파일 감지 지연 | ~2초 (폴링) | **~1ms** (네이티브) |
-| 새 파일 동기화 | ~2.5초 | **~500ms** |
-| 파일 수정 100건 | ~50초 | ~8초 (배치) |
-| CPU 사용률 (감시) | 높음 | **최소** |
+| 지표 | 목표 |
+|------|------|
+| 파일 감지 지연 | ~2초 (SMB 폴링 한계) |
+| 새 파일 동기화 | < 3초 |
+| 배치 처리 (500건) | < 10초 |
+| CPU 사용률 | < 1% |
+| 데이터 손실 | 0건 |
 
 ---
 
 ## 2. 아키텍처
 
-### 2.1 배포 방식: GFX PC 직접 실행
-
-**선택 이유**: NAS SMB 연결 문제 회피, 네트워크 지연 없음, 단순한 배포
-
-```
-┌─────────────────────────────────────────────────────────────────────┐
-│                         GFX PC (Windows)                            │
-│                                                                     │
-│  ┌─────────────┐          ┌─────────────────────────────────────┐  │
-│  │  PokerGFX   │ ──JSON──>│         Sync Agent                  │  │
-│  │ (GFX 소프트웨어)│          │  (PyInstaller EXE)                 │  │
-│  └─────────────┘          └──────────────┬──────────────────────┘  │
-│         │                                │                          │
-│         ▼                                ▼                          │
-│  C:\pokergfx\hands\      ┌────────────────────────────────────┐    │
-│  (로컬 JSON 저장)         │  watchfiles (Rust/Notify 기반)     │    │
-│                          │  - ReadDirectoryChangesW (Win32)   │    │
-│                          │  - 즉시 감지 (~1ms)                 │    │
-│                          │  - CPU 사용 최소                    │    │
-│                          └──────────────┬─────────────────────┘    │
-│                                         │                           │
-│                          ┌──────────────┴──────────────┐           │
-│                          │                             │           │
-│                          ▼                             ▼           │
-│               ┌──────────────────┐       ┌─────────────────┐       │
-│               │  [실시간 경로]    │       │  [배치 경로]     │       │
-│               │  Change.added    │       │  Change.modified│       │
-│               │                  │       │  오프라인 큐     │       │
-│               │  단건 Upsert     │       │  BatchQueue     │       │
-│               │  (즉시 처리)     │       │  (500건/5초)    │       │
-│               └────────┬─────────┘       └────────┬────────┘       │
-│                        │                          │                │
-│                        └────────────┬─────────────┘                │
-│                                     │                               │
-└─────────────────────────────────────┼───────────────────────────────┘
-                                      │ HTTPS
-                                      ▼
-                         ┌─────────────────────────────┐
-                         │         Supabase            │
-                         │     gfx_sessions 테이블      │
-                         │   (file_hash UNIQUE 제약)    │
-                         └─────────────────────────────┘
-```
-
-### 2.2 파일 감시 방식 비교
-
-| 항목 | PollingObserver (기존) | watchfiles (신규) |
-|------|----------------------|-------------------|
-| 감지 원리 | 주기적 디렉토리 스캔 | OS 네이티브 이벤트 |
-| Windows API | - | ReadDirectoryChangesW |
-| 감지 지연 | ~2초 | **~1ms** |
-| CPU 사용 | 높음 | **최소** |
-| 배터리 소모 | 높음 | **최소** |
-| NAS/SMB 지원 | O | X (로컬만) |
-| 구현 | Python | Rust (Notify) |
-
-### 2.3 이벤트 라우팅
-
-| watchfiles 이벤트 | 경로 | 처리 방식 | 지연 |
-|------------------|------|----------|------|
-| `Change.added` | 실시간 | 단건 Upsert | **즉시 (~1ms)** |
-| `Change.modified` | 배치 | BatchQueue | 최대 5초 |
-| 오프라인 큐 | 배치 | Batch Upsert | 50건 단위 |
-
-### 2.4 Upsert vs Insert
-
-| 방식 | 중복 처리 | 성능 |
-|------|----------|------|
-| `.insert()` | 에러 발생 → 예외 처리 필요 | 기본 |
-| `.upsert(on_conflict)` | 자동 업데이트 | 동일 + 안전 |
-
-**결론**: `.upsert(on_conflict="file_hash")` 사용
-
----
-
-## 3. 요구사항
-
-### 3.1 기능 요구사항
-
-| ID | 요구사항 | 우선순위 |
-|----|----------|----------|
-| FR-01 | 새 파일(Change.added) 즉시 동기화 | **HIGH** |
-| FR-02 | 수정 파일(Change.modified) 배치 처리 | HIGH |
-| FR-03 | 오프라인 큐 배치 처리 | HIGH |
-| FR-04 | 중복 파일 자동 처리 (upsert) | HIGH |
-| FR-05 | 배치 크기 설정 가능 (기본 500) | MEDIUM |
-| FR-06 | 배치 플러시 간격 설정 (기본 5초) | MEDIUM |
-| FR-07 | **watchfiles 기반 네이티브 감지** | **HIGH** |
-
-### 3.2 비기능 요구사항
-
-| ID | 요구사항 | 목표 값 |
-|----|----------|---------|
-| NFR-01 | 파일 감지 지연 | **< 10ms** |
-| NFR-02 | 새 파일 동기화 지연 | < 1초 |
-| NFR-03 | 배치 처리 성능 향상 | 6배 이상 |
-| NFR-04 | 메모리 사용량 (배치 큐) | < 50MB |
-| NFR-05 | 장애 시 데이터 손실 | 0건 |
-| NFR-06 | CPU 사용률 (파일 감시) | **< 1%** |
-
----
-
-## 4. 상세 설계
-
-### 4.1 watchfiles 기반 FileWatcher
-
-```python
-# src/sync_agent/file_watcher.py
-
-import asyncio
-import logging
-from pathlib import Path
-from typing import Callable, Coroutine, Any
-
-from watchfiles import awatch, Change
-
-logger = logging.getLogger(__name__)
-
-
-class WatchfilesWatcher:
-    """watchfiles 기반 파일 감시자.
-
-    Rust(Notify) 기반으로 OS 네이티브 API 사용:
-    - Windows: ReadDirectoryChangesW
-    - Linux: inotify
-    - macOS: FSEvents
-
-    폴링 방식 대비:
-    - 감지 지연: ~2초 → ~1ms
-    - CPU 사용: 높음 → 최소
-    """
-
-    def __init__(
-        self,
-        watch_path: str,
-        on_created: Callable[[str], Coroutine[Any, Any, None]],
-        on_modified: Callable[[str], Coroutine[Any, Any, None]],
-        file_pattern: str = "*.json",
-    ) -> None:
-        """초기화.
-
-        Args:
-            watch_path: 감시할 디렉토리 경로
-            on_created: 파일 생성 시 콜백 (async)
-            on_modified: 파일 수정 시 콜백 (async)
-            file_pattern: 감시할 파일 패턴
-        """
-        self.watch_path = Path(watch_path)
-        self.on_created = on_created
-        self.on_modified = on_modified
-        self.file_pattern = file_pattern
-        self._running = False
-
-    def _match_pattern(self, path: str) -> bool:
-        """파일 패턴 매칭."""
-        return Path(path).match(self.file_pattern)
-
-    async def start(self) -> None:
-        """파일 감시 시작."""
-        self._running = True
-        logger.info(f"watchfiles 감시 시작: {self.watch_path}")
-
-        async for changes in awatch(self.watch_path, stop_event=self._stop_event):
-            for change_type, path in changes:
-                if not self._match_pattern(path):
-                    continue
-
-                try:
-                    if change_type == Change.added:
-                        logger.debug(f"파일 생성 감지: {path}")
-                        await self.on_created(path)
-                    elif change_type == Change.modified:
-                        logger.debug(f"파일 수정 감지: {path}")
-                        await self.on_modified(path)
-                except Exception as e:
-                    logger.error(f"이벤트 처리 실패 ({path}): {e}")
-
-    async def stop(self) -> None:
-        """파일 감시 중지."""
-        self._running = False
-        logger.info("watchfiles 감시 중지")
-
-    @property
-    def _stop_event(self) -> asyncio.Event:
-        """중지 이벤트."""
-        event = asyncio.Event()
-        if not self._running:
-            event.set()
-        return event
-```
-
-### 4.2 BatchQueue 클래스
-
-```python
-# src/sync_agent/batch_queue.py
-
-import asyncio
-import time
-from dataclasses import dataclass, field
-from typing import Any
-
-
-@dataclass
-class BatchQueue:
-    """배치 처리용 인메모리 큐.
-
-    속성:
-        max_size: 배치 최대 크기 (기본 500)
-        flush_interval: 자동 플러시 간격 초 (기본 5.0)
-    """
-
-    max_size: int = 500
-    flush_interval: float = 5.0
-    _items: list[dict[str, Any]] = field(default_factory=list)
-    _last_flush: float = field(default_factory=time.time)
-    _lock: asyncio.Lock = field(default_factory=asyncio.Lock)
-
-    async def add(self, record: dict[str, Any]) -> list[dict[str, Any]] | None:
-        """레코드 추가. 플러시 조건 충족 시 배치 반환."""
-        async with self._lock:
-            self._items.append(record)
-
-            if len(self._items) >= self.max_size:
-                return await self._flush_internal()
-
-            if self._should_flush():
-                return await self._flush_internal()
-
-            return None
-
-    def _should_flush(self) -> bool:
-        """시간 기반 플러시 조건 확인."""
-        return (
-            len(self._items) > 0
-            and (time.time() - self._last_flush) >= self.flush_interval
-        )
-
-    async def _flush_internal(self) -> list[dict[str, Any]]:
-        """내부 플러시 (락 보유 상태)."""
-        batch = self._items
-        self._items = []
-        self._last_flush = time.time()
-        return batch
-
-    async def flush(self) -> list[dict[str, Any]]:
-        """강제 플러시."""
-        async with self._lock:
-            return await self._flush_internal()
-
-    @property
-    def pending_count(self) -> int:
-        """대기 중인 레코드 수."""
-        return len(self._items)
-```
-
-### 4.3 SyncAgent 메인 루프
-
-```python
-# src/sync_agent/main.py
-
-import asyncio
-import logging
-
-from src.sync_agent.config import SyncAgentSettings
-from src.sync_agent.file_watcher import WatchfilesWatcher
-from src.sync_agent.sync_service import SyncService
-from src.sync_agent.local_queue import LocalQueue
-
-logger = logging.getLogger(__name__)
-
-
-class SyncAgent:
-    """GFX JSON → Supabase 동기화 에이전트."""
-
-    def __init__(self, settings: SyncAgentSettings) -> None:
-        self.settings = settings
-        self.local_queue = LocalQueue(settings.queue_db_path)
-        self.sync_service = SyncService(settings, self.local_queue)
-        self.watcher: WatchfilesWatcher | None = None
-
-    async def start(self) -> None:
-        """에이전트 시작."""
-        logger.info("SyncAgent 시작")
-
-        # watchfiles 기반 파일 감시자 초기화
-        self.watcher = WatchfilesWatcher(
-            watch_path=self.settings.gfx_watch_path,
-            on_created=self._handle_created,
-            on_modified=self._handle_modified,
-            file_pattern="*.json",
-        )
-
-        # 병렬 실행: 파일 감시 + 오프라인 큐 처리
-        await asyncio.gather(
-            self.watcher.start(),
-            self._process_offline_queue_loop(),
-        )
-
-    async def _handle_created(self, path: str) -> None:
-        """파일 생성 이벤트 처리 (실시간 경로)."""
-        await self.sync_service.sync_file(path, "created")
-
-    async def _handle_modified(self, path: str) -> None:
-        """파일 수정 이벤트 처리 (배치 경로)."""
-        await self.sync_service.sync_file(path, "modified")
-
-    async def _process_offline_queue_loop(self) -> None:
-        """오프라인 큐 주기적 처리."""
-        while True:
-            await asyncio.sleep(self.settings.queue_process_interval)
-            await self.sync_service.process_offline_queue()
-
-    async def stop(self) -> None:
-        """에이전트 중지."""
-        if self.watcher:
-            await self.watcher.stop()
-
-        # 배치 큐 플러시
-        await self.sync_service.flush_batch_queue()
-        logger.info("SyncAgent 중지")
-```
-
-### 4.4 설정 추가
-
-```python
-# src/sync_agent/config.py
-
-class SyncAgentSettings(BaseSettings):
-    # Supabase 연결
-    supabase_url: str
-    supabase_key: str
-
-    # 감시 경로
-    gfx_watch_path: str = "C:/GFX/output"
-
-    # 배치 처리 설정
-    batch_size: int = 500
-    flush_interval: float = 5.0
-
-    # 오프라인 큐
-    queue_db_path: str = "C:/GFX/sync_queue/pending.db"
-    queue_process_interval: int = 60
-    max_retries: int = 5
-```
-
----
-
-## 5. 데이터베이스
-
-### 5.1 Supabase 테이블
-
-```sql
--- gfx_sessions 테이블 (기존)
-CREATE TABLE gfx_sessions (
-    id UUID PRIMARY KEY DEFAULT gen_random_uuid(),
-    session_id INTEGER NOT NULL,
-    file_name TEXT NOT NULL,
-    file_hash TEXT NOT NULL UNIQUE,  -- Upsert 충돌 키
-    raw_json JSONB NOT NULL,
-    table_type TEXT,
-    event_title TEXT,
-    software_version TEXT,
-    hand_count INTEGER DEFAULT 0,
-    session_created_at TIMESTAMPTZ,
-    sync_source TEXT DEFAULT 'gfx_pc_direct',
-    sync_status TEXT DEFAULT 'synced',
-    created_at TIMESTAMPTZ DEFAULT NOW(),
-    updated_at TIMESTAMPTZ DEFAULT NOW()
-);
-
--- file_hash 인덱스 (upsert 성능)
-CREATE UNIQUE INDEX idx_gfx_sessions_file_hash ON gfx_sessions(file_hash);
-```
-
----
-
-## 6. 오프라인 큐 설명
-
-### 6.1 필요 시나리오
-
-| 장애 유형 | 처리 방식 |
-|----------|----------|
-| 네트워크 일시 단절 | LocalQueue 저장 → 자동 재시도 |
-| Supabase 503 에러 | LocalQueue 저장 → 복구 후 배치 처리 |
-| GFX PC 재부팅 | 미처리 파일 스캔 → 배치 처리 |
-| 장시간 오프라인 | LocalQueue 누적 → 복구 후 일괄 처리 |
-
----
-
-## 7. 구현 계획
-
-### 7.1 파일 변경 목록
-
-| 파일 | 작업 | 우선순위 |
-|------|------|----------|
-| `src/sync_agent/file_watcher.py` | **신규 생성** (watchfiles) | **HIGH** |
-| `src/sync_agent/batch_queue.py` | 신규 생성 | HIGH |
-| `src/sync_agent/sync_service.py` | 수정 (하이브리드 로직) | HIGH |
-| `src/sync_agent/main.py` | 수정 (watchfiles 통합) | HIGH |
-| `src/sync_agent/config.py` | 설정 추가 | HIGH |
-| `requirements.txt` | **watchfiles 추가** | HIGH |
-| `tests/test_file_watcher.py` | **신규 생성** | HIGH |
-| `tests/test_batch_queue.py` | 신규 생성 | HIGH |
-
-### 7.2 의존성 추가
-
-```txt
-# requirements.txt
-watchfiles>=0.21.0  # Rust 기반 파일 감시
-supabase>=2.0.0
-pydantic-settings>=2.0.0
-```
-
----
-
-## 8. 검증 계획
-
-### 8.1 성능 벤치마크
-
-| 시나리오 | 측정 방법 | 목표 |
-|----------|----------|------|
-| 파일 감지 지연 | 파일 생성 → 이벤트 수신 시간 | **< 10ms** |
-| 실시간 1건 | 감지 → Supabase 완료 | < 1초 |
-| 배치 500건 | 배치 upsert 지연 | < 10초 |
-| 큐 1000건 | 복구 처리 시간 | < 60초 |
-| CPU 사용률 | idle 상태 감시 중 | **< 1%** |
-
-### 8.2 watchfiles vs PollingObserver 비교 테스트
-
-```python
-# tests/test_file_watcher_performance.py
-
-import time
-import asyncio
-from pathlib import Path
-
-async def test_watchfiles_detection_latency():
-    """watchfiles 감지 지연 측정."""
-    detected = asyncio.Event()
-    detection_time = None
-
-    async def on_created(path: str):
-        nonlocal detection_time
-        detection_time = time.perf_counter()
-        detected.set()
-
-    watcher = WatchfilesWatcher(
-        watch_path="./test_dir",
-        on_created=on_created,
-        on_modified=lambda p: None,
-    )
-
-    # 백그라운드에서 감시 시작
-    watch_task = asyncio.create_task(watcher.start())
-
-    await asyncio.sleep(0.1)  # 감시 시작 대기
-
-    # 파일 생성 및 시간 측정
-    start_time = time.perf_counter()
-    Path("./test_dir/test.json").write_text("{}")
-
-    await asyncio.wait_for(detected.wait(), timeout=5.0)
-
-    latency_ms = (detection_time - start_time) * 1000
-    assert latency_ms < 100  # 100ms 이내 감지
-```
-
----
-
-## 9. 참조
-
-### 9.1 웹 리서치 출처
-
-- [watchfiles - GitHub](https://github.com/samuelcolvin/watchfiles)
-- [watchfiles Documentation](https://watchfiles.helpmanual.io/)
-- [Best Practices for Inserting Large Number of Rows](https://github.com/orgs/supabase/discussions/11349)
-- [Speeding Up Bulk Loading in PostgreSQL](https://dev.to/supabase/speeding-up-bulk-loading-in-postgresql-41g5)
-- [Python: Upsert data - Supabase Docs](https://supabase.com/docs/reference/python/upsert)
-
-### 9.2 관련 문서
-
-| 문서 | 설명 |
-|------|------|
-| [FT-0010](./FT-0010-nas-smb-integration.md) | NAS SMB 통합 |
-| [FT-0002](./FT-0002-primary-gfx-rfid.md) | Primary Layer - GFX RFID |
-
----
-
-## 10. NAS 중앙 통제 아키텍처 (v2.0)
-
-### 10.1 개요
-
-기존 GFX PC별 개별 Agent 방식에서 **NAS 중앙 통제 방식**으로 전면 재설계.
-
-| 항목 | 기존 (v1.x) | 변경 (v2.0) |
-|------|-------------|-------------|
-| Agent 위치 | 각 GFX PC | NAS (단일) |
-| 파일 감시 | watchfiles (로컬) | PollingObserver (SMB) |
-| 관리 포인트 | N개 PC | 1개 NAS |
-| 모니터링 | 없음 | Next.js 대시보드 |
-| 배포 | PyInstaller EXE | Docker Container |
-
-### 10.2 아키텍처 다이어그램
+### 2.1 전체 구조
 
 ```
 ┌─────────────────────────────────────────────────────────────────────────┐
 │                           GFX PC Layer                                   │
 │                                                                          │
-│   GFX PC 1        GFX PC 2        GFX PC N                              │
-│   (PokerGFX)      (PokerGFX)      (PokerGFX)                            │
-│       │               │               │                                  │
-│       └───────────────┼───────────────┘                                  │
-│                       │ SMB Write                                        │
-└───────────────────────┼──────────────────────────────────────────────────┘
-                        ▼
+│   GFX PC 1        GFX PC 2        ...        GFX PC N                   │
+│   (PokerGFX)      (PokerGFX)                (PokerGFX)                  │
+│       │               │                         │                        │
+│       └───────────────┴─────────────────────────┘                        │
+│                           │ SMB Write                                    │
+└───────────────────────────┼──────────────────────────────────────────────┘
+                            ▼
 ┌─────────────────────────────────────────────────────────────────────────┐
 │                       NAS Storage Layer                                  │
-│   \\NAS\gfx_data\                                                        │
-│   ├── config/pc_registry.json    ← PC 등록 정보                         │
-│   ├── PC01/hands/                ← GFX PC 1 전용                        │
-│   ├── PC02/hands/                ← GFX PC 2 전용                        │
+│   /volume1/gfx_data/                                                     │
+│   ├── config/pc_registry.json    ← PC 등록 정보 (JSON)                  │
+│   ├── PC01/hands/                ← GFX PC 1 전용 폴더                   │
+│   ├── PC02/hands/                ← GFX PC 2 전용 폴더                   │
+│   ├── ...                                                                │
 │   └── _error/                    ← 파싱 실패 파일 격리                   │
-└───────────────────────┼──────────────────────────────────────────────────┘
-                        │ Docker Volume Mount
-                        ▼
+└───────────────────────────┼──────────────────────────────────────────────┘
+                            │ Docker Volume Mount
+                            ▼
 ┌─────────────────────────────────────────────────────────────────────────┐
-│                   NAS Docker Container Layer                             │
+│                   Docker Container Layer                                 │
 │                                                                          │
 │   ┌─────────────────────────────────┐  ┌────────────────────────────┐   │
-│   │   Central Sync Agent (Python)   │  │  Next.js Dashboard         │   │
-│   │                                 │  │  (Port 3000)               │   │
-│   │   - MultiPathWatcher            │  │                            │   │
-│   │   - CentralSyncService          │  │  - 실시간 현황             │   │
+│   │   Sync Agent (Python)           │  │  Dashboard (Next.js)       │   │
+│   │                                 │  │  Port 3000                 │   │
+│   │   - PollingWatcher (2초)        │  │                            │   │
+│   │   - SyncService                 │  │  - 실시간 현황             │   │
 │   │   - BatchQueue (500건/5초)      │  │  - PC별 상태               │   │
-│   │   - LocalQueue (SQLite)         │  │  - 오류 목록               │   │
+│   │   - OfflineQueue (aiosqlite)    │  │  - 오류 목록               │   │
+│   │   - SupabaseClient (httpx)      │  │  - 모니터링 지표           │   │
 │   └───────────────┬─────────────────┘  └─────────────┬──────────────┘   │
 │                   │                                  │                   │
 └───────────────────┼──────────────────────────────────┼───────────────────┘
@@ -590,46 +90,700 @@ async def test_watchfiles_detection_latency():
 │   ┌─────────────────────────┐  ┌─────────────────────────────────────┐  │
 │   │   gfx_sessions 테이블   │  │      sync_events 테이블            │  │
 │   │                         │  │      (Realtime 활성화)             │  │
-│   │   + gfx_pc_id 컬럼      │  │                                     │  │
-│   │   UNIQUE(gfx_pc_id,     │  │   → Next.js 대시보드 실시간 업데이트│  │
-│   │          file_hash)     │  │                                     │  │
-│   └─────────────────────────┘  └─────────────────────────────────────┘  │
-│                                                                          │
-│   ┌─────────────────────────┐  ┌─────────────────────────────────────┐  │
-│   │   pc_status 뷰         │  │      sync_stats 뷰                  │  │
-│   │   (PC별 상태 집계)      │  │      (전체 통계)                    │  │
+│   │   UNIQUE(gfx_pc_id,     │  │                                     │  │
+│   │          file_hash)     │  │   → Dashboard 실시간 업데이트      │  │
 │   └─────────────────────────┘  └─────────────────────────────────────┘  │
 └─────────────────────────────────────────────────────────────────────────┘
 ```
 
-### 10.3 주요 파일
+### 2.2 데이터 흐름
 
-| 파일 | 설명 |
-|------|------|
-| `src/sync_agent/multi_path_watcher.py` | 다중 SMB 경로 감시 (watchdog) |
-| `src/sync_agent/config.py` | CentralSyncSettings 클래스 |
-| `src/sync_agent/sync_service.py` | CentralSyncService (gfx_pc_id 지원) |
-| `src/sync_agent/main.py` | CentralSyncAgent 클래스, `--central` 모드 |
-| `migrations/001_nas_central.sql` | Supabase 테이블 마이그레이션 |
-| `docker-compose.yml` | Docker 배포 설정 |
-| `dashboard/` | Next.js 웹 대시보드 |
+```
+GFX PC (PokerGFX)
+    │
+    │ SMB Write (JSON 파일)
+    ▼
+NAS Storage (/volume1/gfx_data/PC01/hands/*.json)
+    │
+    │ Docker Volume Mount (read-only)
+    ▼
+PollingWatcher (watchdog, 2초 주기)
+    │
+    ▼ FileEvent(path, event_type, gfx_pc_id)
+    │
+SyncService
+    │
+    ├── created → 즉시 upsert (단건)
+    │
+    └── modified → BatchQueue (500건/5초) → flush → upsert (배치)
+    │
+    └── 실패 시 → OfflineQueue (aiosqlite)
+    │
+    ▼
+SupabaseClient (httpx)
+    │
+    ▼
+Supabase Cloud (gfx_sessions 테이블)
+```
 
-### 10.4 실행 방법
+### 2.3 모듈 구조
+
+```
+src/sync_agent/
+├── __init__.py
+├── main.py                  # CLI 진입점
+│
+├── config/
+│   └── settings.py          # Settings 단일 클래스
+│
+├── core/
+│   ├── agent.py             # SyncAgent (오케스트레이터)
+│   ├── sync_service.py      # SyncService (동기화 로직)
+│   └── json_parser.py       # JSON 파싱 + 해시 생성
+│
+├── watcher/
+│   ├── base.py              # FileWatcher Protocol
+│   ├── polling_watcher.py   # SMB 폴링 감시자 (watchdog)
+│   └── registry.py          # PC 레지스트리 관리
+│
+├── queue/
+│   ├── batch_queue.py       # 인메모리 배치 큐
+│   └── offline_queue.py     # aiosqlite 오프라인 큐
+│
+├── db/
+│   └── supabase_client.py   # httpx 기반 REST 클라이언트
+│
+└── health/
+    └── healthcheck.py       # Docker 헬스체크 HTTP 서버
+```
+
+---
+
+## 3. 요구사항
+
+### 3.1 기능 요구사항
+
+| ID | 요구사항 | 우선순위 |
+|----|----------|----------|
+| FR-01 | 여러 GFX PC 경로 동시 감시 | **HIGH** |
+| FR-02 | 새 파일 (created) 즉시 동기화 | **HIGH** |
+| FR-03 | 수정 파일 (modified) 배치 처리 | HIGH |
+| FR-04 | 중복 파일 자동 처리 (upsert) | HIGH |
+| FR-05 | 오프라인 큐 (네트워크 장애 대응) | **HIGH** |
+| FR-06 | PC 레지스트리 동적 로드 | MEDIUM |
+| FR-07 | 실시간 대시보드 | MEDIUM |
+| FR-08 | Docker 헬스체크 | MEDIUM |
+
+### 3.2 비기능 요구사항
+
+| ID | 요구사항 | 목표 값 |
+|----|----------|---------|
+| NFR-01 | 파일 감지 지연 | < 3초 (폴링 한계) |
+| NFR-02 | 동시 PC 지원 | 10대 이상 |
+| NFR-03 | 배치 처리 성능 | 500건 < 10초 |
+| NFR-04 | 메모리 사용량 | < 512MB |
+| NFR-05 | 장애 시 데이터 손실 | 0건 |
+| NFR-06 | 컨테이너 재시작 복구 | < 30초 |
+
+---
+
+## 4. 오류 예상 지점 분석
+
+### 4.1 L1: GFX PC → NAS (SMB 전송)
+
+| 오류 | 시나리오 | 탐지 | 복구 전략 |
+|------|----------|------|----------|
+| 네트워크 끊김 | NAS/스위치 장애 | SMB write 실패 | GFX PC 로컬 임시 저장 |
+| 세션 타임아웃 | 15분 유휴 | `STATUS_SESSION_EXPIRED` | 세션 재연결 |
+| 인증 실패 | 비밀번호 변경 | `STATUS_LOGON_FAILURE` | 관리자 알림 |
+| 파일 충돌 | 동시 쓰기 | `STATUS_SHARING_VIOLATION` | 지수 백오프 재시도 |
+| 디스크 부족 | NAS 용량 초과 | `STATUS_DISK_FULL` | 80% 임계값 알림 |
+
+### 4.2 L2: NAS 파일 시스템
+
+| 오류 | 시나리오 | 탐지 | 복구 전략 |
+|------|----------|------|----------|
+| 부분 쓰기 | 네트워크 끊김 중 쓰기 | `JSONDecodeError` | 오류 폴더 격리 |
+| 인코딩 오류 | UTF-8 BOM 등 | `UnicodeDecodeError` | 인코딩 감지 변환 |
+| 파일명 특수문자 | Windows 금지 문자 | `OSError` | 파일명 sanitize |
+| 시간대 불일치 | PC별 시간대 차이 | mtime 불일치 | file_hash 기반 비교 |
+
+### 4.3 L3: Docker Agent
+
+| 오류 | 시나리오 | 탐지 | 복구 전략 |
+|------|----------|------|----------|
+| 폴링 누락 | 2초 내 생성→삭제 | 없음 (silent) | **시작 시 전체 스캔** |
+| JSON 파싱 | 잘못된 JSON | `JSONDecodeError` | 오류 폴더 격리 |
+| 메모리 부족 | 대용량 JSON, 누수 | OOM Kill | Docker restart policy |
+| 배치 오버플로우 | 대량 동시 유입 | pending_count | 조기 flush |
+| 중복 이벤트 | SMB 특성 | 로그 반복 | `_processed_paths` 세트 |
+
+### 4.4 L4: Supabase 동기화
+
+| 오류 | 시나리오 | 탐지 | 복구 전략 |
+|------|----------|------|----------|
+| 타임아웃 | 서버 지연 | `TimeoutException` | OfflineQueue 저장 |
+| Rate Limit | 1000/s 초과 | HTTP 429 | **지수 백오프 + jitter** |
+| 인증 만료 | 키 재생성 | HTTP 401 | 관리자 알림 |
+| 스키마 불일치 | 필드 누락 | HTTP 400 | 레코드 격리 |
+| 페이로드 초과 | > 2MB | HTTP 413 | 레코드 분할 |
+
+### 4.5 L5: Offline Queue (SQLite)
+
+| 오류 | 시나리오 | 탐지 | 복구 전략 |
+|------|----------|------|----------|
+| DB 손상 | 비정상 종료 | `DatabaseError` | DB 재생성, WAL 모드 |
+| 잠금 (BUSY) | 동시 접근 | `OperationalError` | 타임아웃 증가 |
+| 무한 재시도 | 영구 오류 | retry_count 누적 | **Dead Letter Queue** |
+| 큐 무한 증가 | 장기 장애 | pending_count | **최대 크기 제한** |
+| 재시도 폭주 | 복구 후 동시 | 요청 급증 | **jitter 추가** |
+
+---
+
+## 5. 상세 설계
+
+### 5.1 Settings (단일화)
+
+```python
+# src/sync_agent/config/settings.py
+
+from pydantic_settings import BaseSettings, SettingsConfigDict
+
+class Settings(BaseSettings):
+    """NAS Sync Agent 설정 (환경 변수 전용)."""
+
+    model_config = SettingsConfigDict(env_prefix="GFX_SYNC_")
+
+    # NAS 경로
+    nas_base_path: str = "/app/data"
+    registry_path: str = "config/pc_registry.json"
+    error_folder: str = "_error"
+
+    # Supabase
+    supabase_url: str
+    supabase_secret_key: str
+
+    # 폴링
+    poll_interval: float = 2.0
+
+    # 배치
+    batch_size: int = 500
+    flush_interval: float = 5.0
+
+    # 오프라인 큐
+    queue_db_path: str = "/app/queue/pending.db"
+    queue_process_interval: int = 60
+    max_retries: int = 5
+    max_queue_size: int = 10000  # 신규: 큐 크기 제한
+
+    # Rate Limit 대응
+    rate_limit_max_retries: int = 5
+    rate_limit_base_delay: float = 1.0
+
+    # 헬스체크
+    health_port: int = 8080
+```
+
+### 5.2 SyncAgent (오케스트레이터)
+
+```python
+# src/sync_agent/core/agent.py
+
+import asyncio
+from typing import Protocol
+
+class SyncAgent:
+    """NAS 동기화 에이전트."""
+
+    def __init__(
+        self,
+        settings: Settings,
+        watcher: FileWatcher,           # DI: Protocol
+        sync_service: SyncService,      # DI
+        registry: PCRegistry,           # DI
+    ) -> None:
+        self.settings = settings
+        self.watcher = watcher
+        self.sync_service = sync_service
+        self.registry = registry
+
+    async def start(self) -> None:
+        """에이전트 시작 - 4개 태스크 병렬 실행."""
+        await asyncio.gather(
+            self._scan_existing_files(),      # 시작 시 전체 스캔
+            self.watcher.start(),              # 파일 감시
+            self._process_offline_queue_loop(), # 오프라인 큐 처리
+            self.registry.watch_changes(),     # PC 레지스트리 감시
+        )
+
+    async def _scan_existing_files(self) -> None:
+        """시작 시 기존 파일 전체 스캔 (폴링 누락 방지)."""
+        for pc_id, pc_info in self.registry.watched_pcs.items():
+            for json_file in pc_info.watch_path.glob("**/*.json"):
+                await self.sync_service.sync_file(
+                    str(json_file), "created", pc_id
+                )
+
+    async def stop(self) -> None:
+        """graceful shutdown."""
+        await self.watcher.stop()
+        await self.sync_service.flush_batch_queue()
+```
+
+### 5.3 SyncService (동기화 로직)
+
+```python
+# src/sync_agent/core/sync_service.py
+
+from typing import Literal
+
+class SyncService:
+    """파일 동기화 서비스."""
+
+    def __init__(
+        self,
+        settings: Settings,
+        supabase: SupabaseClient,       # DI
+        batch_queue: BatchQueue,         # DI
+        offline_queue: OfflineQueue,     # DI
+        json_parser: JsonParser,         # DI
+    ) -> None:
+        self.settings = settings
+        self.supabase = supabase
+        self.batch_queue = batch_queue
+        self.offline_queue = offline_queue
+        self.json_parser = json_parser
+
+    async def sync_file(
+        self,
+        path: str,
+        event_type: Literal["created", "modified"],
+        gfx_pc_id: str,
+    ) -> SyncResult:
+        """파일 동기화."""
+        try:
+            record = self.json_parser.parse(path, gfx_pc_id)
+        except JSONDecodeError:
+            await self._move_to_error_folder(path)
+            return SyncResult(success=False, error="parse_error")
+
+        if event_type == "created":
+            return await self._upsert_single(record, path)
+        else:
+            batch = await self.batch_queue.add(record)
+            if batch:
+                return await self._upsert_batch(batch)
+            return SyncResult(success=True, pending=True)
+
+    async def _upsert_single(self, record: dict, path: str) -> SyncResult:
+        """단건 upsert (Rate Limit 대응 포함)."""
+        for attempt in range(self.settings.rate_limit_max_retries):
+            try:
+                await self.supabase.upsert("gfx_sessions", [record])
+                return SyncResult(success=True)
+            except RateLimitError:
+                wait = self._calculate_backoff(attempt)
+                await asyncio.sleep(wait)
+            except Exception as e:
+                await self.offline_queue.enqueue(record)
+                return SyncResult(success=False, error=str(e), queued=True)
+
+        # 모든 재시도 실패
+        await self.offline_queue.enqueue(record)
+        return SyncResult(success=False, error="rate_limit_exceeded", queued=True)
+
+    def _calculate_backoff(self, attempt: int) -> float:
+        """지수 백오프 + jitter 계산."""
+        import random
+        base = self.settings.rate_limit_base_delay
+        return (2 ** attempt) * base + random.uniform(0, 1)
+```
+
+### 5.4 OfflineQueue (Dead Letter Queue 포함)
+
+```python
+# src/sync_agent/queue/offline_queue.py
+
+import aiosqlite
+
+class OfflineQueue:
+    """aiosqlite 기반 오프라인 큐 (Dead Letter Queue 포함)."""
+
+    def __init__(self, db_path: str, max_size: int = 10000) -> None:
+        self.db_path = db_path
+        self.max_size = max_size
+        self._db: aiosqlite.Connection | None = None
+
+    async def connect(self) -> None:
+        """DB 연결 (WAL 모드)."""
+        self._db = await aiosqlite.connect(self.db_path)
+        await self._db.execute("PRAGMA journal_mode=WAL")
+        await self._init_tables()
+
+    async def _init_tables(self) -> None:
+        """테이블 초기화."""
+        await self._db.execute("""
+            CREATE TABLE IF NOT EXISTS pending_sync (
+                id INTEGER PRIMARY KEY AUTOINCREMENT,
+                record_json TEXT NOT NULL,
+                gfx_pc_id TEXT NOT NULL,
+                file_path TEXT,
+                retry_count INTEGER DEFAULT 0,
+                created_at TEXT DEFAULT CURRENT_TIMESTAMP,
+                last_error TEXT
+            )
+        """)
+
+        # Dead Letter Queue 테이블
+        await self._db.execute("""
+            CREATE TABLE IF NOT EXISTS dead_letter (
+                id INTEGER PRIMARY KEY AUTOINCREMENT,
+                record_json TEXT NOT NULL,
+                gfx_pc_id TEXT NOT NULL,
+                file_path TEXT,
+                retry_count INTEGER,
+                error_reason TEXT,
+                created_at TEXT DEFAULT CURRENT_TIMESTAMP
+            )
+        """)
+        await self._db.commit()
+
+    async def enqueue(self, record: dict, gfx_pc_id: str, file_path: str) -> int:
+        """큐에 추가 (크기 제한 적용)."""
+        if await self.count() >= self.max_size:
+            await self._remove_oldest()
+
+        cursor = await self._db.execute(
+            "INSERT INTO pending_sync (record_json, gfx_pc_id, file_path) VALUES (?, ?, ?)",
+            (json.dumps(record), gfx_pc_id, file_path)
+        )
+        await self._db.commit()
+        return cursor.lastrowid
+
+    async def mark_failed(self, queue_id: int, error: str) -> None:
+        """실패 처리 (Dead Letter Queue 이동 포함)."""
+        async with self._db.execute(
+            "SELECT * FROM pending_sync WHERE id = ?", (queue_id,)
+        ) as cursor:
+            row = await cursor.fetchone()
+
+        if row and row["retry_count"] >= self.max_retries:
+            # Dead Letter Queue로 이동
+            await self._db.execute("""
+                INSERT INTO dead_letter (record_json, gfx_pc_id, file_path, retry_count, error_reason)
+                VALUES (?, ?, ?, ?, ?)
+            """, (row["record_json"], row["gfx_pc_id"], row["file_path"], row["retry_count"], error))
+            await self._db.execute("DELETE FROM pending_sync WHERE id = ?", (queue_id,))
+        else:
+            # 재시도 카운트 증가
+            await self._db.execute(
+                "UPDATE pending_sync SET retry_count = retry_count + 1, last_error = ? WHERE id = ?",
+                (error, queue_id)
+            )
+        await self._db.commit()
+```
+
+### 5.5 SupabaseClient (httpx)
+
+```python
+# src/sync_agent/db/supabase_client.py
+
+import httpx
+
+class RateLimitError(Exception):
+    """Rate Limit 초과 예외."""
+    pass
+
+class SupabaseClient:
+    """httpx 기반 Supabase REST 클라이언트."""
+
+    def __init__(self, url: str, secret_key: str) -> None:
+        self.url = url
+        self.secret_key = secret_key
+        self._client: httpx.AsyncClient | None = None
+
+    async def connect(self) -> None:
+        """HTTP 클라이언트 초기화."""
+        self._client = httpx.AsyncClient(
+            base_url=f"{self.url}/rest/v1",
+            headers={
+                "apikey": self.secret_key,
+                "Authorization": f"Bearer {self.secret_key}",
+                "Content-Type": "application/json",
+                "Prefer": "resolution=merge-duplicates",
+            },
+            timeout=30.0,
+        )
+
+    async def upsert(
+        self,
+        table: str,
+        records: list[dict],
+        on_conflict: str = "gfx_pc_id,file_hash",
+    ) -> UpsertResult:
+        """Upsert 실행 (Rate Limit 예외 발생)."""
+        response = await self._client.post(
+            f"/{table}?on_conflict={on_conflict}",
+            json=records,
+        )
+
+        if response.status_code == 429:
+            raise RateLimitError("Rate limit exceeded")
+
+        response.raise_for_status()
+        return UpsertResult(success=True, count=len(records))
+
+    async def close(self) -> None:
+        """클라이언트 종료."""
+        if self._client:
+            await self._client.aclose()
+```
+
+---
+
+## 6. 데이터베이스
+
+### 6.1 Supabase 테이블
+
+```sql
+-- gfx_sessions 테이블
+CREATE TABLE gfx_sessions (
+    id UUID PRIMARY KEY DEFAULT gen_random_uuid(),
+    gfx_pc_id TEXT NOT NULL,          -- PC 식별자
+    session_id INTEGER NOT NULL,
+    file_name TEXT NOT NULL,
+    file_hash TEXT NOT NULL,
+    raw_json JSONB NOT NULL,
+    table_type TEXT,
+    event_title TEXT,
+    software_version TEXT,
+    hand_count INTEGER DEFAULT 0,
+    session_created_at TIMESTAMPTZ,
+    sync_source TEXT DEFAULT 'nas_central',
+    sync_status TEXT DEFAULT 'synced',
+    created_at TIMESTAMPTZ DEFAULT NOW(),
+    updated_at TIMESTAMPTZ DEFAULT NOW(),
+
+    UNIQUE(gfx_pc_id, file_hash)      -- 복합 유니크 키
+);
+
+-- sync_events 테이블 (Realtime 활성화)
+CREATE TABLE sync_events (
+    id BIGSERIAL PRIMARY KEY,
+    gfx_pc_id TEXT NOT NULL,
+    event_type TEXT NOT NULL,         -- created, modified, error
+    file_path TEXT,
+    record_count INTEGER DEFAULT 1,
+    error_message TEXT,
+    created_at TIMESTAMPTZ DEFAULT NOW()
+);
+
+-- Realtime 활성화
+ALTER PUBLICATION supabase_realtime ADD TABLE sync_events;
+
+-- PC별 상태 뷰
+CREATE VIEW pc_status AS
+SELECT
+    gfx_pc_id,
+    COUNT(*) as total_files,
+    MAX(created_at) as last_sync,
+    COUNT(*) FILTER (WHERE sync_status = 'error') as error_count
+FROM gfx_sessions
+GROUP BY gfx_pc_id;
+```
+
+### 6.2 SQLite 스키마 (Offline Queue)
+
+```sql
+-- pending_sync 테이블
+CREATE TABLE pending_sync (
+    id INTEGER PRIMARY KEY AUTOINCREMENT,
+    record_json TEXT NOT NULL,
+    gfx_pc_id TEXT NOT NULL,
+    file_path TEXT,
+    retry_count INTEGER DEFAULT 0,
+    created_at TEXT DEFAULT CURRENT_TIMESTAMP,
+    last_error TEXT
+);
+
+-- dead_letter 테이블 (Dead Letter Queue)
+CREATE TABLE dead_letter (
+    id INTEGER PRIMARY KEY AUTOINCREMENT,
+    record_json TEXT NOT NULL,
+    gfx_pc_id TEXT NOT NULL,
+    file_path TEXT,
+    retry_count INTEGER,
+    error_reason TEXT,
+    created_at TEXT DEFAULT CURRENT_TIMESTAMP
+);
+```
+
+---
+
+## 7. 의존성
+
+```toml
+# pyproject.toml
+
+[project]
+dependencies = [
+    "pydantic-settings>=2.0.0",   # 설정 관리
+    "aiosqlite>=0.19.0",          # 비동기 SQLite
+    "httpx>=0.27.0",              # HTTP 클라이언트
+    "watchdog>=4.0.0",            # 폴링 감시
+]
+
+[project.optional-dependencies]
+dev = [
+    "pytest>=8.0.0",
+    "pytest-asyncio>=0.23.0",
+    "pytest-cov>=4.0.0",
+    "ruff>=0.1.0",
+]
+```
+
+### 제거된 의존성
+
+| 패키지 | 이유 |
+|--------|------|
+| `watchfiles` | SMB 미지원, 로컬 전용 |
+| `supabase` | 무거움, httpx로 대체 |
+| `pystray` | GUI 제거 |
+| `Pillow` | GUI 제거 |
+
+---
+
+## 8. 모니터링
+
+### 8.1 지표
+
+| 지표 | 임계값 | 알림 |
+|------|--------|------|
+| 디스크 사용량 | 80% | 경고 |
+| 메모리 사용량 | 512MB | 경고 |
+| BatchQueue pending | 500 | 경고 |
+| OfflineQueue pending | 5000 | 긴급 |
+| retry_count >= 5 | 10건 | 검토 필요 |
+| 연속 실패 | 5회 | 알림 |
+| Dead Letter Queue | 1건 이상 | 검토 필요 |
+
+### 8.2 헬스체크 엔드포인트
+
+```json
+GET /health
+
+{
+  "status": "healthy",
+  "uptime_seconds": 3600,
+  "components": {
+    "watcher": "running",
+    "supabase": "connected",
+    "offline_queue": {
+      "pending_count": 12,
+      "dead_letter_count": 0
+    },
+    "batch_queue": {
+      "pending_count": 45
+    }
+  },
+  "last_sync": "2026-01-13T10:30:00Z",
+  "watched_pcs": ["PC01", "PC02", "PC03"]
+}
+```
+
+---
+
+## 9. 배포
+
+### 9.1 Docker Compose
+
+```yaml
+# docker-compose.yml
+
+version: '3.8'
+
+services:
+  sync-agent:
+    build:
+      context: .
+      dockerfile: Dockerfile.agent
+    volumes:
+      - /volume1/gfx_data:/app/data:ro
+      - sync_queue:/app/queue
+    environment:
+      GFX_SYNC_SUPABASE_URL: ${SUPABASE_URL}
+      GFX_SYNC_SUPABASE_SECRET_KEY: ${SUPABASE_SECRET_KEY}
+      GFX_SYNC_NAS_BASE_PATH: /app/data
+      GFX_SYNC_POLL_INTERVAL: "2.0"
+    restart: unless-stopped
+    healthcheck:
+      test: ["CMD", "curl", "-f", "http://localhost:8080/health"]
+      interval: 30s
+      timeout: 10s
+      retries: 3
+    logging:
+      driver: json-file
+      options:
+        max-size: "10m"
+        max-file: "3"
+
+  dashboard:
+    build:
+      context: ./dashboard
+    ports:
+      - "3000:3000"
+    environment:
+      NEXT_PUBLIC_SUPABASE_URL: ${SUPABASE_URL}
+      NEXT_PUBLIC_SUPABASE_ANON_KEY: ${SUPABASE_ANON_KEY}
+    depends_on:
+      - sync-agent
+
+volumes:
+  sync_queue:
+```
+
+### 9.2 실행 방법
 
 ```bash
-# 1. Supabase 마이그레이션 실행
-# Supabase SQL Editor에서 migrations/001_nas_central.sql 실행
-
-# 2. .env 파일 설정
+# 1. 환경 변수 설정
 cp .env.example .env
-# SUPABASE_URL, SUPABASE_SERVICE_KEY 등 설정
+# SUPABASE_URL, SUPABASE_SECRET_KEY 등 설정
 
-# 3. Docker Compose 실행
+# 2. Docker Compose 실행
 docker-compose up -d
 
+# 3. 로그 확인
+docker-compose logs -f sync-agent
+
 # 4. 대시보드 접속
-# http://localhost:3000
+# http://NAS-IP:3000
 ```
+
+---
+
+## 10. 구현 순서 (TDD)
+
+### Phase 1: 인프라 계층
+1. `config/settings.py` - 환경 변수 기반 단일 설정
+2. `queue/offline_queue.py` - aiosqlite + Dead Letter Queue
+3. `db/supabase_client.py` - httpx + Rate Limit 예외
+
+### Phase 2: 핵심 로직
+4. `core/json_parser.py` - 파싱 + 해시 생성
+5. `queue/batch_queue.py` - 인메모리 배치 큐
+6. `core/sync_service.py` - 지수 백오프 포함
+
+### Phase 3: 감시자 계층
+7. `watcher/registry.py` - PC 레지스트리 관리
+8. `watcher/polling_watcher.py` - watchdog 폴링
+
+### Phase 4: 오케스트레이션
+9. `core/agent.py` - 시작 시 전체 스캔 포함
+10. `main.py` - CLI, 시그널 핸들링
+
+### Phase 5: 운영
+11. `health/healthcheck.py` - 상세 헬스체크
+12. Docker 설정 업데이트
 
 ---
 
@@ -638,5 +792,6 @@ docker-compose up -d
 | 버전 | 날짜 | 변경 내용 | 작성자 |
 |------|------|----------|--------|
 | 1.0 | 2026-01-13 | 초안 작성 | Claude |
-| 1.1 | 2026-01-13 | watchfiles 기반으로 변경 (PollingObserver → Rust/Notify) | Claude |
-| 2.0 | 2026-01-13 | NAS 중앙 통제 방식 재설계, GUI 대시보드 추가 | Claude |
+| 1.1 | 2026-01-13 | watchfiles 기반으로 변경 | Claude |
+| 2.0 | 2026-01-13 | NAS 중앙 + PC 로컬 이중 모드 | Claude |
+| **3.0** | **2026-01-13** | **NAS 전용 전면 재설계, 오류 분석 추가, Dead Letter Queue** | **Claude** |
