@@ -23,7 +23,9 @@ services:
     environment:
       - GFX_SYNC_NAS_BASE_PATH=/app/data
       - GFX_SYNC_SUPABASE_URL=${SUPABASE_URL}
-      - GFX_SYNC_SUPABASE_SERVICE_KEY=${SUPABASE_SERVICE_KEY}
+      # 신규 키 (sb_secret_...) 우선, 레거시 키 fallback
+      - GFX_SYNC_SUPABASE_SECRET_KEY=${SUPABASE_SECRET_KEY:-}
+      - GFX_SYNC_SUPABASE_SERVICE_KEY=${SUPABASE_SERVICE_KEY:-}
       - GFX_SYNC_POLL_INTERVAL=${POLL_INTERVAL:-2.0}
       - GFX_SYNC_BATCH_SIZE=${BATCH_SIZE:-500}
       - GFX_SYNC_FLUSH_INTERVAL=${FLUSH_INTERVAL:-5.0}
@@ -51,7 +53,9 @@ services:
       - "${DASHBOARD_PORT:-3000}:3000"
     environment:
       - NEXT_PUBLIC_SUPABASE_URL=${SUPABASE_URL}
-      - NEXT_PUBLIC_SUPABASE_ANON_KEY=${SUPABASE_ANON_KEY}
+      # 신규 키 (sb_publishable_...) 우선, 레거시 키 fallback
+      - NEXT_PUBLIC_SUPABASE_PUBLISHABLE_KEY=${SUPABASE_PUBLISHABLE_KEY:-}
+      - NEXT_PUBLIC_SUPABASE_ANON_KEY=${SUPABASE_ANON_KEY:-}
     depends_on:
       - sync-agent
     healthcheck:
