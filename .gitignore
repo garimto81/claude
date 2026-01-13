@@ -168,3 +168,22 @@ get_display_info.ps1
 .claude/hooks/*.js
 .claude/statusline.js
 iconik_parser/
+
+# 중첩 Git 레포 (별도 관리)
+airi/
+claudeproject_master/
+claudeyoutuber/
+secretary/
+youtuber/
+
+# 임시 스캔/출력 파일
+drive_*.json
+ollama/
+*.log
+!.claude/hooks/*.log
+
+# VS Code profiles (로컬 설정)
+vibe-profiles/
+vswitch*.json
+vswitch*.ps1
+check_ides.ps1
