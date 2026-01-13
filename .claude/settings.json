@@ -13,6 +13,10 @@
           {
             "type": "command",
             "command": "C:/Users/AidenKim/AppData/Local/Programs/Python/Python312/python.exe C:/claude/.claude/hooks/checklist_updater.py"
+          },
+          {
+            "type": "command",
+            "command": "C:/Users/AidenKim/AppData/Local/Programs/Python/Python312/python.exe C:/claude/.claude/hooks/tmpclaude_cleanup.py"
           }
         ]
       }

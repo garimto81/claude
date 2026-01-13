@@ -8,12 +8,16 @@ SessionStart 이벤트에서 실행됩니다.
 import json
 import subprocess
 import os
+import glob
 from datetime import datetime
 from pathlib import Path
 
 PROJECT_DIR = os.environ.get("CLAUDE_PROJECT_DIR", "D:/AI/claude01")
 SESSION_FILE = Path(PROJECT_DIR) / ".claude" / "session_state.json"
 AUTO_STATE_FILE = Path(PROJECT_DIR) / ".claude" / "workflow" / "auto_state.json"
+
+# Claude Code Task 도구가 생성하는 임시 파일 패턴
+TMPCLAUDE_PATTERN = "tmpclaude-*-cwd"
 
 
 def get_current_branch() -> str:
@@ -42,6 +46,31 @@ def get_uncommitted_changes() -> int:
         return len([line for line in result.stdout.strip().split("\n") if line])
     except Exception:
         return 0
+
+
+def cleanup_tmpclaude_files() -> int:
+    """tmpclaude-*-cwd 임시 파일 재귀적 삭제 (Claude Code Task 도구 버그 대응)"""
+    cleaned = 0
+    try:
+        # 모든 하위 디렉토리에서 재귀 검색
+        pattern = os.path.join(PROJECT_DIR, "**", TMPCLAUDE_PATTERN)
+        for filepath in glob.glob(pattern, recursive=True):
+            try:
+                os.remove(filepath)
+                cleaned += 1
+            except Exception:
+                pass
+        # 루트 디렉토리도 검색
+        pattern = os.path.join(PROJECT_DIR, TMPCLAUDE_PATTERN)
+        for filepath in glob.glob(pattern):
+            try:
+                os.remove(filepath)
+                cleaned += 1
+            except Exception:
+                pass
+    except Exception:
+        pass
+    return cleaned
 
 
 def load_previous_session() -> dict:
@@ -76,6 +105,9 @@ def save_session_state(state: dict):
 
 def main():
     try:
+        # 이전 세션 임시 파일 정리 (Claude Code Task 도구 버그 대응)
+        cleaned_files = cleanup_tmpclaude_files()
+
         # 이전 세션 로드
         prev_session = load_previous_session()
 
@@ -85,6 +117,10 @@ def main():
 
         # 세션 정보 생성
         session_info = []
+
+        # 임시 파일 정리 결과
+        if cleaned_files > 0:
+            session_info.append(f"🗑️ 임시 파일 정리: {cleaned_files}개 삭제")
 
         # 브랜치 경고 (main에서 작업 중인 경우)
         if branch in ["main", "master"]:

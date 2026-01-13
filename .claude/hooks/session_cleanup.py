@@ -19,6 +19,9 @@ TEMP_PATTERNS = [
     "temp_*.md",
     "*.tmp",
     "*.bak",
+    "tmpclaude-*",
+    "ralph-counter.txt",
+    "ralph-test-*.md",
 ]
 
 
@@ -54,12 +57,11 @@ def find_temp_files() -> list:
 
 
 def cleanup_temp_files(files: list) -> int:
-    """임시 파일 삭제 (선택적)"""
+    """임시 파일 즉시 삭제"""
     cleaned = 0
     for f in files:
         try:
-            # 안전을 위해 삭제하지 않고 목록만 반환
-            # os.remove(f)
+            os.remove(f)
             cleaned += 1
         except Exception:
             pass
@@ -86,14 +88,11 @@ def main():
             for task in pending_tasks[:3]:
                 session_info.append(f"   - {task}")
 
-        # 임시 파일 확인
+        # 임시 파일 찾기 및 즉시 삭제
         temp_files = find_temp_files()
         if temp_files:
-            session_info.append(f"🗑️ 임시 파일: {len(temp_files)}개 발견")
-            for f in temp_files[:3]:
-                session_info.append(f"   - {os.path.basename(f)}")
-            if len(temp_files) > 3:
-                session_info.append(f"   ... 외 {len(temp_files) - 3}개")
+            cleaned = cleanup_temp_files(temp_files)
+            session_info.append(f"🗑️ 임시 파일: {cleaned}개 삭제 완료")
 
         # 세션 상태 저장
         save_session_state({
