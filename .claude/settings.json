@@ -6,9 +6,8 @@
     "padding": 0
   },
   "hooks": {
-    "PostToolUse": [
+    "SubagentStop": [
       {
-        "matcher": "Task",
         "hooks": [
           {
             "type": "command",
