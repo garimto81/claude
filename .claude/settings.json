@@ -1,10 +1,5 @@
 {
   "$schema": "https://json.schemastore.org/claude-code-settings.json",
-  "statusLine": {
-    "type": "command",
-    "command": "C:/Users/AidenKim/AppData/Local/Programs/Python/Python312/python.exe C:/claude/.claude/scripts/context-monitor.py",
-    "padding": 0
-  },
   "hooks": {
     "SubagentStop": [
       {
@@ -62,5 +57,10 @@
         ]
       }
     ]
+  },
+  "statusLine": {
+    "type": "command",
+    "command": "C:/Users/AidenKim/AppData/Local/Programs/Python/Python312/python.exe C:/claude/.claude/scripts/context-monitor.py",
+    "padding": 0
   }
 }

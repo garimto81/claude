@@ -30,8 +30,10 @@ def get_claude_version():
     except Exception:
         return "?"
 
-def get_git_remote(project_dir):
-    """Get GitHub remote repository (repo only, without owner)"""
+
+
+def find_git_dir(project_dir):
+    """Find .git directory by traversing up the directory tree (monorepo support)."""
     try:
         # Normalize path for Windows (convert /d/path to D:/path)
         if sys.platform == 'win32' and project_dir.startswith('/'):
@@ -39,8 +41,26 @@ def get_git_remote(project_dir):
             if len(parts) > 1 and len(parts[1]) == 1:  # /d/... format
                 project_dir = f"{parts[1].upper()}:/{'/'.join(parts[2:])}"
 
-        git_dir = Path(project_dir) / '.git'
+        current = Path(project_dir).resolve()
+        # Traverse up to find .git directory
+        while current != current.parent:
+            git_dir = current / '.git'
+            if git_dir.exists():
+                return git_dir
+            current = current.parent
+        # Check root as well
+        git_dir = current / '.git'
         if git_dir.exists():
+            return git_dir
+        return None
+    except Exception:
+        return None
+
+def get_git_remote(project_dir):
+    """Get GitHub remote repository (repo only, without owner)"""
+    try:
+        git_dir = find_git_dir(project_dir)
+        if git_dir:
             config_file = git_dir / 'config'
             if config_file.exists():
                 content = config_file.read_text(encoding='utf-8')
@@ -70,14 +90,8 @@ def get_git_remote(project_dir):
 def get_git_branch(project_dir):
     """Get current git branch name"""
     try:
-        # Normalize path for Windows (convert /d/path to D:/path)
-        if sys.platform == 'win32' and project_dir.startswith('/'):
-            parts = project_dir.split('/')
-            if len(parts) > 1 and len(parts[1]) == 1:  # /d/... format
-                project_dir = f"{parts[1].upper()}:/{'/'.join(parts[2:])}"
-
-        git_dir = Path(project_dir) / '.git'
-        if git_dir.exists():
+        git_dir = find_git_dir(project_dir)
+        if git_dir:
             head_file = git_dir / 'HEAD'
             if head_file.exists():
                 content = head_file.read_text(encoding='utf-8').strip()
