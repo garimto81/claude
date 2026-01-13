@@ -50,7 +50,7 @@ class SyncService:
 
             self._client = create_client(
                 self.settings.supabase_url,
-                self.settings.supabase_service_key,
+                self.settings.get_api_key(),  # 신규 키 우선, 레거시 fallback
             )
         return self._client
 
@@ -220,7 +220,7 @@ class CentralSyncService:
 
             self._client = create_client(
                 self.settings.supabase_url,
-                self.settings.supabase_service_key,
+                self.settings.get_api_key(),  # 신규 키 우선, 레거시 fallback
             )
         return self._client
 

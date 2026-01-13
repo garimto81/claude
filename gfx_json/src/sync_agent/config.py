@@ -42,7 +42,10 @@ class AppConfig:
 
     # Supabase
     supabase_url: str = ""
-    supabase_service_key: str = ""
+    # 신규 키 (sb_secret_...) 또는 레거시 키 (JWT) 모두 지원
+    supabase_secret_key: str = ""
+    # 레거시 호환성 (마이그레이션 기간)
+    supabase_service_key: str = ""  # deprecated, use supabase_secret_key
 
     # 경로
     gfx_watch_path: str = "C:/GFX/output"
@@ -77,15 +80,19 @@ class AppConfig:
         except (json.JSONDecodeError, TypeError):
             return cls()
 
+    def get_api_key(self) -> str:
+        """API 키 반환 (신규 키 우선, 레거시 fallback)."""
+        return self.supabase_secret_key or self.supabase_service_key
+
     def is_configured(self) -> bool:
         """필수 설정이 완료되었는지 확인."""
-        return bool(self.supabase_url and self.supabase_service_key)
+        return bool(self.supabase_url and self.get_api_key())
 
     def to_settings(self) -> "SyncAgentSettings":
         """SyncAgentSettings로 변환."""
         return SyncAgentSettings(
             supabase_url=self.supabase_url,
-            supabase_service_key=self.supabase_service_key,
+            supabase_secret_key=self.get_api_key(),
             gfx_watch_path=self.gfx_watch_path,
             queue_db_path=self.queue_db_path,
             batch_size=self.batch_size,
@@ -110,11 +117,19 @@ class SyncAgentSettings(BaseSettings):
     # Supabase 연결
     # URL: https://<project-ref>.supabase.co
     supabase_url: str = Field(default="")
-    # service_role key (NOT anon key)
-    # - 서버 사이드 앱이므로 service_role 사용
+
+    # 신규 API 키 (sb_secret_...)
+    # - 서버 사이드 앱 전용
     # - RLS 우회하여 모든 데이터 접근 가능
-    # - 확인: supabase projects api-keys --project-ref <ref>
+    # - 위치: Supabase Dashboard > Settings > API Keys > Secret key
+    supabase_secret_key: str = Field(default="")
+
+    # 레거시 키 (JWT 형식) - 마이그레이션 기간 동안 fallback
     supabase_service_key: str = Field(default="")
+
+    def get_api_key(self) -> str:
+        """API 키 반환 (신규 키 우선, 레거시 fallback)."""
+        return self.supabase_secret_key or self.supabase_service_key
 
     # 감시 경로
     gfx_watch_path: str = Field(default="C:/GFX/output")
@@ -150,7 +165,16 @@ class CentralSyncSettings(BaseSettings):
 
     # Supabase 연결
     supabase_url: str = Field(default="")
+
+    # 신규 API 키 (sb_secret_...)
+    supabase_secret_key: str = Field(default="")
+
+    # 레거시 키 (JWT 형식) - 마이그레이션 기간 동안 fallback
     supabase_service_key: str = Field(default="")
+
+    def get_api_key(self) -> str:
+        """API 키 반환 (신규 키 우선, 레거시 fallback)."""
+        return self.supabase_secret_key or self.supabase_service_key
 
     # 폴링 설정 (SMB용 - watchfiles는 SMB 미지원)
     poll_interval: float = Field(default=2.0, description="폴링 주기 (초)")
