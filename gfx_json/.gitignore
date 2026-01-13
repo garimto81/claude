@@ -58,3 +58,6 @@ out/
 
 # Local
 *.local
+
+# Supabase
+supabase/.temp/
