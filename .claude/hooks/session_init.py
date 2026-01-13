@@ -12,7 +12,7 @@ import glob
 from datetime import datetime
 from pathlib import Path
 
-PROJECT_DIR = os.environ.get("CLAUDE_PROJECT_DIR", "D:/AI/claude01")
+PROJECT_DIR = os.environ.get("CLAUDE_PROJECT_DIR", os.getcwd())
 SESSION_FILE = Path(PROJECT_DIR) / ".claude" / "session_state.json"
 AUTO_STATE_FILE = Path(PROJECT_DIR) / ".claude" / "workflow" / "auto_state.json"
 
