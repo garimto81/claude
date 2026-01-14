@@ -10,6 +10,37 @@
 
 ---
 
+## 운영 환경
+
+> **중요**: 이 프로젝트는 **GUI 기반 웹 인터페이스**로 NAS를 관리합니다.
+
+### 접속 방식
+
+```
+┌─────────────────┐         ┌─────────────────────────────────────┐
+│  Windows PC     │  HTTP   │  Synology NAS (DSM)                 │
+│  웹 브라우저    │────────▶│  - File Station (파일 관리)         │
+│                 │         │  - Container Manager (Docker 관리)  │
+└─────────────────┘         └─────────────────────────────────────┘
+```
+
+### 작업 도구
+
+| 작업 | 도구 | 접속 방법 |
+|------|------|-----------|
+| **파일 업로드/복사** | File Station | 웹 브라우저 → DSM → File Station |
+| **Docker 빌드/실행** | Container Manager | 웹 브라우저 → DSM → Container Manager |
+| **환경 변수 설정** | File Station | `.env` 파일 직접 편집 |
+| **로그 확인** | Container Manager | Container → Log 탭 |
+
+### SSH/CLI 미사용
+
+- 모든 작업은 **웹 GUI**로 수행
+- SSH 접속 불필요 (선택사항)
+- 터미널 명령어는 트러블슈팅 참고용으로만 제공
+
+---
+
 ## 1. 사전 요구사항
 
 ### 1.1 하드웨어
@@ -209,8 +240,10 @@ Container Manager에서:
 
 브라우저에서 접속:
 ```
-http://<NAS-IP>:8080/health
+http://<NAS-IP>:8081/health
 ```
+
+> **참고**: 포트 8080은 Synology 서비스와 충돌할 수 있어 8081 사용
 
 정상 응답:
 ```json
@@ -336,6 +369,31 @@ Container Manager에서 프로젝트 설정:
 1. 로그 확인: `docker logs gfx-sync-agent`
 2. `.env` 파일 문법 오류 확인
 3. 볼륨 마운트 경로 확인
+
+### 8.6 포트 충돌 오류 (external connectivity)
+
+**증상**:
+```
+Error response from daemon: driver failed programming external connectivity on endpoint gfx-sync-agent
+Exit Code: 1
+```
+
+**원인**: Synology 서비스(Web Station, Photos 등)가 포트 8080을 이미 사용 중
+
+**해결 (GUI)**:
+
+1. **Container Manager** → **Project** → `gfx-sync` → **Stop**
+2. **File Station**에서 `docker-compose.yml` 편집:
+   ```yaml
+   ports:
+     - "8081:8080"  # 8080 → 8081로 변경
+   ```
+3. **Container Manager** → **Project** → `gfx-sync` → **Build** → **Start**
+
+**포트 확인 (선택 - SSH)**:
+```bash
+sudo netstat -tlnp | grep :8080
+```
 
 ---
 
