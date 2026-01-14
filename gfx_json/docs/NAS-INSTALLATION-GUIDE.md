@@ -144,10 +144,9 @@ SUPABASE_SECRET_KEY=sb_secret_xxxxxxxxxxxxx
 SUPABASE_PUBLISHABLE_KEY=sb_publishable_xxxxxxxxxxxxx
 
 # ===========================================
-# NAS 설정
+# NAS 설정 (docker-compose.yml에 하드코딩됨)
 # ===========================================
-# 컨테이너 내부에서 마운트될 NAS 경로
-NAS_MOUNT_PATH=/volume1/gfx_data
+# 데이터 경로: /volume1/gfx_data (변경 시 docker-compose.yml 수정)
 
 # ===========================================
 # Sync Agent 설정 (선택)
