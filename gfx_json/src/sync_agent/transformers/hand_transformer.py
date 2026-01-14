@@ -42,7 +42,18 @@ class HandTransformer:
         Returns:
             HandRecord
         """
-        blinds = data.get("FlopDrawBlinds", {})
+        blinds_data = data.get("FlopDrawBlinds", {})
+
+        small_blind = self._to_decimal(blinds_data.get("SmallBlindAmt"))
+        big_blind = self._to_decimal(blinds_data.get("BigBlindAmt"))
+        ante = self._to_decimal(data.get("AnteAmt"))
+
+        # AEP 매핑용 blinds JSONB 생성
+        blinds_jsonb = {
+            "small_blind_amt": float(small_blind) if small_blind else None,
+            "big_blind_amt": float(big_blind) if big_blind else None,
+            "ante": float(ante) if ante else None,
+        }
 
         return HandRecord(
             session_id=session_id,
@@ -55,9 +66,10 @@ class HandTransformer:
             recording_offset_start=self.parse_iso_duration(
                 data.get("RecordingOffsetStart")
             ),
-            small_blind=self._to_decimal(blinds.get("SmallBlindAmt")),
-            big_blind=self._to_decimal(blinds.get("BigBlindAmt")),
-            ante=self._to_decimal(data.get("AnteAmt")),
+            small_blind=small_blind,
+            big_blind=big_blind,
+            ante=ante,
+            blinds=blinds_jsonb,
             num_boards=data.get("NumBoards", 1),
             run_it_num_times=data.get("RunItNumTimes", 1),
             player_count=len(data.get("Players", [])),

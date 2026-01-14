@@ -37,6 +37,7 @@ class HandRecord:
         small_blind: 스몰 블라인드
         big_blind: 빅 블라인드
         ante: 앤티
+        blinds: JSONB 블라인드 정보 (AEP 매핑용)
         num_boards: 보드 수
         run_it_num_times: Run It 횟수
         player_count: 참여 플레이어 수
@@ -60,6 +61,7 @@ class HandRecord:
     small_blind: Decimal | None = None
     big_blind: Decimal | None = None
     ante: Decimal | None = None
+    blinds: dict[str, Any] | None = None
     num_boards: int = 1
     run_it_num_times: int = 1
     player_count: int = 0
@@ -87,6 +89,7 @@ class HandRecord:
             "small_blind": float(self.small_blind) if self.small_blind else None,
             "big_blind": float(self.big_blind) if self.big_blind else None,
             "ante": float(self.ante) if self.ante else None,
+            "blinds": self.blinds,
             "num_boards": self.num_boards,
             "run_it_num_times": self.run_it_num_times,
             "player_count": self.player_count,
