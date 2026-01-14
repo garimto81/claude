@@ -15,7 +15,8 @@ services:
     restart: unless-stopped
     volumes:
       # Synology NAS 볼륨 마운트 (읽기 전용)
-      - /volume1/gfx_data:/app/data:ro
+      # .env 파일에서 NAS_MOUNT_PATH 설정 필수
+      - ${NAS_MOUNT_PATH}:/app/data:ro
       # 오프라인 큐 DB (영속성)
       - sync_queue:/app/queue
     environment:

@@ -144,9 +144,10 @@ SUPABASE_SECRET_KEY=sb_secret_xxxxxxxxxxxxx
 SUPABASE_PUBLISHABLE_KEY=sb_publishable_xxxxxxxxxxxxx
 
 # ===========================================
-# NAS 설정 (docker-compose.yml에 하드코딩됨)
+# NAS 설정 (필수)
 # ===========================================
-# 데이터 경로: /volume1/gfx_data (변경 시 docker-compose.yml 수정)
+# GFX 데이터 폴더 경로 (절대 경로)
+NAS_MOUNT_PATH=/volume1/gfx_data
 
 # ===========================================
 # Sync Agent 설정 (선택)
@@ -393,6 +394,17 @@ Exit Code: 1
 ```bash
 sudo netstat -tlnp | grep :8080
 ```
+
+### 8.7 볼륨 경로 인식 오류
+
+**증상**: Container Manager가 `/volume/docker/...`로 경로를 잘못 인식
+
+**원인**: docker-compose.yml에 경로를 하드코딩하면 Container Manager가 상대 경로로 해석
+
+**해결**:
+1. `.env` 파일에 `NAS_MOUNT_PATH=/volume1/gfx_data` 설정
+2. docker-compose.yml에서 `${NAS_MOUNT_PATH}` 환경변수 사용
+3. **Container Manager** → **Project** → **Rebuild**
 
 ---
 
