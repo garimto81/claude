@@ -102,6 +102,7 @@ class HandPlayerRecord:
         hand_id: 핸드 FK
         player_id: 플레이어 FK
         player_num: 좌석 번호 (1-10)
+        player_name: 플레이어명 (비정규화, AEP 매핑용)
         hole_cards: 홀 카드 (예: ["As", "Kh"])
         start_stack_amt: 시작 스택
         end_stack_amt: 종료 스택
@@ -111,6 +112,7 @@ class HandPlayerRecord:
         aggression_pct: Aggression%
         sitting_out: 자리 비움 여부
         is_winner: 승자 여부
+        elimination_rank: 탈락 순위 (0 = 미탈락)
         created_at: 레코드 생성 시간
     """
 
@@ -118,6 +120,7 @@ class HandPlayerRecord:
     player_id: UUID
     player_num: int = 0
     id: UUID = field(default_factory=uuid4)
+    player_name: str | None = None
     hole_cards: list[str] = field(default_factory=list)
     start_stack_amt: Decimal | None = None
     end_stack_amt: Decimal | None = None
@@ -127,6 +130,7 @@ class HandPlayerRecord:
     aggression_pct: float | None = None
     sitting_out: bool = False
     is_winner: bool = False
+    elimination_rank: int = 0
     created_at: datetime = field(default_factory=utcnow)
 
     def to_dict(self) -> dict[str, Any]:
@@ -136,6 +140,7 @@ class HandPlayerRecord:
             "hand_id": str(self.hand_id),
             "player_id": str(self.player_id),
             "player_num": self.player_num,
+            "player_name": self.player_name,
             "hole_cards": self.hole_cards,
             "start_stack_amt": float(self.start_stack_amt) if self.start_stack_amt else None,
             "end_stack_amt": float(self.end_stack_amt) if self.end_stack_amt else None,
@@ -147,5 +152,6 @@ class HandPlayerRecord:
             "aggression_pct": self.aggression_pct,
             "sitting_out": self.sitting_out,
             "is_winner": self.is_winner,
+            "elimination_rank": self.elimination_rank,
             "created_at": self.created_at.isoformat(),
         }

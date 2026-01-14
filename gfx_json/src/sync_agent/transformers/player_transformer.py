@@ -63,6 +63,7 @@ class PlayerTransformer:
             hand_id=hand_id,
             player_id=player_id,
             player_num=data.get("PlayerNum", 0),
+            player_name=data.get("Name"),
             hole_cards=self.parse_hole_cards(data.get("HoleCards", [])),
             start_stack_amt=self._to_decimal(data.get("StartStackAmt")),
             end_stack_amt=self._to_decimal(data.get("EndStackAmt")),
@@ -72,6 +73,7 @@ class PlayerTransformer:
             aggression_pct=data.get("AggressionFrequencyPercent"),
             sitting_out=data.get("SittingOut", False),
             is_winner=data.get("IsWinner", False),
+            elimination_rank=data.get("EliminationRank", 0),
         )
 
     def validate(self, data: dict[str, Any]) -> list[str]:

@@ -108,6 +108,7 @@ class HandRepository(BaseRepository[HandRecord]):
             small_blind=to_decimal(data.get("small_blind")),
             big_blind=to_decimal(data.get("big_blind")),
             ante=to_decimal(data.get("ante")),
+            blinds=data.get("blinds"),
             num_boards=data.get("num_boards", 1),
             run_it_num_times=data.get("run_it_num_times", 1),
             player_count=data.get("player_count", 0),
