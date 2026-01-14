@@ -23,5 +23,5 @@ HEALTHCHECK --interval=30s --timeout=10s --retries=3 \
 # 포트
 EXPOSE 8080
 
-# 실행
-CMD ["python", "-m", "src.sync_agent.main_v3"]
+# 실행 (디버깅용 - 직접 실행)
+CMD ["python", "-u", "src/sync_agent/main_v3.py"]
