@@ -61,8 +61,8 @@
 │                       NAS Storage Layer                                  │
 │   /volume1/gfx_data/                                                     │
 │   ├── config/pc_registry.json    ← PC 등록 정보 (JSON)                  │
-│   ├── PC01/hands/                ← GFX PC 1 전용 폴더                   │
-│   ├── PC02/hands/                ← GFX PC 2 전용 폴더                   │
+│   ├── PC01/                      ← GFX PC 1 전용 폴더 (JSON 직접 저장)   │
+│   ├── PC02/                      ← GFX PC 2 전용 폴더                   │
 │   ├── ...                                                                │
 │   └── _error/                    ← 파싱 실패 파일 격리                   │
 └───────────────────────────┼──────────────────────────────────────────────┘
@@ -103,7 +103,7 @@ GFX PC (PokerGFX)
     │
     │ SMB Write (JSON 파일)
     ▼
-NAS Storage (/volume1/gfx_data/PC01/hands/*.json)
+NAS Storage (/volume1/gfx_data/PC01/*.json)
     │
     │ Docker Volume Mount (read-only)
     ▼
