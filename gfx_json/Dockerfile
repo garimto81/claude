@@ -12,6 +12,7 @@ COPY src/ src/
 
 # 환경 변수
 ENV PYTHONUNBUFFERED=1
+ENV PYTHONPATH=/app
 ENV GFX_SYNC_NAS_BASE_PATH=/app/data
 ENV GFX_SYNC_QUEUE_DB_PATH=/app/queue/pending.db
 
