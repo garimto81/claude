@@ -1,0 +1,163 @@
+#!/usr/bin/env python3
+"""
+auto-executor: Task tool 강제 사용 자동화 엔진
+
+모든 작업을 반드시 Task tool을 통해 서브에이전트에 위임합니다.
+"""
+
+import argparse
+import sys
+import os
+from pathlib import Path
+
+# Windows 콘솔 UTF-8 설정
+if sys.platform == "win32":
+    os.system("chcp 65001 >nul 2>&1")
+    sys.stdout.reconfigure(encoding='utf-8', errors='replace')
+    sys.stderr.reconfigure(encoding='utf-8', errors='replace')
+
+# 스크립트 경로 추가
+SCRIPT_DIR = Path(__file__).parent
+sys.path.insert(0, str(SCRIPT_DIR))
+
+from session_manager import SessionManager
+from task_runner import TaskRunner
+from agent_selector import AgentSelector
+
+
+def main():
+    parser = argparse.ArgumentParser(
+        description="Task tool 강제 사용 자동화 엔진"
+    )
+    parser.add_argument(
+        "--task", "-t",
+        type=str,
+        help="실행할 작업 (없으면 자동 발견)"
+    )
+    parser.add_argument(
+        "--status", "-s",
+        action="store_true",
+        help="현재 세션 상태 출력"
+    )
+    parser.add_argument(
+        "--stop",
+        action="store_true",
+        help="세션 종료 및 최종 보고서"
+    )
+    parser.add_argument(
+        "--redirect", "-r",
+        type=str,
+        help="작업 방향 수정"
+    )
+    parser.add_argument(
+        "--max",
+        type=int,
+        default=0,
+        help="최대 반복 횟수 (0=무한)"
+    )
+    parser.add_argument(
+        "--dry-run",
+        action="store_true",
+        help="실행 없이 계획만 출력"
+    )
+
+    args = parser.parse_args()
+
+    # 프로젝트 루트
+    project_root = Path(__file__).parent.parent.parent.parent.parent
+
+    # 매니저 초기화
+    session = SessionManager(project_root)
+    runner = TaskRunner(project_root)
+    selector = AgentSelector()
+
+    # 모드별 처리
+    if args.status:
+        print(session.get_status_report())
+        return 0
+
+    if args.stop:
+        report = session.stop_session()
+        print(report)
+        return 0
+
+    if args.redirect:
+        session.redirect(args.redirect)
+        print(f"✅ 방향 수정 완료: {args.redirect}")
+        print("다음 작업을 시작하려면 다시 실행하세요.")
+        return 0
+
+    # 작업 모드
+    iteration = 0
+    max_iterations = args.max if args.max > 0 else float('inf')
+
+    while iteration < max_iterations:
+        iteration += 1
+        print(f"\n{'='*60}")
+        print(f"🔄 반복 #{iteration}")
+        print(f"{'='*60}")
+
+        # 1. 세션 확인/생성
+        session.ensure_session(args.task)
+
+        # 2. 작업 발견
+        if args.task and iteration == 1:
+            task = args.task
+        else:
+            task = runner.discover_next_task(session.get_direction())
+
+        if not task:
+            print("✅ 모든 작업 완료. 자율 발견 모드로 전환...")
+            task = runner.discover_autonomous_task()
+
+            if not task:
+                print("💤 발견된 작업 없음. 30초 후 재시도...")
+                if args.max > 0:
+                    break
+                import time
+                time.sleep(30)
+                continue
+
+        print(f"\n📋 발견된 작업: {task}")
+
+        # 3. 에이전트 선택
+        agent = selector.select_agent(task)
+        print(f"🤖 선택된 에이전트: {agent}")
+
+        # 4. dry-run 모드
+        if args.dry_run:
+            print(f"\n[DRY-RUN] Task tool 호출 예정:")
+            print(f"  - subagent_type: {agent}")
+            print(f"  - task: {task}")
+            continue
+
+        # 5. Task tool로 서브에이전트 실행 (핵심!)
+        print(f"\n🚀 Task tool로 서브에이전트 실행 중...")
+        result = runner.execute_with_task_tool(task, agent)
+
+        # 6. 결과 저장
+        session.add_completed_task(task, agent, result)
+
+        # 7. 결과 출력
+        print(f"\n✅ 작업 완료")
+        print(f"{'─'*40}")
+        print(result.get("summary", "결과 없음"))
+
+        # 8. 다음 안내
+        stats = session.get_statistics()
+        print(f"\n📊 진행 현황: 완료 {stats['completed']}, 대기 {stats['pending']}")
+        print(f"\n다음 작업을 실행하려면 계속 진행합니다...")
+
+        # 단일 실행 모드 (--max 1)
+        if args.max == 1:
+            print("\n💡 다음 명령어:")
+            print("  - 계속: python auto_executor.py")
+            print("  - 상태: python auto_executor.py --status")
+            print("  - 종료: python auto_executor.py --stop")
+            break
+
+    return 0
+
+
+if __name__ == "__main__":
+    sys.exit(main())
