@@ -25,6 +25,7 @@ auto_trigger: false
 /auto status                   # 현재 진행 상황 정리
 /auto redirect "새 방향"        # 방향 수정
 /auto stop                     # 작업 중지 + 최종 보고서
+/auto --mockup "화면 이름"      # 블랙앤화이트 목업 생성 + 스크린샷
 ```
 
 ---
@@ -60,6 +61,7 @@ python C:\claude\.claude\skills\auto-executor\scripts\auto_executor.py
 | `--stop` | 세션 종료 |
 | `--max N` | 최대 N회 반복 |
 | `--dry-run` | 실행 없이 계획만 |
+| `--mockup "이름"` | 블랙앤화이트 목업 생성 + 스크린샷 |
 
 ---
 
@@ -84,9 +86,14 @@ python C:\claude\.claude\skills\auto-executor\scripts\auto_executor.py --redirec
 
 # /auto stop → 종료
 python C:\claude\.claude\skills\auto-executor\scripts\auto_executor.py --stop
+
+# /auto --mockup "화면 이름" → 목업 생성 (Skill tool 사용)
+Skill(skill="mockup", args="화면 이름")
 ```
 
 **스크립트 실행 후 결과를 사용자에게 보고하세요.**
+
+> ⚠️ `--mockup` 옵션은 Python 스크립트가 아닌 Skill tool을 직접 호출합니다.
 
 ---
 
@@ -103,6 +110,7 @@ $ARGUMENTS를 분석하여 모드를 결정하세요:
 | `status` | 상황 보고 모드 |
 | `redirect "새 방향"` | 방향 수정 모드 |
 | `stop` | 종료 모드 |
+| `--mockup "화면 이름"` | **목업 모드** - HTML 생성 + 스크린샷 |
 
 ---
 
@@ -441,6 +449,66 @@ Task(
 4. **세션 파일 아카이브**
    - `.claude/auto/session.yaml` → `.claude/auto/history/session_{id}.yaml`로 이동
    - 새 세션을 위해 session.yaml 삭제
+
+---
+
+## [목업 모드] /auto --mockup "화면 이름"
+
+블랙앤화이트 톤의 HTML 와이어프레임을 생성하고 스크린샷을 캡처합니다.
+
+### 실행 방법
+
+**Skill tool을 사용하여 `/mockup` 커맨드를 호출하세요:**
+
+```python
+Skill(
+    skill="mockup",
+    args="{화면 이름}"
+)
+```
+
+### 예시
+
+```bash
+/auto --mockup "로그인 화면"      # 로그인 화면 목업 생성
+/auto --mockup "대시보드"         # 대시보드 목업 생성
+/auto --mockup "결제 플로우"      # 결제 화면 목업 생성
+```
+
+### 결과물
+
+| 파일 | 경로 |
+|------|------|
+| HTML | `docs/mockups/{name}.html` |
+| 스크린샷 | `docs/images/{name}.png` |
+
+### 출력 형식
+
+```markdown
+## /auto --mockup 완료
+
+### 생성된 목업
+> {화면 이름}
+
+### 결과 파일
+| 파일 | 경로 |
+|------|------|
+| HTML | `docs/mockups/{name}.html` |
+| 스크린샷 | `docs/images/{name}.png` |
+
+### 문서 삽입 코드
+```markdown
+![{화면 이름}](../images/{name}.png)
+```
+
+---
+
+**다음 단계**
+- 다른 화면 추가: `/auto --mockup "다른 화면"`
+- 자동 작업으로 복귀: `/auto`
+```
+
+> ℹ️ 목업 모드는 세션에 기록되지 않습니다. 독립 실행됩니다.
 
 ---
 
