@@ -136,7 +136,7 @@ CREATE TABLE IF NOT EXISTS gfx_hand_players (
     player_id UUID NOT NULL REFERENCES gfx_players(id) ON DELETE CASCADE,
 
     -- 시트 정보
-    player_num INTEGER NOT NULL,
+    seat_num INTEGER NOT NULL,
 
     -- 홀 카드
     hole_cards TEXT[],
@@ -147,9 +147,9 @@ CREATE TABLE IF NOT EXISTS gfx_hand_players (
     cumulative_winnings_amt DECIMAL(18,2),
 
     -- 플레이어 통계
-    vpip_pct FLOAT,
-    pfr_pct FLOAT,
-    aggression_pct FLOAT,
+    vpip_percent FLOAT,
+    preflop_raise_percent FLOAT,
+    aggression_frequency_percent FLOAT,
 
     -- 상태
     sitting_out BOOLEAN DEFAULT FALSE,
@@ -159,7 +159,7 @@ CREATE TABLE IF NOT EXISTS gfx_hand_players (
     created_at TIMESTAMPTZ DEFAULT NOW(),
 
     -- 복합 유니크
-    CONSTRAINT uq_gfx_hand_players_seat UNIQUE (hand_id, player_num)
+    CONSTRAINT uq_gfx_hand_players_seat UNIQUE (hand_id, seat_num)
 );
 
 -- 인덱스
