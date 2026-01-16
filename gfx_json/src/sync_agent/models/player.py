@@ -104,15 +104,18 @@ class HandPlayerRecord:
         seat_num: 좌석 번호 (1-10)
         player_name: 플레이어명 (비정규화, AEP 매핑용)
         hole_cards: 홀 카드 (예: ["As", "Kh"])
+        has_shown: 카드 공개 여부
         start_stack_amt: 시작 스택
         end_stack_amt: 종료 스택
         cumulative_winnings_amt: 누적 수익
+        blind_bet_straddle_amt: 블라인드/스트래들 금액
         vpip_percent: VPIP%
         preflop_raise_percent: PFR%
         aggression_frequency_percent: Aggression%
+        went_to_showdown_percent: 쇼다운 진출률%
         sitting_out: 자리 비움 여부
         is_winner: 승자 여부
-        elimination_rank: 탈락 순위 (0 = 미탈락)
+        elimination_rank: 탈락 순위 (-1 = 미탈락)
         created_at: 레코드 생성 시간
     """
 
@@ -122,15 +125,18 @@ class HandPlayerRecord:
     id: UUID = field(default_factory=uuid4)
     player_name: str | None = None
     hole_cards: list[str] = field(default_factory=list)
+    has_shown: bool = False
     start_stack_amt: Decimal | None = None
     end_stack_amt: Decimal | None = None
     cumulative_winnings_amt: Decimal | None = None
+    blind_bet_straddle_amt: int = 0
     vpip_percent: float | None = None
     preflop_raise_percent: float | None = None
     aggression_frequency_percent: float | None = None
+    went_to_showdown_percent: float | None = None
     sitting_out: bool = False
     is_winner: bool = False
-    elimination_rank: int = 0
+    elimination_rank: int = -1
     created_at: datetime = field(default_factory=utcnow)
 
     def to_dict(self) -> dict[str, Any]:
@@ -142,14 +148,17 @@ class HandPlayerRecord:
             "seat_num": self.seat_num,
             "player_name": self.player_name,
             "hole_cards": self.hole_cards,
+            "has_shown": self.has_shown,
             "start_stack_amt": float(self.start_stack_amt) if self.start_stack_amt else None,
             "end_stack_amt": float(self.end_stack_amt) if self.end_stack_amt else None,
             "cumulative_winnings_amt": (
                 float(self.cumulative_winnings_amt) if self.cumulative_winnings_amt else None
             ),
+            "blind_bet_straddle_amt": self.blind_bet_straddle_amt,
             "vpip_percent": self.vpip_percent,
             "preflop_raise_percent": self.preflop_raise_percent,
             "aggression_frequency_percent": self.aggression_frequency_percent,
+            "went_to_showdown_percent": self.went_to_showdown_percent,
             "sitting_out": self.sitting_out,
             "is_winner": self.is_winner,
             "elimination_rank": self.elimination_rank,

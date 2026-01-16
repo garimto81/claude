@@ -59,21 +59,25 @@ class PlayerTransformer:
         Returns:
             HandPlayerRecord
         """
+        hole_cards = self.parse_hole_cards(data.get("HoleCards", []))
         return HandPlayerRecord(
             hand_id=hand_id,
             player_id=player_id,
             seat_num=data.get("PlayerNum", 0),
             player_name=data.get("Name"),
-            hole_cards=self.parse_hole_cards(data.get("HoleCards", [])),
+            hole_cards=hole_cards,
+            has_shown=len(hole_cards) > 0,
             start_stack_amt=self._to_decimal(data.get("StartStackAmt")),
             end_stack_amt=self._to_decimal(data.get("EndStackAmt")),
             cumulative_winnings_amt=self._to_decimal(data.get("CumulativeWinningsAmt")),
+            blind_bet_straddle_amt=data.get("BlindBetStraddleAmt", 0) or 0,
             vpip_percent=data.get("VPIPPercent"),
             preflop_raise_percent=data.get("PreflopRaisePercent"),
             aggression_frequency_percent=data.get("AggressionFrequencyPercent"),
+            went_to_showdown_percent=data.get("WentToShowDownPercent"),
             sitting_out=data.get("SittingOut", False),
             is_winner=data.get("IsWinner", False),
-            elimination_rank=data.get("EliminationRank", 0),
+            elimination_rank=data.get("EliminationRank", -1) if data.get("EliminationRank") else -1,
         )
 
     def validate(self, data: dict[str, Any]) -> list[str]:
