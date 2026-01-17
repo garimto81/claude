@@ -1,0 +1,88 @@
+job_id: job_20260115_003
+created_at: 2026-01-15T17:30:00
+request: |
+  WSOPTV PRD 문서 수정 및 신규 작성
+  - PRD-0006 Multi-view 쟁점/개선 아이디어 추가
+  - PRD-0007 콘텐츠 전략 신규 작성
+  - michael_vision_analysis.md 수정
+status: in_progress
+
+context:
+  user_feedback:
+    content_strategy:
+      - 200개 대회 중 150개는 WSOP VEGAS (5~7월)
+      - 50개는 Super Circuit, WSOP Europe
+      - 50개 방송 = 동시 진행으로 못하는 것
+      - ESPN/PokerGo는 WSOP VEGAS만 집중
+      - WSOP 직접 = VEGAS + 전세계 브레이슬릿
+    multi_view:
+      issue: 현재 프로덕션 스타일과 다름
+      current_style: 여러 피처 테이블 조합 → 최종 PGM 송출
+      options:
+        - 피처 테이블 변경마다 다른 화면
+        - 특정 피처 테이블의 특정 선수만 (원 목적)
+      conclusion: |
+        1. PGM
+        2. WSOP TV 전용 피처 테이블 + 멀티뷰
+      action: 쟁점 명확화 + 개선 아이디어 제안
+    stats_view:
+      vpip_3bet: GG POKER STAT 동일 적용
+      betting_probability: GTO Wizard solution (GGM$에서 도입)
+    subscription:
+      timeshift: Plus/Plus+ 둘 다 제공
+    decision_owner:
+      change: "결정 주체" → "제안 주체"
+      rule: Michael 제외, 관련 파트/사람 표기
+    removals:
+      - Mega Cloud 후보에서 제거
+      - 2026년 3월 1일 마감 질문 제거
+    additions:
+      - 역대 WSOP 영상: 1973년~현재
+
+tasks:
+  - id: task_001
+    agent: docs-writer
+    action: PRD-0006 Advanced Mode 수정 (Multi-view 쟁점 추가)
+    input:
+      file: C:/claude/WSOPTV/tasks/prds/PRD-0006-advanced-mode.md
+      modifications:
+        - Multi-view 섹션에 프로덕션 쟁점 추가
+        - PGM vs WSOP TV 전용 피처 테이블 구조 명시
+        - 개선 아이디어 3개 이상 제안
+        - StatsView에 GTO Wizard 솔루션 명시
+        - Timeshift 양 티어 제공으로 수정
+        - "결정 주체" → "제안 주체" 변경
+    depends_on: null
+    output_file: .claude/workflow/results/job003_task_001.yaml
+    status: pending
+
+  - id: task_002
+    agent: docs-writer
+    action: PRD-0007 콘텐츠 전략 신규 작성
+    input:
+      template: PRD-0006 형식 참고
+      content:
+        - 대회 분포 (150개 VEGAS, 50개 해외)
+        - 방송 기준 (동시 진행 제약, 가치 기준)
+        - ESPN/PokerGo 역할 (VEGAS 집중)
+        - WSOP 직접 방송 범위 (전세계)
+        - YouTube 동시 송출 전략
+        - 역대 영상 아카이브 (1973년~)
+    depends_on: null
+    output_file: .claude/workflow/results/job003_task_002.yaml
+    status: pending
+
+  - id: task_003
+    agent: docs-writer
+    action: michael_vision_analysis.md 수정
+    input:
+      file: C:/claude/WSOPTV/docs/order/michael_vision_analysis.md
+      modifications:
+        - 콘텐츠 전략 섹션 확장
+        - "결정 주체" → "제안 주체" 전체 변경
+        - Mega Cloud 후보 제거
+        - 2026년 3월 1일 질문 제거
+        - 역대 영상 1973년부터 명시
+    depends_on: null
+    output_file: .claude/workflow/results/job003_task_003.yaml
+    status: pending
