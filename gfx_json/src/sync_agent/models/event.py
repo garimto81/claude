@@ -33,6 +33,7 @@ class EventRecord:
         amount: 베팅 금액 (베팅 이벤트 시)
         cards: 보드 카드 (BOARD_CARD 이벤트 시)
         pot: 현재 팟 크기
+        event_time: 이벤트 발생 시간 (ISO 8601)
         extra_data: 추가 데이터 (JSONB)
         created_at: 레코드 생성 시간
     """
@@ -45,6 +46,7 @@ class EventRecord:
     amount: Decimal | None = None
     cards: list[str] = field(default_factory=list)
     pot: Decimal | None = None
+    event_time: str | None = None
     extra_data: dict[str, Any] | None = None
     created_at: datetime = field(default_factory=utcnow)
 
@@ -59,6 +61,7 @@ class EventRecord:
             "amount": float(self.amount) if self.amount else None,
             "cards": self.cards if self.cards else None,
             "pot": float(self.pot) if self.pot else None,
+            "event_time": self.event_time,
             "extra_data": self.extra_data,
             "created_at": self.created_at.isoformat(),
         }

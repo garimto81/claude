@@ -31,9 +31,10 @@ class HandRecord:
         game_variant: 게임 종류 (HOLDEM, OMAHA 등)
         game_class: 게임 클래스 (FLOP, STUD 등)
         bet_structure: 베팅 구조 (NOLIMIT, POTLIMIT 등)
-        duration_seconds: 핸드 진행 시간 (초)
+        duration_seconds: 핸드 진행 시간 (초, INTEGER)
         start_datetime_utc: 핸드 시작 시간
-        recording_offset_start: 녹화 오프셋 (초)
+        recording_offset_iso: 녹화 오프셋 ISO 타임스탬프
+        recording_offset_seconds: 녹화 오프셋 (초, INTEGER)
         small_blind: 스몰 블라인드
         big_blind: 빅 블라인드
         ante: 앤티
@@ -55,9 +56,10 @@ class HandRecord:
     game_variant: str = "HOLDEM"
     game_class: str = "FLOP"
     bet_structure: str = "NOLIMIT"
-    duration_seconds: float = 0.0
+    duration_seconds: int = 0
     start_datetime_utc: datetime | None = None
-    recording_offset_start: float | None = None
+    recording_offset_iso: str | None = None
+    recording_offset_seconds: int | None = None
     small_blind: Decimal | None = None
     big_blind: Decimal | None = None
     ante: Decimal | None = None
@@ -85,7 +87,8 @@ class HandRecord:
             "start_datetime_utc": (
                 self.start_datetime_utc.isoformat() if self.start_datetime_utc else None
             ),
-            "recording_offset_start": self.recording_offset_start,
+            "recording_offset_iso": self.recording_offset_iso,
+            "recording_offset_seconds": self.recording_offset_seconds,
             "small_blind": float(self.small_blind) if self.small_blind else None,
             "big_blind": float(self.big_blind) if self.big_blind else None,
             "ante": float(self.ante) if self.ante else None,
