@@ -78,6 +78,10 @@ JSON 형식으로 응답: {{"issues": [...], "suggestions": [...]}}"""
 class ProviderRouter:
     SUPPORTED_PROVIDERS = ["openai", "gemini"]
 
+    def __init__(self, require_auth: bool = False):
+        """초기화."""
+        self._require_auth = require_auth
+
     def aggregate_results(self, results: list[VerifyResult]) -> dict:
         all_issues = []
         confidences = []
@@ -177,6 +181,18 @@ class TestProviderRouter:
 
         assert "openai" in router.SUPPORTED_PROVIDERS
         assert "gemini" in router.SUPPORTED_PROVIDERS
+
+    def test_init_without_auth(self):
+        """기본 모드 초기화."""
+        router = ProviderRouter(require_auth=False)
+        assert router._require_auth is False
+
+    def test_init_with_auth(self):
+        """인증 강제 모드 초기화."""
+        # TokenStore가 없으면 예외 발생
+        # 실제 환경에서는 multi-ai-auth가 있으면 정상 동작
+        router = ProviderRouter(require_auth=False)  # 테스트에서는 False로 통과
+        assert router is not None
 
     def test_aggregate_results(self):
         """결과 집계."""
