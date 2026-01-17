@@ -1,0 +1,42 @@
+task_id: task_006
+agent: devops-engineer
+status: completed
+started_at: 2026-01-15T10:00:00Z
+completed_at: 2026-01-15T10:05:00Z
+output:
+  summary: |
+    ae_nexrender_module의 Docker 설정과 pyproject.toml 작성 완료.
+    PRD-0011 섹션 10 기반으로 Python 3.11, Supabase, Nexrender 연동 설정 구현.
+    Docker 컨테이너 헬스체크, 리소스 제한, 로깅 설정 포함.
+  files_created:
+    - C:\claude\ae_nexrender_module\pyproject.toml
+    - C:\claude\ae_nexrender_module\docker\Dockerfile
+    - C:\claude\ae_nexrender_module\docker\docker-compose.yml
+    - C:\claude\ae_nexrender_module\.env.example
+  details:
+    pyproject_toml:
+      - Python 3.11+ 기반
+      - 의존성: httpx, supabase, pydantic, aiohttp
+      - 개발 의존성: pytest, ruff, pytest-asyncio
+      - CLI 엔트리포인트: ae-worker
+      - Ruff, pytest 설정 포함
+    dockerfile:
+      - FROM python:3.11-slim
+      - WORKDIR /app
+      - HEALTHCHECK 30초 간격
+      - EXPOSE 8080
+      - CMD python -m worker.main
+    docker_compose:
+      - ae-worker 서비스 정의
+      - 환경변수: SUPABASE_URL, NEXRENDER_URL 등
+      - 볼륨: output, templates 마운트
+      - 리소스 제한: 2GB 메모리, 2 CPU
+      - 로깅: json-file (10MB, 3개 파일)
+      - restart: unless-stopped
+    env_example:
+      - Supabase 연동 (URL, Service Key)
+      - Nexrender 연동 (URL, Secret)
+      - 경로 설정 (Output, Template, NAS)
+      - 렌더링 설정 (Timeout, Max Retries)
+      - 폴링 설정 (Default, Busy, Idle)
+errors: null

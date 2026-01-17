@@ -218,10 +218,10 @@ Examples:
 
         files = results.get('files', [])
 
-        print(f"\n문서 목록 ({len(files)}개):")
+        print(f"\nDocument List ({len(files)}):")
         print("-" * 60)
         for f in files:
-            print(f"  • {f['name']}")
+            print(f"  - {f['name']}")
             print(f"    {f['webViewLink']}")
             print()
 

@@ -1,0 +1,218 @@
+task_id: job002_task_003
+title: ae_nexrender_module 테스트 환경 구축
+status: completed
+created_at: 2026-01-15T14:30:00Z
+completed_at: 2026-01-15T14:45:00Z
+
+summary: |
+  ae_nexrender_module의 테스트 환경을 성공적으로 구축했습니다.
+  CyprusDesign.aep 템플릿 기반 샘플 데이터 생성기와 CLI 테스트 도구를 제공합니다.
+
+deliverables:
+  - path: C:\claude\ae_nexrender_module\tests\__init__.py
+    type: module_init
+    description: 테스트 모듈 초기화 파일
+
+  - path: C:\claude\ae_nexrender_module\tests\sample_data.py
+    type: data_generator
+    description: CyprusDesign.aep 기반 샘플 GFX 데이터 생성기
+    features:
+      - 5가지 컴포지션 타입 지원
+      - 슬롯 및 단일 필드 자동 생성
+      - render_queue INSERT용 데이터 생성
+      - 배치 작업 생성 (1~N개)
+    compositions:
+      - "1-Hand-for-hand play is currently in progress"
+      - "1-NEXT STREAM STARTING SOON"
+      - "2-Hand-for-hand play is currently in progress"
+      - "2-NEXT STREAM STARTING SOON"
+      - "4-NEXT STREAM STARTING SOON"
+
+  - path: C:\claude\ae_nexrender_module\scripts\__init__.py
+    type: module_init
+    description: 스크립트 모듈 초기화 파일
+
+  - path: C:\claude\ae_nexrender_module\scripts\test_render.py
+    type: cli_tool
+    description: 단일 렌더링 테스트 CLI
+    usage: |
+      # 샘플 데이터로 테스트
+      python scripts/test_render.py --sample
+
+      # 특정 컴포지션 테스트
+      python scripts/test_render.py --composition "1-Hand-for-hand play is currently in progress"
+
+      # Job JSON만 생성 (Dry-run)
+      python scripts/test_render.py --sample --dry-run
+
+      # 진행률 폴링 없이 빠른 제출
+      python scripts/test_render.py --sample --no-poll
+    features:
+      - NexrenderJobBuilder 활용 Job JSON 생성
+      - Nexrender 서버 헬스 체크
+      - 작업 제출 및 진행률 폴링
+      - Dry-run 모드 (JSON 확인용)
+      - 커스텀 출력 포맷 지원
+
+  - path: C:\claude\ae_nexrender_module\scripts\seed_render_queue.py
+    type: cli_tool
+    description: Supabase render_queue 시딩 스크립트
+    usage: |
+      # 5개 랜덤 작업 생성
+      python scripts/seed_render_queue.py --count 5
+
+      # 특정 컴포지션 작업 생성
+      python scripts/seed_render_queue.py --composition "1-Hand-for-hand play is currently in progress"
+
+      # 모든 컴포지션 타입 생성
+      python scripts/seed_render_queue.py --all
+
+      # 상세 출력 (GFX 데이터 포함)
+      python scripts/seed_render_queue.py --count 3 --verbose
+    features:
+      - Supabase render_queue 직접 INSERT
+      - 배치 작업 생성 (1~N개)
+      - 모든 컴포지션 타입 자동 생성
+      - 우선순위 및 출력 포맷 커스터마이징
+      - 상세 출력 모드
+
+architecture:
+  components:
+    sample_data:
+      purpose: 테스트용 샘플 데이터 생성
+      key_functions:
+        - generate_sample_gfx_data(): 컴포지션별 GFX 데이터 생성
+        - generate_sample_render_request(): render_queue INSERT용 데이터 생성
+        - generate_batch_render_requests(): 배치 작업 생성
+      data_structure:
+        gfx_data:
+          slots:
+            - slot_index: int
+              fields: dict[str, str]
+          single_fields: dict[str, str]
+
+    test_render:
+      purpose: 단일 렌더링 E2E 테스트
+      workflow:
+        1: 샘플 GFX 데이터 생성
+        2: NexrenderJobBuilder로 Job JSON 생성
+        3: Nexrender 서버 헬스 체크
+        4: 작업 제출 (POST /api/v1/jobs)
+        5: 진행률 폴링 (GET /api/v1/jobs/:uid)
+      integration:
+        - lib.client.NexrenderClient
+        - lib.job_builder.NexrenderJobBuilder
+        - tests.sample_data
+
+    seed_render_queue:
+      purpose: render_queue 테이블 시딩
+      workflow:
+        1: 샘플 렌더링 요청 생성
+        2: Supabase 클라이언트 연결
+        3: render_queue INSERT (배치)
+        4: 결과 출력 및 검증
+      integration:
+        - supabase.create_client()
+        - tests.sample_data
+
+test_data_samples:
+  composition_1:
+    name: "1-Hand-for-hand play is currently in progress"
+    single_fields:
+      - event_name: "EVENT #12: $5,000 MEGA MYSTERY BOUNTY RAFFLE"
+      - message: "Hand-for-hand play is currently in progress"
+      - table_id: "Table 1"
+    slots: []
+
+  composition_2:
+    name: "2-NEXT STREAM STARTING SOON"
+    single_fields:
+      - event_name: "EVENT #12: $5,000 MEGA MYSTERY BOUNTY RAFFLE"
+      - next_stream_time: "Starting in 15 minutes"
+    slots:
+      - slot_index: 1
+        fields:
+          - tournament_name: "WSOP MAIN EVENT"
+      - slot_index: 2
+        fields:
+          - tournament_name: "WSOP BRACELET RACE"
+
+  composition_4:
+    name: "4-NEXT STREAM STARTING SOON"
+    single_fields:
+      - event_name: "EVENT #12: $5,000 MEGA MYSTERY BOUNTY RAFFLE"
+    slots:
+      - slot_index: 1..4
+        fields:
+          - tournament_name: "WSOP MAIN EVENT"
+          - next_stream_time: "Starting in 15 minutes"
+
+environment_setup:
+  required_env_vars:
+    - SUPABASE_URL: Supabase 프로젝트 URL
+    - SUPABASE_SERVICE_KEY: Supabase 서비스 키
+    - NEXRENDER_URL: Nexrender 서버 URL (기본: http://localhost:3000)
+    - OUTPUT_DIR_HOST: 출력 디렉토리 (기본: D:/output)
+
+  optional_env_vars:
+    - NEXRENDER_SECRET: Nexrender API Secret
+    - RENDER_TIMEOUT: 렌더링 타임아웃 (초)
+    - MAX_RETRIES: 최대 재시도 횟수
+
+next_steps:
+  - title: 테스트 실행
+    steps:
+      1: ".env 파일에 환경변수 설정"
+      2: "Nexrender 서버 실행 확인"
+      3: "python scripts/test_render.py --sample --dry-run (Job JSON 확인)"
+      4: "python scripts/test_render.py --sample (실제 렌더링)"
+
+  - title: Supabase 시딩
+    steps:
+      1: ".env 파일에 Supabase 환경변수 설정"
+      2: "Supabase render_queue 테이블 생성 확인"
+      3: "python scripts/seed_render_queue.py --all (모든 컴포지션 타입 생성)"
+      4: "Worker 실행하여 작업 처리 확인"
+
+  - title: E2E 테스트
+    steps:
+      1: "Worker 실행: python -m worker.main"
+      2: "시딩: python scripts/seed_render_queue.py --count 5"
+      3: "Worker 로그 모니터링"
+      4: "Supabase 대시보드에서 상태 확인"
+
+validation_checklist:
+  - item: tests/sample_data.py 생성 완료
+    status: done
+  - item: scripts/test_render.py 생성 완료
+    status: done
+  - item: scripts/seed_render_queue.py 생성 완료
+    status: done
+  - item: 5가지 컴포지션 타입 지원
+    status: done
+  - item: CyprusDesign.aep 경로 정확성
+    status: done
+  - item: CLI 도구 argparse 구현
+    status: done
+  - item: Dry-run 모드 지원
+    status: done
+  - item: Supabase 연동 구현
+    status: done
+
+technical_notes:
+  - CyprusDesign.aep의 실제 컴포지션 이름을 기반으로 샘플 데이터 생성
+  - 슬롯 기반 반복 데이터와 단일 필드를 구분하여 처리
+  - NexrenderJobBuilder를 활용하여 일관된 Job JSON 생성
+  - Supabase render_queue 스키마와 호환되는 데이터 구조
+  - CLI 도구는 독립 실행 가능 (프로젝트 루트를 Python 경로에 추가)
+
+limitations:
+  - AEP 파일의 실제 레이어 구조를 파싱하지 않음 (사전 정의된 매핑 사용)
+  - 이미지/비디오 에셋은 샘플 데이터에 포함되지 않음 (텍스트만 지원)
+  - Worker와의 통합 테스트는 별도로 수행 필요
+
+references:
+  aep_template: C:\claude\automation_ae\templates\CyprusDesign\CyprusDesign.aep
+  worker_config: C:\claude\ae_nexrender_module\worker\config.py
+  job_builder: C:\claude\ae_nexrender_module\lib\job_builder.py
+  nexrender_client: C:\claude\ae_nexrender_module\lib\client.py

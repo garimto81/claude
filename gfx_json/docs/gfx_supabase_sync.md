@@ -787,11 +787,129 @@ docker-compose logs -f sync-agent
 
 ---
 
-## 11. 변경 이력
+---
+
+## 11. Claude Code 자동화 워크플로우
+
+> **목적**: Claude Code가 비밀번호 입력 없이 NAS 서버의 Docker 컨테이너를 자동으로 관리
+
+### 11.1 자동화 아키텍처
+
+```
+┌────────────────────────────────────────────────────────────────────────┐
+│                         Claude Code (Windows)                           │
+│                                                                         │
+│   /auto "작업 지시"                                                     │
+│       │                                                                 │
+│       ▼                                                                 │
+│   ┌─────────────────────────────────────────────────────────────────┐  │
+│   │  SSH 키 인증 (비밀번호 없음)                                     │  │
+│   │  ssh aiden@221.149.191.204 "..."                                │  │
+│   └─────────────────────────────────────────────────────────────────┘  │
+│       │                                                                 │
+└───────┼─────────────────────────────────────────────────────────────────┘
+        │ SSH + sudo NOPASSWD
+        ▼
+┌────────────────────────────────────────────────────────────────────────┐
+│                      Synology NAS (221.149.191.204)                     │
+│                                                                         │
+│   ┌─────────────────────────────────────────────────────────────────┐  │
+│   │  /volume1/docker/gfx-sync/                                      │  │
+│   │  ├── src/sync_agent/core/   ← 코드 배포 경로                    │  │
+│   │  ├── docker-compose.yml                                         │  │
+│   │  └── .env                                                       │  │
+│   └─────────────────────────────────────────────────────────────────┘  │
+│       │                                                                 │
+│       ▼ docker-compose build && up -d                                  │
+│   ┌─────────────────────────────────────────────────────────────────┐  │
+│   │  gfx-sync-agent (Docker Container)                               │  │
+│   │  - SyncService + BatchQueue + OfflineQueue                      │  │
+│   │  - SupabaseClient (httpx)                                       │  │
+│   └─────────────────────────────────────────────────────────────────┘  │
+│       │                                                                 │
+└───────┼─────────────────────────────────────────────────────────────────┘
+        │ HTTPS
+        ▼
+┌────────────────────────────────────────────────────────────────────────┐
+│                          Supabase Cloud                                 │
+│   gfx_sessions 테이블 (UNIQUE: session_id)                             │
+└────────────────────────────────────────────────────────────────────────┘
+```
+
+### 11.2 자동화 설정 요약
+
+| 설정 | 값 | 목적 |
+|------|-----|------|
+| **SSH 키 인증** | `~/.ssh/id_rsa.pub` → NAS `authorized_keys` | 비밀번호 없이 접속 |
+| **PubkeyAuthentication** | `/etc/ssh/sshd_config` 활성화 | SSH 키 인증 허용 |
+| **홈 디렉토리 권한** | `chmod 755 /volume1/homes/aiden` | Synology ACL 문제 해결 |
+| **sudo NOPASSWD** | `/etc/sudoers.d/aiden` | Docker 명령 비밀번호 없이 실행 |
+
+### 11.3 자동화 워크플로우 (코드 배포)
+
+```bash
+# 1. 로컬 파일을 NAS 임시 경로에 업로드
+cat C:\claude\gfx_json\src\sync_agent\core\json_parser.py | \
+  ssh aiden@221.149.191.204 "cat > /tmp/json_parser.py"
+
+# 2. sudo로 프로젝트 경로에 복사
+ssh aiden@221.149.191.204 "sudo cp /tmp/json_parser.py /volume1/docker/gfx-sync/src/sync_agent/core/"
+
+# 3. Docker 이미지 재빌드 및 컨테이너 재시작
+ssh aiden@221.149.191.204 "cd /volume1/docker/gfx-sync && \
+  sudo /usr/local/bin/docker-compose down && \
+  sudo /usr/local/bin/docker-compose build --no-cache && \
+  sudo /usr/local/bin/docker-compose up -d"
+
+# 4. 로그 확인으로 배포 검증
+ssh aiden@221.149.191.204 "sudo /usr/local/bin/docker logs --tail 30 gfx-sync-agent"
+```
+
+### 11.4 주요 자동화 명령어
+
+| 작업 | 명령어 |
+|------|--------|
+| **컨테이너 상태** | `ssh aiden@221.149.191.204 "sudo /usr/local/bin/docker ps --filter name=gfx"` |
+| **로그 확인** | `ssh aiden@221.149.191.204 "sudo /usr/local/bin/docker logs --tail 50 gfx-sync-agent"` |
+| **컨테이너 재시작** | `ssh aiden@221.149.191.204 "sudo /usr/local/bin/docker restart gfx-sync-agent"` |
+| **빌드 + 시작** | `ssh aiden@221.149.191.204 "cd /volume1/docker/gfx-sync && sudo /usr/local/bin/docker-compose up -d --build"` |
+| **전체 재빌드** | `ssh aiden@221.149.191.204 "cd /volume1/docker/gfx-sync && sudo /usr/local/bin/docker-compose build --no-cache"` |
+
+### 11.5 NAS 서버 정보
+
+| 항목 | 값 |
+|------|-----|
+| **외부 IP** | `221.149.191.204` |
+| **내부 IP** | `10.10.100.122` |
+| **DSM 웹** | `https://221.149.191.204:5001` |
+| **SSH 사용자** | `aiden` |
+| **프로젝트 경로** | `/volume1/docker/gfx-sync` |
+| **Docker 경로** | `/usr/local/bin/docker` |
+| **컨테이너 이름** | `gfx-sync-agent` |
+
+### 11.6 자동화 트러블슈팅
+
+| 오류 | 원인 | 해결 |
+|------|------|------|
+| `Permission denied (publickey)` | SSH 키 인증 실패 | `chmod 755 /volume1/homes/aiden` |
+| `sudo: a password is required` | NOPASSWD 미설정 | `/etc/sudoers.d/aiden` 생성 |
+| `PGRST204: column not found` | DB 스키마 불일치 | 코드 수정 후 재배포 |
+| `docker: command not found` | PATH 미포함 | 전체 경로 사용 |
+| SCP 실패 | Synology SCP 이슈 | SSH + cat 방식 사용 |
+
+### 11.7 상세 설정 문서
+
+자동화 설정의 상세 절차는 다음 문서 참조:
+- **`docs/NAS-SSH-GUIDE.md`** → 섹션 8. Claude Code 자동화 설정
+
+---
+
+## 12. 변경 이력
 
 | 버전 | 날짜 | 변경 내용 | 작성자 |
 |------|------|----------|--------|
 | 1.0 | 2026-01-13 | 초안 작성 | Claude |
 | 1.1 | 2026-01-13 | watchfiles 기반으로 변경 | Claude |
 | 2.0 | 2026-01-13 | NAS 중앙 + PC 로컬 이중 모드 | Claude |
-| **3.0** | **2026-01-13** | **NAS 전용 전면 재설계, 오류 분석 추가, Dead Letter Queue** | **Claude** |
+| 3.0 | 2026-01-13 | NAS 전용 전면 재설계, 오류 분석 추가, Dead Letter Queue | Claude |
+| **3.1** | **2026-01-16** | **Claude Code 자동화 워크플로우 섹션 추가, DB 스키마 수정 (session_id UNIQUE)** | **Claude** |

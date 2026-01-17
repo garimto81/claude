@@ -1,0 +1,30 @@
+task_id: task_005
+agent: backend-dev
+status: completed
+started_at: "2026-01-15T10:00:00Z"
+completed_at: "2026-01-15T10:15:00Z"
+output:
+  summary: "ae_nexrender_module의 worker/ 모듈 3개 파일 구현 완료 (health.py, job_processor.py, main.py)"
+  files_created:
+    - C:\claude\ae_nexrender_module\worker\health.py
+    - C:\claude\ae_nexrender_module\worker\job_processor.py
+    - C:\claude\ae_nexrender_module\worker\main.py
+    - C:\claude\ae_nexrender_module\worker\__init__.py
+  details:
+    health_server:
+      - aiohttp 기반 HTTP 서버
+      - "GET /health 엔드포인트 (worker_id, running, current_job_id, uptime 반환)"
+      - async start/stop 메서드
+    job_processor:
+      - 5단계 렌더링 프로세스 구현
+      - "NexrenderJobBuilder로 Job JSON 생성"
+      - "NexrenderClient로 작업 제출 및 진행률 폴링"
+      - "ErrorClassifier 기반 자동 재시도 로직"
+      - "후처리 (파일 검증, NAS 복사 준비)"
+    main_worker:
+      - 적응형 폴링 루프 (busy 5초, idle 30초, error 60초)
+      - "claim_render_job RPC를 통한 Atomic 작업 할당"
+      - "SIGINT/SIGTERM 시그널 핸들러"
+      - "우아한 종료 (현재 작업 release)"
+      - "run() 엔트리포인트 함수"
+errors: null

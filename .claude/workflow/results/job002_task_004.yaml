@@ -1,0 +1,92 @@
+task_id: job002_task_004
+task_name: ae_nexrender_module 환경 설정 파일 완성
+status: completed
+completion_date: 2026-01-15
+
+summary: |
+  ae_nexrender_module의 환경 설정과 테스트 인프라를 완성했습니다.
+  .env.example 업데이트, pytest 설정 및 fixture 구성, 3개 핵심 모듈 단위 테스트 작성 완료.
+
+deliverables:
+  - name: .env.example 업데이트
+    path: C:/claude/ae_nexrender_module/.env.example
+    description: |
+      - Supabase, Nexrender, 경로 설정 포함
+      - CyprusDesign 템플릿 테스트 설정 추가
+      - 커스텀 경로 매핑 설정 추가
+
+  - name: pytest 설정 (conftest.py)
+    path: C:/claude/ae_nexrender_module/tests/conftest.py
+    description: |
+      - 공통 fixture 7개 정의 (sample_gfx_data, worker_config, path_converter 등)
+      - 다양한 시나리오용 샘플 데이터 fixture
+      - 환경변수 기반 설정 fixture
+
+  - name: 샘플 데이터 생성기
+    path: C:/claude/ae_nexrender_module/tests/sample_data.py
+    description: |
+      - generate_sample_gfx_data: 4가지 variant (basic, multi_slot, with_images, with_metadata)
+      - generate_sample_template: 레거시 템플릿 방식
+      - generate_sample_layer_data: 레거시 레이어 데이터
+
+  - name: JobBuilder 단위 테스트
+    path: C:/claude/ae_nexrender_module/tests/test_job_builder.py
+    description: |
+      - 11개 테스트 케이스 (모두 통과)
+      - GFX 데이터 → Job JSON 변환 테스트
+      - 템플릿 기반 Job 빌드 테스트 (레거시)
+      - 출력 포맷 (mp4, mov, png_sequence) 테스트
+      - 콜백 URL, 멀티슬롯, 이미지 에셋 테스트
+
+  - name: PathUtils 단위 테스트
+    path: C:/claude/ae_nexrender_module/tests/test_path_utils.py
+    description: |
+      - 19개 테스트 케이스 (모두 통과)
+      - Docker ↔ Windows 경로 변환 테스트
+      - file:// URL 변환 테스트
+      - UNC 경로 (NAS) 테스트
+      - 커스텀 경로 매핑 테스트
+      - 엣지 케이스 (공백, 특수문자, 깊은 중첩)
+
+  - name: Errors 단위 테스트
+    path: C:/claude/ae_nexrender_module/tests/test_errors.py
+    description: |
+      - 46개 테스트 케이스 (모두 통과)
+      - 에러 분류기 (재시도 가능/불가/미분류)
+      - 패턴 매칭 테스트 (RETRYABLE_PATTERNS, NON_RETRYABLE_PATTERNS)
+      - 에러 메시지 포맷팅 테스트
+      - 실제 시나리오 테스트 (Connection failed, File not found 등)
+
+test_results:
+  total_tests: 76
+  passed: 76
+  failed: 0
+  errors: 0
+  coverage:
+    lib/errors.py: 100%
+    lib/types.py: 100%
+    lib/job_builder.py: 93%
+    lib/path_utils.py: 97%
+    worker/config.py: 74%
+    overall: 48%
+
+technical_details:
+  test_framework: pytest 8.3.4
+  python_version: 3.12.10
+  key_features:
+    - AAA 패턴 (Arrange-Act-Assert) 준수
+    - pytest fixture 활용한 테스트 데이터 재사용
+    - parametrize를 통한 패턴 테스트 (에러 분류)
+    - 실제 시나리오 기반 테스트 케이스
+
+next_steps:
+  - worker/ 모듈 통합 테스트 작성
+  - E2E 테스트 (Supabase 연동) 작성
+  - Docker 빌드 및 헬스체크 테스트
+  - 실제 Nexrender 연동 테스트 (CyprusDesign 템플릿)
+
+notes: |
+  - lib/ 모듈 단위 테스트 완료 (coverage 93-100%)
+  - worker/ 모듈은 아직 커버리지 낮음 (17-34%)
+  - 통합 테스트 및 E2E 테스트는 다음 단계
+  - 환경변수 설정 문서화 완료 (.env.example)

@@ -17,6 +17,9 @@ class TextSegment:
     code: bool = False
     strikethrough: bool = False
     link: Optional[str] = None
+    # 이미지 관련 필드 (마크다운 ![alt](url) 구문)
+    image_url: Optional[str] = None      # 이미지 URL (HTTP/HTTPS)
+    image_alt: Optional[str] = None      # 이미지 alt 텍스트
 
 
 @dataclass

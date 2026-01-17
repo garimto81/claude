@@ -71,6 +71,10 @@ class MarkdownToDocsConverter:
         # 참조 링크 저장소
         self._reference_links: dict[str, str] = {}
 
+        # 이미지 정보 저장소 (2단계 삽입용)
+        # 각 항목: {'index': 삽입위치, 'url': 이미지URL, 'alt': alt텍스트}
+        self._pending_images: list[dict[str, Any]] = []
+
         # YAML frontmatter 제거 및 참조 링크 파싱
         self._preprocess_content()
 
@@ -197,6 +201,15 @@ class MarkdownToDocsConverter:
                 i += 1
                 continue
 
+            # 독립 이미지 라인 처리: 줄 전체가 이미지인 경우
+            image_match = re.match(r'^\s*!\[([^\]]*)\]\(([^)]+)\)\s*$', line)
+            if image_match:
+                alt_text = image_match.group(1)
+                image_url = image_match.group(2)
+                self._add_image_block(image_url, alt_text)
+                i += 1
+                continue
+
             # 일반 텍스트 (인라인 스타일 적용)
             if line.strip():
                 self._add_paragraph_with_inline_styles(line)
@@ -261,6 +274,7 @@ class MarkdownToDocsConverter:
 
         # 정규식 패턴들 (순서 중요 - 긴 패턴 먼저)
         patterns = [
+            (r'!\[([^\]]*)\]\(([^)]+)\)', 'image'),    # ![alt](url) - 이미지 (링크보다 먼저!)
             (r'\[([^\]]+)\]\(([^)]+)\)', 'link'),      # [text](url)
             # 중첩 포맷 (bold + italic)
             (r'\*\*\*(.+?)\*\*\*', 'bold_italic'),     # ***bold italic***
@@ -283,6 +297,9 @@ class MarkdownToDocsConverter:
         for pattern, style in patterns:
             for match in re.finditer(pattern, text):
                 if style == 'link':
+                    all_matches.append((match.start(), match.end(), match.group(1), style, match.group(2)))
+                elif style == 'image':
+                    # 이미지: group(1)=alt텍스트, group(2)=URL
                     all_matches.append((match.start(), match.end(), match.group(1), style, match.group(2)))
                 else:
                     all_matches.append((match.start(), match.end(), match.group(1), style, None))
@@ -322,6 +339,9 @@ class MarkdownToDocsConverter:
                 segment.strikethrough = True
             elif style == 'link':
                 segment.link = link_url
+            elif style == 'image':
+                segment.image_url = link_url  # URL (HTTP/HTTPS 또는 로컬 경로)
+                segment.image_alt = content   # alt 텍스트
 
             segments.append(segment)
             plain_text += content
@@ -851,6 +871,100 @@ class MarkdownToDocsConverter:
             }
         })
 
+    def _add_image_block(self, url: str, alt_text: str = ''):
+        """
+        이미지 블록 추가 (2단계 삽입)
+
+        1단계: placeholder 텍스트 삽입
+        2단계: create_google_doc()에서 실제 이미지로 교체
+
+        Args:
+            url: 이미지 URL (HTTP/HTTPS) 또는 로컬 경로
+            alt_text: 이미지 alt 텍스트
+        """
+        # 로컬 경로 감지 및 URL 정규화
+        normalized_url = self._normalize_image_url(url)
+
+        if normalized_url:
+            # 이미지 삽입 위치 기록 (현재 인덱스)
+            self._pending_images.append({
+                'index': self.current_index,
+                'url': normalized_url,
+                'alt': alt_text or 'image',
+            })
+
+            # placeholder 텍스트 삽입 (나중에 삭제됨)
+            placeholder = f"[🖼 {alt_text or 'image'}]"
+            start = self._add_text(placeholder)
+
+            # placeholder 스타일 (회색, 이탤릭)
+            self.requests.append({
+                'updateTextStyle': {
+                    'range': {
+                        'startIndex': start,
+                        'endIndex': self.current_index - 1
+                    },
+                    'textStyle': {
+                        'italic': True,
+                        'foregroundColor': {
+                            'color': {'rgbColor': {'red': 0.6, 'green': 0.6, 'blue': 0.6}}
+                        }
+                    },
+                    'fields': 'italic,foregroundColor'
+                }
+            })
+        else:
+            # URL이 유효하지 않으면 경고 텍스트만 삽입
+            warning = f"[⚠️ 이미지 로드 실패: {url}]"
+            start = self._add_text(warning)
+            self.requests.append({
+                'updateTextStyle': {
+                    'range': {
+                        'startIndex': start,
+                        'endIndex': self.current_index - 1
+                    },
+                    'textStyle': {
+                        'foregroundColor': {
+                            'color': {'rgbColor': {'red': 0.8, 'green': 0.4, 'blue': 0.0}}
+                        }
+                    },
+                    'fields': 'foregroundColor'
+                }
+            })
+
+    def _normalize_image_url(self, url: str) -> str | None:
+        """
+        이미지 URL 정규화
+
+        HTTP/HTTPS URL은 그대로 반환
+        로컬 경로는 None 반환 (향후 Drive 업로드 구현 시 확장)
+
+        Args:
+            url: 원본 URL 또는 경로
+
+        Returns:
+            정규화된 URL 또는 None (로컬 파일)
+        """
+        url = url.strip()
+
+        # HTTP/HTTPS URL
+        if url.startswith(('http://', 'https://')):
+            return url
+
+        # Data URL (Base64 인코딩 이미지)
+        if url.startswith('data:image/'):
+            return url
+
+        # 로컬 경로 (상대 경로 또는 절대 경로)
+        # 향후 Drive 업로드 구현 시 여기서 처리
+        if url.startswith(('./', '../', '/', 'C:', 'D:')):
+            # 현재는 로컬 파일 미지원 - None 반환
+            # TODO: Drive 업로드 후 공개 URL 반환
+            return None
+
+        # 기타 (상대 경로로 가정)
+        return None
+
     def _add_horizontal_rule(self):
         """수평선 추가 (SKILL.md 2.3 표준: ─ 반복 금지, 하단 구분선 사용)"""
         # 빈 단락 삽입 후 하단에 얇은 구분선 추가
@@ -1019,7 +1133,58 @@ def create_google_doc(
     else:
         print("     콘텐츠 추가됨 (테이블 포함)")
 
-    # 5. 전체 문서 줄간격 적용 (115%)
+    # 5. 2단계 이미지 삽입 (placeholder → 실제 이미지)
+    if converter._pending_images:
+        try:
+            # 문서 현재 상태 조회
+            doc = docs_service.documents().get(documentId=doc_id).execute()
+            body_content = doc.get('body', {}).get('content', [])
+
+            # placeholder 텍스트 검색 및 이미지 삽입
+            image_requests = []
+            for img_info in reversed(converter._pending_images):  # 뒤에서부터 처리 (인덱스 유지)
+                placeholder = f"[🖼 {img_info['alt']}]"
+
+                # placeholder 위치 찾기
+                placeholder_index = _find_text_index(body_content, placeholder)
+
+                if placeholder_index is not None:
+                    # 1) placeholder 삭제
+                    image_requests.append({
+                        'deleteContentRange': {
+                            'range': {
+                                'startIndex': placeholder_index,
+                                'endIndex': placeholder_index + len(placeholder) + 1  # +1 for newline
+                            }
+                        }
+                    })
+
+                    # 2) 이미지 삽입
+                    image_requests.append({
+                        'insertInlineImage': {
+                            'location': {'index': placeholder_index},
+                            'uri': img_info['url'],
+                            'objectSize': {
+                                'width': {'magnitude': 400, 'unit': 'PT'},  # 최대 너비 400pt
+                            }
+                        }
+                    })
+
+            # 이미지 요청 실행 (각각 순차적으로)
+            for req in image_requests:
+                try:
+                    docs_service.documents().batchUpdate(
+                        documentId=doc_id,
+                        body={'requests': [req]}
+                    ).execute()
+                except Exception as img_err:
+                    print(f"     이미지 삽입 경고: {img_err}")
+
+            print(f"     이미지 {len(converter._pending_images)}개 삽입됨")
+        except Exception as e:
+            print(f"     이미지 삽입 실패: {e}")
+
+    # 6. 전체 문서 줄간격 적용 (115%) - SKILL.md 전역 표준
     if apply_page_style:
         try:
             doc = docs_service.documents().get(documentId=doc_id).execute()
@@ -1042,6 +1207,34 @@ def create_google_doc(
         except Exception as e:
             print(f"     줄간격 적용 실패: {e}")
 
-    # 6. 문서 URL 반환
+    # 7. 문서 URL 반환
     doc_url = f"https://docs.google.com/document/d/{doc_id}/edit"
     return doc_url
+
+
+def _find_text_index(body_content: list[dict], search_text: str) -> int | None:
+    """
+    Google Docs body content에서 특정 텍스트의 시작 인덱스 찾기
+
+    Args:
+        body_content: 문서 body.content 리스트
+        search_text: 찾을 텍스트
+
+    Returns:
+        텍스트 시작 인덱스 또는 None
+    """
+    for element in body_content:
+        if 'paragraph' in element:
+            paragraph = element['paragraph']
+            para_elements = paragraph.get('elements', [])
+
+            for para_el in para_elements:
+                if 'textRun' in para_el:
+                    text_content = para_el['textRun'].get('content', '')
+                    if search_text in text_content:
+                        # 텍스트 시작 인덱스 계산
+                        start_index = para_el.get('startIndex', 0)
+                        offset = text_content.find(search_text)
+                        return start_index + offset
+
+    return None

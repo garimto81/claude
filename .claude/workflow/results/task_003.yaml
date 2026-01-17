@@ -1,0 +1,13 @@
+task_id: task_003
+agent: database-specialist
+status: completed
+started_at: 2026-01-15T00:00:00Z
+completed_at: 2026-01-15T00:00:00Z
+output:
+  summary: "Supabase 마이그레이션 SQL 3개 파일 생성 완료. render_queue 테이블, RLS 정책, claim_render_job 함수 포함"
+  files_created:
+    - C:\claude\ae_nexrender_module\migrations\001_render_queue.sql
+    - C:\claude\ae_nexrender_module\migrations\002_rls_policies.sql
+    - C:\claude\ae_nexrender_module\migrations\003_rpc_functions.sql
+  files_modified: []
+errors: null

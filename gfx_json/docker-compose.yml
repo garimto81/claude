@@ -13,6 +13,10 @@ services:
       dockerfile: Dockerfile
     container_name: gfx-sync-agent
     restart: unless-stopped
+    # DNS 설정 (NAS 내부 DNS 해석 실패 방지)
+    dns:
+      - 8.8.8.8
+      - 8.8.4.4
     volumes:
       # Synology NAS 볼륨 마운트 (읽기 전용)
       # .env 파일에서 NAS_MOUNT_PATH 설정 필수
@@ -38,7 +42,8 @@ services:
     ports:
       - "8081:8080"  # NAS 포트 충돌 방지 (8080 → 8081)
     healthcheck:
-      test: ["CMD", "curl", "-f", "http://localhost:8080/health"]
+      # python:3.12-slim에는 curl이 없으므로 Python 사용
+      test: ["CMD", "python", "-c", "import urllib.request; urllib.request.urlopen('http://localhost:8080/health')"]
       interval: 30s
       timeout: 10s
       retries: 3

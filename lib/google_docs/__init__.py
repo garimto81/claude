@@ -31,8 +31,10 @@ from .notion_style import (
 )
 from .diagram_generator import DiagramGenerator, create_generator
 from .image_inserter import ImageInserter, create_inserter
+from .batch_processor import BatchConverter, ConvertResult as BatchConvertResult
+from .auto_trigger import AutoTriggerHandler
 
-__version__ = "1.2.0"
+__version__ = "1.3.0"
 __all__ = [
     # Models
     "TextSegment",
@@ -61,4 +63,9 @@ __all__ = [
     # Image Inserter
     "ImageInserter",
     "create_inserter",
+    # Batch Processor (Phase 1)
+    "BatchConverter",
+    "BatchConvertResult",
+    # Auto Trigger (Phase 1)
+    "AutoTriggerHandler",
 ]
