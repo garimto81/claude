@@ -6,6 +6,7 @@ description: Cross-AI Verifier로 코드 검증 (GPT, Gemini)
 # /verify - 다중 AI 코드 검증 커맨드
 
 외부 AI 모델(OpenAI GPT, Google Gemini)을 사용하여 코드를 교차 검증합니다.
+**OAuth 로그인 방식만 지원합니다** (ChatGPT Plus/Pro, Gemini 구독).
 
 ## Usage
 
@@ -16,7 +17,6 @@ Options:
   --provider <name>    사용할 AI Provider (openai, gemini)
   --focus <type>       검증 초점 (security, bugs, performance, all)
   --parallel           모든 Provider 동시 검증
-  --require-auth       OAuth 인증 필수 (구독 모델 강제)
 ```
 
 ## Examples
@@ -30,9 +30,6 @@ Options:
 
 # 병렬 검증 (OpenAI + Gemini 동시)
 /verify src/ --parallel --focus all
-
-# 구독 모델 강제 (OAuth 인증 필수)
-/verify src/api.py --require-auth --provider openai
 ```
 
 ## 검증 Focus
@@ -48,12 +45,12 @@ Options:
 
 | Provider | 모델 | 인증 방법 |
 |----------|------|----------|
-| **openai** | GPT-4 | OAuth (ChatGPT Plus/Pro) 또는 API 키 |
-| **gemini** | Gemini Pro | OAuth (Google) 또는 API 키 |
+| **openai** | GPT-4 | OAuth (ChatGPT Plus/Pro 구독 필요) |
+| **gemini** | Gemini Pro | OAuth (Google 계정 로그인) |
 
-## 인증 설정
+## 인증 설정 (필수)
 
-### Option 1: OAuth 로그인 (권장)
+사용 전 반드시 OAuth 로그인이 필요합니다:
 
 ```bash
 # OpenAI 로그인 (ChatGPT Plus/Pro 구독 필요)
@@ -63,13 +60,7 @@ Options:
 /ai-auth login --provider google
 ```
 
-### Option 2: API 키 설정
-
-```bash
-# 환경 변수 설정
-export OPENAI_API_KEY="sk-..."
-export GEMINI_API_KEY="..."
-```
+> ⚠️ 로그인하지 않으면 검증이 실행되지 않습니다.
 
 ---
 
@@ -85,7 +76,6 @@ export GEMINI_API_KEY="..."
 | `--provider` | `openai` | 사용할 Provider |
 | `--focus` | `all` | 검증 초점 |
 | `--parallel` | `false` | 병렬 검증 여부 |
-| `--require-auth` | `false` | OAuth 인증 필수 |
 
 ### STEP 2: 타겟 코드 읽기
 
@@ -105,7 +95,7 @@ for file in files:
 from providers.router import ProviderRouter
 from prompts.verify_prompt import build_verify_prompt
 
-router = ProviderRouter(require_auth=require_auth)
+router = ProviderRouter()  # OAuth 토큰 필수
 
 if parallel:
     results = await router.verify_parallel(code, prompt, language=language)
