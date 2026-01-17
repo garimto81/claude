@@ -12,16 +12,41 @@ from typing import Any, Literal
 from .adapters.openai_adapter import OpenAIAdapter, OpenAIResponse
 from .adapters.gemini_adapter import GeminiAdapter, GeminiResponse
 
-# multi-ai-auth TokenStore import 시도
-try:
-    multi_ai_auth_path = Path(__file__).parent.parent.parent.parent / "multi-ai-auth" / "scripts"
-    if multi_ai_auth_path.exists():
-        sys.path.insert(0, str(multi_ai_auth_path))
+
+def _get_multi_ai_auth_path() -> Path | None:
+    """Multi-AI Auth 경로 탐색.
+
+    Returns:
+        경로가 존재하면 Path, 없으면 None
+    """
+    # 절대 경로로 안정적인 import
+    skill_root = Path(__file__).parent.parent.parent  # .claude/skills/cross-ai-verifier
+    auth_path = skill_root.parent / "multi-ai-auth" / "scripts"  # .claude/skills/multi-ai-auth/scripts
+
+    if auth_path.exists():
+        return auth_path
+    return None
+
+
+# multi-ai-auth TokenStore import
+HAS_TOKEN_STORE = False
+TokenStore = None
+
+auth_path = _get_multi_ai_auth_path()
+if auth_path:
+    try:
+        # sys.path에 중복 추가 방지
+        auth_path_str = str(auth_path)
+        if auth_path_str not in sys.path:
+            sys.path.insert(0, auth_path_str)
+
         from storage.token_store import TokenStore
         HAS_TOKEN_STORE = True
-except ImportError:
-    HAS_TOKEN_STORE = False
-    TokenStore = None
+    except ImportError as e:
+        # import 실패 시 디버깅 정보
+        print(f"Warning: TokenStore import failed: {e}", file=sys.stderr)
+        HAS_TOKEN_STORE = False
+        TokenStore = None
 
 
 ProviderType = Literal["openai", "gemini"]
@@ -44,18 +69,57 @@ class ProviderRouter:
     다중 AI Provider 관리 및 병렬 검증 지원.
 
     Example:
+        # 기본 모드 (OAuth 우선, 환경변수 fallback)
         router = ProviderRouter()
         result = await router.verify(code, "openai", prompt)
-        results = await router.verify_parallel(code, ["openai", "gemini"], prompt)
+
+        # 인증 강제 모드 (OAuth 토큰 필수)
+        router = ProviderRouter(require_auth=True)
+        await router.ensure_authenticated("openai")  # 토큰 없으면 에러
+        result = await router.verify(code, "openai", prompt)
     """
 
     SUPPORTED_PROVIDERS = ["openai", "gemini"]
 
-    def __init__(self):
-        """초기화."""
+    def __init__(self, require_auth: bool = False):
+        """초기화.
+
+        Args:
+            require_auth: True면 OAuth 토큰 필수 (API 키 허용 안함)
+        """
         self._token_store = None
+        self._require_auth = require_auth
+
         if HAS_TOKEN_STORE:
             self._token_store = TokenStore()
+        elif require_auth:
+            # TokenStore 없으면 인증 강제 모드 사용 불가
+            raise RuntimeError(
+                "require_auth=True requires multi-ai-auth skill.\n"
+                "Install multi-ai-auth skill first."
+            )
+
+    async def ensure_authenticated(self, provider: str) -> None:
+        """인증 확인 및 안내.
+
+        Args:
+            provider: Provider 이름
+
+        Raises:
+            RuntimeError: 토큰이 없거나 만료된 경우
+        """
+        if not self._require_auth:
+            # 인증 강제 모드가 아니면 체크하지 않음
+            return
+
+        token = await self._get_token(provider)
+        if not token:
+            # 로그인 안내 메시지
+            raise RuntimeError(
+                f"❌ {provider.upper()} 인증이 필요합니다.\n"
+                f"   다음 명령어로 로그인하세요:\n"
+                f"   /ai-auth login --provider {provider}"
+            )
 
     async def _get_token(self, provider: str) -> str | None:
         """토큰 조회.
@@ -111,6 +175,10 @@ class ProviderRouter:
             VerifyResult: 검증 결과
         """
         try:
+            # 인증 강제 모드면 토큰 확인
+            if self._require_auth:
+                await self.ensure_authenticated(provider)
+
             # 토큰 조회 (TokenStore 우선, 없으면 환경변수)
             token = await self._get_token(provider)
             adapter = self._get_adapter(provider, token)
