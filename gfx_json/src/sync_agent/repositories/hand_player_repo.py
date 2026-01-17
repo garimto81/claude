@@ -18,7 +18,7 @@ class HandPlayerRepository(BaseRepository[HandPlayerRecord]):
     """HandPlayer Repository.
 
     gfx_hand_players 테이블 조작.
-    (hand_id, player_num) 복합 유니크 기준.
+    (hand_id, seat_num) 복합 유니크 기준.
     """
 
     def __init__(self, client: SupabaseClient) -> None:
@@ -26,7 +26,7 @@ class HandPlayerRepository(BaseRepository[HandPlayerRecord]):
         super().__init__(client, "gfx_hand_players")
 
     async def upsert(self, record: HandPlayerRecord) -> HandPlayerRecord:
-        """(hand_id, player_num) 기준 upsert.
+        """(hand_id, seat_num) 기준 upsert.
 
         Args:
             record: HandPlayerRecord
@@ -37,7 +37,7 @@ class HandPlayerRepository(BaseRepository[HandPlayerRecord]):
         await self.client.upsert(
             table=self.table,
             records=[record.to_dict()],
-            on_conflict="hand_id,player_num",
+            on_conflict="hand_id,seat_num",
         )
         return record
 
@@ -56,6 +56,6 @@ class HandPlayerRepository(BaseRepository[HandPlayerRecord]):
         result = await self.client.upsert(
             table=self.table,
             records=[r.to_dict() for r in records],
-            on_conflict="hand_id,player_num",
+            on_conflict="hand_id,seat_num",
         )
         return result.count

@@ -16,9 +16,9 @@ ENV PYTHONPATH=/app
 ENV GFX_SYNC_NAS_BASE_PATH=/app/data
 ENV GFX_SYNC_QUEUE_DB_PATH=/app/queue/pending.db
 
-# 헬스체크
+# 헬스체크 (python:3.12-slim에는 curl이 없으므로 Python 사용)
 HEALTHCHECK --interval=30s --timeout=10s --retries=3 \
-    CMD curl -f http://localhost:8080/health || exit 1
+    CMD python -c "import urllib.request; urllib.request.urlopen('http://localhost:8080/health')" || exit 1
 
 # 포트
 EXPOSE 8080

@@ -435,6 +435,7 @@ docker exec gfx-sync-agent ls -la /app/queue/
 
 | 문서 | 설명 |
 |------|------|
+| `docs/NAS-SSH-GUIDE.md` | **SSH 접속 및 로그 확인 가이드** |
 | `docs/gfx_supabase_sync.md` | 시스템 PRD (전체 아키텍처) |
 | `docs/DESIGN.md` | 기술 설계 문서 |
 | `migrations/001_nas_central.sql` | DB 마이그레이션 스크립트 |
