@@ -9,8 +9,13 @@ from dataclasses import dataclass, field
 from pathlib import Path
 from typing import Any, Literal
 
-from .adapters.openai_adapter import OpenAIAdapter, OpenAIResponse
-from .adapters.gemini_adapter import GeminiAdapter, GeminiResponse
+# 부모 디렉토리를 sys.path에 추가
+_PARENT_DIR = Path(__file__).parent.parent
+if str(_PARENT_DIR) not in sys.path:
+    sys.path.insert(0, str(_PARENT_DIR))
+
+from providers.adapters.openai_adapter import OpenAIAdapter, OpenAIResponse
+from providers.adapters.gemini_adapter import GeminiAdapter, GeminiResponse
 
 
 def _get_multi_ai_auth_path() -> Path | None:
@@ -21,7 +26,7 @@ def _get_multi_ai_auth_path() -> Path | None:
     """
     # 절대 경로로 안정적인 import
     skill_root = Path(__file__).parent.parent.parent  # .claude/skills/cross-ai-verifier
-    auth_path = skill_root.parent / "multi-ai-auth" / "scripts"  # .claude/skills/multi-ai-auth/scripts
+    auth_path = skill_root.parent / "multi-ai-auth"  # .claude/skills/multi-ai-auth
 
     if auth_path.exists():
         return auth_path
@@ -40,11 +45,11 @@ if auth_path:
         if auth_path_str not in sys.path:
             sys.path.insert(0, auth_path_str)
 
-        from storage.token_store import TokenStore
+        # 패키지 레벨에서 import
+        from scripts.storage.token_store import TokenStore
         HAS_TOKEN_STORE = True
     except ImportError as e:
-        # import 실패 시 디버깅 정보
-        print(f"Warning: TokenStore import failed: {e}", file=sys.stderr)
+        # import 실패 시 디버깅 정보 (Warning 메시지 제거)
         HAS_TOKEN_STORE = False
         TokenStore = None
 
