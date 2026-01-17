@@ -138,12 +138,12 @@ class JsonParser:
             file_hash = self._generate_hash(content)
 
             record = {
-                "gfx_pc_id": gfx_pc_id,
                 "file_hash": file_hash,
                 "file_name": file_name,
                 "session_id": self._extract_session_id(data, file_name),
                 "raw_json": data,
-                "sync_source": "nas_central",
+                # 내부용 메타데이터 (DB 컬럼 없음)
+                "_gfx_pc_id": gfx_pc_id,
             }
 
             # Optional 필드 - NULL이 아닌 경우만 추가
@@ -162,11 +162,6 @@ class JsonParser:
             hand_count = self._count_hands(data)
             if hand_count:
                 record["hand_count"] = hand_count
-
-            # created_datetime_utc - DB 컬럼 존재 여부 확인 필요
-            # created_datetime_utc = self._extract_created_at(data)
-            # if created_datetime_utc:
-            #     record["created_datetime_utc"] = created_datetime_utc
 
             payouts = self._extract_payouts(data)
             if payouts:
@@ -217,7 +212,8 @@ class JsonParser:
             "file_name": path.name,
             "session_id": self._extract_session_id(data, path.name),
             "raw_json": data,
-            "sync_source": "nas_central",
+            # 내부용 메타데이터 (DB 컬럼 없음)
+            "_gfx_pc_id": gfx_pc_id,
         }
 
         # Optional 필드 - NULL이 아닌 경우만 추가
@@ -237,16 +233,10 @@ class JsonParser:
         if hand_count:
             record["hand_count"] = hand_count
 
-        # created_datetime_utc - DB 컬럼 존재 여부 확인 필요
-        # 현재 비활성화 (Supabase 스키마에 없음)
-        # created_datetime_utc = self._extract_created_at(data)
-        # if created_datetime_utc:
-        #     record["created_datetime_utc"] = created_datetime_utc
-
-        # payouts - DB 컬럼 존재 여부 확인 필요
-        # payouts = self._extract_payouts(data)
-        # if payouts:
-        #     record["payouts"] = payouts
+        # payouts 컬럼은 DB에 있음
+        payouts = self._extract_payouts(data)
+        if payouts:
+            record["payouts"] = payouts
 
         return record
 

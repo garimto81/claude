@@ -1,0 +1,58 @@
+job_id: job_20260115_002
+created_at: 2026-01-15T15:00:00
+request: "ae_nexrender_module 출력 테스트 환경 구축"
+status: completed
+
+context:
+  target_aep: C:\claude\automation_ae\templates\CyprusDesign\CyprusDesign.aep
+  target_db: Supabase
+  project_path: C:\claude\ae_nexrender_module
+  goal: Dashboard API 연동 테스트를 위한 샘플 데이터 기반 테스트 환경 구축
+
+tasks:
+  - id: task_001
+    agent: Explore
+    action: "CyprusDesign.aep 프로젝트 구조 및 컴포지션 분석"
+    input:
+      aep_path: C:\claude\automation_ae\templates\CyprusDesign\CyprusDesign.aep
+      analyze: compositions, layers, data_fields
+    depends_on: null
+    output_file: C:\claude\.claude\workflow\results\job002_task_001.yaml
+    status: pending
+
+  - id: task_002
+    agent: Explore
+    action: "기존 automation_ae의 GFX 렌더링 API 분석"
+    input:
+      search_path: C:\claude\automation_ae\backend\app\api\v1
+      focus: gfx_render.py, render_sessions.py
+    depends_on: null
+    output_file: C:\claude\.claude\workflow\results\job002_task_002.yaml
+    status: pending
+
+  - id: task_003
+    agent: backend-dev
+    action: "테스트용 샘플 GFX 데이터 생성기 구현"
+    input:
+      output_dir: C:\claude\ae_nexrender_module\tests
+    depends_on: [task_001]
+    output_file: C:\claude\.claude\workflow\results\job002_task_003.yaml
+    status: waiting
+
+  - id: task_004
+    agent: backend-dev
+    action: "CLI 테스트 러너 구현 (단일 렌더링 테스트)"
+    input:
+      output_dir: C:\claude\ae_nexrender_module\scripts
+    depends_on: [task_003]
+    output_file: C:\claude\.claude\workflow\results\job002_task_004.yaml
+    status: waiting
+
+  - id: task_005
+    agent: backend-dev
+    action: "Supabase render_queue 테스트 시딩 스크립트"
+    input:
+      output_dir: C:\claude\ae_nexrender_module\scripts
+    depends_on: [task_003]
+    output_file: C:\claude\.claude\workflow\results\job002_task_005.yaml
+    status: waiting
