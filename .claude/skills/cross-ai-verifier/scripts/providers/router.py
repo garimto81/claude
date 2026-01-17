@@ -72,37 +72,33 @@ class ProviderRouter:
     """Provider 라우터.
 
     다중 AI Provider 관리 및 병렬 검증 지원.
+    OAuth 로그인 방식만 지원합니다 (API 키 fallback 없음).
 
     Example:
-        # 기본 모드 (OAuth 우선, 환경변수 fallback)
+        # OAuth 로그인 후 검증
         router = ProviderRouter()
         result = await router.verify(code, "openai", prompt)
 
-        # 인증 강제 모드 (OAuth 토큰 필수)
-        router = ProviderRouter(require_auth=True)
-        await router.ensure_authenticated("openai")  # 토큰 없으면 에러
-        result = await router.verify(code, "openai", prompt)
+        # 토큰 없으면 자동으로 로그인 안내 에러 발생
     """
 
     SUPPORTED_PROVIDERS = ["openai", "gemini"]
 
-    def __init__(self, require_auth: bool = False):
+    def __init__(self):
         """초기화.
 
-        Args:
-            require_auth: True면 OAuth 토큰 필수 (API 키 허용 안함)
-        """
-        self._token_store = None
-        self._require_auth = require_auth
+        OAuth 로그인 방식만 지원합니다.
+        Multi-AI Auth 스킬이 필수입니다.
 
-        if HAS_TOKEN_STORE:
-            self._token_store = TokenStore()
-        elif require_auth:
-            # TokenStore 없으면 인증 강제 모드 사용 불가
+        Raises:
+            RuntimeError: Multi-AI Auth 스킬이 없는 경우
+        """
+        if not HAS_TOKEN_STORE:
             raise RuntimeError(
-                "require_auth=True requires multi-ai-auth skill.\n"
-                "Install multi-ai-auth skill first."
+                "Multi-AI Auth 스킬이 필요합니다.\n"
+                "OAuth 로그인을 위해 multi-ai-auth 스킬을 설치하세요."
             )
+        self._token_store = TokenStore()
 
     async def ensure_authenticated(self, provider: str) -> None:
         """인증 확인 및 안내.
@@ -113,17 +109,14 @@ class ProviderRouter:
         Raises:
             RuntimeError: 토큰이 없거나 만료된 경우
         """
-        if not self._require_auth:
-            # 인증 강제 모드가 아니면 체크하지 않음
-            return
-
         token = await self._get_token(provider)
         if not token:
             # 로그인 안내 메시지
+            provider_name = "google" if provider == "gemini" else provider
             raise RuntimeError(
                 f"❌ {provider.upper()} 인증이 필요합니다.\n"
                 f"   다음 명령어로 로그인하세요:\n"
-                f"   /ai-auth login --provider {provider}"
+                f"   /ai-auth login --provider {provider_name}"
             )
 
     async def _get_token(self, provider: str) -> str | None:
@@ -141,12 +134,12 @@ class ProviderRouter:
                 return token.access_token
         return None
 
-    def _get_adapter(self, provider: str, token: str | None = None):
+    def _get_adapter(self, provider: str, token: str):
         """어댑터 생성.
 
         Args:
             provider: Provider 이름
-            token: API 토큰 (없으면 환경변수 사용)
+            token: OAuth 토큰 (필수)
 
         Returns:
             해당 Provider의 어댑터
@@ -170,6 +163,8 @@ class ProviderRouter:
     ) -> VerifyResult:
         """단일 Provider 검증.
 
+        OAuth 로그인이 필수입니다. 토큰이 없으면 에러가 발생합니다.
+
         Args:
             code: 검증할 코드
             provider: 사용할 Provider
@@ -180,11 +175,10 @@ class ProviderRouter:
             VerifyResult: 검증 결과
         """
         try:
-            # 인증 강제 모드면 토큰 확인
-            if self._require_auth:
-                await self.ensure_authenticated(provider)
+            # OAuth 토큰 확인 (필수)
+            await self.ensure_authenticated(provider)
 
-            # 토큰 조회 (TokenStore 우선, 없으면 환경변수)
+            # 토큰 조회
             token = await self._get_token(provider)
             adapter = self._get_adapter(provider, token)
 
