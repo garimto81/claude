@@ -6,10 +6,16 @@ OS 자격증명 저장소를 사용한 토큰 관리.
 import json
 import os
 import platform
+import sys
 from pathlib import Path
 from typing import Optional
 
-from ..providers.base import AuthToken
+# 절대 import로 변경 (상대 import 문제 해결)
+_SCRIPT_DIR = Path(__file__).parent.parent
+if str(_SCRIPT_DIR) not in sys.path:
+    sys.path.insert(0, str(_SCRIPT_DIR))
+
+from providers.base import AuthToken
 
 # keyring이 없으면 파일 기반 저장소 사용
 try:

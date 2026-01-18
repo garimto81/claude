@@ -1,10 +1,11 @@
 """OpenAI API Adapter
 
 GPT-4를 사용한 코드 검증.
-OAuth 로그인 방식만 지원 (API 키 fallback 없음).
+API 키 또는 OAuth 토큰 지원.
 """
 
 import json
+import os
 from dataclasses import dataclass
 
 import httpx
@@ -22,34 +23,38 @@ class OpenAIResponse:
 class OpenAIAdapter:
     """OpenAI GPT-4 API 어댑터.
 
-    OAuth 로그인을 통한 토큰만 지원합니다.
-    ChatGPT Plus/Pro 구독이 필요합니다.
+    API 키(환경변수) 또는 OAuth 토큰 지원.
 
     Example:
-        adapter = OpenAIAdapter(token=oauth_token)
+        # API 키 사용 (환경변수에서 자동 로드)
+        adapter = OpenAIAdapter()
         result = await adapter.verify_code(code, "python", "security")
+
+        # 또는 토큰 직접 전달
+        adapter = OpenAIAdapter(token=api_key)
     """
 
     BASE_URL = "https://api.openai.com/v1/chat/completions"
     MODEL = "gpt-4"
     TIMEOUT = 30.0
 
-    def __init__(self, token: str):
+    def __init__(self, token: str | None = None):
         """초기화.
 
         Args:
-            token: OAuth 로그인으로 획득한 토큰 (필수)
+            token: API 키 또는 OAuth 토큰 (없으면 환경변수에서 로드)
 
         Raises:
-            ValueError: 토큰이 없는 경우
+            ValueError: 토큰/API 키가 없는 경우
         """
-        if not token:
+        self.token = token or os.environ.get("OPENAI_API_KEY")
+
+        if not self.token:
             raise ValueError(
-                "OpenAI OAuth 토큰이 필요합니다.\n"
-                "다음 명령어로 로그인하세요:\n"
-                "/ai-auth login --provider openai"
+                "OpenAI API 키가 필요합니다.\n"
+                "환경변수를 설정하세요:\n"
+                "  set OPENAI_API_KEY=sk-your-key"
             )
-        self.token = token
 
     async def verify_code(
         self,

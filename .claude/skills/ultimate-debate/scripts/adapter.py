@@ -1,14 +1,14 @@
 """Skill Adapter - Core Engine과 Claude Code Skill Layer 연결.
 
-이 어댑터는 독립 패키지(packages/ultimate-debate/)의 Core Engine을
+이 어댑터는 독립 레포(ultimate-debate/)의 Core Engine을
 Claude Code의 Skill 시스템과 연결합니다.
 """
 
 import sys
 from pathlib import Path
 
-# Core Engine 패키지 경로 추가
-PACKAGES_PATH = Path(__file__).parent.parent.parent.parent.parent / "packages" / "ultimate-debate" / "src"
+# Core Engine 패키지 경로 추가 (독립 서브 레포)
+PACKAGES_PATH = Path(__file__).parent.parent.parent.parent.parent / "ultimate-debate" / "src"
 if str(PACKAGES_PATH) not in sys.path:
     sys.path.insert(0, str(PACKAGES_PATH))
 
