@@ -6,11 +6,11 @@
         "hooks": [
           {
             "type": "command",
-            "command": "C:/Users/AidenKim/AppData/Local/Programs/Python/Python312/python.exe C:/claude/.claude/hooks/checklist_updater.py"
+            "command": "python .claude/hooks/checklist_updater.py"
           },
           {
             "type": "command",
-            "command": "C:/Users/AidenKim/AppData/Local/Programs/Python/Python312/python.exe C:/claude/.claude/hooks/tmpclaude_cleanup.py"
+            "command": "python .claude/hooks/tmpclaude_cleanup.py"
           }
         ]
       }
@@ -21,7 +21,7 @@
         "hooks": [
           {
             "type": "command",
-            "command": "C:/Users/AidenKim/AppData/Local/Programs/Python/Python312/python.exe C:/claude/.claude/hooks/branch_guard.py"
+            "command": "python .claude/hooks/branch_guard.py"
           }
         ]
       },
@@ -30,7 +30,7 @@
         "hooks": [
           {
             "type": "command",
-            "command": "C:/Users/AidenKim/AppData/Local/Programs/Python/Python312/python.exe C:/claude/.claude/hooks/tool_validator.py"
+            "command": "python .claude/hooks/tool_validator.py"
           }
         ]
       }
@@ -41,7 +41,7 @@
         "hooks": [
           {
             "type": "command",
-            "command": "C:/Users/AidenKim/AppData/Local/Programs/Python/Python312/python.exe C:/claude/.claude/hooks/session_init.py"
+            "command": "python .claude/hooks/session_init.py"
           }
         ]
       }
@@ -52,7 +52,7 @@
         "hooks": [
           {
             "type": "command",
-            "command": "C:/Users/AidenKim/AppData/Local/Programs/Python/Python312/python.exe C:/claude/.claude/hooks/session_cleanup.py"
+            "command": "python .claude/hooks/session_cleanup.py"
           }
         ]
       }
@@ -60,7 +60,7 @@
   },
   "statusLine": {
     "type": "command",
-    "command": "C:/Users/AidenKim/AppData/Local/Programs/Python/Python312/python.exe C:/claude/.claude/scripts/context-monitor.py",
+    "command": "python .claude/scripts/context-monitor.py",
     "padding": 0
   }
 }

@@ -6,7 +6,7 @@ description: Cross-AI Verifier로 코드 검증 (GPT, Gemini)
 # /verify - 다중 AI 코드 검증 커맨드
 
 외부 AI 모델(OpenAI GPT, Google Gemini)을 사용하여 코드를 교차 검증합니다.
-**OAuth 로그인 방식만 지원합니다** (ChatGPT Plus/Pro, Gemini 구독).
+**API 키 환경변수 방식으로 인증합니다.**
 
 ## Usage
 
@@ -45,22 +45,33 @@ Options:
 
 | Provider | 모델 | 인증 방법 |
 |----------|------|----------|
-| **openai** | GPT-4 | OAuth (ChatGPT Plus/Pro 구독 필요) |
-| **gemini** | Gemini Pro | OAuth (Google 계정 로그인) |
+| **openai** | GPT-4 | 환경변수 `OPENAI_API_KEY` |
+| **gemini** | Gemini Pro | 환경변수 `GEMINI_API_KEY` |
 
 ## 인증 설정 (필수)
 
-사용 전 반드시 OAuth 로그인이 필요합니다:
+API 키를 환경변수로 설정하세요:
 
-```bash
-# OpenAI 로그인 (ChatGPT Plus/Pro 구독 필요)
-/ai-auth login --provider openai
-
-# Google 로그인 (Gemini 사용)
-/ai-auth login --provider google
+```powershell
+# PowerShell (현재 세션만)
+$env:OPENAI_API_KEY = "<YOUR_API_KEY>"
+$env:GEMINI_API_KEY = "<YOUR_API_KEY>"
 ```
 
-> ⚠️ 로그인하지 않으면 검증이 실행되지 않습니다.
+> ⚠️ **보안 주의사항**
+> - 셸 히스토리에 API 키가 남을 수 있습니다
+> - 권장: `.env` 파일 사용 후 `.gitignore`에 등록
+> - 또는 Windows Credential Manager / Secret Manager 사용
+
+설정 안내를 보려면:
+
+```bash
+/ai-login gpt      # OpenAI API 키 설정 방법
+/ai-login gemini   # Gemini API 키 설정 방법
+/ai-login status   # 현재 설정 상태 확인
+```
+
+> ⚠️ API 키가 설정되지 않으면 검증이 실행되지 않습니다.
 
 ---
 
@@ -95,7 +106,7 @@ for file in files:
 from providers.router import ProviderRouter
 from prompts.verify_prompt import build_verify_prompt
 
-router = ProviderRouter()  # OAuth 토큰 필수
+router = ProviderRouter()  # API 키 환경변수에서 자동 로드
 
 if parallel:
     results = await router.verify_parallel(code, prompt, language=language)
@@ -176,4 +187,4 @@ else:
 | 경로 | 설명 |
 |------|------|
 | `.claude/skills/cross-ai-verifier/` | Cross-AI Verifier Skill |
-| `.claude/skills/multi-ai-auth/` | Multi-AI Auth Skill (OAuth 인증) |
+| `.claude/commands/ai-login.md` | API 키 설정 안내 |

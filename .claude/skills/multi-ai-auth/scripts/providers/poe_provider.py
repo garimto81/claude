@@ -11,7 +11,15 @@ from typing import Optional
 import httpx
 
 from .base import AuthToken, BaseProvider
-from ..auth.api_key_flow import PoeAPIKeyFlow
+
+# 절대 import로 변경 (상대 import 문제 해결)
+import sys
+from pathlib import Path
+_SCRIPT_DIR = Path(__file__).parent.parent
+if str(_SCRIPT_DIR) not in sys.path:
+    sys.path.insert(0, str(_SCRIPT_DIR))
+
+from auth.api_key_flow import PoeAPIKeyFlow
 
 
 class PoeProvider(BaseProvider):

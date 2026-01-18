@@ -131,9 +131,15 @@ def main():
             print(f"  - task: {task}")
             continue
 
-        # 5. Task tool로 서브에이전트 실행 (핵심!)
-        print(f"\n🚀 Task tool로 서브에이전트 실행 중...")
-        result = runner.execute_with_task_tool(task, agent)
+        # 5. 에이전트별 실행
+        if agent == "verify":
+            # verify 에이전트: GPT + Gemini 병렬 검증 직접 실행
+            print(f"\n🔍 Cross-AI Verifier 실행 중 (GPT + Gemini 병렬)...")
+            result = runner.execute_verify_parallel(task)
+        else:
+            # 기타 에이전트: Task tool로 서브에이전트 실행
+            print(f"\n🚀 Task tool로 서브에이전트 실행 중...")
+            result = runner.execute_with_task_tool(task, agent)
 
         # 6. 결과 저장
         session.add_completed_task(task, agent, result)
@@ -143,7 +149,32 @@ def main():
         print(f"{'─'*40}")
         print(result.get("summary", "결과 없음"))
 
-        # 8. 다음 안내
+        # 8. 자동 Cross-AI 검증 (verify 에이전트가 아닌 경우)
+        if agent != "verify":
+            verify_info = runner.should_auto_verify(min_changes=50)  # 50줄 이상 변경 시
+            if verify_info:
+                print(f"\n{'─'*40}")
+                print(f"🔍 자동 Cross-AI 검증 시작 (GPT + Gemini)")
+                print(f"   {verify_info['reason']}")
+                print(f"{'─'*40}")
+
+                verify_result = runner.execute_verify_parallel(
+                    task=f"자동 검증: {task}",
+                    target_files=verify_info.get("changed_files")
+                )
+
+                # 검증 결과 저장
+                session.add_completed_task(
+                    f"[자동검증] {task}",
+                    "verify",
+                    verify_result
+                )
+
+                print(f"\n🔍 검증 완료")
+                print(f"{'─'*40}")
+                print(verify_result.get("summary", "검증 결과 없음"))
+
+        # 9. 다음 안내
         stats = session.get_statistics()
         print(f"\n📊 진행 현황: 완료 {stats['completed']}, 대기 {stats['pending']}")
         print(f"\n다음 작업을 실행하려면 계속 진행합니다...")

@@ -38,6 +38,86 @@ auto_trigger: false
 | **서브에이전트 강제** | Python 스크립트가 Task tool 사용을 강제 |
 | **세션 관리** | 진행 상황을 session.yaml에 저장, 언제든 확인 가능 |
 | **사용자 친화적** | 돌아와서 status 확인, redirect로 방향 수정 |
+| **🆕 자동 Cross-AI 검증** | 50줄+ 변경 시 GPT + Gemini 자동 검토 |
+
+---
+
+## 🔍 자동 Cross-AI 검증 (GPT + Gemini)
+
+**모든 작업 완료 후 자동으로 외부 AI 검토가 실행됩니다.**
+
+### 트리거 조건
+
+| 조건 | 값 |
+|------|-----|
+| 최소 변경량 | 50줄 이상 (insertions + deletions) |
+| 대상 파일 | `.py`, `.ts`, `.tsx`, `.js`, `.jsx` |
+| 제외 | verify 에이전트로 실행된 작업 |
+
+### 동작 흐름
+
+```
+/auto "API 리팩토링"
+    │
+    ▼
+┌─────────────────────────────┐
+│ backend-dev 에이전트 실행   │
+│ → API 코드 수정 완료        │
+└─────────────────────────────┘
+    │
+    ▼
+┌─────────────────────────────┐
+│ 자동 변경량 체크            │
+│ git diff → 150줄 변경 감지  │
+└─────────────────────────────┘
+    │
+    ▼
+┌─────────────────────────────┐
+│ 🔍 Cross-AI Verifier 실행  │
+│ GPT + Gemini 병렬 검증      │
+│ → 보안, 버그, 성능 검토     │
+└─────────────────────────────┘
+    │
+    ▼
+┌─────────────────────────────┐
+│ 검증 결과 세션에 저장       │
+│ → /auto status로 확인 가능  │
+└─────────────────────────────┘
+```
+
+### 인증 설정 (최초 1회)
+
+```bash
+/ai-login gpt      # OpenAI 로그인
+/ai-login gemini   # Gemini 로그인
+/ai-login status   # 상태 확인
+```
+
+### 검증 Focus 자동 결정
+
+| 작업 키워드 | 검증 Focus |
+|-------------|-----------|
+| 보안, security, 취약점 | `security` |
+| 버그, bug, 오류, error | `bugs` |
+| 성능, performance, 최적화 | `performance` |
+| 기타 | `all` (종합 검토) |
+
+### 예시 출력
+
+```
+✅ 작업 완료
+────────────────────────────────────────
+API 엔드포인트 3개 리팩토링 완료
+
+────────────────────────────────────────
+🔍 자동 Cross-AI 검증 시작 (GPT + Gemini)
+   대규모 변경 감지: 150줄 (120+, 30-)
+────────────────────────────────────────
+
+🔍 검증 완료
+────────────────────────────────────────
+🔍 Cross-AI 검증 완료 (GPT + Gemini) | 📁 검증 파일: 3개 | ⚠️ 발견 이슈: 2개 | 🎯 검증 초점: all
+```
 
 ---
 
@@ -47,7 +127,7 @@ auto_trigger: false
 
 ```bash
 # 실제 실행되는 스크립트
-python C:\claude\.claude\skills\auto-executor\scripts\auto_executor.py
+python .claude/skills/auto-executor/scripts/auto_executor.py
 ```
 
 ### 스크립트 옵션
@@ -73,19 +153,19 @@ python C:\claude\.claude\skills\auto-executor\scripts\auto_executor.py
 
 ```bash
 # /auto → 기본 실행
-python C:\claude\.claude\skills\auto-executor\scripts\auto_executor.py --max 1
+python .claude/skills/auto-executor/scripts/auto_executor.py --max 1
 
 # /auto "지시" → 특정 작업
-python C:\claude\.claude\skills\auto-executor\scripts\auto_executor.py --task "$ARGUMENTS" --max 1
+python .claude/skills/auto-executor/scripts/auto_executor.py --task "$ARGUMENTS" --max 1
 
 # /auto status → 상태 확인
-python C:\claude\.claude\skills\auto-executor\scripts\auto_executor.py --status
+python .claude/skills/auto-executor/scripts/auto_executor.py --status
 
 # /auto redirect "새 방향" → 방향 수정
-python C:\claude\.claude\skills\auto-executor\scripts\auto_executor.py --redirect "$NEW_DIRECTION"
+python .claude/skills/auto-executor/scripts/auto_executor.py --redirect "$NEW_DIRECTION"
 
 # /auto stop → 종료
-python C:\claude\.claude\skills\auto-executor\scripts\auto_executor.py --stop
+python .claude/skills/auto-executor/scripts/auto_executor.py --stop
 
 # /auto --mockup "화면 이름" → 목업 생성 (Skill tool 사용)
 Skill(skill="mockup", args="화면 이름")
@@ -202,6 +282,7 @@ gh pr list --state open --limit 3 2>/dev/null
 | 버그, 에러, 실패, 디버그, 테스트 실패 | `debugger` |
 | 테스트, TDD, 커버리지, 테스트 추가 | `test-engineer` |
 | 리뷰, 검토, 품질, 린트 | `code-reviewer` |
+| **검증, verify, GPT 검토, Gemini 검토, 다른 LLM** | **`verify`** |
 | API, 백엔드, 서버, 엔드포인트 | `backend-dev` |
 | UI, 프론트, 컴포넌트, 화면 | `frontend-dev` |
 | 보안, 취약점, 인증, 권한 | `security-auditor` |
@@ -214,6 +295,8 @@ gh pr list --state open --limit 3 2>/dev/null
 | 커밋, git | `Bash` (직접 실행) |
 
 **기본값**: 매칭 없으면 `Explore` 사용
+
+> ⚡ **verify 에이전트 특별 처리**: verify 선택 시 Task tool 대신 Cross-AI Verifier를 직접 실행하여 GPT + Gemini 병렬 검증을 수행합니다.
 
 ### STEP 4: TodoWrite 업데이트
 
@@ -242,7 +325,7 @@ Task(
 {발견된 작업 설명}
 
 ## 프로젝트 정보
-- 경로: C:\claude
+- 경로: {PROJECT_ROOT}
 - 현재 브랜치: {git branch 결과}
 
 ## 중요 규칙
@@ -614,7 +697,31 @@ $ /auto "테스트 커버리지 80% 달성해줘"
 # test-engineer 에이전트로 작업 위임
 ```
 
-### 예시 3: 상황 확인
+### 예시 3: Cross-AI 검증 (GPT + Gemini)
+
+```bash
+$ /auto "코드 검증"
+
+# direction: "코드 검증"으로 설정
+# verify 에이전트 선택 → Cross-AI Verifier 직접 실행
+# GPT + Gemini 병렬 검증 수행
+
+## /auto 작업 완료
+
+### 실행된 작업
+> 코드 검증 (GPT + Gemini 병렬)
+
+### 결과 요약
+🔍 Cross-AI 검증 완료 (GPT + Gemini) | 📁 검증 파일: 3개 | ⚠️ 발견 이슈: 5개 | 🎯 검증 초점: all
+
+### 발견된 이슈
+| 심각도 | 파일 | 설명 | Source |
+|--------|------|------|--------|
+| 🔴 High | src/auth.py:45 | SQL Injection 취약점 | GPT, Gemini |
+| 🟡 Medium | src/api.py:78 | 입력 검증 누락 | GPT |
+```
+
+### 예시 4: 상황 확인
 
 ```bash
 $ /auto status

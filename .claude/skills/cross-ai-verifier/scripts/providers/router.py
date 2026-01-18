@@ -1,57 +1,39 @@
 """Provider Router
 
 Provider 선택 및 병렬 검증 관리.
+OAuth 토큰 우선, API 키 환경변수 fallback.
 """
 
 import asyncio
-import sys
 from dataclasses import dataclass, field
 from pathlib import Path
+import sys
 from typing import Any, Literal
 
-# 부모 디렉토리를 sys.path에 추가
-_PARENT_DIR = Path(__file__).parent.parent
+# 경로 설정을 가장 먼저 수행
+_ROUTER_DIR = Path(__file__).resolve().parent
+
+# 부모 디렉토리 (cross-ai-verifier/scripts)
+_PARENT_DIR = _ROUTER_DIR.parent
 if str(_PARENT_DIR) not in sys.path:
     sys.path.insert(0, str(_PARENT_DIR))
 
+# ultimate-debate 패키지 경로 추가
+_ULTIMATE_DEBATE_SRC = _ROUTER_DIR.parent.parent.parent.parent.parent / "ultimate-debate" / "src"
+if str(_ULTIMATE_DEBATE_SRC) not in sys.path:
+    sys.path.insert(0, str(_ULTIMATE_DEBATE_SRC))
+
+# TokenStore import (ultimate-debate.auth에서)
+try:
+    from ultimate_debate.auth.storage import TokenStore
+    HAS_TOKEN_STORAGE = True
+except ImportError:
+    HAS_TOKEN_STORAGE = False
+    TokenStore = None
+
+# Adapters import
 from providers.adapters.openai_adapter import OpenAIAdapter, OpenAIResponse
 from providers.adapters.gemini_adapter import GeminiAdapter, GeminiResponse
-
-
-def _get_multi_ai_auth_path() -> Path | None:
-    """Multi-AI Auth 경로 탐색.
-
-    Returns:
-        경로가 존재하면 Path, 없으면 None
-    """
-    # 절대 경로로 안정적인 import
-    skill_root = Path(__file__).parent.parent.parent  # .claude/skills/cross-ai-verifier
-    auth_path = skill_root.parent / "multi-ai-auth"  # .claude/skills/multi-ai-auth
-
-    if auth_path.exists():
-        return auth_path
-    return None
-
-
-# multi-ai-auth TokenStore import
-HAS_TOKEN_STORE = False
-TokenStore = None
-
-auth_path = _get_multi_ai_auth_path()
-if auth_path:
-    try:
-        # sys.path에 중복 추가 방지
-        auth_path_str = str(auth_path)
-        if auth_path_str not in sys.path:
-            sys.path.insert(0, auth_path_str)
-
-        # 패키지 레벨에서 import
-        from scripts.storage.token_store import TokenStore
-        HAS_TOKEN_STORE = True
-    except ImportError as e:
-        # import 실패 시 디버깅 정보 (Warning 메시지 제거)
-        HAS_TOKEN_STORE = False
-        TokenStore = None
 
 
 ProviderType = Literal["openai", "gemini"]
@@ -72,14 +54,18 @@ class ProviderRouter:
     """Provider 라우터.
 
     다중 AI Provider 관리 및 병렬 검증 지원.
-    OAuth 로그인 방식만 지원합니다 (API 키 fallback 없음).
+
+    인증 우선순위:
+    1. OAuth 토큰 (TokenStorage에서 로드)
+    2. API 키 환경변수 (fallback)
 
     Example:
-        # OAuth 로그인 후 검증
+        # OAuth 토큰 또는 API 키 자동 로드
         router = ProviderRouter()
         result = await router.verify(code, "openai", prompt)
 
-        # 토큰 없으면 자동으로 로그인 안내 에러 발생
+        # 병렬 검증
+        results = await router.verify_parallel(code, prompt)
     """
 
     SUPPORTED_PROVIDERS = ["openai", "gemini"]
@@ -87,59 +73,37 @@ class ProviderRouter:
     def __init__(self):
         """초기화.
 
-        OAuth 로그인 방식만 지원합니다.
-        Multi-AI Auth 스킬이 필수입니다.
-
-        Raises:
-            RuntimeError: Multi-AI Auth 스킬이 없는 경우
+        OAuth 토큰을 우선 로드하고, 없으면 API 키 환경변수 사용.
         """
-        if not HAS_TOKEN_STORE:
-            raise RuntimeError(
-                "Multi-AI Auth 스킬이 필요합니다.\n"
-                "OAuth 로그인을 위해 multi-ai-auth 스킬을 설치하세요."
-            )
-        self._token_store = TokenStore()
+        self._token_storage = TokenStore() if HAS_TOKEN_STORAGE else None
 
-    async def ensure_authenticated(self, provider: str) -> None:
-        """인증 확인 및 안내.
-
-        Args:
-            provider: Provider 이름
-
-        Raises:
-            RuntimeError: 토큰이 없거나 만료된 경우
-        """
-        token = await self._get_token(provider)
-        if not token:
-            # 로그인 안내 메시지
-            provider_name = "google" if provider == "gemini" else provider
-            raise RuntimeError(
-                f"❌ {provider.upper()} 인증이 필요합니다.\n"
-                f"   다음 명령어로 로그인하세요:\n"
-                f"   /ai-auth login --provider {provider_name}"
-            )
-
-    async def _get_token(self, provider: str) -> str | None:
-        """토큰 조회.
+    def _get_oauth_token(self, provider: str) -> str | None:
+        """OAuth 토큰 조회.
 
         Args:
             provider: Provider 이름
 
         Returns:
-            토큰 문자열 또는 None
+            OAuth access_token 또는 None
         """
-        if self._token_store:
-            token = await self._token_store.load(provider)
-            if token and not token.is_expired():
-                return token.access_token
+        if not self._token_storage:
+            return None
+
+        # Provider 이름 매핑 (cross-ai-verifier → multi-ai-auth)
+        storage_name = "openai" if provider == "openai" else "google"
+        token = self._token_storage.get_valid_token(storage_name)
+
+        if token:
+            return token.access_token
         return None
 
-    def _get_adapter(self, provider: str, token: str):
+    def _get_adapter(self, provider: str):
         """어댑터 생성.
+
+        OAuth 토큰을 우선 사용하고, 없으면 API 키 환경변수 fallback.
 
         Args:
             provider: Provider 이름
-            token: OAuth 토큰 (필수)
 
         Returns:
             해당 Provider의 어댑터
@@ -147,10 +111,13 @@ class ProviderRouter:
         Raises:
             ValueError: 지원하지 않는 Provider
         """
+        # OAuth 토큰 우선 조회
+        oauth_token = self._get_oauth_token(provider)
+
         if provider == "openai":
-            return OpenAIAdapter(token=token)
+            return OpenAIAdapter(token=oauth_token)
         elif provider == "gemini":
-            return GeminiAdapter(token=token)
+            return GeminiAdapter(token=oauth_token)
         else:
             raise ValueError(f"지원하지 않는 Provider: {provider}")
 
@@ -163,7 +130,7 @@ class ProviderRouter:
     ) -> VerifyResult:
         """단일 Provider 검증.
 
-        OAuth 로그인이 필수입니다. 토큰이 없으면 에러가 발생합니다.
+        API 키는 환경변수에서 자동 로드됩니다.
 
         Args:
             code: 검증할 코드
@@ -175,13 +142,7 @@ class ProviderRouter:
             VerifyResult: 검증 결과
         """
         try:
-            # OAuth 토큰 확인 (필수)
-            await self.ensure_authenticated(provider)
-
-            # 토큰 조회
-            token = await self._get_token(provider)
-            adapter = self._get_adapter(provider, token)
-
+            adapter = self._get_adapter(provider)
             response = await adapter.verify_code(code, language, prompt)
 
             return VerifyResult(

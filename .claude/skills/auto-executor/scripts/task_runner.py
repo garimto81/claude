@@ -10,8 +10,9 @@ import shutil
 import sys
 import json
 import re
+import asyncio
 from pathlib import Path
-from typing import Optional, Dict, Any
+from typing import Optional, Dict, Any, List
 
 
 class TaskRunner:
@@ -269,6 +270,270 @@ Task(
                 "task": task,
                 "agent": agent
             }
+
+    def execute_verify_parallel(self, task: str, target_files: Optional[List[str]] = None) -> Dict[str, Any]:
+        """
+        GPT + Gemini 병렬 검증 실행
+
+        Args:
+            task: 검증 작업 설명
+            target_files: 검증할 파일 목록 (없으면 변경된 파일 자동 탐지)
+
+        Returns:
+            검증 결과 딕셔너리
+        """
+        # 1. 검증 대상 파일 결정
+        if not target_files:
+            target_files = self._get_changed_files()
+
+        if not target_files:
+            return {
+                "success": False,
+                "summary": "검증할 파일이 없습니다",
+                "output": "",
+                "task": task,
+                "agent": "verify"
+            }
+
+        # 2. Cross-AI Verifier 스크립트 경로
+        verifier_script = self.project_root / ".claude" / "skills" / "cross-ai-verifier" / "scripts" / "main.py"
+
+        if not verifier_script.exists():
+            return {
+                "success": False,
+                "summary": "Cross-AI Verifier 스크립트를 찾을 수 없습니다",
+                "output": f"경로: {verifier_script}",
+                "task": task,
+                "agent": "verify"
+            }
+
+        # 3. 검증 focus 추출 (task에서 키워드 분석)
+        focus = self._extract_verify_focus(task)
+
+        # 4. 각 파일에 대해 GPT + Gemini 병렬 검증
+        all_results = []
+        errors = []
+
+        for file_path in target_files[:5]:  # 최대 5개 파일
+            try:
+                result = subprocess.run(
+                    [
+                        sys.executable, str(verifier_script),
+                        file_path,
+                        "--parallel",  # GPT + Gemini 동시 검증
+                        "--focus", focus,
+                        "--json"
+                    ],
+                    capture_output=True,
+                    text=True,
+                    cwd=self.project_root,
+                    timeout=300,  # 5분 타임아웃
+                    encoding="utf-8",
+                    errors="replace"
+                )
+
+                if result.returncode == 0 and result.stdout.strip():
+                    try:
+                        file_result = json.loads(result.stdout)
+                        file_result["file"] = file_path
+                        all_results.append(file_result)
+                    except json.JSONDecodeError:
+                        all_results.append({
+                            "file": file_path,
+                            "raw_output": result.stdout[:1000]
+                        })
+                else:
+                    errors.append({
+                        "file": file_path,
+                        "error": result.stderr[:500] if result.stderr else "Unknown error"
+                    })
+
+            except subprocess.TimeoutExpired:
+                errors.append({
+                    "file": file_path,
+                    "error": "검증 타임아웃 (5분 초과)"
+                })
+            except Exception as e:
+                errors.append({
+                    "file": file_path,
+                    "error": str(e)
+                })
+
+        # 5. 결과 집계
+        total_issues = sum(
+            len(r.get("issues", []))
+            for r in all_results
+            if isinstance(r.get("issues"), list)
+        )
+
+        summary = self._format_verify_summary(all_results, errors, focus)
+
+        return {
+            "success": len(all_results) > 0,
+            "summary": summary,
+            "results": all_results,
+            "errors": errors,
+            "total_issues": total_issues,
+            "files_checked": len(all_results),
+            "task": task,
+            "agent": "verify",
+            "providers": ["openai", "gemini"]
+        }
+
+    def _get_changed_files(self) -> List[str]:
+        """git diff에서 변경된 파일 목록 추출"""
+        try:
+            result = subprocess.run(
+                ["git", "diff", "--name-only", "--diff-filter=ACMR"],
+                capture_output=True,
+                text=True,
+                cwd=self.project_root,
+                timeout=30
+            )
+
+            if result.returncode == 0 and result.stdout.strip():
+                files = result.stdout.strip().split("\n")
+                # Python/TypeScript 파일만 필터링
+                code_files = [
+                    f for f in files
+                    if f.endswith(('.py', '.ts', '.tsx', '.js', '.jsx'))
+                ]
+                return code_files
+
+            return []
+        except Exception:
+            return []
+
+    def _extract_verify_focus(self, task: str) -> str:
+        """작업 설명에서 검증 focus 추출"""
+        task_lower = task.lower()
+
+        if any(kw in task_lower for kw in ["보안", "security", "취약점", "vulnerability"]):
+            return "security"
+        elif any(kw in task_lower for kw in ["버그", "bug", "오류", "error"]):
+            return "bugs"
+        elif any(kw in task_lower for kw in ["성능", "performance", "최적화", "optimization"]):
+            return "performance"
+        else:
+            return "all"
+
+    def _format_verify_summary(
+        self,
+        results: List[Dict],
+        errors: List[Dict],
+        focus: str
+    ) -> str:
+        """검증 결과 요약 포맷팅"""
+        if not results and errors:
+            return f"검증 실패: {len(errors)}개 파일에서 오류 발생"
+
+        total_issues = sum(
+            len(r.get("issues", []))
+            for r in results
+            if isinstance(r.get("issues"), list)
+        )
+
+        high_severity = sum(
+            1 for r in results
+            for issue in r.get("issues", [])
+            if isinstance(issue, dict) and issue.get("severity") == "high"
+        )
+
+        providers_used = "GPT + Gemini"
+
+        summary_parts = [
+            f"🔍 Cross-AI 검증 완료 ({providers_used})",
+            f"📁 검증 파일: {len(results)}개",
+            f"⚠️ 발견 이슈: {total_issues}개",
+        ]
+
+        if high_severity > 0:
+            summary_parts.append(f"🔴 심각 이슈: {high_severity}개")
+
+        summary_parts.append(f"🎯 검증 초점: {focus}")
+
+        if errors:
+            summary_parts.append(f"❌ 오류: {len(errors)}개 파일")
+
+        return " | ".join(summary_parts)
+
+    def should_auto_verify(self, min_changes: int = 100) -> Optional[Dict[str, Any]]:
+        """
+        코드 변경 시 자동 검증 여부 판단
+
+        Args:
+            min_changes: 검증 권장을 위한 최소 변경 줄 수
+
+        Returns:
+            검증 필요 시 변경 정보 딕셔너리, 아니면 None
+        """
+        try:
+            # git diff로 변경량 체크
+            result = subprocess.run(
+                ["git", "diff", "--stat"],
+                capture_output=True,
+                text=True,
+                cwd=self.project_root,
+                timeout=30
+            )
+
+            if result.returncode != 0 or not result.stdout.strip():
+                return None
+
+            # 변경 줄 수 파싱 (예: "3 files changed, 150 insertions(+), 20 deletions(-)")
+            match = re.search(
+                r"(\d+)\s+files?\s+changed(?:,\s+(\d+)\s+insertions?\(\+\))?(?:,\s+(\d+)\s+deletions?\(-\))?",
+                result.stdout
+            )
+
+            if not match:
+                return None
+
+            files_changed = int(match.group(1))
+            insertions = int(match.group(2) or 0)
+            deletions = int(match.group(3) or 0)
+            total_changes = insertions + deletions
+
+            if total_changes >= min_changes:
+                # 변경된 파일 목록 추출
+                changed_files = []
+                for line in result.stdout.strip().split("\n")[:-1]:
+                    # "path/to/file.py | 10 ++"
+                    file_match = re.match(r"\s*([^\|]+)\s*\|", line)
+                    if file_match:
+                        changed_files.append(file_match.group(1).strip())
+
+                return {
+                    "should_verify": True,
+                    "files_changed": files_changed,
+                    "insertions": insertions,
+                    "deletions": deletions,
+                    "total_changes": total_changes,
+                    "changed_files": changed_files[:10],  # 최대 10개
+                    "reason": f"대규모 변경 감지: {total_changes}줄 ({insertions}+, {deletions}-)"
+                }
+
+            return None
+
+        except Exception:
+            return None
+
+    def get_verify_recommendation(self) -> Optional[str]:
+        """자동 검증 권장 메시지 생성"""
+        verify_info = self.should_auto_verify()
+
+        if not verify_info:
+            return None
+
+        files_preview = ", ".join(verify_info["changed_files"][:3])
+        if len(verify_info["changed_files"]) > 3:
+            files_preview += f" 외 {len(verify_info['changed_files']) - 3}개"
+
+        return f"""💡 **Cross-AI 검증 권장**
+{verify_info['reason']}
+주요 파일: {files_preview}
+
+검증 실행: `/auto "코드 검증"` 또는 `/verify`"""
 
     def _extract_summary(self, output: str) -> str:
         """출력에서 요약 추출"""

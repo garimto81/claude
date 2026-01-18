@@ -20,6 +20,9 @@ class AgentSelector:
         # 테스트 관련
         (r"테스트|test|TDD|커버리지|coverage|pytest|jest|spec", "test-engineer"),
 
+        # 검증 (Cross-AI Verifier) - code-reviewer보다 먼저 매칭되어야 함
+        (r"검증|verify|cross.?ai|gpt.*검토|gemini.*검토|다른.*llm|교차\s*검토|ai\s*검토", "verify"),
+
         # 코드 리뷰/품질
         (r"리뷰|review|검토|품질|quality|린트|lint|ruff|eslint|코드\s*품질", "code-reviewer"),
 
@@ -86,6 +89,7 @@ class AgentSelector:
             "code-reviewer": "코드 품질 리뷰 및 린트 수정",
             "backend-dev": "백엔드 API 개발",
             "frontend-dev": "프론트엔드 UI 개발",
+            "verify": "Cross-AI 코드/기획 검증 (GPT, Gemini)",
             "security-auditor": "보안 취약점 분석",
             "docs-writer": "문서 작성 및 업데이트",
             "database-specialist": "데이터베이스 설계 및 쿼리 최적화",
@@ -120,6 +124,10 @@ if __name__ == "__main__":
         "데이터베이스 스키마 설계",
         "Docker 배포 설정",
         "코드베이스 구조 분석",
+        "코드 검증해줘",
+        "GPT로 검토",
+        "다른 LLM으로 비교",
+        "Cross-AI 검증",
     ]
 
     print("에이전트 자동 선택 테스트:\n")
