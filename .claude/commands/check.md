@@ -18,12 +18,15 @@ Options:
   --perf          성능 분석 (optimize 흡수)
   --security      보안 검사 심화
   --api           API 엔드포인트 테스트 (api-test 흡수)
+  --react         React/Next.js 성능 최적화 검사 (Vercel Best Practices)
   --all           모든 검사 수행
 
 조합 사용:
   /check --e2e --fix    E2E + 자동 수정
   /check --perf --fix   성능 분석 + 자동 수정
   /check --api          REST/GraphQL API 테스트
+  /check --react        React 성능 규칙 검사
+  /check --react --fix  React 검사 + 제안 적용
 ```
 
 ## Check Categories
@@ -228,6 +231,7 @@ Action: Fix npm vulnerabilities before deploy
 | `--security` | `security-auditor` | 보안 취약점 심층 분석 |
 | `--e2e` | `test-engineer` | E2E 테스트 실행 |
 | `--perf` | `devops-engineer` | 성능 분석 |
+| `--react` | `frontend-dev` | React 성능 최적화 검사 |
 
 ## Related
 
@@ -266,6 +270,58 @@ Action: Fix npm vulnerabilities before deploy
 
 ---
 
+## --react 모드 (React 성능 검사)
+
+`/check --react`는 Vercel Engineering의 React Best Practices를 기반으로 성능 검사를 수행합니다.
+
+```bash
+/check --react                    # React 성능 규칙 검사
+/check --react src/components/    # 특정 디렉토리만 검사
+/check --react --perf             # 성능 분석과 함께 검사
+```
+
+### 검사 우선순위
+
+| 우선순위 | 카테고리 | 검사 항목 |
+|:--------:|----------|-----------|
+| 🔴 CRITICAL | Eliminating Waterfalls | sequential await, Promise.all 미사용 |
+| 🔴 CRITICAL | Bundle Size | barrel file import, dynamic import 미사용 |
+| 🟠 HIGH | Server-Side | RSC 직렬화, parallel fetch, React.cache |
+| 🟡 MEDIUM | Re-render | stale closure, 불필요한 리렌더링 |
+| 🟢 LOW | JS Performance | 루프 최적화, Set/Map 미사용 |
+
+### 출력 예시
+
+```
+🔍 Running React Best Practices Check...
+
+🔴 CRITICAL Issues (2)
+   1. [Waterfall] src/pages/Home.tsx:24
+      → Sequential awaits detected
+      → Fix: Use Promise.all() for independent operations
+
+   2. [Bundle] src/components/Icons.tsx:1
+      → Barrel file import from 'lucide-react'
+      → Fix: Import directly from source files
+
+🟠 HIGH Issues (1)
+   1. [RSC] src/app/page.tsx:15
+      → Passing full user object (50 fields) to client component
+      → Fix: Pass only required fields
+
+✅ MEDIUM/LOW: 3 suggestions available
+
+Summary: 2 CRITICAL, 1 HIGH, 3 suggestions
+Action: Fix CRITICAL issues before deployment
+```
+
+### 연동 스킬
+
+`vercel-react-best-practices` 스킬의 49개 규칙을 기반으로 검사합니다.
+상세 규칙은 `.claude/skills/vercel-react-best-practices/AGENTS.md` 참조.
+
+---
+
 ## 통합 이력
 
 | 기존 커맨드 | 통합 위치 | 날짜 |
@@ -273,3 +329,4 @@ Action: Fix npm vulnerabilities before deploy
 | `/final-check` | `/check --e2e` | 2025-12-11 |
 | `/optimize` | `/check --perf` | 2025-12-11 |
 | `/api-test` | `/check --api` | 2025-12-15 |
+| (신규) | `/check --react` | 2026-01-19 |

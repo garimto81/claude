@@ -13,18 +13,24 @@ triggers:
     - "ruff"
     - "mypy"
     - "eslint"
+    - "React 검사"
+    - "React 성능"
   file_patterns:
     - "src/**/*.py"
     - "src/**/*.ts"
     - "**/*.js"
+    - "**/*.tsx"
+    - "**/*.jsx"
   context:
     - "코드 품질 개선"
     - "린트 오류 수정"
+    - "React 성능 최적화"
 
 capabilities:
   - run_quality_check
   - auto_fix_lint
   - security_scan
+  - react_performance_check
 
 model_preference: haiku
 
@@ -33,6 +39,7 @@ auto_trigger: true
 dependencies:
   - code-reviewer
   - security-auditor
+  - vercel-react-best-practices
 token_budget: 1400
 ---
 
@@ -202,6 +209,37 @@ repos:
 | Incompatible types | 타입 불일치 | 타입 수정 또는 캐스팅 |
 | Module has no attribute | 모듈 속성 없음 | 타입 스텁 설치 |
 
+## React 성능 검사
+
+### React 검사 모드
+
+```bash
+# React 성능 규칙 검사
+/check --react
+
+# 특정 디렉토리만
+/check --react src/components/
+
+# 품질 + React 검사 조합
+python scripts/run_quality_check.py --react
+```
+
+### 검사 항목
+
+| 우선순위 | 카테고리 | 검사 내용 |
+|:--------:|----------|----------|
+| 🔴 CRITICAL | Waterfall | sequential await 감지 |
+| 🔴 CRITICAL | Bundle | barrel file import 감지 |
+| 🟠 HIGH | Server | RSC 직렬화 최적화 |
+| 🟡 MEDIUM | Re-render | stale closure, 불필요한 렌더링 |
+
+### 연동 스킬
+
+`vercel-react-best-practices` 스킬의 49개 규칙을 기반으로 검사합니다.
+상세 규칙: `.claude/skills/vercel-react-best-practices/AGENTS.md`
+
+---
+
 ## 관련 도구
 
 | 도구 | 용도 |
@@ -209,7 +247,8 @@ repos:
 | `scripts/run_quality_check.py` | 통합 검사 |
 | `code-reviewer` 에이전트 | 코드 리뷰 |
 | `security-auditor` 에이전트 | 보안 검사 |
-| `/check` | 기존 Command (deprecated) |
+| `vercel-react-best-practices` 스킬 | React 성능 검사 |
+| `/check` | 통합 검증 커맨드 |
 
 ---
 

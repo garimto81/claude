@@ -85,6 +85,29 @@ export function Component({ prop }: Props) {
 | Accessibility | Built-in from start, not afterthought |
 | Testing | Visual regression, interaction testing |
 
+## Performance Guidelines
+
+React/Next.js 작업 시 `vercel-react-best-practices` 스킬을 자동 참조합니다.
+
+### 우선순위별 검사
+
+| 우선순위 | 이슈 | 조치 |
+|:--------:|------|------|
+| 🔴 CRITICAL | Waterfall, Bundle Size | 즉시 수정 |
+| 🟠 HIGH | RSC 직렬화, Server Performance | 배포 전 수정 |
+| 🟡 MEDIUM | Re-render, Rendering | 권장 수정 |
+| 🟢 LOW | JS Performance | 선택적 수정 |
+
+### 자동 검사 트리거
+
+다음 상황에서 성능 규칙을 자동으로 검토합니다:
+
+- `.tsx`, `.jsx` 파일 수정 시
+- `next.config.*` 수정 시
+- "성능", "최적화" 키워드 언급 시
+
+상세 규칙: `.claude/skills/vercel-react-best-practices/AGENTS.md`
+
 ## Principles
 
 1. **User-first**: Empathy and data-driven design
