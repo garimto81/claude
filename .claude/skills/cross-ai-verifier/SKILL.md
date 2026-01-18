@@ -1,8 +1,37 @@
 ---
-name: "Cross-AI Verifier"
+name: cross-ai-verifier
 description: "다중 AI 모델을 통한 코드 검증 (OpenAI + Gemini)"
-version: "1.0.0"
+version: "2.0.0"
 author: "Claude Code"
+
+triggers:
+  keywords:
+    - "검증"
+    - "verify"
+    - "GPT 리뷰"
+    - "Gemini 검토"
+    - "교차 검증"
+    - "외부 AI"
+  file_patterns:
+    - "src/**/*.py"
+    - "src/**/*.ts"
+    - "**/*.tsx"
+    - "**/*.jsx"
+  context:
+    - "코드 품질 검증"
+    - "외부 AI 리뷰"
+    - "보안 취약점 분석"
+
+capabilities:
+  - parallel_verification
+  - security_analysis
+  - bug_detection
+  - performance_review
+
+model_preference: opus
+phase: [4, 5]
+auto_trigger: false
+token_budget: 3000
 ---
 
 # Cross-AI Verifier Skill
@@ -24,8 +53,8 @@ Claude가 작성한 코드를 외부 AI(GPT, Gemini)가 교차 검증합니다.
 
 | Provider | 모델 | 인증 |
 |----------|------|------|
-| **OpenAI** | GPT-4 | multi-ai-auth 토큰 또는 OPENAI_API_KEY |
-| **Gemini** | Gemini Pro | multi-ai-auth 토큰 또는 GEMINI_API_KEY |
+| **OpenAI** | GPT-4 | OAuth 토큰 (ai-login 스킬) |
+| **Gemini** | Gemini Pro | OAuth 토큰 (ai-login 스킬) |
 
 ## 검증 Focus
 
@@ -36,22 +65,15 @@ Claude가 작성한 코드를 외부 AI(GPT, Gemini)가 교차 검증합니다.
 | `performance` | 성능 이슈 및 최적화 제안 |
 | `all` | 종합 코드 리뷰 |
 
-## 설치
+## 인증 설정
 
 ```bash
-cd .claude/skills/cross-ai-verifier
-pip install -r requirements.txt
-```
-
-## 환경 변수 (선택)
-
-```bash
-# multi-ai-auth 토큰이 없는 경우
-export OPENAI_API_KEY="sk-..."
-export GEMINI_API_KEY="..."
+# OAuth 로그인 (권장)
+/ai-login openai
+/ai-login gemini
 ```
 
 ## 관련 문서
 
-- [Multi-AI Auth Skill](../multi-ai-auth/SKILL.md)
-- [PRD-0031](../../../tasks/prds/PRD-0031-multi-ai-auth-skill.md)
+- [AI Login Skill](../ai-login/SKILL.md)
+- [PRD-0035](../../../tasks/prds/PRD-0035-multi-ai-consensus-verifier.md)

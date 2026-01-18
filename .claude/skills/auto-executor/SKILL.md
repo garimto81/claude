@@ -1,13 +1,31 @@
 ---
 name: auto-executor
 description: Task tool 강제 사용 자동화 엔진
-version: 1.0.0
+version: 2.0.0
+
 triggers:
   keywords:
     - "auto"
     - "자동 실행"
-token_budget: 2000
+    - "서브 에이전트"
+    - "작업 위임"
+  file_patterns:
+    - "**/*.py"
+    - "**/*.ts"
+    - "**/*.tsx"
+    - "**/*.js"
+  context:
+    - "자동화 작업"
+    - "서브에이전트 위임"
+
+capabilities:
+  - task_delegation
+  - agent_selection
+  - session_management
+
 model_preference: opus
+auto_trigger: false
+token_budget: 2000
 ---
 
 # auto-executor 스킬
