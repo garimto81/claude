@@ -14,8 +14,15 @@ Usage:
 
 import argparse
 import asyncio
+import os
 import sys
 from typing import Optional
+
+# Windows 콘솔 UTF-8 설정
+if sys.platform == "win32":
+    os.system("chcp 65001 >nul 2>&1")
+    sys.stdout.reconfigure(encoding='utf-8', errors='replace')
+    sys.stderr.reconfigure(encoding='utf-8', errors='replace')
 
 from rich.console import Console
 from rich.table import Table
