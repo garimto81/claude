@@ -14,6 +14,11 @@ import asyncio
 import sys
 from pathlib import Path
 
+# 현재 스크립트의 디렉토리를 sys.path에 추가
+_SCRIPT_DIR = Path(__file__).parent
+if str(_SCRIPT_DIR) not in sys.path:
+    sys.path.insert(0, str(_SCRIPT_DIR))
+
 from engines.verify_engine import VerifyEngine
 
 

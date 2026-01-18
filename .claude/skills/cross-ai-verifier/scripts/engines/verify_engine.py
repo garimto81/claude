@@ -3,12 +3,18 @@
 코드 검증 핵심 엔진.
 """
 
+import sys
 from dataclasses import dataclass, field
 from pathlib import Path
 from typing import Any, Literal
 
-from ..providers.router import ProviderRouter, VerifyResult
-from ..prompts.verify_prompt import build_verify_prompt, FocusType
+# 부모 디렉토리를 sys.path에 추가
+_PARENT_DIR = Path(__file__).parent.parent
+if str(_PARENT_DIR) not in sys.path:
+    sys.path.insert(0, str(_PARENT_DIR))
+
+from providers.router import ProviderRouter, VerifyResult
+from prompts.verify_prompt import build_verify_prompt, FocusType
 
 
 @dataclass

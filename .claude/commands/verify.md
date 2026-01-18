@@ -6,6 +6,7 @@ description: Cross-AI Verifier로 코드 검증 (GPT, Gemini)
 # /verify - 다중 AI 코드 검증 커맨드
 
 외부 AI 모델(OpenAI GPT, Google Gemini)을 사용하여 코드를 교차 검증합니다.
+**API 키 환경변수 방식으로 인증합니다.**
 
 ## Usage
 
@@ -16,7 +17,6 @@ Options:
   --provider <name>    사용할 AI Provider (openai, gemini)
   --focus <type>       검증 초점 (security, bugs, performance, all)
   --parallel           모든 Provider 동시 검증
-  --require-auth       OAuth 인증 필수 (구독 모델 강제)
 ```
 
 ## Examples
@@ -30,9 +30,6 @@ Options:
 
 # 병렬 검증 (OpenAI + Gemini 동시)
 /verify src/ --parallel --focus all
-
-# 구독 모델 강제 (OAuth 인증 필수)
-/verify src/api.py --require-auth --provider openai
 ```
 
 ## 검증 Focus
@@ -48,28 +45,33 @@ Options:
 
 | Provider | 모델 | 인증 방법 |
 |----------|------|----------|
-| **openai** | GPT-4 | OAuth (ChatGPT Plus/Pro) 또는 API 키 |
-| **gemini** | Gemini Pro | OAuth (Google) 또는 API 키 |
+| **openai** | GPT-4 | 환경변수 `OPENAI_API_KEY` |
+| **gemini** | Gemini Pro | 환경변수 `GEMINI_API_KEY` |
 
-## 인증 설정
+## 인증 설정 (필수)
 
-### Option 1: OAuth 로그인 (권장)
+API 키를 환경변수로 설정하세요:
 
-```bash
-# OpenAI 로그인 (ChatGPT Plus/Pro 구독 필요)
-/ai-auth login --provider openai
-
-# Google 로그인 (Gemini 사용)
-/ai-auth login --provider google
+```powershell
+# PowerShell (현재 세션만)
+$env:OPENAI_API_KEY = "<YOUR_API_KEY>"
+$env:GEMINI_API_KEY = "<YOUR_API_KEY>"
 ```
 
-### Option 2: API 키 설정
+> ⚠️ **보안 주의사항**
+> - 셸 히스토리에 API 키가 남을 수 있습니다
+> - 권장: `.env` 파일 사용 후 `.gitignore`에 등록
+> - 또는 Windows Credential Manager / Secret Manager 사용
+
+설정 안내를 보려면:
 
 ```bash
-# 환경 변수 설정
-export OPENAI_API_KEY="sk-..."
-export GEMINI_API_KEY="..."
+/ai-login gpt      # OpenAI API 키 설정 방법
+/ai-login gemini   # Gemini API 키 설정 방법
+/ai-login status   # 현재 설정 상태 확인
 ```
+
+> ⚠️ API 키가 설정되지 않으면 검증이 실행되지 않습니다.
 
 ---
 
@@ -85,7 +87,6 @@ export GEMINI_API_KEY="..."
 | `--provider` | `openai` | 사용할 Provider |
 | `--focus` | `all` | 검증 초점 |
 | `--parallel` | `false` | 병렬 검증 여부 |
-| `--require-auth` | `false` | OAuth 인증 필수 |
 
 ### STEP 2: 타겟 코드 읽기
 
@@ -105,7 +106,7 @@ for file in files:
 from providers.router import ProviderRouter
 from prompts.verify_prompt import build_verify_prompt
 
-router = ProviderRouter(require_auth=require_auth)
+router = ProviderRouter()  # API 키 환경변수에서 자동 로드
 
 if parallel:
     results = await router.verify_parallel(code, prompt, language=language)
@@ -186,4 +187,4 @@ else:
 | 경로 | 설명 |
 |------|------|
 | `.claude/skills/cross-ai-verifier/` | Cross-AI Verifier Skill |
-| `.claude/skills/multi-ai-auth/` | Multi-AI Auth Skill (OAuth 인증) |
+| `.claude/commands/ai-login.md` | API 키 설정 안내 |

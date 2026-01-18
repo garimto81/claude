@@ -1,12 +1,12 @@
 """Gemini API Adapter
 
 Google Gemini Pro를 사용한 코드 검증.
+API 키 또는 OAuth 토큰 지원.
 """
 
 import json
 import os
 from dataclasses import dataclass
-from typing import Any
 
 import httpx
 
@@ -23,9 +23,15 @@ class GeminiResponse:
 class GeminiAdapter:
     """Google Gemini Pro API 어댑터.
 
+    API 키(환경변수) 또는 OAuth 토큰 지원.
+
     Example:
-        adapter = GeminiAdapter(token="...")
+        # API 키 사용 (환경변수에서 자동 로드)
+        adapter = GeminiAdapter()
         result = await adapter.verify_code(code, "python", "security")
+
+        # 또는 토큰 직접 전달
+        adapter = GeminiAdapter(token=api_key)
     """
 
     BASE_URL = "https://generativelanguage.googleapis.com/v1beta/models/gemini-pro:generateContent"
@@ -35,14 +41,18 @@ class GeminiAdapter:
         """초기화.
 
         Args:
-            token: Gemini API 키 (없으면 환경변수 사용)
+            token: API 키 또는 OAuth 토큰 (없으면 환경변수에서 로드)
+
+        Raises:
+            ValueError: 토큰/API 키가 없는 경우
         """
-        self.token = token or os.getenv("GEMINI_API_KEY")
+        self.token = token or os.environ.get("GEMINI_API_KEY") or os.environ.get("GOOGLE_API_KEY")
+
         if not self.token:
             raise ValueError(
-                "Gemini API 키가 필요합니다. "
-                "GEMINI_API_KEY 환경변수를 설정하거나 "
-                "/ai-auth login --provider google 를 실행하세요."
+                "Gemini API 키가 필요합니다.\n"
+                "환경변수를 설정하세요:\n"
+                "  set GEMINI_API_KEY=your-key"
             )
 
     async def verify_code(
