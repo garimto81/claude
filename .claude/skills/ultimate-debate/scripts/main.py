@@ -9,7 +9,13 @@ from pathlib import Path
 # Add current directory to path
 sys.path.insert(0, str(Path(__file__).parent))
 
-from debate.orchestrator import UltimateDebate
+# Core Engine 어댑터 사용 시도, 실패 시 레거시 모드
+try:
+    from adapter import UltimateDebateAdapter, CORE_AVAILABLE, load_debate_context
+    USE_ADAPTER = CORE_AVAILABLE
+except ImportError:
+    USE_ADAPTER = False
+    from debate.orchestrator import UltimateDebate
 
 
 def main():
@@ -113,16 +119,26 @@ def run_debate(task: str, max_rounds: int = 5, threshold: float = 0.8) -> dict:
     Returns:
         Final debate result
     """
-    debate = UltimateDebate(
-        task=task,
-        max_rounds=max_rounds,
-        consensus_threshold=threshold,
-    )
+    # Core Engine 어댑터 또는 레거시 모드 선택
+    if USE_ADAPTER:
+        print("[INFO] Using Core Engine (packages/ultimate-debate)")
+        debate = UltimateDebateAdapter(
+            task=task,
+            max_rounds=max_rounds,
+            consensus_threshold=threshold,
+        )
+    else:
+        print("[INFO] Using Legacy Mode (skills/ultimate-debate/scripts/debate)")
+        debate = UltimateDebate(
+            task=task,
+            max_rounds=max_rounds,
+            consensus_threshold=threshold,
+        )
 
     # Note: AI clients should be registered here
     # For now, runs with mock data
 
-    print(f"Starting debate: {debate.task_id}")
+    print(f"Starting debate: {debate.engine.task_id if USE_ADAPTER else debate.task_id}")
     print(f"Task: {task}")
     print(f"Max rounds: {max_rounds}")
     print(f"Threshold: {threshold}\n")

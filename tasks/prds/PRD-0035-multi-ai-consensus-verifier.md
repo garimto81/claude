@@ -1211,7 +1211,676 @@ Round 2 | Strategy: NORMAL
 
 ---
 
-## 7. 체크리스트
+## 7. 저장 방식 및 청킹 전략 (Storage & Chunking Strategy)
+
+### 7.1 프로젝트/스킬 정의 (Identity Decision)
+
+```
+┌─────────────────────────────────────────────────────────────────────┐
+│                    Ultimate Debate: 정체성 정의                      │
+├─────────────────────────────────────────────────────────────────────┤
+│                                                                      │
+│  ❓ 별도 프로젝트인가? 스킬인가?                                     │
+│                                                                      │
+│  ┌─────────────────────────────────────────────────────────────┐    │
+│  │                                                               │    │
+│  │  🎯 결론: **Hybrid Architecture (하이브리드 아키텍처)**       │    │
+│  │                                                               │    │
+│  │  ┌─────────────────┐      ┌─────────────────┐                │    │
+│  │  │   Core Engine   │      │   Skill Layer   │                │    │
+│  │  │   (독립 패키지)  │ ───► │   (통합 인터페이스) │                │    │
+│  │  └─────────────────┘      └─────────────────┘                │    │
+│  │          │                        │                           │    │
+│  │          │                        │                           │    │
+│  │          ▼                        ▼                           │    │
+│  │  ┌─────────────────┐      ┌─────────────────┐                │    │
+│  │  │ 재사용 가능한    │      │ Claude Code     │                │    │
+│  │  │ Python 패키지   │      │ /auto 통합      │                │    │
+│  │  └─────────────────┘      └─────────────────┘                │    │
+│  │                                                               │    │
+│  └─────────────────────────────────────────────────────────────┘    │
+│                                                                      │
+│  이유:                                                               │
+│  ─────                                                              │
+│  1. Core Engine은 다른 프로젝트에서도 재사용 가능해야 함              │
+│  2. Claude Code 통합은 Skill 형태가 가장 자연스러움                  │
+│  3. 독립 실행도, /auto 통합도 모두 지원 필요                         │
+│                                                                      │
+└─────────────────────────────────────────────────────────────────────┘
+```
+
+### 7.2 디렉토리 구조 (최종)
+
+```
+C:\claude\
+├── packages/                              # 📦 독립 패키지 (Core Engine)
+│   └── ultimate-debate/
+│       ├── pyproject.toml                 # 패키지 설정
+│       ├── README.md
+│       ├── src/
+│       │   └── ultimate_debate/
+│       │       ├── __init__.py
+│       │       ├── engine.py              # UnlimitedDebateEngine
+│       │       ├── comparison/
+│       │       │   ├── __init__.py
+│       │       │   ├── semantic.py        # Layer 1
+│       │       │   ├── structural.py      # Layer 2
+│       │       │   └── hash.py            # Layer 3
+│       │       ├── consensus/
+│       │       │   ├── __init__.py
+│       │       │   ├── protocol.py        # ConsensusProtocol
+│       │       │   └── tracker.py         # ConvergenceTracker
+│       │       ├── strategies/
+│       │       │   ├── __init__.py
+│       │       │   ├── normal.py
+│       │       │   ├── mediated.py
+│       │       │   ├── scope_reduced.py
+│       │       │   └── perspective_shift.py
+│       │       └── storage/
+│       │           ├── __init__.py
+│       │           ├── context_manager.py # MD 파일 관리
+│       │           └── chunker.py         # 청킹 전략
+│       └── tests/
+│           └── ...
+│
+├── .claude/
+│   ├── skills/
+│   │   └── ultimate-debate/               # 🔌 Skill Layer (통합)
+│   │       ├── SKILL.md
+│   │       └── scripts/
+│   │           ├── __init__.py
+│   │           ├── main.py                # CLI + /auto 통합
+│   │           └── adapter.py             # Core Engine 어댑터
+│   │
+│   └── debates/                           # 💾 토론 데이터 저장소
+│       ├── index.yaml                     # 전체 인덱스
+│       └── {task_id}/                     # 작업별 폴더
+│           └── ...
+```
+
+### 7.3 저장 방식 상세
+
+#### 7.3.1 파일 유형별 저장 전략
+
+```
+┌─────────────────────────────────────────────────────────────────────┐
+│                    Storage Strategy by File Type                     │
+├─────────────────────────────────────────────────────────────────────┤
+│                                                                      │
+│  Type 1: Analysis Files (분석 파일)                                  │
+│  ──────────────────────────────────                                 │
+│  위치: .claude/debates/{task_id}/round_{N}/{model}.md               │
+│  크기: 평균 2-5KB                                                   │
+│  보관: 영구 (토론 히스토리)                                          │
+│                                                                      │
+│  Type 2: Comparison Files (비교 결과)                                │
+│  ──────────────────────────────────                                 │
+│  위치: .claude/debates/{task_id}/round_{N}/COMPARISON.md            │
+│  크기: 평균 1-2KB                                                   │
+│  보관: 영구                                                          │
+│                                                                      │
+│  Type 3: State Files (상태 파일)                                     │
+│  ──────────────────────────────────                                 │
+│  위치: .claude/debates/{task_id}/STATE.yaml                         │
+│  크기: ~500 bytes                                                   │
+│  보관: 토론 진행 중에만 (완료 후 FINAL.md로 통합)                     │
+│                                                                      │
+│  Type 4: Index Files (인덱스)                                        │
+│  ──────────────────────────────────                                 │
+│  위치: .claude/debates/index.yaml                                   │
+│  크기: 토론 개수 × ~100 bytes                                       │
+│  보관: 영구 (전체 토론 목록)                                         │
+│                                                                      │
+│  Type 5: Cache Files (캐시)                                          │
+│  ──────────────────────────────────                                 │
+│  위치: .claude/debates/.cache/                                      │
+│  크기: 가변                                                          │
+│  보관: 7일 후 자동 삭제                                              │
+│                                                                      │
+└─────────────────────────────────────────────────────────────────────┘
+```
+
+#### 7.3.2 MD 파일 포맷 표준
+
+```markdown
+---
+# YAML Frontmatter (메타데이터)
+task_id: "api-refactor-001"
+round: 3
+model: "claude"
+timestamp: "2026-01-18T15:30:00Z"
+hash: "abc123..."
+status: "completed"
+---
+
+# Round 3 - Claude Analysis
+
+## Summary (요약 - Context 로딩용)
+<!-- CHUNK:SUMMARY:START -->
+인증 미들웨어 통합 제안. 데코레이터 패턴 권장.
+<!-- CHUNK:SUMMARY:END -->
+
+## Full Analysis (전체 분석)
+<!-- CHUNK:FULL:START -->
+### 1. 현황 분석
+- 현재 15개 엔드포인트에 인증 로직 분산
+- 코드 중복률 40%
+...
+
+### 2. 제안 전략
+1. auth_middleware.py 신규 생성
+2. 데코레이터 패턴으로 권한 적용
+...
+<!-- CHUNK:FULL:END -->
+
+## Conclusion (결론)
+<!-- CHUNK:CONCLUSION:START -->
+auth_middleware.py로 인증 통합, 데코레이터 패턴 적용
+<!-- CHUNK:CONCLUSION:END -->
+```
+
+### 7.4 청킹 전략 (Chunking Strategy)
+
+#### 7.4.1 청크 유형
+
+```
+┌─────────────────────────────────────────────────────────────────────┐
+│                    Chunking Strategy                                 │
+├─────────────────────────────────────────────────────────────────────┤
+│                                                                      │
+│  청크 유형 및 용도:                                                  │
+│  ──────────────────                                                 │
+│                                                                      │
+│  ┌─────────────┬──────────┬────────────────────────────────────┐   │
+│  │ 청크 유형   │ 크기     │ 용도                                │   │
+│  ├─────────────┼──────────┼────────────────────────────────────┤   │
+│  │ SUMMARY     │ ~200자   │ Context 유지 (항상 로드)            │   │
+│  │ CONCLUSION  │ ~500자   │ 합의 비교용 (비교 시 로드)          │   │
+│  │ FULL        │ ~3000자  │ 상세 분석 (필요 시 로드)            │   │
+│  │ METADATA    │ ~100자   │ 인덱싱용 (항상 로드)                │   │
+│  └─────────────┴──────────┴────────────────────────────────────┘   │
+│                                                                      │
+│  로딩 전략:                                                          │
+│  ──────────                                                         │
+│                                                                      │
+│  ┌──────────────────────────────────────────────────────────────┐   │
+│  │                                                                │   │
+│  │  Level 0: METADATA only (~100 bytes/file)                     │   │
+│  │  └─ 인덱스 조회, 상태 확인                                     │   │
+│  │                                                                │   │
+│  │  Level 1: METADATA + SUMMARY (~300 bytes/file)                │   │
+│  │  └─ Context 유지, 진행 상황 표시                               │   │
+│  │                                                                │   │
+│  │  Level 2: + CONCLUSION (~800 bytes/file)                      │   │
+│  │  └─ 합의 비교, 해시 계산                                       │   │
+│  │                                                                │   │
+│  │  Level 3: + FULL (~4000 bytes/file)                           │   │
+│  │  └─ 상세 분석 필요 시에만                                      │   │
+│  │                                                                │   │
+│  └──────────────────────────────────────────────────────────────┘   │
+│                                                                      │
+└─────────────────────────────────────────────────────────────────────┘
+```
+
+#### 7.4.2 청킹 구현
+
+```python
+class ChunkManager:
+    """청크 기반 파일 관리"""
+
+    CHUNK_MARKERS = {
+        "SUMMARY": ("<!-- CHUNK:SUMMARY:START -->", "<!-- CHUNK:SUMMARY:END -->"),
+        "CONCLUSION": ("<!-- CHUNK:CONCLUSION:START -->", "<!-- CHUNK:CONCLUSION:END -->"),
+        "FULL": ("<!-- CHUNK:FULL:START -->", "<!-- CHUNK:FULL:END -->"),
+    }
+
+    def __init__(self, base_path: Path):
+        self.base_path = base_path
+
+    def load_chunk(self, file_path: Path, chunk_type: str) -> str:
+        """특정 청크만 로드
+
+        Args:
+            file_path: MD 파일 경로
+            chunk_type: SUMMARY | CONCLUSION | FULL
+
+        Returns:
+            청크 내용
+        """
+        content = file_path.read_text(encoding="utf-8")
+        start_marker, end_marker = self.CHUNK_MARKERS[chunk_type]
+
+        start_idx = content.find(start_marker)
+        end_idx = content.find(end_marker)
+
+        if start_idx == -1 or end_idx == -1:
+            return ""
+
+        return content[start_idx + len(start_marker):end_idx].strip()
+
+    def load_level(self, file_path: Path, level: int) -> dict[str, str]:
+        """레벨별 청크 로드
+
+        Args:
+            file_path: MD 파일 경로
+            level: 0-3
+
+        Returns:
+            청크 딕셔너리
+        """
+        result = {"metadata": self._load_frontmatter(file_path)}
+
+        if level >= 1:
+            result["summary"] = self.load_chunk(file_path, "SUMMARY")
+
+        if level >= 2:
+            result["conclusion"] = self.load_chunk(file_path, "CONCLUSION")
+
+        if level >= 3:
+            result["full"] = self.load_chunk(file_path, "FULL")
+
+        return result
+
+    def load_for_comparison(self, task_id: str, round_num: int) -> list[dict]:
+        """비교용 로드 (Level 2)
+
+        3개 AI의 결론만 로드하여 비교 수행
+        """
+        models = ["claude", "gemini", "gpt"]
+        results = []
+
+        for model in models:
+            file_path = self.base_path / task_id / f"round_{round_num:03d}" / f"{model}.md"
+            if file_path.exists():
+                data = self.load_level(file_path, level=2)
+                data["model"] = model
+                results.append(data)
+
+        return results
+
+    def load_for_context(self, task_id: str) -> dict:
+        """Context 유지용 로드 (Level 1)
+
+        최소한의 정보만 로드하여 Context 절약
+        """
+        task_path = self.base_path / task_id
+
+        # STATE.yaml에서 현재 상태 로드
+        state_file = task_path / "STATE.yaml"
+        if state_file.exists():
+            state = yaml.safe_load(state_file.read_text())
+        else:
+            state = {}
+
+        # 최신 라운드의 요약만 로드
+        current_round = state.get("current_round", 0)
+        summaries = {}
+
+        for model in ["claude", "gemini", "gpt"]:
+            file_path = task_path / f"round_{current_round:03d}" / f"{model}.md"
+            if file_path.exists():
+                summaries[model] = self.load_chunk(file_path, "SUMMARY")
+
+        return {
+            "task_id": task_id,
+            "state": state,
+            "current_summaries": summaries,
+            # 전체 내용은 로드하지 않음 (Context 절약)
+        }
+
+
+class ContextOptimizer:
+    """Context 최적화 관리"""
+
+    # Context 내 유지되는 최대 크기
+    MAX_CONTEXT_SIZE = 500  # bytes
+
+    def __init__(self, chunk_manager: ChunkManager):
+        self.chunk_manager = chunk_manager
+
+    def get_context_snapshot(self, task_id: str) -> dict:
+        """Context에 유지할 최소 스냅샷 생성
+
+        Returns:
+            ~300 bytes 크기의 스냅샷
+        """
+        data = self.chunk_manager.load_for_context(task_id)
+
+        # 요약 압축 (각 모델당 50자 제한)
+        compressed_summaries = {
+            model: summary[:50] + "..." if len(summary) > 50 else summary
+            for model, summary in data.get("current_summaries", {}).items()
+        }
+
+        return {
+            "task_id": task_id,
+            "round": data["state"].get("current_round", 0),
+            "strategy": data["state"].get("current_strategy", "NORMAL"),
+            "consensus_level": data["state"].get("consensus_level", 0),
+            "summaries": compressed_summaries,
+            "files_path": f".claude/debates/{task_id}/"
+        }
+
+    def estimate_context_usage(self, snapshot: dict) -> int:
+        """Context 사용량 추정"""
+        import json
+        return len(json.dumps(snapshot, ensure_ascii=False))
+```
+
+#### 7.4.3 자동 정리 전략
+
+```python
+class StorageCleaner:
+    """저장소 자동 정리"""
+
+    def __init__(self, base_path: Path):
+        self.base_path = base_path
+        self.cache_path = base_path / ".cache"
+
+    async def cleanup(self) -> CleanupResult:
+        """정리 작업 실행
+
+        1. 7일 이상 된 캐시 삭제
+        2. 완료된 토론의 STATE.yaml → FINAL.md 통합
+        3. 오래된 토론 아카이브 (30일+)
+        """
+        deleted_cache = await self._cleanup_cache(days=7)
+        merged_states = await self._merge_completed_states()
+        archived = await self._archive_old_debates(days=30)
+
+        return CleanupResult(
+            deleted_cache_files=deleted_cache,
+            merged_state_files=merged_states,
+            archived_debates=archived
+        )
+
+    async def _cleanup_cache(self, days: int) -> int:
+        """오래된 캐시 삭제"""
+        if not self.cache_path.exists():
+            return 0
+
+        cutoff = datetime.now() - timedelta(days=days)
+        deleted = 0
+
+        for file in self.cache_path.glob("**/*"):
+            if file.is_file():
+                mtime = datetime.fromtimestamp(file.stat().st_mtime)
+                if mtime < cutoff:
+                    file.unlink()
+                    deleted += 1
+
+        return deleted
+
+    async def _archive_old_debates(self, days: int) -> int:
+        """오래된 토론 아카이브"""
+        archive_path = self.base_path / "archive"
+        archive_path.mkdir(exist_ok=True)
+
+        cutoff = datetime.now() - timedelta(days=days)
+        archived = 0
+
+        for task_dir in self.base_path.iterdir():
+            if not task_dir.is_dir() or task_dir.name.startswith("."):
+                continue
+
+            final_file = task_dir / "FINAL.md"
+            if final_file.exists():
+                mtime = datetime.fromtimestamp(final_file.stat().st_mtime)
+                if mtime < cutoff:
+                    # ZIP으로 압축 후 이동
+                    archive_file = archive_path / f"{task_dir.name}.zip"
+                    shutil.make_archive(
+                        str(archive_file.with_suffix("")),
+                        "zip",
+                        task_dir
+                    )
+                    shutil.rmtree(task_dir)
+                    archived += 1
+
+        return archived
+```
+
+### 7.5 인덱스 관리
+
+```yaml
+# .claude/debates/index.yaml
+
+version: "1.0"
+last_updated: "2026-01-18T15:30:00Z"
+
+debates:
+  - task_id: "api-refactor-001"
+    created_at: "2026-01-18T10:00:00Z"
+    status: "completed"  # running | completed | archived
+    total_rounds: 2
+    final_consensus: true
+    strategy_used: ["NORMAL"]
+    summary: "API 인증 미들웨어 통합"
+
+  - task_id: "db-migration-002"
+    created_at: "2026-01-18T14:00:00Z"
+    status: "running"
+    current_round: 5
+    current_strategy: "MEDIATED"
+    consensus_level: 2
+
+statistics:
+  total_debates: 15
+  completed: 12
+  running: 2
+  archived: 1
+  avg_rounds_to_consensus: 2.8
+  strategy_effectiveness:
+    NORMAL: 0.85
+    MEDIATED: 0.92
+    SCOPE_REDUCED: 0.78
+    PERSPECTIVE_SHIFT: 0.65
+```
+
+---
+
+## 8. 프로젝트 vs 스킬 아키텍처 결정
+
+### 8.1 하이브리드 아키텍처 상세
+
+```
+┌─────────────────────────────────────────────────────────────────────┐
+│              Hybrid Architecture Decision                            │
+├─────────────────────────────────────────────────────────────────────┤
+│                                                                      │
+│  ┌─────────────────────────────────────────────────────────────┐    │
+│  │                    Why Hybrid?                               │    │
+│  │                                                               │    │
+│  │  Option A: 순수 스킬 (Pure Skill)                            │    │
+│  │  ────────────────────────────────                           │    │
+│  │  ✅ Claude Code 통합 간단                                    │    │
+│  │  ❌ 다른 프로젝트에서 재사용 불가                             │    │
+│  │  ❌ 패키지 배포 불가                                         │    │
+│  │                                                               │    │
+│  │  Option B: 순수 패키지 (Pure Package)                        │    │
+│  │  ────────────────────────────────                           │    │
+│  │  ✅ pip install 가능                                         │    │
+│  │  ✅ 다른 프로젝트에서 재사용 가능                             │    │
+│  │  ❌ Claude Code /auto 통합 번거로움                          │    │
+│  │                                                               │    │
+│  │  Option C: 하이브리드 (Hybrid) ✅ 선택                       │    │
+│  │  ────────────────────────────────                           │    │
+│  │  ✅ Core Engine은 독립 패키지로 재사용 가능                   │    │
+│  │  ✅ Skill Layer로 Claude Code 자연스럽게 통합                │    │
+│  │  ✅ 두 가지 사용 방식 모두 지원                               │    │
+│  │                                                               │    │
+│  └─────────────────────────────────────────────────────────────┘    │
+│                                                                      │
+└─────────────────────────────────────────────────────────────────────┘
+```
+
+### 8.2 사용 방식
+
+```python
+# 방식 1: 독립 패키지로 사용 (다른 프로젝트)
+# ──────────────────────────────────────────
+
+from ultimate_debate import UnlimitedDebateEngine
+from ultimate_debate.clients import ClaudeClient, GeminiClient, GPTClient
+
+engine = UnlimitedDebateEngine(
+    task="API 리팩토링 전략",
+    clients={
+        "claude": ClaudeClient(api_key="..."),
+        "gemini": GeminiClient(api_key="..."),
+        "gpt": GPTClient(api_key="...")
+    }
+)
+
+result = await engine.run()
+print(result.final_strategy)
+
+
+# 방식 2: Claude Code 스킬로 사용
+# ──────────────────────────────────────────
+
+# /auto "API 리팩토링"
+# → 자동으로 Ultimate Debate 실행
+# → 100% 합의 후 자동 구현
+
+
+# 방식 3: CLI 직접 실행
+# ──────────────────────────────────────────
+
+# python -m ultimate_debate --task "API 리팩토링"
+# python -m ultimate_debate --status --task-id debate_001
+# python -m ultimate_debate --resume --task-id debate_001
+```
+
+### 8.3 패키지 구조
+
+```toml
+# packages/ultimate-debate/pyproject.toml
+
+[project]
+name = "ultimate-debate"
+version = "1.0.0"
+description = "Multi-AI Unlimited Debate Engine with 100% Consensus"
+authors = [
+    {name = "Claude Code", email = "noreply@anthropic.com"}
+]
+requires-python = ">=3.12"
+
+dependencies = [
+    "httpx>=0.27.0",
+    "pyyaml>=6.0",
+    "rich>=13.0",  # CLI 출력용
+]
+
+[project.optional-dependencies]
+claude = ["anthropic>=0.40.0"]
+openai = ["openai>=1.50.0"]
+google = ["google-generativeai>=0.8.0"]
+all = ["anthropic>=0.40.0", "openai>=1.50.0", "google-generativeai>=0.8.0"]
+
+[project.scripts]
+ultimate-debate = "ultimate_debate.cli:main"
+
+[build-system]
+requires = ["hatchling"]
+build-backend = "hatchling.build"
+```
+
+### 8.4 Skill Adapter
+
+```python
+# .claude/skills/ultimate-debate/scripts/adapter.py
+
+"""Skill Layer: Core Engine을 Claude Code에 통합"""
+
+import sys
+from pathlib import Path
+
+# Core Engine import (packages/ 또는 pip install)
+try:
+    from ultimate_debate import UnlimitedDebateEngine
+    from ultimate_debate.storage import ChunkManager
+except ImportError:
+    # 로컬 개발 환경: packages/ 경로 추가
+    packages_path = Path(__file__).parent.parent.parent.parent.parent / "packages" / "ultimate-debate" / "src"
+    sys.path.insert(0, str(packages_path))
+    from ultimate_debate import UnlimitedDebateEngine
+    from ultimate_debate.storage import ChunkManager
+
+
+class SkillAdapter:
+    """Claude Code Skill Adapter"""
+
+    def __init__(self):
+        self.engine = None
+        self.chunk_manager = ChunkManager(Path(".claude/debates"))
+
+    async def start_debate(self, task: str) -> dict:
+        """새 토론 시작 (/auto 연동)"""
+        self.engine = UnlimitedDebateEngine(
+            task=task,
+            storage_path=Path(".claude/debates")
+        )
+
+        result = await self.engine.run()
+
+        return {
+            "status": result.status,
+            "task_id": result.task_id,
+            "total_rounds": result.total_rounds,
+            "final_strategy": result.final_strategy,
+            "history_path": str(result.history_path)
+        }
+
+    def get_context_snapshot(self, task_id: str) -> dict:
+        """Context 최소화 스냅샷 (Main Context 유지용)"""
+        from ultimate_debate.storage import ContextOptimizer
+
+        optimizer = ContextOptimizer(self.chunk_manager)
+        return optimizer.get_context_snapshot(task_id)
+
+    async def resume_debate(self, task_id: str) -> dict:
+        """중단된 토론 재개"""
+        state = self.chunk_manager.load_for_context(task_id)
+
+        self.engine = UnlimitedDebateEngine.from_state(
+            state,
+            storage_path=Path(".claude/debates")
+        )
+
+        return await self.engine.run()
+```
+
+### 8.5 배포 전략
+
+```
+┌─────────────────────────────────────────────────────────────────────┐
+│                    Deployment Strategy                               │
+├─────────────────────────────────────────────────────────────────────┤
+│                                                                      │
+│  Phase 1: 로컬 개발 (현재)                                           │
+│  ─────────────────────────────                                      │
+│  - packages/ultimate-debate/ 에 Core Engine 개발                    │
+│  - .claude/skills/ultimate-debate/ 에 Skill Adapter 개발            │
+│  - 직접 경로 import로 사용                                           │
+│                                                                      │
+│  Phase 2: PyPI 배포 (선택적)                                         │
+│  ─────────────────────────────                                      │
+│  - pip install ultimate-debate                                      │
+│  - 다른 프로젝트에서 import 가능                                     │
+│  - Skill Adapter는 pip install 버전 사용                            │
+│                                                                      │
+│  Phase 3: Claude Code 기본 통합 (미래)                               │
+│  ─────────────────────────────                                      │
+│  - /auto --debate 기본 옵션으로 제공                                 │
+│  - 별도 스킬 설치 없이 사용 가능                                     │
+│                                                                      │
+└─────────────────────────────────────────────────────────────────────┘
+```
+
+---
+
+## 9. 체크리스트
 
 ### 구현 체크리스트
 
@@ -1226,9 +1895,13 @@ Round 2 | Strategy: NORMAL
   - [ ] 기본 토론 루프
   - [ ] 4개 전략 (NORMAL/MEDIATED/SCOPE_REDUCED/PERSPECTIVE_SHIFT)
   - [ ] ConvergenceTracker
-- [ ] Context 최적화
-  - [ ] MD 파일 저장/로드
-  - [ ] 요약만 Context 유지
+- [ ] Storage & Chunking 구현
+  - [ ] ChunkManager (청크 로드/저장)
+  - [ ] ContextOptimizer (스냅샷 생성)
+  - [ ] StorageCleaner (자동 정리)
+- [ ] Hybrid Architecture 구현
+  - [ ] packages/ultimate-debate/ Core Engine
+  - [ ] .claude/skills/ultimate-debate/ Skill Adapter
 - [ ] /auto 통합
   - [ ] 자동 끝장토론 트리거
   - [ ] 사용자 인터페이스
@@ -1240,10 +1913,12 @@ Round 2 | Strategy: NORMAL
 - [ ] Context 소비량 측정 (<5%)
 - [ ] 10라운드 이상 지속 토론 테스트
 - [ ] 사용자 강제 종료 테스트
+- [ ] 청킹 로드/저장 테스트
+- [ ] 자동 정리 테스트
 
 ---
 
-## 8. 참조
+## 10. 참조
 
 - PRD-0035 v3.0 (끝장토론 초안)
 - [Multi-Agent Debate Framework](https://www.emergentmind.com/topics/multiagent-debate-framework)
