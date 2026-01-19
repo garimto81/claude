@@ -141,9 +141,9 @@ GG POKER 방송은 여러 개의 테이블을 전환하여 방송하는 방식.
 
 #### 1.5 UI 목업
 
-![Multi-View Screen](../../docs/images/PRD-0002/multiview-screen.png)
+![Multi-view 3계층 레이아웃](../images/PRD-0006/multiview-3layer.png)
 
-[HTML 원본](../../docs/mockups/PRD-0002/multiview-screen.html)
+[HTML 원본](../mockups/PRD-0006/multiview-3layer.html)
 
 ---
 
@@ -194,9 +194,9 @@ GG POKER 방송은 여러 개의 테이블을 전환하여 방송하는 방식.
 
 #### 2.3 UI 목업
 
-![StatsView HUD](../../docs/images/PRD-0002/statsview-hud.png)
+![StatsView HUD](../images/PRD-0006/statsview-hud.png)
 
-[HTML 원본](../../docs/mockups/PRD-0002/statsview-hud.html)
+[HTML 원본](../mockups/PRD-0006/statsview-hud.html)
 
 #### 2.4 기능 요구사항
 
@@ -265,6 +265,78 @@ GG POKER 방송은 여러 개의 테이블을 전환하여 방송하는 방식.
 | VS-1.2 | 실시간 전환 | 재생 중 끊김 없이 전환 | P0 |
 | VS-1.3 | 모드 기억 | 마지막 선택 모드 저장 | P1 |
 | VS-1.4 | Combined 모드 | Multi-view + StatsView 동시 | P2 |
+
+#### 3.4 UI 목업
+
+![View Mode Switcher](../images/PRD-0006/view-mode-switcher.png)
+
+[HTML 원본](../mockups/PRD-0006/view-mode-switcher.html)
+
+---
+
+### 4. 멀티 재생 확장 (Tony 기획)
+
+#### 4.1 선수별/테이블별 멀티 재생
+
+| 기능 | 설명 | 우선순위 |
+|------|------|:--------:|
+| **선수별 멀티 재생** | 한 테이블의 각 선수별 화면 동시 재생 | P1 |
+| **테이블별 멀티 재생** | 각각 다른 대회, 테이블 동시 재생 | P1 |
+
+> 여러 대회/테이블을 병렬로 시청하면서 관심 있는 선수의 플레이를 놓치지 않는 시청 경험 제공.
+
+#### 4.2 동영상 Tagging (Hand 기반)
+
+대회 영상/Script 기반 영상 태깅 시스템으로 핸드 단위 검색 및 재생 지원.
+
+| 태그 필드 | 설명 |
+|----------|------|
+| **Hand Number** | 핸드 번호, Blinds 레벨 |
+| **참여 플레이어** | 해당 핸드에 참여한 플레이어 목록 |
+| **각 플레이어의 Hands** | 홀카드 정보 |
+| **Community Card** | 보드 카드 (Flop, Turn, River) |
+| **최종 Winner** | 승자 + 승리 핸드 |
+
+**기술 요구사항**:
+
+| ID | 요구사항 | 설명 | 우선순위 |
+|----|---------|------|:--------:|
+| TG-1.1 | 핸드 태깅 시스템 | 대회 영상 핸드별 메타데이터 저장 | P1 |
+| TG-1.2 | 태그 DB 스키마 | 핸드, 플레이어, 카드 정보 연결 | P1 |
+| TG-1.3 | 태깅 자동화 | Script/RFID 기반 자동 태깅 | P2 |
+
+#### 4.3 고급 검색 기능
+
+| 검색 유형 | 설명 | 예시 |
+|----------|------|------|
+| **선수 기반** | 특정 선수가 참여한 Pot만 재생 | "Phil Ivey 핸드 모음" |
+| **핸드 결과 기반** | 특정 핸드로 이기거나 진 핸드 | "AA로 진 핸드" |
+| **복합 검색** | A 선수와 B 선수가 함께 했던 대회/동영상 | "Negreanu vs Hellmuth" |
+| **특수 상황** | 희귀 상황 핸드 검색 | "포카드가 로열 스트레이트 플러시에게 패한 핸드" |
+
+**기술 요구사항**:
+
+| ID | 요구사항 | 설명 | 우선순위 |
+|----|---------|------|:--------:|
+| SR-1.1 | 선수 기반 검색 | 플레이어 ID로 핸드 필터링 | P1 |
+| SR-1.2 | 핸드 결과 검색 | 홀카드/결과 조합 필터 | P1 |
+| SR-1.3 | 복합 검색 | 다중 조건 AND/OR 검색 | P2 |
+| SR-1.4 | 특수 상황 검색 | 희귀 핸드 조합 검색 | P2 |
+
+#### 4.3.1 UI 목업
+
+![Hand Search](../images/PRD-0006/hand-search.png)
+
+[HTML 원본](../mockups/PRD-0006/hand-search.html)
+
+#### 4.4 플랫폼 관련 (기존 문서 확인)
+
+| 항목 | 상태 | 참조 |
+|------|------|------|
+| **로그인** | GGPass SSO | PRD-0002 FR-6.1 ✅ |
+| **Payment** | 자체 구독 시스템 | PRD-0002 FR-6.2, FR-7 ✅ |
+
+> 로그인 및 결제 시스템은 이미 PRD-0002에 정의되어 있으므로 추가 구현 불필요.
 
 ---
 
@@ -442,15 +514,13 @@ GG POKER 방송은 여러 개의 테이블을 전환하여 방송하는 방식.
 
 ## References
 
-- `docs/order/michael_note.md` - 크리에이티브 디렉터 비전
-- `docs/order/michael_vision_analysis.md` - 비전 분석 보고서
-- `tasks/prds/PRD-0002-wsoptv-ott-platform-mvp.md` - MVP 스펙
-- `docs/0001-multiview-3layer-rationale.md` - 3계층 Multi-View 아키텍처 근거
+- [PRD-0002 WSOPTV OTT Platform MVP](PRD-0002-wsoptv-ott-platform-mvp.md) - MVP 스펙
+- [ADR-0001 3계층 Multi-View 아키텍처 근거](../adrs/ADR-0001-multiview-3layer-rationale.md)
 
 ---
 
 *Created: 2026-01-15*
-*Last Updated: 2026-01-16*
+*Last Updated: 2026-01-19*
 
 ---
 
@@ -460,3 +530,5 @@ GG POKER 방송은 여러 개의 테이블을 전환하여 방송하는 방식.
 |------|------|--------|------|
 | 1.0 | 2026-01-15 | Claude Code | 최초 작성 |
 | 2.0 | 2026-01-16 | Claude Code | Multi-view 3계층 동적 구조로 재설계, StatsView 2가지 구조 정의, UI 목업 링크 추가 |
+| 2.1 | 2026-01-19 | Claude Code | 섹션 4 추가 (Tony 기획: 멀티 재생 확장, Hand Tagging, 고급 검색) |
+| 2.2 | 2026-01-19 | Claude Code | PRD-0006 전용 UI 목업 4개 추가 (multiview-3layer, statsview-hud, view-mode-switcher, hand-search) |

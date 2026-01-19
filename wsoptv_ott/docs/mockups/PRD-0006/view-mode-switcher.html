@@ -1,0 +1,636 @@
+<!DOCTYPE html>
+<html lang="ko">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>WSOPTV - View Mode Switcher</title>
+    <style>
+        * {
+            margin: 0;
+            padding: 0;
+            box-sizing: border-box;
+        }
+
+        body {
+            font-family: -apple-system, BlinkMacSystemFont, 'Segoe UI', Roboto, sans-serif;
+            background: #0a0a0a;
+            color: #fff;
+            min-height: 100vh;
+        }
+
+        /* Header */
+        .header {
+            background: #1a1a1a;
+            padding: 12px 24px;
+            display: flex;
+            justify-content: space-between;
+            align-items: center;
+            border-bottom: 1px solid #333;
+        }
+
+        .logo {
+            font-size: 20px;
+            font-weight: bold;
+            color: #f0c14b;
+        }
+
+        .user-info {
+            display: flex;
+            align-items: center;
+            gap: 12px;
+        }
+
+        .badge {
+            background: linear-gradient(135deg, #f0c14b, #d4a437);
+            color: #000;
+            padding: 4px 10px;
+            border-radius: 4px;
+            font-size: 11px;
+            font-weight: bold;
+        }
+
+        /* Video Container */
+        .video-container {
+            position: relative;
+            height: calc(100vh - 60px);
+            background: #000;
+            display: flex;
+            align-items: center;
+            justify-content: center;
+        }
+
+        .video-placeholder {
+            text-align: center;
+            color: #666;
+        }
+
+        .video-placeholder .icon {
+            font-size: 80px;
+            margin-bottom: 16px;
+        }
+
+        /* View Mode Switcher - Floating Panel */
+        .view-mode-panel {
+            position: absolute;
+            top: 20px;
+            left: 50%;
+            transform: translateX(-50%);
+            background: rgba(0, 0, 0, 0.85);
+            backdrop-filter: blur(10px);
+            border-radius: 12px;
+            padding: 8px;
+            display: flex;
+            gap: 8px;
+            border: 1px solid #333;
+        }
+
+        .mode-btn {
+            display: flex;
+            flex-direction: column;
+            align-items: center;
+            padding: 12px 24px;
+            border-radius: 8px;
+            background: transparent;
+            border: 2px solid transparent;
+            color: #888;
+            cursor: pointer;
+            transition: all 0.2s;
+            min-width: 100px;
+        }
+
+        .mode-btn:hover {
+            background: rgba(255, 255, 255, 0.1);
+            color: #fff;
+        }
+
+        .mode-btn.active {
+            background: rgba(240, 193, 75, 0.15);
+            border-color: #f0c14b;
+            color: #f0c14b;
+        }
+
+        .mode-icon {
+            font-size: 24px;
+            margin-bottom: 6px;
+        }
+
+        .mode-label {
+            font-size: 12px;
+            font-weight: 500;
+        }
+
+        .mode-badge {
+            font-size: 9px;
+            background: #333;
+            padding: 2px 6px;
+            border-radius: 3px;
+            margin-top: 4px;
+        }
+
+        .mode-btn.active .mode-badge {
+            background: #f0c14b;
+            color: #000;
+        }
+
+        /* Live Badge */
+        .live-badge {
+            position: absolute;
+            top: 80px;
+            left: 20px;
+            background: #e74c3c;
+            color: #fff;
+            padding: 6px 14px;
+            border-radius: 4px;
+            font-size: 12px;
+            font-weight: bold;
+            display: flex;
+            align-items: center;
+            gap: 6px;
+        }
+
+        .live-dot {
+            width: 8px;
+            height: 8px;
+            background: #fff;
+            border-radius: 50%;
+            animation: pulse 1.5s infinite;
+        }
+
+        @keyframes pulse {
+            0%, 100% { opacity: 1; }
+            50% { opacity: 0.5; }
+        }
+
+        /* Mode Preview Cards */
+        .mode-preview-container {
+            position: absolute;
+            bottom: 140px;
+            left: 50%;
+            transform: translateX(-50%);
+            display: flex;
+            gap: 20px;
+        }
+
+        .preview-card {
+            background: rgba(0, 0, 0, 0.8);
+            border-radius: 12px;
+            padding: 16px;
+            width: 280px;
+            border: 1px solid #333;
+        }
+
+        .preview-card.active {
+            border-color: #f0c14b;
+        }
+
+        .preview-title {
+            font-size: 14px;
+            font-weight: bold;
+            margin-bottom: 8px;
+            display: flex;
+            align-items: center;
+            gap: 8px;
+        }
+
+        .preview-title .icon {
+            font-size: 18px;
+        }
+
+        .preview-desc {
+            font-size: 12px;
+            color: #999;
+            margin-bottom: 12px;
+            line-height: 1.5;
+        }
+
+        .preview-visual {
+            background: #1a1a1a;
+            border-radius: 8px;
+            height: 120px;
+            display: flex;
+            align-items: center;
+            justify-content: center;
+            overflow: hidden;
+        }
+
+        /* Standard Mode Preview */
+        .standard-visual {
+            width: 90%;
+            height: 80%;
+            background: linear-gradient(135deg, #333, #222);
+            border-radius: 4px;
+            display: flex;
+            align-items: center;
+            justify-content: center;
+            color: #666;
+        }
+
+        /* Multi-view Preview */
+        .multiview-visual {
+            display: grid;
+            grid-template-columns: 2fr 1fr;
+            gap: 4px;
+            width: 90%;
+            height: 80%;
+        }
+
+        .mv-main {
+            background: linear-gradient(135deg, #333, #222);
+            border-radius: 4px;
+            display: flex;
+            align-items: center;
+            justify-content: center;
+            color: #666;
+            font-size: 10px;
+        }
+
+        .mv-sidebar {
+            display: flex;
+            flex-direction: column;
+            gap: 4px;
+        }
+
+        .mv-thumb {
+            flex: 1;
+            background: #333;
+            border-radius: 3px;
+        }
+
+        /* StatsView Preview */
+        .statsview-visual {
+            position: relative;
+            width: 90%;
+            height: 80%;
+            background: linear-gradient(135deg, #1a4d1a, #0d3d0d);
+            border-radius: 4px;
+        }
+
+        .sv-hud {
+            position: absolute;
+            top: 8px;
+            left: 8px;
+            background: rgba(0,0,0,0.8);
+            padding: 4px 6px;
+            border-radius: 3px;
+            font-size: 8px;
+        }
+
+        .sv-hud-row {
+            display: flex;
+            gap: 8px;
+        }
+
+        .sv-stat {
+            color: #f0c14b;
+        }
+
+        /* Combined Preview */
+        .combined-visual {
+            display: grid;
+            grid-template-columns: 2fr 1fr;
+            gap: 4px;
+            width: 90%;
+            height: 80%;
+        }
+
+        .cb-main {
+            background: linear-gradient(135deg, #1a4d1a, #0d3d0d);
+            border-radius: 4px;
+            position: relative;
+        }
+
+        .cb-hud {
+            position: absolute;
+            top: 4px;
+            left: 4px;
+            background: rgba(0,0,0,0.8);
+            padding: 2px 4px;
+            border-radius: 2px;
+            font-size: 6px;
+            color: #f0c14b;
+        }
+
+        .cb-sidebar {
+            display: flex;
+            flex-direction: column;
+            gap: 3px;
+        }
+
+        .cb-thumb {
+            flex: 1;
+            background: #333;
+            border-radius: 3px;
+        }
+
+        /* Plus+ Badge */
+        .plus-badge {
+            background: linear-gradient(135deg, #f0c14b, #d4a437);
+            color: #000;
+            padding: 2px 6px;
+            border-radius: 3px;
+            font-size: 9px;
+            font-weight: bold;
+        }
+
+        /* Event Info */
+        .event-info {
+            position: absolute;
+            bottom: 80px;
+            left: 20px;
+        }
+
+        .event-title {
+            font-size: 18px;
+            font-weight: bold;
+            margin-bottom: 4px;
+        }
+
+        .event-meta {
+            font-size: 13px;
+            color: #999;
+        }
+
+        /* Controls */
+        .controls {
+            position: absolute;
+            bottom: 20px;
+            left: 20px;
+            right: 20px;
+            display: flex;
+            align-items: center;
+            gap: 16px;
+        }
+
+        .control-btn {
+            background: rgba(255,255,255,0.2);
+            border: none;
+            color: #fff;
+            width: 40px;
+            height: 40px;
+            border-radius: 50%;
+            cursor: pointer;
+            font-size: 16px;
+        }
+
+        .progress-bar {
+            flex: 1;
+            height: 4px;
+            background: rgba(255,255,255,0.2);
+            border-radius: 2px;
+        }
+
+        .progress-fill {
+            width: 25%;
+            height: 100%;
+            background: #f0c14b;
+            border-radius: 2px;
+        }
+
+        .time {
+            font-size: 12px;
+            color: #999;
+        }
+
+        /* Tooltip */
+        .tooltip {
+            position: absolute;
+            top: 100%;
+            left: 50%;
+            transform: translateX(-50%);
+            background: #333;
+            color: #fff;
+            padding: 8px 12px;
+            border-radius: 6px;
+            font-size: 11px;
+            white-space: nowrap;
+            margin-top: 8px;
+            opacity: 0;
+            pointer-events: none;
+            transition: opacity 0.2s;
+        }
+
+        .mode-btn:hover .tooltip {
+            opacity: 1;
+        }
+
+        .tooltip::before {
+            content: '';
+            position: absolute;
+            bottom: 100%;
+            left: 50%;
+            transform: translateX(-50%);
+            border: 6px solid transparent;
+            border-bottom-color: #333;
+        }
+
+        /* Subscription Prompt */
+        .sub-prompt {
+            position: absolute;
+            top: 50%;
+            left: 50%;
+            transform: translate(-50%, -50%);
+            background: rgba(0, 0, 0, 0.95);
+            border-radius: 16px;
+            padding: 30px;
+            text-align: center;
+            max-width: 400px;
+            border: 1px solid #333;
+            display: none;
+        }
+
+        .sub-prompt.show {
+            display: block;
+        }
+
+        .sub-icon {
+            font-size: 48px;
+            margin-bottom: 16px;
+        }
+
+        .sub-title {
+            font-size: 20px;
+            font-weight: bold;
+            margin-bottom: 8px;
+        }
+
+        .sub-desc {
+            font-size: 14px;
+            color: #999;
+            margin-bottom: 20px;
+            line-height: 1.5;
+        }
+
+        .sub-btn {
+            background: #f0c14b;
+            color: #000;
+            border: none;
+            padding: 12px 32px;
+            border-radius: 8px;
+            font-size: 14px;
+            font-weight: bold;
+            cursor: pointer;
+        }
+
+        .sub-btn:hover {
+            background: #d4a437;
+        }
+    </style>
+</head>
+<body>
+    <header class="header">
+        <div class="logo">WSOP TV</div>
+        <div class="user-info">
+            <span class="badge">PLUS+</span>
+            <span>John D.</span>
+        </div>
+    </header>
+
+    <div class="video-container">
+        <div class="video-placeholder">
+            <div class="icon">🎬</div>
+            <div>WSOP 2026 Main Event - Day 5</div>
+        </div>
+
+        <!-- View Mode Switcher -->
+        <div class="view-mode-panel">
+            <button class="mode-btn">
+                <span class="mode-icon">📺</span>
+                <span class="mode-label">Standard</span>
+                <div class="tooltip">기본 시청 모드</div>
+            </button>
+            <button class="mode-btn active">
+                <span class="mode-icon">📱</span>
+                <span class="mode-label">Multi-view</span>
+                <span class="mode-badge">PLUS+</span>
+                <div class="tooltip">3계층 멀티뷰</div>
+            </button>
+            <button class="mode-btn">
+                <span class="mode-icon">📊</span>
+                <span class="mode-label">StatsView</span>
+                <span class="mode-badge">PLUS+</span>
+                <div class="tooltip">HUD 통계 오버레이</div>
+            </button>
+            <button class="mode-btn">
+                <span class="mode-icon">🎯</span>
+                <span class="mode-label">Combined</span>
+                <span class="mode-badge">Phase 2</span>
+                <div class="tooltip">멀티뷰 + 통계</div>
+            </button>
+        </div>
+
+        <div class="live-badge">
+            <span class="live-dot"></span>
+            LIVE
+        </div>
+
+        <!-- Mode Preview Cards -->
+        <div class="mode-preview-container">
+            <div class="preview-card">
+                <div class="preview-title">
+                    <span class="icon">📺</span>
+                    Standard Mode
+                </div>
+                <div class="preview-desc">
+                    PD 연출 메인 화면 (PGM)을 단일 화면으로 시청합니다.
+                </div>
+                <div class="preview-visual">
+                    <div class="standard-visual">PGM</div>
+                </div>
+            </div>
+
+            <div class="preview-card active">
+                <div class="preview-title">
+                    <span class="icon">📱</span>
+                    Multi-view Mode
+                    <span class="plus-badge">PLUS+</span>
+                </div>
+                <div class="preview-desc">
+                    PGM + 피처 테이블 + PlayerCAM을 동시에 시청합니다.
+                </div>
+                <div class="preview-visual">
+                    <div class="multiview-visual">
+                        <div class="mv-main">Main</div>
+                        <div class="mv-sidebar">
+                            <div class="mv-thumb"></div>
+                            <div class="mv-thumb"></div>
+                            <div class="mv-thumb"></div>
+                        </div>
+                    </div>
+                </div>
+            </div>
+
+            <div class="preview-card">
+                <div class="preview-title">
+                    <span class="icon">📊</span>
+                    StatsView Mode
+                    <span class="plus-badge">PLUS+</span>
+                </div>
+                <div class="preview-desc">
+                    GGPoker HUD 통계 오버레이와 함께 시청합니다.
+                </div>
+                <div class="preview-visual">
+                    <div class="statsview-visual">
+                        <div class="sv-hud">
+                            <div class="sv-hud-row">
+                                <span class="sv-stat">VPIP 28%</span>
+                                <span class="sv-stat">PFR 22%</span>
+                            </div>
+                        </div>
+                    </div>
+                </div>
+            </div>
+
+            <div class="preview-card">
+                <div class="preview-title">
+                    <span class="icon">🎯</span>
+                    Combined Mode
+                    <span style="font-size: 9px; color: #888; margin-left: 4px;">Phase 2</span>
+                </div>
+                <div class="preview-desc">
+                    Multi-view + StatsView를 동시에 사용합니다.
+                </div>
+                <div class="preview-visual">
+                    <div class="combined-visual">
+                        <div class="cb-main">
+                            <div class="cb-hud">HUD</div>
+                        </div>
+                        <div class="cb-sidebar">
+                            <div class="cb-thumb"></div>
+                            <div class="cb-thumb"></div>
+                            <div class="cb-thumb"></div>
+                        </div>
+                    </div>
+                </div>
+            </div>
+        </div>
+
+        <div class="event-info">
+            <div class="event-title">WSOP 2026 Main Event - Day 5</div>
+            <div class="event-meta">Final Table • $10M Guaranteed • 9 Players Remaining</div>
+        </div>
+
+        <div class="controls">
+            <button class="control-btn">⏮</button>
+            <button class="control-btn">▶</button>
+            <button class="control-btn">⏭</button>
+            <div class="progress-bar">
+                <div class="progress-fill"></div>
+            </div>
+            <span class="time">1:00:00 / 4:00:00</span>
+            <button class="control-btn">🔊</button>
+            <button class="control-btn">⛶</button>
+        </div>
+
+        <!-- Subscription Prompt (hidden by default) -->
+        <div class="sub-prompt">
+            <div class="sub-icon">🔒</div>
+            <div class="sub-title">Plus+ 전용 기능</div>
+            <div class="sub-desc">
+                Multi-view와 StatsView는 Plus+ 구독자 전용 기능입니다.<br>
+                지금 업그레이드하고 프리미엄 시청 경험을 즐기세요.
+            </div>
+            <button class="sub-btn">Plus+ 업그레이드 ($50/월)</button>
+        </div>
+    </div>
+</body>
+</html>

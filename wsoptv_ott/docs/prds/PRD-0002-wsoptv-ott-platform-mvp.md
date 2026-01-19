@@ -201,9 +201,9 @@ GG POKER 방송은 여러 개의 테이블을 전환하여 방송하는 방식.
 
 ### 플랫폼 구성
 
-![Platform Architecture](../../docs/images/PRD-0002/architecture.png)
+![Platform Architecture](../images/PRD-0002/architecture.png)
 
-[HTML 원본](../../docs/mockups/PRD-0002/architecture.html)
+[HTML 원본](../mockups/PRD-0002/architecture.html)
 
 ### 시스템 연동
 
@@ -222,9 +222,9 @@ GG POKER 방송은 여러 개의 테이블을 전환하여 방송하는 방식.
 
 ### Watch Screen
 
-![Watch Screen](../../docs/images/PRD-0002/watch-screen.png)
+![Watch Screen](../images/PRD-0002/watch-screen.png)
 
-[HTML 원본](../../docs/mockups/PRD-0002/watch-screen.html)
+[HTML 원본](../mockups/PRD-0002/watch-screen.html)
 
 **주요 기능**:
 - 대형 플레이어 (히어로 영역)
@@ -237,25 +237,25 @@ GG POKER 방송은 여러 개의 테이블을 전환하여 방송하는 방식.
 
 #### Layer 1: Main PGM
 
-![Layer 1: Main PGM](../../docs/images/PRD-0002/multiview-layer1-pgm.png)
+![Layer 1: Main PGM](../images/PRD-0002/multiview-layer1-pgm.png)
 
-[HTML 원본](../../docs/mockups/PRD-0002/multiview-layer1-pgm.html)
+[HTML 원본](../mockups/PRD-0002/multiview-layer1-pgm.html)
 
 **레이아웃**: 메인에 PGM, 우측에 피처 테이블 목록만
 
 #### Layer 2: Feature Table
 
-![Layer 2: Feature Table](../../docs/images/PRD-0002/multiview-layer2-table.png)
+![Layer 2: Feature Table](../images/PRD-0002/multiview-layer2-table.png)
 
-[HTML 원본](../../docs/mockups/PRD-0002/multiview-layer2-table.html)
+[HTML 원본](../mockups/PRD-0002/multiview-layer2-table.html)
 
 **레이아웃**: 좌측에 PGM+다른 테이블, 메인에 선택한 테이블, 우측에 PlayerCAM 목록
 
 #### Layer 3: PlayerCAM
 
-![Layer 3: PlayerCAM](../../docs/images/PRD-0002/multiview-layer3-playercam.png)
+![Layer 3: PlayerCAM](../images/PRD-0002/multiview-layer3-playercam.png)
 
-[HTML 원본](../../docs/mockups/PRD-0002/multiview-layer3-playercam.html)
+[HTML 원본](../mockups/PRD-0002/multiview-layer3-playercam.html)
 
 **레이아웃**: 좌측에 PGM+피처 테이블, 메인에 선택한 PlayerCAM, 우측에 다른 PlayerCAM
 
@@ -268,15 +268,15 @@ GG POKER 방송은 여러 개의 테이블을 전환하여 방송하는 방식.
 
 ### Multi-View UX Flow
 
-![Multi-View UX Flow](../../docs/images/PRD-0002/multiview-ux-flow.png)
+![Multi-View UX Flow](../images/PRD-0002/multiview-ux-flow.png)
 
-[HTML 원본](../../docs/mockups/PRD-0002/multiview-ux-flow.html)
+[HTML 원본](../mockups/PRD-0002/multiview-ux-flow.html)
 
 ### StatsView Video Player Layout
 
-![StatsView Layout](../../docs/images/PRD-0002/player-with-statsview.png)
+![StatsView Layout](../images/PRD-0002/player-with-statsview.png)
 
-[HTML 원본](../../docs/mockups/PRD-0002/player-with-statsview.html)
+[HTML 원본](../mockups/PRD-0002/player-with-statsview.html)
 
 **레이아웃 구조**:
 - 좌측: 플레이어 통계 HUD (VPIP/PFR/3Bet/AF/Stack)
@@ -286,16 +286,16 @@ GG POKER 방송은 여러 개의 테이블을 전환하여 방송하는 방식.
 
 ### Collections Screen
 
-![Collections Screen](../../docs/images/PRD-0002/collections-screen.png)
+![Collections Screen](../images/PRD-0002/collections-screen.png)
 
-[HTML 원본](../../docs/mockups/PRD-0002/collections-screen.html)
+[HTML 원본](../mockups/PRD-0002/collections-screen.html)
 
 **주요 기능**:
 - 히어로 배너 (Featured Collection)
 - 필터 탭 (Main Event, Bracelet, High Roller, Classics)
 - 시청 진행률 표시
 - 큐레이티드 플레이리스트
-- 검색 기능 (Elasticsearch 기반 - [PRD-0007](PRD-0007-content-strategy.md) 참조)
+- 검색 기능 (Elasticsearch 기반 - [STRAT-0007](../strategies/STRAT-0007-content-sourcing.md) 참조)
 
 **검색 기능 상세**:
 - 대회명, 년도, 플레이어명, 게임 타입 등 메타데이터 기반 전문 검색
@@ -374,10 +374,9 @@ GG POKER 방송은 여러 개의 테이블을 전환하여 방송하는 방식.
 
 ## References
 
-- [Michael Vision Note](../docs/order/michael_note.md)
-- [Michael Vision Analysis](../docs/order/michael_vision_analysis.md)
 - [PRD-0006 Advanced Mode](PRD-0006-advanced-mode.md)
-- [0003 Cross-Promotion Strategy](0003-cross-promotion-strategy.md)
+- [STRAT-0003 Cross-Promotion Strategy](../strategies/STRAT-0003-cross-promotion.md)
+- [STRAT-0007 Content Sourcing](../strategies/STRAT-0007-content-sourcing.md)
 
 ---
 

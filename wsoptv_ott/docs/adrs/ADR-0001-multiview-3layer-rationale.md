@@ -6,7 +6,7 @@
 | **작성일** | 2026-01-16 |
 | **상태** | Draft |
 | **영향도** | High - Advanced Mode의 핵심 UX 설계 |
-| **관련 PRD** | [PRD-0002](../../tasks/prds/PRD-0002-wsoptv-ott-platform-mvp.md), [PRD-0006](../../tasks/prds/PRD-0006-advanced-mode.md) |
+| **관련 PRD** | [PRD-0002](../prds/PRD-0002-wsoptv-ott-platform-mvp.md), [PRD-0006](../prds/PRD-0006-advanced-mode.md) |
 
 ---
 
@@ -399,10 +399,8 @@ GG POKER 방송의 현실:
 
 | 문서 | 위치 | 설명 |
 |------|------|------|
-| Michael Note | `docs/order/michael_note.md` | 크리에이티브 디렉터 원안 |
-| Michael Vision Analysis | `docs/order/michael_vision_analysis.md` | 원안 분석 및 해석 |
-| PRD-0002 | `tasks/prds/PRD-0002-wsoptv-ott-platform-mvp.md` | MVP 스펙 (3계층 정의) |
-| PRD-0006 | `tasks/prds/PRD-0006-advanced-mode.md` | Advanced Mode 상세 스펙 |
+| PRD-0002 | [PRD-0002-wsoptv-ott-platform-mvp.md](../prds/PRD-0002-wsoptv-ott-platform-mvp.md) | MVP 스펙 (3계층 정의) |
+| PRD-0006 | [PRD-0006-advanced-mode.md](../prds/PRD-0006-advanced-mode.md) | Advanced Mode 상세 스펙 |
 
 ---
 
