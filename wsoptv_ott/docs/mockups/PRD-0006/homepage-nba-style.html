@@ -1,0 +1,436 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>WSOPTV - Homepage (NBA Style)</title>
+    <style>
+        * { margin: 0; padding: 0; box-sizing: border-box; }
+        body { font-family: -apple-system, BlinkMacSystemFont, 'Segoe UI', Roboto, sans-serif; background: #0a0a0a; color: #fff; }
+
+        /* Tournament Strip (NBA Score Strip) */
+        .tournament-strip {
+            background: #1a1a1a;
+            border-bottom: 1px solid #333;
+            padding: 8px 0;
+            overflow-x: auto;
+            white-space: nowrap;
+        }
+        .strip-container { display: flex; gap: 2px; padding: 0 16px; }
+        .strip-item {
+            background: #252525;
+            padding: 8px 16px;
+            border-radius: 4px;
+            min-width: 160px;
+            cursor: pointer;
+            transition: background 0.2s;
+        }
+        .strip-item:hover { background: #333; }
+        .strip-item.live { border-left: 3px solid #e53935; }
+        .strip-item.vod { border-left: 3px solid #666; }
+        .strip-header { display: flex; align-items: center; gap: 6px; margin-bottom: 4px; }
+        .live-badge { background: #e53935; color: #fff; font-size: 9px; padding: 2px 6px; border-radius: 2px; font-weight: bold; }
+        .vod-badge { background: #666; color: #fff; font-size: 9px; padding: 2px 6px; border-radius: 2px; }
+        .strip-title { font-size: 11px; font-weight: 600; color: #fff; }
+        .strip-info { font-size: 10px; color: #888; }
+        .strip-pot { font-size: 12px; color: #4CAF50; font-weight: bold; margin-top: 2px; }
+
+        /* Plus+ CTA Banner */
+        .plus-banner {
+            background: linear-gradient(90deg, #1e3a5f 0%, #0d47a1 100%);
+            padding: 12px 24px;
+            display: flex;
+            justify-content: space-between;
+            align-items: center;
+        }
+        .banner-text { font-size: 14px; font-weight: 500; }
+        .banner-text span { color: #ffd700; }
+        .banner-cta {
+            background: #ffd700;
+            color: #000;
+            border: none;
+            padding: 8px 20px;
+            border-radius: 4px;
+            font-weight: bold;
+            cursor: pointer;
+        }
+
+        /* Main Content */
+        .main-content { display: flex; gap: 24px; padding: 24px; max-width: 1400px; margin: 0 auto; }
+
+        /* Hero Section */
+        .hero-section { flex: 2; }
+        .hero-card {
+            background: #1a1a1a;
+            border-radius: 8px;
+            overflow: hidden;
+        }
+        .hero-image {
+            position: relative;
+            background: linear-gradient(135deg, #1e3a5f, #0d47a1);
+            height: 320px;
+            display: flex;
+            align-items: center;
+            justify-content: center;
+        }
+        .hero-overlay {
+            position: absolute;
+            bottom: 0;
+            left: 0;
+            right: 0;
+            background: linear-gradient(transparent, rgba(0,0,0,0.9));
+            padding: 24px;
+        }
+        .hero-badge { background: #e53935; padding: 4px 12px; border-radius: 4px; font-size: 11px; font-weight: bold; display: inline-block; margin-bottom: 8px; }
+        .hero-title { font-size: 28px; font-weight: bold; margin-bottom: 8px; }
+        .hero-subtitle { color: #888; font-size: 14px; margin-bottom: 16px; }
+        .hero-stats { display: flex; gap: 24px; }
+        .hero-stat { text-align: center; }
+        .hero-stat-value { font-size: 24px; font-weight: bold; color: #4CAF50; }
+        .hero-stat-label { font-size: 11px; color: #666; }
+        .hero-actions { display: flex; gap: 12px; padding: 16px; background: #252525; }
+        .btn-primary { background: #e53935; color: #fff; border: none; padding: 12px 24px; border-radius: 4px; font-weight: bold; cursor: pointer; }
+        .btn-secondary { background: #333; color: #fff; border: none; padding: 12px 24px; border-radius: 4px; font-weight: bold; cursor: pointer; }
+
+        /* Headlines Sidebar */
+        .headlines-sidebar { flex: 1; max-width: 320px; }
+        .section-title { font-size: 14px; font-weight: bold; color: #888; margin-bottom: 16px; text-transform: uppercase; letter-spacing: 1px; }
+        .headline-item {
+            background: #1a1a1a;
+            border-radius: 8px;
+            padding: 12px;
+            margin-bottom: 12px;
+            cursor: pointer;
+            transition: background 0.2s;
+        }
+        .headline-item:hover { background: #252525; }
+        .headline-meta { font-size: 10px; color: #e53935; margin-bottom: 4px; }
+        .headline-title { font-size: 13px; font-weight: 500; line-height: 1.4; }
+
+        /* Content Sections */
+        .content-sections { padding: 24px; max-width: 1400px; margin: 0 auto; }
+        .content-section { margin-bottom: 32px; }
+        .section-header { display: flex; justify-content: space-between; align-items: center; margin-bottom: 16px; }
+        .see-all { color: #4CAF50; font-size: 12px; cursor: pointer; }
+
+        /* Stories (Live Tables) */
+        .stories-container { display: flex; gap: 12px; overflow-x: auto; padding-bottom: 8px; }
+        .story-item {
+            min-width: 100px;
+            text-align: center;
+            cursor: pointer;
+        }
+        .story-avatar {
+            width: 80px;
+            height: 80px;
+            border-radius: 50%;
+            background: linear-gradient(135deg, #e53935, #ff5722);
+            padding: 3px;
+            margin: 0 auto 8px;
+        }
+        .story-avatar-inner {
+            width: 100%;
+            height: 100%;
+            border-radius: 50%;
+            background: #333;
+            display: flex;
+            align-items: center;
+            justify-content: center;
+            font-size: 24px;
+        }
+        .story-label { font-size: 11px; color: #888; }
+        .story-live { color: #e53935; font-weight: bold; }
+
+        /* Trending Grid */
+        .trending-grid { display: grid; grid-template-columns: repeat(4, 1fr); gap: 16px; }
+        .trending-card {
+            background: #1a1a1a;
+            border-radius: 8px;
+            overflow: hidden;
+            cursor: pointer;
+            transition: transform 0.2s;
+        }
+        .trending-card:hover { transform: translateY(-4px); }
+        .trending-thumb {
+            height: 120px;
+            background: linear-gradient(135deg, #2d2d2d, #1a1a1a);
+            position: relative;
+        }
+        .trending-duration {
+            position: absolute;
+            bottom: 8px;
+            right: 8px;
+            background: rgba(0,0,0,0.8);
+            padding: 2px 6px;
+            border-radius: 2px;
+            font-size: 10px;
+        }
+        .trending-info { padding: 12px; }
+        .trending-title { font-size: 12px; font-weight: 500; margin-bottom: 4px; line-height: 1.3; }
+        .trending-meta { font-size: 10px; color: #666; }
+
+        /* Recaps Grid */
+        .recaps-grid { display: grid; grid-template-columns: repeat(3, 1fr); gap: 16px; }
+        .recap-card {
+            background: #1a1a1a;
+            border-radius: 8px;
+            overflow: hidden;
+            cursor: pointer;
+        }
+        .recap-thumb {
+            height: 140px;
+            background: linear-gradient(135deg, #1e3a5f, #0d47a1);
+            position: relative;
+        }
+        .recap-play {
+            position: absolute;
+            top: 50%;
+            left: 50%;
+            transform: translate(-50%, -50%);
+            width: 48px;
+            height: 48px;
+            background: rgba(255,255,255,0.9);
+            border-radius: 50%;
+            display: flex;
+            align-items: center;
+            justify-content: center;
+        }
+        .recap-info { padding: 12px; }
+        .recap-title { font-size: 14px; font-weight: 500; margin-bottom: 4px; }
+        .recap-meta { font-size: 11px; color: #666; }
+    </style>
+</head>
+<body>
+    <!-- Tournament Strip (NBA Score Strip Style) -->
+    <div class="tournament-strip">
+        <div class="strip-container">
+            <div class="strip-item live">
+                <div class="strip-header">
+                    <span class="live-badge">LIVE</span>
+                    <span class="strip-title">Main Event</span>
+                </div>
+                <div class="strip-info">Final Table</div>
+                <div class="strip-pot">POT: $2.4M</div>
+            </div>
+            <div class="strip-item live">
+                <div class="strip-header">
+                    <span class="live-badge">LIVE</span>
+                    <span class="strip-title">$100K High Roller</span>
+                </div>
+                <div class="strip-info">Day 2 - 24 Left</div>
+                <div class="strip-pot">POT: $890K</div>
+            </div>
+            <div class="strip-item vod">
+                <div class="strip-header">
+                    <span class="vod-badge">VOD</span>
+                    <span class="strip-title">$1K Daily</span>
+                </div>
+                <div class="strip-info">Day 1 Complete</div>
+                <div class="strip-pot">POT: $420K</div>
+            </div>
+            <div class="strip-item live">
+                <div class="strip-header">
+                    <span class="live-badge">LIVE</span>
+                    <span class="strip-title">Super Circuit #12</span>
+                </div>
+                <div class="strip-info">Heads Up</div>
+                <div class="strip-pot">POT: $1.1M</div>
+            </div>
+            <div class="strip-item vod">
+                <div class="strip-header">
+                    <span class="vod-badge">VOD</span>
+                    <span class="strip-title">PLO Championship</span>
+                </div>
+                <div class="strip-info">Final Table</div>
+                <div class="strip-pot">POT: $560K</div>
+            </div>
+        </div>
+    </div>
+
+    <!-- Plus+ CTA Banner -->
+    <div class="plus-banner">
+        <div class="banner-text">STREAM LIKE YOU'RE AT THE TABLE - Get <span>MultiView, StatsView & Key Hands</span> with Plus+</div>
+        <button class="banner-cta">SUBSCRIBE NOW</button>
+    </div>
+
+    <!-- Main Content Area -->
+    <div class="main-content">
+        <!-- Hero Section (Featured Event) -->
+        <div class="hero-section">
+            <div class="hero-card">
+                <div class="hero-image">
+                    <div class="hero-overlay">
+                        <span class="hero-badge">LIVE NOW</span>
+                        <h1 class="hero-title">WSOP Main Event - Final Table</h1>
+                        <p class="hero-subtitle">6 Players Remaining | Blinds: 100K/200K/200K</p>
+                        <div class="hero-stats">
+                            <div class="hero-stat">
+                                <div class="hero-stat-value">$12.1M</div>
+                                <div class="hero-stat-label">1ST PLACE</div>
+                            </div>
+                            <div class="hero-stat">
+                                <div class="hero-stat-value">Phil Ivey</div>
+                                <div class="hero-stat-label">CHIP LEADER</div>
+                            </div>
+                            <div class="hero-stat">
+                                <div class="hero-stat-value">47</div>
+                                <div class="hero-stat-label">HANDS PLAYED</div>
+                            </div>
+                        </div>
+                    </div>
+                </div>
+                <div class="hero-actions">
+                    <button class="btn-primary">WATCH LIVE</button>
+                    <button class="btn-secondary">BOX SCORE</button>
+                </div>
+            </div>
+        </div>
+
+        <!-- Headlines Sidebar (Poker Headlines) -->
+        <div class="headlines-sidebar">
+            <h3 class="section-title">Poker Headlines</h3>
+            <div class="headline-item">
+                <div class="headline-meta">BREAKING</div>
+                <div class="headline-title">Phil Ivey Takes Chip Lead After Massive Bluff vs Negreanu</div>
+            </div>
+            <div class="headline-item">
+                <div class="headline-meta">ANALYSIS</div>
+                <div class="headline-title">GTO Breakdown: The $2.4M Pot That Changed Everything</div>
+            </div>
+            <div class="headline-item">
+                <div class="headline-meta">INTERVIEW</div>
+                <div class="headline-title">Daniel Negreanu: "I Had to Make That Call"</div>
+            </div>
+            <div class="headline-item">
+                <div class="headline-meta">STATS</div>
+                <div class="headline-title">Final Table Stats: Ivey's 28% VPIP Dominates</div>
+            </div>
+        </div>
+    </div>
+
+    <!-- Content Sections -->
+    <div class="content-sections">
+        <!-- Stories (Live Tables) -->
+        <div class="content-section">
+            <div class="section-header">
+                <h3 class="section-title">Live Tables</h3>
+            </div>
+            <div class="stories-container">
+                <div class="story-item">
+                    <div class="story-avatar">
+                        <div class="story-avatar-inner">ME</div>
+                    </div>
+                    <div class="story-label story-live">LIVE</div>
+                </div>
+                <div class="story-item">
+                    <div class="story-avatar">
+                        <div class="story-avatar-inner">HR</div>
+                    </div>
+                    <div class="story-label story-live">LIVE</div>
+                </div>
+                <div class="story-item">
+                    <div class="story-avatar">
+                        <div class="story-avatar-inner">SC</div>
+                    </div>
+                    <div class="story-label story-live">LIVE</div>
+                </div>
+                <div class="story-item">
+                    <div class="story-avatar">
+                        <div class="story-avatar-inner">1K</div>
+                    </div>
+                    <div class="story-label">2h ago</div>
+                </div>
+                <div class="story-item">
+                    <div class="story-avatar">
+                        <div class="story-avatar-inner">PLO</div>
+                    </div>
+                    <div class="story-label">5h ago</div>
+                </div>
+            </div>
+        </div>
+
+        <!-- Trending Hands -->
+        <div class="content-section">
+            <div class="section-header">
+                <h3 class="section-title">Trending Hands</h3>
+                <span class="see-all">See All</span>
+            </div>
+            <div class="trending-grid">
+                <div class="trending-card">
+                    <div class="trending-thumb">
+                        <span class="trending-duration">2:34</span>
+                    </div>
+                    <div class="trending-info">
+                        <div class="trending-title">Ivey's 4-Bet Bluff vs Negreanu</div>
+                        <div class="trending-meta">Hand #47 | 125K views</div>
+                    </div>
+                </div>
+                <div class="trending-card">
+                    <div class="trending-thumb">
+                        <span class="trending-duration">1:58</span>
+                    </div>
+                    <div class="trending-info">
+                        <div class="trending-title">AA Cracked by Runner-Runner</div>
+                        <div class="trending-meta">Hand #52 | 98K views</div>
+                    </div>
+                </div>
+                <div class="trending-card">
+                    <div class="trending-thumb">
+                        <span class="trending-duration">3:12</span>
+                    </div>
+                    <div class="trending-info">
+                        <div class="trending-title">All-In Call with K-High</div>
+                        <div class="trending-meta">Hand #58 | 87K views</div>
+                    </div>
+                </div>
+                <div class="trending-card">
+                    <div class="trending-thumb">
+                        <span class="trending-duration">2:45</span>
+                    </div>
+                    <div class="trending-info">
+                        <div class="trending-title">Hellmuth's Epic Meltdown</div>
+                        <div class="trending-meta">Hand #63 | 76K views</div>
+                    </div>
+                </div>
+            </div>
+        </div>
+
+        <!-- Tournament Recaps -->
+        <div class="content-section">
+            <div class="section-header">
+                <h3 class="section-title">Tournament Recaps</h3>
+                <span class="see-all">See All</span>
+            </div>
+            <div class="recaps-grid">
+                <div class="recap-card">
+                    <div class="recap-thumb">
+                        <div class="recap-play">&#9654;</div>
+                    </div>
+                    <div class="recap-info">
+                        <div class="recap-title">Main Event Day 7 Recap</div>
+                        <div class="recap-meta">45 min | Yesterday</div>
+                    </div>
+                </div>
+                <div class="recap-card">
+                    <div class="recap-thumb">
+                        <div class="recap-play">&#9654;</div>
+                    </div>
+                    <div class="recap-info">
+                        <div class="recap-title">$100K High Roller Day 1</div>
+                        <div class="recap-meta">32 min | 2 days ago</div>
+                    </div>
+                </div>
+                <div class="recap-card">
+                    <div class="recap-thumb">
+                        <div class="recap-play">&#9654;</div>
+                    </div>
+                    <div class="recap-info">
+                        <div class="recap-title">Super Circuit Week 12</div>
+                        <div class="recap-meta">28 min | 3 days ago</div>
+                    </div>
+                </div>
+            </div>
+        </div>
+    </div>
+</body>
+</html>
