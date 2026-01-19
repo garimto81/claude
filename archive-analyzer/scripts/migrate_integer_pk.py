@@ -81,7 +81,9 @@ def create_id_mapping_table(conn, dry_run: bool = False):
         print("  [DRY-RUN] CREATE TABLE id_mapping")
     else:
         conn.execute(ddl)
-        conn.execute("CREATE INDEX IF NOT EXISTS idx_id_mapping_new ON id_mapping(table_name, new_id)")
+        conn.execute(
+            "CREATE INDEX IF NOT EXISTS idx_id_mapping_new ON id_mapping(table_name, new_id)"
+        )
         conn.commit()
         print("  ✅ Created table: id_mapping")
 
@@ -117,8 +119,7 @@ def migrate_catalogs(conn, dry_run: bool = False) -> int:
     for row in rows:
         old_id = row["id"]
         cursor.execute(
-            "UPDATE catalogs SET varchar_id = ? WHERE id = ?",
-            (old_id, old_id)
+            "UPDATE catalogs SET varchar_id = ? WHERE id = ?", (old_id, old_id)
         )
 
     conn.commit()
@@ -156,8 +157,7 @@ def migrate_subcatalogs(conn, dry_run: bool = False) -> int:
     for row in rows:
         old_id = row["id"]
         cursor.execute(
-            "UPDATE subcatalogs SET varchar_id = ? WHERE id = ?",
-            (old_id, old_id)
+            "UPDATE subcatalogs SET varchar_id = ? WHERE id = ?", (old_id, old_id)
         )
 
     conn.commit()
@@ -194,10 +194,7 @@ def migrate_files(conn, dry_run: bool = False) -> int:
 
     for row in rows:
         old_id = row["id"]
-        cursor.execute(
-            "UPDATE files SET varchar_id = ? WHERE id = ?",
-            (old_id, old_id)
-        )
+        cursor.execute("UPDATE files SET varchar_id = ? WHERE id = ?", (old_id, old_id))
 
     conn.commit()
     return len(rows)
@@ -248,10 +245,21 @@ def populate_id_mapping(conn, dry_run: bool = False) -> int:
         for row in rows:
             try:
                 # varchar_id가 원본 ID, id가 현재 PK
-                cursor.execute("""
+                cursor.execute(
+                    """
                     INSERT OR IGNORE INTO id_mapping (table_name, old_id, new_id)
                     VALUES (?, ?, ?)
-                """, (table, row["varchar_id"], row["id"] if isinstance(row["id"], int) else hash(row["id"]) % 10000000))
+                """,
+                    (
+                        table,
+                        row["varchar_id"],
+                        (
+                            row["id"]
+                            if isinstance(row["id"], int)
+                            else hash(row["id"]) % 10000000
+                        ),
+                    ),
+                )
                 total += 1
             except sqlite3.IntegrityError:
                 pass
@@ -287,7 +295,9 @@ def show_stats(conn):
     # id_mapping 테이블
     status = check_migration_status(conn)
     if status["id_mapping_exists"]:
-        cursor.execute("SELECT table_name, COUNT(*) FROM id_mapping GROUP BY table_name")
+        cursor.execute(
+            "SELECT table_name, COUNT(*) FROM id_mapping GROUP BY table_name"
+        )
         print("id_mapping 테이블:")
         for row in cursor.fetchall():
             print(f"  {row[0]}: {row[1]}개")
@@ -311,7 +321,9 @@ def verify(conn) -> dict:
             null_count = cursor.fetchone()[0]
             if null_count > 0:
                 result[f"{table}_ok"] = False
-                result["errors"].append(f"{table}: {null_count} records with NULL varchar_id")
+                result["errors"].append(
+                    f"{table}: {null_count} records with NULL varchar_id"
+                )
         except sqlite3.OperationalError:
             result[f"{table}_ok"] = False
             result["errors"].append(f"{table}: varchar_id column not found")
@@ -361,7 +373,9 @@ def main():
             print("🔍 마이그레이션 검증...\n")
             result = verify(conn)
 
-            if all([result["catalogs_ok"], result["subcatalogs_ok"], result["files_ok"]]):
+            if all(
+                [result["catalogs_ok"], result["subcatalogs_ok"], result["files_ok"]]
+            ):
                 print("✅ 모든 테이블 검증 통과")
             else:
                 print("❌ 검증 실패:")

@@ -380,9 +380,7 @@ class V3SchemaMigration:
     def check_existing_tables(self) -> dict:
         """기존 테이블 존재 여부 확인"""
         cursor = self.conn.cursor()
-        cursor.execute(
-            "SELECT name FROM sqlite_master WHERE type='table'"
-        )
+        cursor.execute("SELECT name FROM sqlite_master WHERE type='table'")
         tables = {row[0] for row in cursor.fetchall()}
 
         return {
@@ -461,7 +459,14 @@ class V3SchemaMigration:
             has_description = "description" in columns
             has_display_title = "display_title" in columns
 
-            select_cols = ["t.id", "t.catalog_id", "t.name", "t.year", "t.location", "t.subcatalog_id"]
+            select_cols = [
+                "t.id",
+                "t.catalog_id",
+                "t.name",
+                "t.year",
+                "t.location",
+                "t.subcatalog_id",
+            ]
             if has_description:
                 select_cols.append("t.description")
             if has_display_title:
@@ -471,7 +476,7 @@ class V3SchemaMigration:
             tournaments = cursor.fetchall()
 
             # 결과를 dict로 변환
-            col_names = [desc[0].split('.')[-1] for desc in cursor.description]
+            col_names = [desc[0].split(".")[-1] for desc in cursor.description]
 
             for row in tournaments:
                 t = dict(zip(col_names, row))
@@ -556,9 +561,7 @@ class V3SchemaMigration:
             if cat_row:
                 default_catalog_id = cat_row[0]
             else:
-                cursor.execute(
-                    "INSERT INTO catalogs (id, name) VALUES (1, 'Default')"
-                )
+                cursor.execute("INSERT INTO catalogs (id, name) VALUES (1, 'Default')")
                 default_catalog_id = 1
 
             # 기본 series 생성
@@ -609,15 +612,19 @@ class V3SchemaMigration:
 
         # files 테이블에 미디어 정보가 있는 경우 직접 사용
         if has_duration_sec and has_resolution and has_codec:
-            select_cols.extend([
-                "f.duration_sec as duration_seconds",
-                "f.resolution",
-                "f.codec as video_codec"
-            ])
+            select_cols.extend(
+                [
+                    "f.duration_sec as duration_seconds",
+                    "f.resolution",
+                    "f.codec as video_codec",
+                ]
+            )
             query = f"SELECT {', '.join(select_cols)} FROM files f"
         else:
             # media_info 테이블 확인 (media_info 또는 nas_media_info)
-            cursor.execute("SELECT name FROM sqlite_master WHERE type='table' AND name IN ('media_info', 'nas_media_info')")
+            cursor.execute(
+                "SELECT name FROM sqlite_master WHERE type='table' AND name IN ('media_info', 'nas_media_info')"
+            )
             media_tables = [r[0] for r in cursor.fetchall()]
             media_table = media_tables[0] if media_tables else None
 
@@ -636,7 +643,9 @@ class V3SchemaMigration:
                         NULL as duration_seconds, NULL as width, NULL as height, NULL as video_codec
                     FROM files f
                 """
-                logger.warning("media_info 테이블이 없습니다. 미디어 정보 없이 진행합니다.")
+                logger.warning(
+                    "media_info 테이블이 없습니다. 미디어 정보 없이 진행합니다."
+                )
 
         cursor.execute(query)
         files = cursor.fetchall()
@@ -730,17 +739,23 @@ class V3SchemaMigration:
 
         # 컬럼 이름 매핑 (다양한 스키마 버전 지원)
         pot_col = "pot_size_bb" if "pot_size_bb" in hands_columns else "pot_bb"
-        start_col = "start_sec" if "start_sec" in hands_columns else "timecode_start_seconds"
+        start_col = (
+            "start_sec" if "start_sec" in hands_columns else "timecode_start_seconds"
+        )
         end_col = "end_sec" if "end_sec" in hands_columns else "timecode_end_seconds"
         has_display_title = "display_title" in hands_columns
 
         select_cols = [
-            "h.id", "h.file_id", "h.winner",
+            "h.id",
+            "h.file_id",
+            "h.winner",
             f"h.{pot_col} as pot_bb",
             "h.is_all_in",
             f"h.{start_col} as timecode_start_seconds",
             f"h.{end_col} as timecode_end_seconds",
-            "h.players", "h.tags", "h.hand_number"
+            "h.players",
+            "h.tags",
+            "h.hand_number",
         ]
         if has_display_title:
             select_cols.append("h.display_title")
@@ -852,9 +867,7 @@ class V3SchemaMigration:
             if row:
                 player_id = row[0]
             else:
-                cursor.execute(
-                    "INSERT INTO players (name) VALUES (?)", (player_name,)
-                )
+                cursor.execute("INSERT INTO players (name) VALUES (?)", (player_name,))
                 player_id = cursor.lastrowid
 
             # content_players에 삽입

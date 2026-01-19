@@ -103,7 +103,9 @@ class SMBConnector:
 
         for attempt in range(self.config.max_retries):
             try:
-                logger.info(f"Connecting to {self.config.server}... (attempt {attempt + 1})")
+                logger.info(
+                    f"Connecting to {self.config.server}... (attempt {attempt + 1})"
+                )
 
                 register_session(
                     self.config.server,
@@ -130,7 +132,9 @@ class SMBConnector:
                 if attempt < self.config.max_retries - 1:
                     time.sleep(self.config.retry_delay * (attempt + 1))
                 else:
-                    logger.error(f"Failed to connect after {self.config.max_retries} attempts")
+                    logger.error(
+                        f"Failed to connect after {self.config.max_retries} attempts"
+                    )
                     raise SMBConnectionError(f"Connection failed: {e}") from e
 
         return False
@@ -199,7 +203,9 @@ class SMBConnector:
             logger.error(f"Failed to get file info {full_path}: {e}")
             raise
 
-    def scan_directory(self, path: str = "", recursive: bool = False) -> Iterator[FileInfo]:
+    def scan_directory(
+        self, path: str = "", recursive: bool = False
+    ) -> Iterator[FileInfo]:
         """디렉토리 스캔 (제너레이터)
 
         Args:
@@ -224,7 +230,9 @@ class SMBConnector:
 
                     # 재귀 스캔
                     if recursive and file_info.is_dir:
-                        sub_path = os.path.join(path, entry.name) if path else entry.name
+                        sub_path = (
+                            os.path.join(path, entry.name) if path else entry.name
+                        )
                         yield from self.scan_directory(sub_path, recursive=True)
 
                 except Exception as e:
@@ -342,7 +350,9 @@ def create_connector(config: Optional[AnalyzerConfig] = None) -> SMBConnector:
     return SMBConnector(config.smb)
 
 
-def quick_connect(server: str, share: str, username: str, password: str, **kwargs) -> SMBConnector:
+def quick_connect(
+    server: str, share: str, username: str, password: str, **kwargs
+) -> SMBConnector:
     """빠른 연결을 위한 헬퍼 함수
 
     Args:
@@ -355,7 +365,9 @@ def quick_connect(server: str, share: str, username: str, password: str, **kwarg
     Returns:
         연결된 SMBConnector
     """
-    config = SMBConfig(server=server, share=share, username=username, password=password, **kwargs)
+    config = SMBConfig(
+        server=server, share=share, username=username, password=password, **kwargs
+    )
     connector = SMBConnector(config)
     connector.connect()
     return connector

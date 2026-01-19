@@ -27,16 +27,12 @@ class TagService(ITagService):
         # TODO: 구현
         raise NotImplementedError
 
-    async def list_tags(
-        self, category: TagCategory | None = None
-    ) -> list[Tag]:
+    async def list_tags(self, category: TagCategory | None = None) -> list[Tag]:
         """태그 목록"""
         # TODO: 구현
         raise NotImplementedError
 
-    async def create_tag(
-        self, name: str, category: TagCategory, **kwargs
-    ) -> Tag:
+    async def create_tag(self, name: str, category: TagCategory, **kwargs) -> Tag:
         """태그 생성"""
         # TODO: 구현
         raise NotImplementedError

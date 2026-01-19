@@ -90,7 +90,7 @@ def extract_relative_path(full_path: str, base_marker: str = "ARCHIVE") -> str:
     marker = f"/{base_marker}/"
     if marker in normalized:
         idx = normalized.find(marker)
-        return normalized[idx + len(marker):].strip("/")
+        return normalized[idx + len(marker) :].strip("/")
     return normalized.split("/")[-1] if "/" in normalized else normalized
 
 

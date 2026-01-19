@@ -27,6 +27,7 @@ from typing import Optional
 # Enums
 # ============================================
 
+
 class AssetStatus(str, Enum):
     PENDING = "pending"
     ACTIVE = "active"
@@ -78,9 +79,11 @@ class TagCategory(str, Enum):
 # Data Models (공유)
 # ============================================
 
+
 @dataclass
 class Asset:
     """자산 기본 정보 - 모든 모듈에서 참조"""
+
     id: str
     nas_path: str
     filename: str
@@ -104,6 +107,7 @@ class Asset:
 @dataclass
 class AssetVersion:
     """자산 버전"""
+
     id: str
     asset_id: str
     version_type: str  # original, proxy, clip, edited
@@ -116,6 +120,7 @@ class AssetVersion:
 @dataclass
 class Tag:
     """태그 정보"""
+
     id: str
     name: str
     category: TagCategory
@@ -127,6 +132,7 @@ class Tag:
 @dataclass
 class TagAlias:
     """태그 별명"""
+
     id: int
     tag_id: str
     alias: str
@@ -135,6 +141,7 @@ class TagAlias:
 @dataclass
 class AssetTag:
     """자산-태그 연결"""
+
     asset_id: str
     tag_id: str
     confidence: float = 1.0  # 자동 태깅 신뢰도
@@ -144,6 +151,7 @@ class AssetTag:
 @dataclass
 class Clip:
     """클립 정보"""
+
     id: str
     source_asset_id: str
     start_time: float
@@ -160,6 +168,7 @@ class Clip:
 @dataclass
 class Job:
     """작업 정보"""
+
     id: str
     job_type: JobType
     status: JobStatus = JobStatus.QUEUED
@@ -175,6 +184,7 @@ class Job:
 @dataclass
 class Collection:
     """컬렉션"""
+
     id: str
     name: str
     description: Optional[str] = None
@@ -184,6 +194,7 @@ class Collection:
 @dataclass
 class SearchResult:
     """검색 결과"""
+
     total: int
     assets: list[Asset]
     facets: dict[str, list[tuple[str, int]]] = field(default_factory=dict)
@@ -193,6 +204,7 @@ class SearchResult:
 @dataclass
 class User:
     """사용자"""
+
     id: str
     email: str
     name: Optional[str] = None
@@ -203,6 +215,7 @@ class User:
 # ============================================
 # Service Interfaces (계약)
 # ============================================
+
 
 class IAssetService(ABC):
     """
@@ -268,16 +281,12 @@ class ITagService(ABC):
         ...
 
     @abstractmethod
-    async def list_tags(
-        self, category: TagCategory | None = None
-    ) -> list[Tag]:
+    async def list_tags(self, category: TagCategory | None = None) -> list[Tag]:
         """태그 목록"""
         ...
 
     @abstractmethod
-    async def create_tag(
-        self, name: str, category: TagCategory, **kwargs
-    ) -> Tag:
+    async def create_tag(self, name: str, category: TagCategory, **kwargs) -> Tag:
         """태그 생성"""
         ...
 
@@ -409,9 +418,7 @@ class IJobService(ABC):
         ...
 
     @abstractmethod
-    async def update_job_status(
-        self, job_id: str, status: JobStatus, **kwargs
-    ) -> bool:
+    async def update_job_status(self, job_id: str, status: JobStatus, **kwargs) -> bool:
         """작업 상태 업데이트"""
         ...
 
@@ -444,9 +451,7 @@ class ICollectionService(ABC):
         ...
 
     @abstractmethod
-    async def add_asset_to_collection(
-        self, collection_id: str, asset_id: str
-    ) -> bool:
+    async def add_asset_to_collection(self, collection_id: str, asset_id: str) -> bool:
         """컬렉션에 자산 추가"""
         ...
 
@@ -471,9 +476,7 @@ class IExportService(ABC):
         ...
 
     @abstractmethod
-    async def export_metadata(
-        self, assets: list[Asset], format: str = "json"
-    ) -> str:
+    async def export_metadata(self, assets: list[Asset], format: str = "json") -> str:
         """메타데이터 내보내기"""
         ...
 

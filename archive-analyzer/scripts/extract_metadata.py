@@ -25,18 +25,23 @@ from datetime import datetime
 from pathlib import Path
 
 # Windows 콘솔 UTF-8 설정 (먼저 환경변수 설정)
-os.environ['PYTHONIOENCODING'] = 'utf-8'
+os.environ["PYTHONIOENCODING"] = "utf-8"
 
-if sys.platform == 'win32':
+if sys.platform == "win32":
     # 콘솔 출력 인코딩 강제 설정
     try:
-        sys.stdout.reconfigure(encoding='utf-8', errors='replace')
-        sys.stderr.reconfigure(encoding='utf-8', errors='replace')
+        sys.stdout.reconfigure(encoding="utf-8", errors="replace")
+        sys.stderr.reconfigure(encoding="utf-8", errors="replace")
     except AttributeError:
         # Python 3.6 이하
         import io
-        sys.stdout = io.TextIOWrapper(sys.stdout.buffer, encoding='utf-8', errors='replace')
-        sys.stderr = io.TextIOWrapper(sys.stderr.buffer, encoding='utf-8', errors='replace')
+
+        sys.stdout = io.TextIOWrapper(
+            sys.stdout.buffer, encoding="utf-8", errors="replace"
+        )
+        sys.stderr = io.TextIOWrapper(
+            sys.stderr.buffer, encoding="utf-8", errors="replace"
+        )
 
 # 프로젝트 경로 추가
 sys.path.insert(0, str(Path(__file__).parent.parent / "src"))
@@ -61,7 +66,7 @@ thread_local = threading.local()
 
 def get_worker_connector(config: SMBConfig) -> SMBConnector:
     """워커별 SMB 연결 반환 (연결 풀링)"""
-    if not hasattr(thread_local, 'connector'):
+    if not hasattr(thread_local, "connector"):
         thread_local.connector = SMBConnector(config)
         thread_local.connector.connect()
     return thread_local.connector
@@ -69,7 +74,7 @@ def get_worker_connector(config: SMBConfig) -> SMBConnector:
 
 def get_worker_extractor(config: SMBConfig) -> SMBMediaExtractor:
     """워커별 추출기 반환"""
-    if not hasattr(thread_local, 'extractor'):
+    if not hasattr(thread_local, "extractor"):
         connector = get_worker_connector(config)
         thread_local.extractor = SMBMediaExtractor(connector)
     return thread_local.extractor
@@ -106,7 +111,7 @@ def progress_callback(progress: ExtractionProgress):
         f"OK: {progress.successful}, Fail: {progress.failed} | "
         f"{progress.files_per_second:.2f} f/s{eta_str}    ",
         end="",
-        flush=True
+        flush=True,
     )
 
 
@@ -116,7 +121,7 @@ def extract_batch_parallel(
     video_files: list,
     skip_existing: bool = True,
     verbose: bool = False,
-    max_workers: int = 4
+    max_workers: int = 4,
 ) -> dict:
     """병렬 배치 메타데이터 추출
 
@@ -150,19 +155,21 @@ def extract_batch_parallel(
 
     actual_to_process = len(files_to_extract)
 
-    print(f"\nStarting parallel extraction for {actual_to_process} files (skipped: {skipped})...")
+    print(
+        f"\nStarting parallel extraction for {actual_to_process} files (skipped: {skipped})..."
+    )
     print(f"Using {max_workers} parallel workers")
     print("-" * 70)
 
     if actual_to_process == 0:
         return {
-            'total': total,
-            'processed': processed,
-            'successful': successful,
-            'failed': failed,
-            'skipped': skipped,
-            'elapsed_seconds': 0,
-            'files_per_second': 0,
+            "total": total,
+            "processed": processed,
+            "successful": successful,
+            "failed": failed,
+            "skipped": skipped,
+            "elapsed_seconds": 0,
+            "files_per_second": 0,
         }
 
     # 병렬 처리
@@ -189,7 +196,9 @@ def extract_batch_parallel(
 
                 if verbose:
                     print(f"\n[{processed}/{total}] SUCCESS: {file_record.filename}")
-                    print(f"    {info.video_codec} {info.resolution} | {info.duration_formatted}")
+                    print(
+                        f"    {info.video_codec} {info.resolution} | {info.duration_formatted}"
+                    )
             else:
                 failed += 1
                 if info:
@@ -227,24 +236,37 @@ def extract_batch_parallel(
     elapsed = (datetime.now() - start_time).total_seconds()
 
     return {
-        'total': total,
-        'processed': processed,
-        'successful': successful,
-        'failed': failed,
-        'skipped': skipped,
-        'elapsed_seconds': elapsed,
-        'files_per_second': processed / elapsed if elapsed > 0 else 0,
+        "total": total,
+        "processed": processed,
+        "successful": successful,
+        "failed": failed,
+        "skipped": skipped,
+        "elapsed_seconds": elapsed,
+        "files_per_second": processed / elapsed if elapsed > 0 else 0,
     }
 
 
 def main():
     parser = argparse.ArgumentParser(description="Media Metadata Extractor (Optimized)")
-    parser.add_argument('--test', action='store_true', help="Test mode (5 files only)")
-    parser.add_argument('--limit', type=int, default=0, help="Limit number of files to process")
-    parser.add_argument('--skip-existing', action='store_true', default=True, help="Skip already extracted files")
-    parser.add_argument('--no-skip', action='store_true', help="Re-extract all files")
-    parser.add_argument('--verbose', '-v', action='store_true', help="Verbose output")
-    parser.add_argument('--workers', '-w', type=int, default=4, help="Number of parallel workers (default: 4)")
+    parser.add_argument("--test", action="store_true", help="Test mode (5 files only)")
+    parser.add_argument(
+        "--limit", type=int, default=0, help="Limit number of files to process"
+    )
+    parser.add_argument(
+        "--skip-existing",
+        action="store_true",
+        default=True,
+        help="Skip already extracted files",
+    )
+    parser.add_argument("--no-skip", action="store_true", help="Re-extract all files")
+    parser.add_argument("--verbose", "-v", action="store_true", help="Verbose output")
+    parser.add_argument(
+        "--workers",
+        "-w",
+        type=int,
+        default=4,
+        help="Number of parallel workers (default: 4)",
+    )
     args = parser.parse_args()
 
     skip_existing = not args.no_skip
@@ -304,7 +326,7 @@ def main():
             video_files=files_to_process,
             skip_existing=skip_existing,
             verbose=args.verbose,
-            max_workers=args.workers
+            max_workers=args.workers,
         )
 
         print()
@@ -328,18 +350,22 @@ def main():
         print(f"  Successful: {media_stats['successful']}")
         print(f"  Failed: {media_stats['failed']}")
 
-        if media_stats['by_resolution']:
+        if media_stats["by_resolution"]:
             print("  By Resolution:")
-            for res, count in sorted(media_stats['by_resolution'].items(), key=lambda x: -x[1]):
+            for res, count in sorted(
+                media_stats["by_resolution"].items(), key=lambda x: -x[1]
+            ):
                 print(f"    {res}: {count}")
 
-        if media_stats['by_codec']:
+        if media_stats["by_codec"]:
             print("  By Video Codec:")
-            for codec, count in sorted(media_stats['by_codec'].items(), key=lambda x: -x[1]):
+            for codec, count in sorted(
+                media_stats["by_codec"].items(), key=lambda x: -x[1]
+            ):
                 print(f"    {codec}: {count}")
 
-        if media_stats['total_duration_seconds'] > 0:
-            hours = media_stats['total_duration_seconds'] / 3600
+        if media_stats["total_duration_seconds"] > 0:
+            hours = media_stats["total_duration_seconds"] / 3600
             print(f"  Total Duration: {hours:.1f} hours ({hours/24:.1f} days)")
 
     except KeyboardInterrupt:
@@ -347,6 +373,7 @@ def main():
     except Exception as e:
         print(f"\n\nError: {e}")
         import traceback
+
         traceback.print_exc()
     finally:
         database.close()

@@ -199,7 +199,9 @@ class TitleGenerator:
                 name,
                 re.IGNORECASE,
             )
-            if wsop_match and (wsop_match.group(1) or wsop_match.group(3) or wsop_match.group(4)):
+            if wsop_match and (
+                wsop_match.group(1) or wsop_match.group(3) or wsop_match.group(4)
+            ):
                 parts = ["WSOP"]
                 if wsop_match.group(1):  # Circuit type
                     parts.append(wsop_match.group(1).strip())
@@ -234,7 +236,9 @@ class TitleGenerator:
         # PAD 패턴 "PAD Season 12 Episode 5"
         if not title:
             pad_match = re.search(
-                r"PAD\s*(?:Season\s*)?(\d+)\s*(?:EP|Episode)?\s*(\d+)?", name, re.IGNORECASE
+                r"PAD\s*(?:Season\s*)?(\d+)\s*(?:EP|Episode)?\s*(\d+)?",
+                name,
+                re.IGNORECASE,
             )
             if pad_match:
                 season = pad_match.group(1)
@@ -253,7 +257,9 @@ class TitleGenerator:
                 buyin = mpp_match.group(2)
                 event_name = mpp_match.group(3).strip()
                 # 이벤트명 정리
-                event_name = re.sub(r"\s*[-–]\s*Day.*$", "", event_name, flags=re.IGNORECASE)
+                event_name = re.sub(
+                    r"\s*[-–]\s*Day.*$", "", event_name, flags=re.IGNORECASE
+                )
                 title = f"MILLIONS ${guarantee} GTD - ${buyin} {event_name}"
 
         # 기본: 파일명 정리
@@ -337,7 +343,9 @@ class TitleGenerator:
             else:
                 parts.append("Big Hand")
 
-        title = " - ".join(parts) if len(parts) > 1 else parts[0] if parts else "Poker Hand"
+        title = (
+            " - ".join(parts) if len(parts) > 1 else parts[0] if parts else "Poker Hand"
+        )
 
         return GeneratedTitle(
             title=title,

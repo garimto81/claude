@@ -197,8 +197,7 @@ class Database:
         cursor = conn.cursor()
 
         # 파일 테이블
-        cursor.execute(
-            """
+        cursor.execute("""
             CREATE TABLE IF NOT EXISTS files (
                 id INTEGER PRIMARY KEY AUTOINCREMENT,
                 path TEXT UNIQUE NOT NULL,
@@ -211,18 +210,20 @@ class Database:
                 scan_status TEXT DEFAULT 'pending',
                 created_at DATETIME DEFAULT CURRENT_TIMESTAMP
             )
-        """
-        )
+        """)
 
         # 인덱스 생성
         cursor.execute("CREATE INDEX IF NOT EXISTS idx_files_path ON files(path)")
         cursor.execute("CREATE INDEX IF NOT EXISTS idx_files_type ON files(file_type)")
-        cursor.execute("CREATE INDEX IF NOT EXISTS idx_files_status ON files(scan_status)")
-        cursor.execute("CREATE INDEX IF NOT EXISTS idx_files_parent ON files(parent_folder)")
+        cursor.execute(
+            "CREATE INDEX IF NOT EXISTS idx_files_status ON files(scan_status)"
+        )
+        cursor.execute(
+            "CREATE INDEX IF NOT EXISTS idx_files_parent ON files(parent_folder)"
+        )
 
         # 스캔 체크포인트 테이블
-        cursor.execute(
-            """
+        cursor.execute("""
             CREATE TABLE IF NOT EXISTS scan_checkpoints (
                 id INTEGER PRIMARY KEY AUTOINCREMENT,
                 scan_id TEXT UNIQUE NOT NULL,
@@ -233,12 +234,10 @@ class Database:
                 created_at DATETIME DEFAULT CURRENT_TIMESTAMP,
                 updated_at DATETIME DEFAULT CURRENT_TIMESTAMP
             )
-        """
-        )
+        """)
 
         # 스캔 통계 테이블
-        cursor.execute(
-            """
+        cursor.execute("""
             CREATE TABLE IF NOT EXISTS scan_stats (
                 id INTEGER PRIMARY KEY AUTOINCREMENT,
                 scan_id TEXT NOT NULL,
@@ -247,12 +246,10 @@ class Database:
                 total_size INTEGER DEFAULT 0,
                 created_at DATETIME DEFAULT CURRENT_TIMESTAMP
             )
-        """
-        )
+        """)
 
         # 미디어 정보 테이블 (Issue #8)
-        cursor.execute(
-            """
+        cursor.execute("""
             CREATE TABLE IF NOT EXISTS media_info (
                 id INTEGER PRIMARY KEY AUTOINCREMENT,
                 file_id INTEGER REFERENCES files(id),
@@ -285,16 +282,16 @@ class Database:
                 created_at DATETIME DEFAULT CURRENT_TIMESTAMP,
                 UNIQUE(file_id)
             )
-        """
+        """)
+        cursor.execute(
+            "CREATE INDEX IF NOT EXISTS idx_media_file_id ON media_info(file_id)"
         )
-        cursor.execute("CREATE INDEX IF NOT EXISTS idx_media_file_id ON media_info(file_id)")
         cursor.execute(
             "CREATE INDEX IF NOT EXISTS idx_media_status ON media_info(extraction_status)"
         )
 
         # 클립 메타데이터 테이블 (iconik CSV 임포트용)
-        cursor.execute(
-            """
+        cursor.execute("""
             CREATE TABLE IF NOT EXISTS clip_metadata (
                 id INTEGER PRIMARY KEY AUTOINCREMENT,
                 iconik_id TEXT UNIQUE,
@@ -330,16 +327,22 @@ class Database:
                 created_at DATETIME DEFAULT CURRENT_TIMESTAMP,
                 updated_at DATETIME DEFAULT CURRENT_TIMESTAMP
             )
-        """
+        """)
+        cursor.execute(
+            "CREATE INDEX IF NOT EXISTS idx_clip_iconik_id ON clip_metadata(iconik_id)"
         )
-        cursor.execute("CREATE INDEX IF NOT EXISTS idx_clip_iconik_id ON clip_metadata(iconik_id)")
-        cursor.execute("CREATE INDEX IF NOT EXISTS idx_clip_file_id ON clip_metadata(file_id)")
-        cursor.execute("CREATE INDEX IF NOT EXISTS idx_clip_project ON clip_metadata(project_name)")
-        cursor.execute("CREATE INDEX IF NOT EXISTS idx_clip_event ON clip_metadata(episode_event)")
+        cursor.execute(
+            "CREATE INDEX IF NOT EXISTS idx_clip_file_id ON clip_metadata(file_id)"
+        )
+        cursor.execute(
+            "CREATE INDEX IF NOT EXISTS idx_clip_project ON clip_metadata(project_name)"
+        )
+        cursor.execute(
+            "CREATE INDEX IF NOT EXISTS idx_clip_event ON clip_metadata(episode_event)"
+        )
 
         # 미디어 파일 테이블 (media_metadata.csv Path 기반 매칭용)
-        cursor.execute(
-            """
+        cursor.execute("""
             CREATE TABLE IF NOT EXISTS media_files (
                 id INTEGER PRIMARY KEY,
                 filename TEXT,
@@ -357,8 +360,7 @@ class Database:
                 normalized_name TEXT,
                 created_at DATETIME DEFAULT CURRENT_TIMESTAMP
             )
-        """
-        )
+        """)
         cursor.execute(
             "CREATE INDEX IF NOT EXISTS idx_media_files_category ON media_files(category)"
         )
@@ -477,7 +479,9 @@ class Database:
         conn = self._get_connection()
         cursor = conn.cursor()
 
-        cursor.execute("SELECT * FROM files WHERE file_type = ? LIMIT ?", (file_type, limit))
+        cursor.execute(
+            "SELECT * FROM files WHERE file_type = ? LIMIT ?", (file_type, limit)
+        )
 
         columns = [col[0] for col in cursor.description]
         return [FileRecord.from_row(tuple(row), columns) for row in cursor.fetchall()]
@@ -498,7 +502,9 @@ class Database:
         conn = self._get_connection()
         cursor = conn.cursor()
 
-        cursor.execute("UPDATE files SET scan_status = ? WHERE path = ?", (status, path))
+        cursor.execute(
+            "UPDATE files SET scan_status = ? WHERE path = ?", (status, path)
+        )
         conn.commit()
         return cursor.rowcount > 0
 
@@ -527,7 +533,9 @@ class Database:
         cursor = conn.cursor()
 
         if file_type:
-            cursor.execute("SELECT COUNT(*) FROM files WHERE file_type = ?", (file_type,))
+            cursor.execute(
+                "SELECT COUNT(*) FROM files WHERE file_type = ?", (file_type,)
+            )
         else:
             cursor.execute("SELECT COUNT(*) FROM files")
 
@@ -540,7 +548,8 @@ class Database:
 
         if file_type:
             cursor.execute(
-                "SELECT COALESCE(SUM(size_bytes), 0) FROM files WHERE file_type = ?", (file_type,)
+                "SELECT COALESCE(SUM(size_bytes), 0) FROM files WHERE file_type = ?",
+                (file_type,),
             )
         else:
             cursor.execute("SELECT COALESCE(SUM(size_bytes), 0) FROM files")
@@ -573,16 +582,14 @@ class Database:
         conn = self._get_connection()
         cursor = conn.cursor()
 
-        cursor.execute(
-            """
+        cursor.execute("""
             SELECT
                 file_type,
                 COUNT(*) as count,
                 COALESCE(SUM(size_bytes), 0) as total_size
             FROM files
             GROUP BY file_type
-        """
-        )
+        """)
 
         stats: Dict[str, any] = {"total_files": 0, "total_size": 0, "by_type": {}}
 
@@ -653,8 +660,16 @@ class Database:
                 total_files=row["total_files"],
                 processed_files=row["processed_files"],
                 status=row["status"],
-                created_at=datetime.fromisoformat(row["created_at"]) if row["created_at"] else None,
-                updated_at=datetime.fromisoformat(row["updated_at"]) if row["updated_at"] else None,
+                created_at=(
+                    datetime.fromisoformat(row["created_at"])
+                    if row["created_at"]
+                    else None
+                ),
+                updated_at=(
+                    datetime.fromisoformat(row["updated_at"])
+                    if row["updated_at"]
+                    else None
+                ),
             )
         return None
 
@@ -809,7 +824,11 @@ class Database:
                 creation_time=row["creation_time"],
                 extraction_status=row["extraction_status"],
                 extraction_error=row["extraction_error"],
-                created_at=datetime.fromisoformat(row["created_at"]) if row["created_at"] else None,
+                created_at=(
+                    datetime.fromisoformat(row["created_at"])
+                    if row["created_at"]
+                    else None
+                ),
             )
         return None
 
@@ -857,7 +876,9 @@ class Database:
         cursor = conn.cursor()
 
         if status:
-            cursor.execute("SELECT COUNT(*) FROM media_info WHERE extraction_status = ?", (status,))
+            cursor.execute(
+                "SELECT COUNT(*) FROM media_info WHERE extraction_status = ?", (status,)
+            )
         else:
             cursor.execute("SELECT COUNT(*) FROM media_info")
 
@@ -878,13 +899,11 @@ class Database:
         }
 
         # 추출 상태별 카운트
-        cursor.execute(
-            """
+        cursor.execute("""
             SELECT extraction_status, COUNT(*) as count
             FROM media_info
             GROUP BY extraction_status
-        """
-        )
+        """)
         for row in cursor.fetchall():
             if row["extraction_status"] == "success":
                 stats["successful"] = row["count"]
@@ -893,8 +912,7 @@ class Database:
             stats["total"] += row["count"]
 
         # 해상도별 분포
-        cursor.execute(
-            """
+        cursor.execute("""
             SELECT
                 CASE
                     WHEN height >= 2160 THEN '4K'
@@ -908,31 +926,26 @@ class Database:
             FROM media_info
             WHERE extraction_status = 'success' AND height IS NOT NULL
             GROUP BY resolution
-        """
-        )
+        """)
         for row in cursor.fetchall():
             stats["by_resolution"][row["resolution"]] = row["count"]
 
         # 코덱별 분포
-        cursor.execute(
-            """
+        cursor.execute("""
             SELECT video_codec, COUNT(*) as count
             FROM media_info
             WHERE extraction_status = 'success' AND video_codec IS NOT NULL
             GROUP BY video_codec
-        """
-        )
+        """)
         for row in cursor.fetchall():
             stats["by_codec"][row["video_codec"]] = row["count"]
 
         # 총 재생 시간
-        cursor.execute(
-            """
+        cursor.execute("""
             SELECT COALESCE(SUM(duration_seconds), 0) as total
             FROM media_info
             WHERE extraction_status = 'success'
-        """
-        )
+        """)
         stats["total_duration_seconds"] = cursor.fetchone()["total"]
 
         return stats
@@ -1115,42 +1128,36 @@ class Database:
         stats["unmatched"] = stats["total"] - stats["matched"]
 
         # 프로젝트별
-        cursor.execute(
-            """
+        cursor.execute("""
             SELECT project_name, COUNT(*) as count
             FROM clip_metadata
             WHERE project_name IS NOT NULL AND project_name != ''
             GROUP BY project_name
             ORDER BY count DESC
-        """
-        )
+        """)
         for row in cursor.fetchall():
             stats["by_project"][row["project_name"]] = row["count"]
 
         # 이벤트별
-        cursor.execute(
-            """
+        cursor.execute("""
             SELECT episode_event, COUNT(*) as count
             FROM clip_metadata
             WHERE episode_event IS NOT NULL AND episode_event != ''
             GROUP BY episode_event
             ORDER BY count DESC
             LIMIT 20
-        """
-        )
+        """)
         for row in cursor.fetchall():
             stats["by_event"][row["episode_event"]] = row["count"]
 
         # 핸드 등급별
-        cursor.execute(
-            """
+        cursor.execute("""
             SELECT hand_grade, COUNT(*) as count
             FROM clip_metadata
             WHERE hand_grade IS NOT NULL AND hand_grade != ''
             GROUP BY hand_grade
             ORDER BY count DESC
-        """
-        )
+        """)
         for row in cursor.fetchall():
             stats["by_hand_grade"][row["hand_grade"]] = row["count"]
 

@@ -24,9 +24,9 @@ from datetime import datetime
 from pathlib import Path
 
 # Windows 콘솔 UTF-8 설정
-if sys.platform == 'win32':
-    sys.stdout.reconfigure(encoding='utf-8', errors='replace')
-    sys.stderr.reconfigure(encoding='utf-8', errors='replace')
+if sys.platform == "win32":
+    sys.stdout.reconfigure(encoding="utf-8", errors="replace")
+    sys.stderr.reconfigure(encoding="utf-8", errors="replace")
 
 # 프로젝트 경로 추가
 sys.path.insert(0, str(Path(__file__).parent.parent / "src"))
@@ -45,50 +45,49 @@ Examples:
   python scripts/generate_report.py --format markdown         # Markdown 출력
   python scripts/generate_report.py --format json -o data.json # JSON 파일 저장
   python scripts/generate_report.py --all -o data/output/      # 모든 포맷 저장
-        """
+        """,
     )
 
     parser.add_argument(
-        "--db", "-d",
+        "--db",
+        "-d",
         default="archive.db",
-        help="데이터베이스 파일 경로 (기본: archive.db)"
+        help="데이터베이스 파일 경로 (기본: archive.db)",
     )
 
     parser.add_argument(
-        "--format", "-f",
+        "--format",
+        "-f",
         choices=["console", "markdown", "json"],
         default="console",
-        help="출력 포맷 (기본: console)"
+        help="출력 포맷 (기본: console)",
     )
 
     parser.add_argument(
-        "--output", "-o",
-        help="출력 파일 경로 (지정하지 않으면 stdout)"
+        "--output", "-o", help="출력 파일 경로 (지정하지 않으면 stdout)"
     )
 
     parser.add_argument(
         "--all",
         action="store_true",
-        help="모든 포맷으로 출력 (--output은 디렉토리로 지정)"
+        help="모든 포맷으로 출력 (--output은 디렉토리로 지정)",
     )
 
     parser.add_argument(
         "--archive-path",
         default="\\\\10.10.100.122\\docker\\GGPNAs\\ARCHIVE",
-        help="아카이브 경로 (리포트에 표시용)"
+        help="아카이브 경로 (리포트에 표시용)",
     )
 
-    parser.add_argument(
-        "--quiet", "-q",
-        action="store_true",
-        help="진행 메시지 숨기기"
-    )
+    parser.add_argument("--quiet", "-q", action="store_true", help="진행 메시지 숨기기")
 
     args = parser.parse_args()
 
     # 데이터베이스 확인
     if not os.path.exists(args.db):
-        print(f"Error: 데이터베이스 파일을 찾을 수 없습니다: {args.db}", file=sys.stderr)
+        print(
+            f"Error: 데이터베이스 파일을 찾을 수 없습니다: {args.db}", file=sys.stderr
+        )
         print("먼저 스캔을 실행하세요: python scripts/scan_archive.py", file=sys.stderr)
         sys.exit(1)
 
@@ -162,6 +161,7 @@ Examples:
     except Exception as e:
         print(f"\nError: {e}", file=sys.stderr)
         import traceback
+
         traceback.print_exc()
         sys.exit(1)
 

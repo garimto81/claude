@@ -23,7 +23,9 @@ logger = logging.getLogger(__name__)
 class SearchConfig:
     """MeiliSearch 설정 (#28 - 환경변수 기반)"""
 
-    host: str = field(default_factory=lambda: os.getenv("MEILISEARCH_URL", "http://localhost:7700"))
+    host: str = field(
+        default_factory=lambda: os.getenv("MEILISEARCH_URL", "http://localhost:7700")
+    )
     api_key: str = field(default_factory=lambda: os.getenv("MEILISEARCH_API_KEY", ""))
 
     # 인덱스 이름
@@ -51,7 +53,9 @@ class SearchService:
             config: MeiliSearch 설정 (기본값 사용 시 None)
         """
         if not MEILISEARCH_AVAILABLE:
-            raise ImportError("meilisearch 패키지가 설치되지 않았습니다. pip install meilisearch")
+            raise ImportError(
+                "meilisearch 패키지가 설치되지 않았습니다. pip install meilisearch"
+            )
 
         self.config = config or SearchConfig()
         self.client = meilisearch.Client(self.config.host, self.config.api_key)
@@ -184,15 +188,16 @@ class SearchService:
             if not batch:
                 break
             docs = [dict(row) for row in batch]
-            self.client.index(self.config.files_index).add_documents(docs, primary_key="id")
+            self.client.index(self.config.files_index).add_documents(
+                docs, primary_key="id"
+            )
             files_count += len(docs)
         if files_count:
             results["files"] = files_count
             logger.info(f"files 인덱싱 완료: {files_count}건")
 
         # media_info 테이블 인덱싱 (청크 처리)
-        cursor.execute(
-            """
+        cursor.execute("""
             SELECT
                 m.*,
                 CASE
@@ -204,15 +209,16 @@ class SearchService:
                     ELSE 'Other'
                 END as resolution_label
             FROM media_info m
-        """
-        )
+        """)
         media_count = 0
         while True:
             batch = cursor.fetchmany(self.BATCH_SIZE)
             if not batch:
                 break
             docs = [dict(row) for row in batch]
-            self.client.index(self.config.media_index).add_documents(docs, primary_key="id")
+            self.client.index(self.config.media_index).add_documents(
+                docs, primary_key="id"
+            )
             media_count += len(docs)
         if media_count:
             results["media_info"] = media_count
@@ -226,7 +232,9 @@ class SearchService:
             if not batch:
                 break
             docs = [dict(row) for row in batch]
-            self.client.index(self.config.clips_index).add_documents(docs, primary_key="id")
+            self.client.index(self.config.clips_index).add_documents(
+                docs, primary_key="id"
+            )
             clips_count += len(docs)
         if clips_count:
             results["clip_metadata"] = clips_count

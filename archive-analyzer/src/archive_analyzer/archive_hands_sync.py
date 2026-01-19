@@ -89,7 +89,9 @@ def normalize_tag(tag: str) -> str:
     if not tag:
         return ""
     tag_lower = tag.strip().lower()
-    return TAG_NORMALIZATION.get(tag_lower, tag_lower.replace(" ", "_").replace("-", "_"))
+    return TAG_NORMALIZATION.get(
+        tag_lower, tag_lower.replace(" ", "_").replace("-", "_")
+    )
 
 
 def parse_timecode(timecode: str) -> Optional[float]:
@@ -177,7 +179,9 @@ class ArchiveHandsSync:
 
     def _load_file_mapping(self):
         """파일 경로 → file_id 매핑 로드"""
-        cursor = self.conn.execute("SELECT id, nas_path FROM files WHERE nas_path IS NOT NULL")
+        cursor = self.conn.execute(
+            "SELECT id, nas_path FROM files WHERE nas_path IS NOT NULL"
+        )
         self.file_mapping = {}
         for row in cursor:
             if row["nas_path"]:
@@ -201,7 +205,8 @@ class ArchiveHandsSync:
         if filename:
             filename_normalized = filename.lower()
             cursor = self.conn.execute(
-                "SELECT id FROM files WHERE LOWER(filename) LIKE ?", (f"%{filename_normalized}%",)
+                "SELECT id FROM files WHERE LOWER(filename) LIKE ?",
+                (f"%{filename_normalized}%",),
             )
             row = cursor.fetchone()
             if row:
@@ -209,7 +214,9 @@ class ArchiveHandsSync:
 
         return None
 
-    def parse_sheet_row(self, headers: List[str], row: List[str]) -> Optional[Dict[str, Any]]:
+    def parse_sheet_row(
+        self, headers: List[str], row: List[str]
+    ) -> Optional[Dict[str, Any]]:
         """시트 행을 hands 레코드로 변환"""
         if not any(row):
             return None
@@ -276,7 +283,9 @@ class ArchiveHandsSync:
             "_source_path": nas_path,
         }
 
-    def sync_worksheet(self, worksheet_name: str, dry_run: bool = False) -> Dict[str, int]:
+    def sync_worksheet(
+        self, worksheet_name: str, dry_run: bool = False
+    ) -> Dict[str, int]:
         """단일 워크시트 동기화"""
         stats = {"inserted": 0, "updated": 0, "skipped": 0, "no_file": 0}
 
@@ -390,7 +399,9 @@ class ArchiveHandsSync:
                 players = json.loads(record["players"])
                 if isinstance(players, list):
                     # 기존 레코드 삭제 후 재삽입
-                    self.conn.execute("DELETE FROM hand_players WHERE hand_id = ?", (hand_id,))
+                    self.conn.execute(
+                        "DELETE FROM hand_players WHERE hand_id = ?", (hand_id,)
+                    )
                     for position, player_name in enumerate(players, 1):
                         if player_name and isinstance(player_name, str):
                             self.conn.execute(
@@ -409,7 +420,9 @@ class ArchiveHandsSync:
                 tags = json.loads(record["tags"])
                 if isinstance(tags, list):
                     # 기존 레코드 삭제 후 재삽입
-                    self.conn.execute("DELETE FROM hand_tags WHERE hand_id = ?", (hand_id,))
+                    self.conn.execute(
+                        "DELETE FROM hand_tags WHERE hand_id = ?", (hand_id,)
+                    )
                     for tag in tags:
                         if tag and isinstance(tag, str):
                             self.conn.execute(
@@ -448,7 +461,9 @@ class ArchiveHandsSync:
     def run_daemon(self):
         """백그라운드 동기화 서비스 실행 (기본 1시간 간격)"""
         interval = self.config.sync_interval_seconds
-        print(f"Starting archive hands sync daemon (interval: {interval}s = {interval//60}min)")
+        print(
+            f"Starting archive hands sync daemon (interval: {interval}s = {interval//60}min)"
+        )
         print("Press Ctrl+C to stop")
         print()
 
@@ -528,7 +543,9 @@ class ArchiveHandsSync:
             return ""
         return "★" * int(score)
 
-    def get_worksheet_file_mapping(self, worksheet_name: str) -> Optional[Tuple[str, str]]:
+    def get_worksheet_file_mapping(
+        self, worksheet_name: str
+    ) -> Optional[Tuple[str, str]]:
         """워크시트에서 NAS 경로와 파일명 추출"""
         try:
             ws = self.spreadsheet.worksheet(worksheet_name)
@@ -555,7 +572,9 @@ class ArchiveHandsSync:
         except Exception:
             return None
 
-    def reverse_sync_worksheet(self, worksheet_name: str, dry_run: bool = False) -> Dict[str, int]:
+    def reverse_sync_worksheet(
+        self, worksheet_name: str, dry_run: bool = False
+    ) -> Dict[str, int]:
         """DB hands → 워크시트 역동기화
 
         워크시트의 NAS 경로로 file_id를 찾고,
@@ -749,15 +768,24 @@ def main():
     import argparse
 
     parser = argparse.ArgumentParser(description="Archive Team Hands Sync")
-    parser.add_argument("--sync", action="store_true", help="Sync archive sheets to DB (forward)")
+    parser.add_argument(
+        "--sync", action="store_true", help="Sync archive sheets to DB (forward)"
+    )
     parser.add_argument(
         "--reverse", action="store_true", help="Sync DB to archive sheets (reverse)"
     )
-    parser.add_argument("--dry-run", action="store_true", help="Preview without writing")
-    parser.add_argument("--sheet", type=str, help="Sync specific worksheet only")
-    parser.add_argument("--daemon", action="store_true", help="Run as background daemon")
     parser.add_argument(
-        "--interval", type=int, default=3600, help="Sync interval in seconds (default: 3600 = 1hr)"
+        "--dry-run", action="store_true", help="Preview without writing"
+    )
+    parser.add_argument("--sheet", type=str, help="Sync specific worksheet only")
+    parser.add_argument(
+        "--daemon", action="store_true", help="Run as background daemon"
+    )
+    parser.add_argument(
+        "--interval",
+        type=int,
+        default=3600,
+        help="Sync interval in seconds (default: 3600 = 1hr)",
     )
 
     args = parser.parse_args()

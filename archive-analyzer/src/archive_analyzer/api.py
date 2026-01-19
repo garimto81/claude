@@ -35,7 +35,8 @@ from .search import (
 
 # 환경 변수 기반 설정
 ALLOWED_ORIGINS = os.getenv(
-    "ALLOWED_ORIGINS", "http://localhost:3000,http://localhost:8000,http://10.10.100.74:8000"
+    "ALLOWED_ORIGINS",
+    "http://localhost:3000,http://localhost:8000,http://10.10.100.74:8000",
 ).split(",")
 
 API_KEY = os.getenv("ARCHIVE_API_KEY", "")
@@ -235,9 +236,13 @@ async def get_stats(request: Request):
     return StatsResponse(indexes=stats)
 
 
-@app.post("/index", response_model=IndexResponse, dependencies=[Depends(verify_api_key)])
+@app.post(
+    "/index", response_model=IndexResponse, dependencies=[Depends(verify_api_key)]
+)
 @rate_limit("10/minute")
-async def index_from_db(request: Request, db_path: str = Query(..., description="archive.db 경로")):
+async def index_from_db(
+    request: Request, db_path: str = Query(..., description="archive.db 경로")
+):
     """DB에서 데이터 인덱싱 (API Key 필요)"""
     service = get_service()
 
@@ -261,7 +266,9 @@ async def index_from_db(request: Request, db_path: str = Query(..., description=
 async def search_files(
     request: Request,
     q: str = Query(..., min_length=1, description="검색어"),
-    file_type: Optional[str] = Query(None, description="파일 유형 (video, audio, subtitle 등)"),
+    file_type: Optional[str] = Query(
+        None, description="파일 유형 (video, audio, subtitle 등)"
+    ),
     extension: Optional[str] = Query(None, description="확장자 (.mp4, .mkv 등)"),
     limit: int = Query(20, ge=1, le=100, description="결과 수 제한"),
     offset: int = Query(0, ge=0, le=MAX_OFFSET, description="시작 위치"),
@@ -398,7 +405,11 @@ async def get_sync_stats(request: Request):
         raise HTTPException(status_code=500, detail="통계 조회 중 오류가 발생했습니다")
 
 
-@app.post("/sync/files", response_model=SyncResultResponse, dependencies=[Depends(verify_api_key)])
+@app.post(
+    "/sync/files",
+    response_model=SyncResultResponse,
+    dependencies=[Depends(verify_api_key)],
+)
 @rate_limit("10/minute")
 async def sync_files(
     request: Request,
@@ -423,11 +434,15 @@ async def sync_files(
         raise HTTPException(status_code=404, detail="필요한 파일을 찾을 수 없습니다")
     except Exception:
         logger.exception("File sync failed")
-        raise HTTPException(status_code=500, detail="파일 동기화 중 오류가 발생했습니다")
+        raise HTTPException(
+            status_code=500, detail="파일 동기화 중 오류가 발생했습니다"
+        )
 
 
 @app.post(
-    "/sync/catalogs", response_model=SyncResultResponse, dependencies=[Depends(verify_api_key)]
+    "/sync/catalogs",
+    response_model=SyncResultResponse,
+    dependencies=[Depends(verify_api_key)],
 )
 @rate_limit("10/minute")
 async def sync_catalogs(
@@ -453,10 +468,14 @@ async def sync_catalogs(
         raise HTTPException(status_code=404, detail="필요한 파일을 찾을 수 없습니다")
     except Exception:
         logger.exception("Catalog sync failed")
-        raise HTTPException(status_code=500, detail="카탈로그 동기화 중 오류가 발생했습니다")
+        raise HTTPException(
+            status_code=500, detail="카탈로그 동기화 중 오류가 발생했습니다"
+        )
 
 
-@app.post("/sync/all", response_model=FullSyncResponse, dependencies=[Depends(verify_api_key)])
+@app.post(
+    "/sync/all", response_model=FullSyncResponse, dependencies=[Depends(verify_api_key)]
+)
 @rate_limit("5/minute")
 async def sync_all(
     request: Request,
@@ -492,7 +511,9 @@ async def sync_all(
         raise HTTPException(status_code=404, detail="필요한 파일을 찾을 수 없습니다")
     except Exception:
         logger.exception("Full sync failed")
-        raise HTTPException(status_code=500, detail="전체 동기화 중 오류가 발생했습니다")
+        raise HTTPException(
+            status_code=500, detail="전체 동기화 중 오류가 발생했습니다"
+        )
 
 
 # 직접 실행 시

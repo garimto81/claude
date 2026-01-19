@@ -63,7 +63,9 @@ class SyncResult:
 
 
 # YAML 패턴 파일 경로
-_PATTERNS_FILE = Path(__file__).parent.parent.parent / "config" / "catalog_patterns.yaml"
+_PATTERNS_FILE = (
+    Path(__file__).parent.parent.parent / "config" / "catalog_patterns.yaml"
+)
 
 # 캐시된 패턴 (지연 로드)
 _patterns_cache: Optional[Dict[str, Any]] = None
@@ -102,10 +104,7 @@ def get_multilevel_patterns() -> List[Tuple[str, str, Optional[str], int]]:
 def get_legacy_patterns() -> List[Tuple[str, str, Optional[str]]]:
     """레거시 패턴 목록 반환 (튜플 형식)"""
     patterns = _load_patterns().get("legacy_patterns", [])
-    return [
-        (p["regex"], p["catalog_id"], p.get("subcatalog_id"))
-        for p in patterns
-    ]
+    return [(p["regex"], p["catalog_id"], p.get("subcatalog_id")) for p in patterns]
 
 
 def classify_path(path: str) -> Tuple[str, Optional[str]]:
@@ -151,7 +150,12 @@ def classify_path_multilevel(path: str) -> SubcatalogMatch:
     best_match_length = 0
     best_result = None
 
-    for pattern, catalog, subcatalog_template, depth in get_multilevel_patterns():  # #20
+    for (
+        pattern,
+        catalog,
+        subcatalog_template,
+        depth,
+    ) in get_multilevel_patterns():  # #20
         match = re.search(pattern, normalized, re.IGNORECASE)
         if match:
             match_length = len(match.group(0))
@@ -203,7 +207,9 @@ class SyncService:
         try:
             conn = sqlite3.connect(self.config.pokervod_db)
             cursor = conn.cursor()
-            cursor.execute("CREATE INDEX IF NOT EXISTS idx_files_nas_path ON files(nas_path)")
+            cursor.execute(
+                "CREATE INDEX IF NOT EXISTS idx_files_nas_path ON files(nas_path)"
+            )
             conn.commit()
             conn.close()
             logger.debug("pokervod.db 인덱스 확인 완료")
@@ -256,8 +262,7 @@ class SyncService:
             else:
                 hls_filter = ""
 
-            src_cursor.execute(
-                f"""
+            src_cursor.execute(f"""
                 SELECT
                     f.path,
                     f.filename,
@@ -272,8 +277,7 @@ class SyncService:
                 LEFT JOIN media_info m ON f.id = m.file_id
                 WHERE f.file_type = 'video'
                 {hls_filter}
-            """
-            )
+            """)
 
             files = src_cursor.fetchall()
             logger.info(f"동기화 대상 파일: {len(files)}개")
@@ -287,11 +291,14 @@ class SyncService:
                     file_id = generate_file_id(nas_path)
 
                     # 해상도 문자열
-                    resolution = format_resolution(file_row["width"], file_row["height"])
+                    resolution = format_resolution(
+                        file_row["width"], file_row["height"]
+                    )
 
                     # 기존 레코드 확인
                     dst_cursor.execute(
-                        "SELECT id, updated_at FROM files WHERE nas_path = ?", (nas_path,)
+                        "SELECT id, updated_at FROM files WHERE nas_path = ?",
+                        (nas_path,),
                     )
                     existing = dst_cursor.fetchone()
 
@@ -410,7 +417,9 @@ class SyncService:
         try:
             # 모든 파일 경로에서 카탈로그 추출 (다단계)
             src_cursor = src_conn.cursor()
-            src_cursor.execute("SELECT DISTINCT path FROM files WHERE file_type = 'video'")
+            src_cursor.execute(
+                "SELECT DISTINCT path FROM files WHERE file_type = 'video'"
+            )
 
             # catalog_id -> {subcatalog_id: SubcatalogMatch}
             catalogs_found: Dict[str, Dict[str, SubcatalogMatch]] = {}
@@ -421,7 +430,10 @@ class SyncService:
                     catalogs_found[match.catalog_id] = {}
 
                 subcatalog_id = match.full_subcatalog_id
-                if subcatalog_id and subcatalog_id not in catalogs_found[match.catalog_id]:
+                if (
+                    subcatalog_id
+                    and subcatalog_id not in catalogs_found[match.catalog_id]
+                ):
                     catalogs_found[match.catalog_id][subcatalog_id] = match
 
             dst_cursor = dst_conn.cursor()
@@ -429,7 +441,9 @@ class SyncService:
             # 카탈로그 동기화
             for catalog_id, subcatalogs in catalogs_found.items():
                 # 카탈로그 존재 확인
-                dst_cursor.execute("SELECT id FROM catalogs WHERE id = ?", (catalog_id,))
+                dst_cursor.execute(
+                    "SELECT id FROM catalogs WHERE id = ?", (catalog_id,)
+                )
                 if not dst_cursor.fetchone():
                     if not dry_run:
                         dst_cursor.execute(
@@ -449,7 +463,9 @@ class SyncService:
 
                 # 다단계 서브카탈로그 동기화
                 for subcatalog_id, match in subcatalogs.items():
-                    dst_cursor.execute("SELECT id FROM subcatalogs WHERE id = ?", (subcatalog_id,))
+                    dst_cursor.execute(
+                        "SELECT id FROM subcatalogs WHERE id = ?", (subcatalog_id,)
+                    )
                     if not dst_cursor.fetchone():
                         # 상위 서브카탈로그 ID 결정
                         parent_id = self._get_parent_subcatalog_id(match)
@@ -529,7 +545,9 @@ class SyncService:
 
         return None
 
-    def _build_subcatalog_path(self, catalog_id: str, match: SubcatalogMatch) -> Optional[str]:
+    def _build_subcatalog_path(
+        self, catalog_id: str, match: SubcatalogMatch
+    ) -> Optional[str]:
         """서브카탈로그 전체 경로 생성"""
         subcatalog_id = match.full_subcatalog_id
         if not subcatalog_id:
@@ -558,11 +576,15 @@ class SyncService:
             if grandparent:
                 grandparent_suffix = grandparent.replace(f"{catalog_lower}-", "")
                 base_suffix = base_id.replace(f"{catalog_lower}-", "")
-                return f"{catalog_lower}/{grandparent_suffix}/{base_suffix}/{match.year}"
+                return (
+                    f"{catalog_lower}/{grandparent_suffix}/{base_suffix}/{match.year}"
+                )
 
         return f"{catalog_lower}/{subcatalog_id}"
 
-    def _format_subcatalog_name(self, subcatalog_id: str, match: SubcatalogMatch) -> str:
+    def _format_subcatalog_name(
+        self, subcatalog_id: str, match: SubcatalogMatch
+    ) -> str:
         """서브카탈로그 표시 이름 생성"""
         if match.year:
             # wsop-europe-2024 -> "2024 WSOP Europe"
