@@ -47,7 +47,7 @@ Claude Code `/login`과 동일한 브라우저 기반 인증 방식입니다.
 ```python
 import asyncio
 import sys
-sys.path.insert(0, "ultimate-debate/src")
+sys.path.insert(0, "C:/claude/ultimate-debate/src")
 
 from ultimate_debate.auth.providers import OpenAIProvider
 from ultimate_debate.auth.storage import TokenStore
@@ -155,7 +155,7 @@ Google Gemini OAuth에는 Client ID 설정이 필요합니다:
 ```python
 import asyncio
 import sys
-sys.path.insert(0, "ultimate-debate/src")
+sys.path.insert(0, "C:/claude/ultimate-debate/src")
 
 from ultimate_debate.auth.providers import GoogleProvider
 from ultimate_debate.auth.storage import TokenStore
@@ -215,7 +215,7 @@ asyncio.run(login_google())
 ```python
 import sys
 import os
-sys.path.insert(0, "ultimate-debate/src")
+sys.path.insert(0, "C:/claude/ultimate-debate/src")
 
 from ultimate_debate.auth.storage import TokenStore
 
@@ -269,7 +269,7 @@ else:
 ```python
 import asyncio
 import sys
-sys.path.insert(0, "ultimate-debate/src")
+sys.path.insert(0, "C:/claude/ultimate-debate/src")
 
 from ultimate_debate.auth.storage import TokenStore
 
