@@ -10,8 +10,22 @@ import re
 import sys
 import subprocess
 import os
+from pathlib import Path
 
-PROJECT_DIR = os.environ.get("CLAUDE_PROJECT_DIR", "D:/AI/claude01")
+
+def _get_project_dir() -> str:
+    """프로젝트 디렉토리를 동적으로 감지"""
+    if env_dir := os.environ.get("CLAUDE_PROJECT_DIR"):
+        return env_dir
+    # 스크립트 위치 기반 감지
+    script_dir = Path(__file__).resolve().parent
+    project_root = script_dir.parent.parent
+    if (project_root / ".claude").exists():
+        return str(project_root)
+    return os.getcwd()
+
+
+PROJECT_DIR = _get_project_dir()
 
 # Conventional Commits 패턴
 COMMIT_PATTERN = (
