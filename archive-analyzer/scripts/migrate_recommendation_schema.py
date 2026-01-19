@@ -11,6 +11,7 @@ Usage:
 """
 
 import argparse
+import os
 import sqlite3
 import sys
 from datetime import datetime
@@ -20,8 +21,17 @@ from pathlib import Path
 if sys.platform == "win32":
     sys.stdout.reconfigure(encoding="utf-8")
 
+
+def _get_project_root() -> Path:
+    """프로젝트 루트 동적 감지"""
+    if env_root := os.environ.get("CLAUDE_PROJECT_DIR"):
+        return Path(env_root)
+    return Path(__file__).resolve().parent.parent.parent
+
+
 # 경로 설정
-POKERVOD_DB = Path("D:/AI/claude01/qwen_hand_analysis/data/pokervod.db")
+PROJECT_ROOT = _get_project_root()
+POKERVOD_DB = PROJECT_ROOT / "shared-data" / "pokervod.db"
 
 # 신규 테이블 DDL 정의
 TABLES = {
