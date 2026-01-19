@@ -6,9 +6,9 @@ import sys
 from pathlib import Path
 
 # Windows 콘솔 UTF-8 설정
-if sys.platform == 'win32':
-    sys.stdout.reconfigure(encoding='utf-8', errors='replace')
-    sys.stderr.reconfigure(encoding='utf-8', errors='replace')
+if sys.platform == "win32":
+    sys.stdout.reconfigure(encoding="utf-8", errors="replace")
+    sys.stderr.reconfigure(encoding="utf-8", errors="replace")
 
 # 프로젝트 경로 추가
 sys.path.insert(0, str(Path(__file__).parent.parent / "src"))
@@ -39,7 +39,7 @@ def progress_callback(progress: ScanProgress):
         f"{progress.files_per_second:.1f} f/s | "
         f"ETA: {progress.estimated_remaining:.0f}s",
         end="",
-        flush=True
+        flush=True,
     )
 
 
@@ -97,7 +97,7 @@ def main():
         print()
         print("By Type:")
         for file_type, data in sorted(result.by_type.items()):
-            size_gb = data['size'] / (1024**3)
+            size_gb = data["size"] / (1024**3)
             print(f"  {file_type:12}: {data['count']:6,} files ({size_gb:8.2f} GB)")
 
         if result.errors:

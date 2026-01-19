@@ -20,53 +20,53 @@ from archive_analyzer.database import Database
 # rapidfuzz가 있으면 퍼지 매칭 사용
 try:
     from rapidfuzz import fuzz, process
+
     FUZZY_AVAILABLE = True
 except ImportError:
     FUZZY_AVAILABLE = False
     print("Warning: rapidfuzz not installed. Fuzzy matching disabled.")
 
 logging.basicConfig(
-    level=logging.INFO,
-    format='%(asctime)s - %(levelname)s - %(message)s'
+    level=logging.INFO, format="%(asctime)s - %(levelname)s - %(message)s"
 )
 logger = logging.getLogger(__name__)
 
 
 # CSV 컬럼 → DB 필드 매핑
 COLUMN_MAPPING = {
-    'id': 'iconik_id',
-    'title': 'title',
-    'Description': 'description',
-    'time_start_ms': 'time_start_ms',
-    'time_end_ms': 'time_end_ms',
-    'ProjectName': 'project_name',
-    'Year_': 'year',
-    'Location': 'location',
-    'Venue': 'venue',
-    'EpisodeEvent': 'episode_event',
-    'Source': 'source',
-    'GameType': 'game_type',
-    'PlayersTags': 'players_tags',
-    'HandGrade': 'hand_grade',
-    'HANDTag': 'hand_tag',
-    'EPICHAND': 'epic_hand',
-    'Tournament': 'tournament',
-    'PokerPlayTags': 'poker_play_tags',
-    'Adjective': 'adjective',
-    'Emotion': 'emotion',
-    'Badbeat': 'is_badbeat',
-    'Bluff': 'is_bluff',
-    'Suckout': 'is_suckout',
-    'Cooler': 'is_cooler',
-    'RUNOUTTag': 'runout_tag',
-    'PostFlop': 'postflop',
-    'All-in': 'allin_tag',
+    "id": "iconik_id",
+    "title": "title",
+    "Description": "description",
+    "time_start_ms": "time_start_ms",
+    "time_end_ms": "time_end_ms",
+    "ProjectName": "project_name",
+    "Year_": "year",
+    "Location": "location",
+    "Venue": "venue",
+    "EpisodeEvent": "episode_event",
+    "Source": "source",
+    "GameType": "game_type",
+    "PlayersTags": "players_tags",
+    "HandGrade": "hand_grade",
+    "HANDTag": "hand_tag",
+    "EPICHAND": "epic_hand",
+    "Tournament": "tournament",
+    "PokerPlayTags": "poker_play_tags",
+    "Adjective": "adjective",
+    "Emotion": "emotion",
+    "Badbeat": "is_badbeat",
+    "Bluff": "is_bluff",
+    "Suckout": "is_suckout",
+    "Cooler": "is_cooler",
+    "RUNOUTTag": "runout_tag",
+    "PostFlop": "postflop",
+    "All-in": "allin_tag",
 }
 
 
 def parse_int(value: str) -> Optional[int]:
     """문자열을 정수로 변환"""
-    if not value or value.strip() == '':
+    if not value or value.strip() == "":
         return None
     try:
         return int(float(value))
@@ -84,13 +84,13 @@ def parse_csv_row(row: Dict[str, str]) -> Dict[str, Any]:
     clip = {}
 
     for csv_col, db_field in COLUMN_MAPPING.items():
-        value = row.get(csv_col, '').strip()
+        value = row.get(csv_col, "").strip()
 
         # 불리언 필드
-        if db_field.startswith('is_'):
+        if db_field.startswith("is_"):
             clip[db_field] = parse_bool_tag(value)
         # 정수 필드
-        elif db_field in ('time_start_ms', 'time_end_ms', 'year'):
+        elif db_field in ("time_start_ms", "time_end_ms", "year"):
             clip[db_field] = parse_int(value)
         else:
             clip[db_field] = value if value else None
@@ -102,18 +102,18 @@ def load_csv(csv_path: str) -> List[Dict[str, Any]]:
     """CSV 파일 로드"""
     clips = []
 
-    with open(csv_path, 'r', encoding='utf-8-sig') as f:
+    with open(csv_path, "r", encoding="utf-8-sig") as f:
         reader = csv.DictReader(f)
 
         for row in reader:
             clip = parse_csv_row(row)
 
             # iconik_id가 없으면 건너뛰기
-            if not clip.get('iconik_id'):
+            if not clip.get("iconik_id"):
                 continue
 
             # 빈 제목인 경우 건너뛰기 (테스트 데이터 등)
-            if not clip.get('title') or 'test' in clip.get('title', '').lower():
+            if not clip.get("title") or "test" in clip.get("title", "").lower():
                 continue
 
             clips.append(clip)
@@ -132,29 +132,32 @@ def extract_filename_keywords(title: str) -> List[str]:
 
     # 연도 추출
     import re
-    years = re.findall(r'20\d{2}', title_lower)
+
+    years = re.findall(r"20\d{2}", title_lower)
     keywords.extend(years)
 
     # 이벤트 번호 추출
-    events = re.findall(r'ev[-_]?\d+', title_lower)
+    events = re.findall(r"ev[-_]?\d+", title_lower)
     keywords.extend(events)
 
     # 프로젝트명 추출
-    projects = ['wsop', 'hcl', 'pad', 'mpp', 'ggmillions']
+    projects = ["wsop", "hcl", "pad", "mpp", "ggmillions"]
     for proj in projects:
         if proj in title_lower:
             keywords.append(proj)
 
     # 이벤트 타입 추출
-    event_types = ['main event', 'me', 'ft', 'final', 'day']
+    event_types = ["main event", "me", "ft", "final", "day"]
     for et in event_types:
         if et in title_lower:
-            keywords.append(et.replace(' ', ''))
+            keywords.append(et.replace(" ", ""))
 
     return keywords
 
 
-def fuzzy_match_file(clip_title: str, file_paths: List[str], threshold: int = 60) -> Optional[tuple]:
+def fuzzy_match_file(
+    clip_title: str, file_paths: List[str], threshold: int = 60
+) -> Optional[tuple]:
     """퍼지 매칭으로 가장 유사한 파일 찾기
 
     Returns:
@@ -167,14 +170,11 @@ def fuzzy_match_file(clip_title: str, file_paths: List[str], threshold: int = 60
     filenames = [Path(p).stem for p in file_paths]
 
     # 클립 제목 정규화
-    clip_normalized = clip_title.lower().replace('-', ' ').replace('_', ' ')
+    clip_normalized = clip_title.lower().replace("-", " ").replace("_", " ")
 
     # 매칭
     result = process.extractOne(
-        clip_normalized,
-        filenames,
-        scorer=fuzz.token_set_ratio,
-        score_cutoff=threshold
+        clip_normalized, filenames, scorer=fuzz.token_set_ratio, score_cutoff=threshold
     )
 
     if result:
@@ -207,7 +207,7 @@ def import_iconik_csv(
 
     if not clips:
         logger.warning("No clips to import")
-        return {'total': 0, 'imported': 0, 'matched': 0}
+        return {"total": 0, "imported": 0, "matched": 0}
 
     db = Database(db_path)
 
@@ -230,16 +230,14 @@ def import_iconik_csv(
         # 파일 매칭
         if match_files and file_paths:
             match_result = fuzzy_match_file(
-                clip.get('title', ''),
-                file_paths,
-                threshold=match_threshold
+                clip.get("title", ""), file_paths, threshold=match_threshold
             )
 
             if match_result:
                 matched_path, confidence = match_result
-                clip['matched_file_path'] = matched_path
-                clip['file_id'] = file_map.get(matched_path)
-                clip['match_confidence'] = confidence
+                clip["matched_file_path"] = matched_path
+                clip["file_id"] = file_map.get(matched_path)
+                clip["match_confidence"] = confidence
                 matched += 1
 
         # DB에 삽입
@@ -256,10 +254,10 @@ def import_iconik_csv(
     db.close()
 
     stats = {
-        'total': len(clips),
-        'imported': imported,
-        'matched': matched,
-        'match_rate': f"{matched / len(clips) * 100:.1f}%" if clips else "0%"
+        "total": len(clips),
+        "imported": imported,
+        "matched": matched,
+        "match_rate": f"{matched / len(clips) * 100:.1f}%" if clips else "0%",
     }
 
     logger.info(f"Import complete: {stats}")
@@ -280,15 +278,15 @@ def show_statistics(db_path: str = "archive.db"):
     print(f"  미매칭 클립: {stats['unmatched']:,}개")
 
     print("\n  [프로젝트별]")
-    for proj, count in stats['by_project'].items():
+    for proj, count in stats["by_project"].items():
         print(f"    {proj}: {count:,}개")
 
     print("\n  [핸드 등급별]")
-    for grade, count in stats['by_hand_grade'].items():
+    for grade, count in stats["by_hand_grade"].items():
         print(f"    {grade}: {count:,}개")
 
     print("\n  [이벤트별 (상위 10개)]")
-    for i, (event, count) in enumerate(stats['by_event'].items()):
+    for i, (event, count) in enumerate(stats["by_event"].items()):
         if i >= 10:
             break
         print(f"    {event}: {count:,}개")
@@ -297,35 +295,16 @@ def show_statistics(db_path: str = "archive.db"):
 
 
 def main():
-    parser = argparse.ArgumentParser(
-        description='iconik 메타데이터 CSV 임포트'
-    )
+    parser = argparse.ArgumentParser(description="iconik 메타데이터 CSV 임포트")
+    parser.add_argument("csv_path", nargs="?", help="CSV 파일 경로")
     parser.add_argument(
-        'csv_path',
-        nargs='?',
-        help='CSV 파일 경로'
+        "--db", "-d", default="archive.db", help="데이터베이스 경로 (기본: archive.db)"
     )
+    parser.add_argument("--no-match", action="store_true", help="파일 매칭 비활성화")
     parser.add_argument(
-        '--db', '-d',
-        default='archive.db',
-        help='데이터베이스 경로 (기본: archive.db)'
+        "--threshold", "-t", type=int, default=60, help="퍼지 매칭 임계값 (기본: 60)"
     )
-    parser.add_argument(
-        '--no-match',
-        action='store_true',
-        help='파일 매칭 비활성화'
-    )
-    parser.add_argument(
-        '--threshold', '-t',
-        type=int,
-        default=60,
-        help='퍼지 매칭 임계값 (기본: 60)'
-    )
-    parser.add_argument(
-        '--stats',
-        action='store_true',
-        help='통계만 출력'
-    )
+    parser.add_argument("--stats", action="store_true", help="통계만 출력")
 
     args = parser.parse_args()
 

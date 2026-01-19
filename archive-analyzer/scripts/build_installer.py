@@ -46,10 +46,13 @@ def check_dependencies():
     # PyInstaller
     try:
         import PyInstaller
+
         print(f"  PyInstaller: {PyInstaller.__version__}")
     except ImportError:
         print("  PyInstaller not found. Installing...")
-        subprocess.run([sys.executable, "-m", "pip", "install", "pyinstaller"], check=True)
+        subprocess.run(
+            [sys.executable, "-m", "pip", "install", "pyinstaller"], check=True
+        )
 
     # pystray, Pillow
     for pkg in ["pystray", "PIL"]:
@@ -59,7 +62,9 @@ def check_dependencies():
         except ImportError:
             print(f"  {pkg} not found. Installing...")
             pip_name = "Pillow" if pkg == "PIL" else pkg
-            subprocess.run([sys.executable, "-m", "pip", "install", pip_name], check=True)
+            subprocess.run(
+                [sys.executable, "-m", "pip", "install", pip_name], check=True
+            )
 
 
 def create_icon():
@@ -121,7 +126,8 @@ def build_exe(onefile: bool = False, debug: bool = False):
         sys.executable,
         "-m",
         "PyInstaller",
-        "--name", APP_NAME,
+        "--name",
+        APP_NAME,
         "--windowed",  # GUI 앱 (콘솔 숨김)
         "--noconfirm",
     ]
@@ -167,8 +173,14 @@ def build_exe(onefile: bool = False, debug: bool = False):
 
     # 데이터 파일 (템플릿, 정적 파일)
     datas = [
-        (str(PROJECT_ROOT / "src" / "archive_analyzer" / "web" / "templates"), "archive_analyzer/web/templates"),
-        (str(PROJECT_ROOT / "src" / "archive_analyzer" / "web" / "static"), "archive_analyzer/web/static"),
+        (
+            str(PROJECT_ROOT / "src" / "archive_analyzer" / "web" / "templates"),
+            "archive_analyzer/web/templates",
+        ),
+        (
+            str(PROJECT_ROOT / "src" / "archive_analyzer" / "web" / "static"),
+            "archive_analyzer/web/static",
+        ),
     ]
     for src, dst in datas:
         if Path(src).exists():
@@ -254,11 +266,19 @@ Filename: "{{app}}\\{{#MyAppExeName}}"; Description: "{{cm:LaunchProgram,{{#Stri
 def main():
     import argparse
 
-    parser = argparse.ArgumentParser(description="Build NAS Auto Sync Windows Installer")
-    parser.add_argument("--onefile", action="store_true", help="Create single executable file")
+    parser = argparse.ArgumentParser(
+        description="Build NAS Auto Sync Windows Installer"
+    )
+    parser.add_argument(
+        "--onefile", action="store_true", help="Create single executable file"
+    )
     parser.add_argument("--debug", action="store_true", help="Enable debug mode")
-    parser.add_argument("--clean", action="store_true", help="Clean build directories only")
-    parser.add_argument("--inno", action="store_true", help="Generate Inno Setup script")
+    parser.add_argument(
+        "--clean", action="store_true", help="Clean build directories only"
+    )
+    parser.add_argument(
+        "--inno", action="store_true", help="Generate Inno Setup script"
+    )
 
     args = parser.parse_args()
 

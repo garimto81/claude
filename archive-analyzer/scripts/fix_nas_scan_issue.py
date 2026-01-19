@@ -10,16 +10,17 @@ Issue #57: NAS 스캔 문제 해결 스크립트
 2. NAS 재스캔
 3. 새 데이터로 업데이트
 """
+
 import sqlite3
 import sys
 from datetime import datetime
 from pathlib import Path
 
-sys.stdout.reconfigure(encoding='utf-8')
+sys.stdout.reconfigure(encoding="utf-8")
 
-ARCHIVE_DB = 'D:/AI/claude01/archive-analyzer/archive.db'
-POKERVOD_DB = 'D:/AI/claude01/shared-data/pokervod.db'
-NAS_ARCHIVE = Path(r'\\10.10.100.122\docker\GGPNAs\ARCHIVE')
+ARCHIVE_DB = "D:/AI/claude01/archive-analyzer/archive.db"
+POKERVOD_DB = "D:/AI/claude01/shared-data/pokervod.db"
+NAS_ARCHIVE = Path(r"\\10.10.100.122\docker\GGPNAs\ARCHIVE")
 
 
 def count_nas_files():
@@ -30,12 +31,12 @@ def count_nas_files():
         print(f"ERROR: NAS 경로 접근 불가: {NAS_ARCHIVE}")
         return 0
 
-    exts = {'.mp4', '.mkv', '.mxf', '.mov', '.avi', '.wmv', '.ts', '.m2ts'}
+    exts = {".mp4", ".mkv", ".mxf", ".mov", ".avi", ".wmv", ".ts", ".m2ts"}
     files = []
 
     for catalog in NAS_ARCHIVE.iterdir():
         if catalog.is_dir():
-            catalog_files = [f for f in catalog.rglob('*') if f.suffix.lower() in exts]
+            catalog_files = [f for f in catalog.rglob("*") if f.suffix.lower() in exts]
             files.extend(catalog_files)
             print(f"  {catalog.name}: {len(catalog_files)} files")
 
@@ -43,14 +44,14 @@ def count_nas_files():
     return files
 
 
-def cleanup_invalid_records(db_path, path_column='path', dry_run=True):
+def cleanup_invalid_records(db_path, path_column="path", dry_run=True):
     """유효하지 않은 레코드 정리"""
     print(f"\n=== Step 2: {Path(db_path).name} 정리 ===")
 
     conn = sqlite3.connect(db_path)
     cursor = conn.cursor()
 
-    cursor.execute(f'SELECT id, {path_column} FROM files')
+    cursor.execute(f"SELECT id, {path_column} FROM files")
     all_files = cursor.fetchall()
     print(f"  총 레코드: {len(all_files)}")
 
@@ -65,13 +66,13 @@ def cleanup_invalid_records(db_path, path_column='path', dry_run=True):
         # 배치로 삭제
         chunk_size = 100
         for i in range(0, len(invalid_ids), chunk_size):
-            chunk = invalid_ids[i:i + chunk_size]
-            placeholders = ','.join('?' * len(chunk))
-            cursor.execute(f'DELETE FROM files WHERE id IN ({placeholders})', chunk)
+            chunk = invalid_ids[i : i + chunk_size]
+            placeholders = ",".join("?" * len(chunk))
+            cursor.execute(f"DELETE FROM files WHERE id IN ({placeholders})", chunk)
         conn.commit()
         print(f"  삭제 완료: {len(invalid_ids)} 레코드")
 
-    cursor.execute('SELECT COUNT(*) FROM files')
+    cursor.execute("SELECT COUNT(*) FROM files")
     remaining = cursor.fetchone()[0]
     print(f"  남은 레코드: {remaining}")
 
@@ -87,7 +88,7 @@ def scan_nas_to_archive_db(nas_files, dry_run=True):
     cursor = conn.cursor()
 
     # 기존 경로 목록
-    cursor.execute('SELECT path FROM files')
+    cursor.execute("SELECT path FROM files")
     existing_paths = {row[0] for row in cursor.fetchall()}
     print(f"  기존 레코드: {len(existing_paths)}")
 
@@ -96,22 +97,27 @@ def scan_nas_to_archive_db(nas_files, dry_run=True):
     for f in nas_files:
         path_str = str(f)
         if path_str not in existing_paths:
-            new_files.append({
-                'path': path_str,
-                'filename': f.name,
-                'extension': f.suffix.lower(),
-                'size_bytes': f.stat().st_size if not dry_run else 0,
-                'file_type': 'video',
-                'parent_folder': str(f.parent),
-            })
+            new_files.append(
+                {
+                    "path": path_str,
+                    "filename": f.name,
+                    "extension": f.suffix.lower(),
+                    "size_bytes": f.stat().st_size if not dry_run else 0,
+                    "file_type": "video",
+                    "parent_folder": str(f.parent),
+                }
+            )
 
     print(f"  신규 파일: {len(new_files)}")
 
     if not dry_run and new_files:
-        cursor.executemany('''
+        cursor.executemany(
+            """
             INSERT INTO files (path, filename, extension, size_bytes, file_type, parent_folder, created_at)
             VALUES (:path, :filename, :extension, :size_bytes, :file_type, :parent_folder, datetime('now'))
-        ''', new_files)
+        """,
+            new_files,
+        )
         conn.commit()
         print(f"  추가 완료: {len(new_files)} 레코드")
 
@@ -122,8 +128,9 @@ def scan_nas_to_archive_db(nas_files, dry_run=True):
 def generate_file_id(nas_path, existing_ids=None):
     """nas_path에서 고유 ID 생성"""
     import hashlib
+
     # 경로를 정규화하고 해시 생성 (전체 32자 사용)
-    normalized = nas_path.replace('\\', '/').lower()
+    normalized = nas_path.replace("\\", "/").lower()
     hash_digest = hashlib.md5(normalized.encode()).hexdigest()
     base_id = f"file_{hash_digest}"
 
@@ -151,36 +158,41 @@ def sync_to_pokervod(dry_run=True):
     pokervod_cursor = pokervod_conn.cursor()
 
     # archive.db에서 유효한 파일 조회
-    archive_cursor.execute('SELECT path, filename, size_bytes, extension FROM files')
+    archive_cursor.execute("SELECT path, filename, size_bytes, extension FROM files")
     archive_files = archive_cursor.fetchall()
 
     # pokervod.db 기존 경로 및 ID
-    pokervod_cursor.execute('SELECT nas_path FROM files')
+    pokervod_cursor.execute("SELECT nas_path FROM files")
     existing_paths = {row[0] for row in pokervod_cursor.fetchall()}
 
-    pokervod_cursor.execute('SELECT id FROM files')
+    pokervod_cursor.execute("SELECT id FROM files")
     existing_ids = {row[0] for row in pokervod_cursor.fetchall()}
 
     new_records = []
     for path, filename, size, ext in archive_files:
         if path not in existing_paths:
-            new_records.append({
-                'id': generate_file_id(path, existing_ids),
-                'nas_path': path,
-                'filename': filename,
-                'size_bytes': size,
-                'analysis_status': 'pending',
-            })
+            new_records.append(
+                {
+                    "id": generate_file_id(path, existing_ids),
+                    "nas_path": path,
+                    "filename": filename,
+                    "size_bytes": size,
+                    "analysis_status": "pending",
+                }
+            )
 
     print(f"  archive.db 파일: {len(archive_files)}")
     print(f"  pokervod.db 기존: {len(existing_paths)}")
     print(f"  신규 추가 대상: {len(new_records)}")
 
     if not dry_run and new_records:
-        pokervod_cursor.executemany('''
+        pokervod_cursor.executemany(
+            """
             INSERT INTO files (id, nas_path, filename, size_bytes, analysis_status, created_at)
             VALUES (:id, :nas_path, :filename, :size_bytes, :analysis_status, datetime('now'))
-        ''', new_records)
+        """,
+            new_records,
+        )
         pokervod_conn.commit()
         print(f"  추가 완료: {len(new_records)} 레코드")
 
@@ -192,8 +204,10 @@ def sync_to_pokervod(dry_run=True):
 def main():
     import argparse
 
-    parser = argparse.ArgumentParser(description='Issue #57: NAS 스캔 문제 해결')
-    parser.add_argument('--execute', action='store_true', help='실제 실행 (기본: dry-run)')
+    parser = argparse.ArgumentParser(description="Issue #57: NAS 스캔 문제 해결")
+    parser.add_argument(
+        "--execute", action="store_true", help="실제 실행 (기본: dry-run)"
+    )
     args = parser.parse_args()
 
     dry_run = not args.execute
@@ -211,8 +225,8 @@ def main():
         return
 
     # Step 2: 유효하지 않은 레코드 정리
-    cleanup_invalid_records(ARCHIVE_DB, path_column='path', dry_run=dry_run)
-    cleanup_invalid_records(POKERVOD_DB, path_column='nas_path', dry_run=dry_run)
+    cleanup_invalid_records(ARCHIVE_DB, path_column="path", dry_run=dry_run)
+    cleanup_invalid_records(POKERVOD_DB, path_column="nas_path", dry_run=dry_run)
 
     # Step 3: NAS 파일을 archive.db에 추가
     added = scan_nas_to_archive_db(nas_files, dry_run=dry_run)
@@ -228,5 +242,5 @@ def main():
         print("    python scripts/fix_nas_scan_issue.py --execute")
 
 
-if __name__ == '__main__':
+if __name__ == "__main__":
     main()

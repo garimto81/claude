@@ -1,4 +1,5 @@
 """Google Sheets 연동 상태 확인 스크립트"""
+
 import os
 
 
@@ -12,8 +13,8 @@ def check_google_sheets():
         print("설치: pip install google-api-python-client google-auth")
         return
 
-    SERVICE_ACCOUNT_FILE = r'C:\claude\json\service_account_key.json'
-    SCOPES = ['https://www.googleapis.com/auth/spreadsheets.readonly']
+    SERVICE_ACCOUNT_FILE = r"C:\claude\json\service_account_key.json"
+    SCOPES = ["https://www.googleapis.com/auth/spreadsheets.readonly"]
 
     if not os.path.exists(SERVICE_ACCOUNT_FILE):
         print(f"❌ 서비스 계정 파일 없음: {SERVICE_ACCOUNT_FILE}")
@@ -23,23 +24,23 @@ def check_google_sheets():
         creds = service_account.Credentials.from_service_account_file(
             SERVICE_ACCOUNT_FILE, scopes=SCOPES
         )
-        service = build('sheets', 'v4', credentials=creds)
+        service = build("sheets", "v4", credentials=creds)
 
         # 1. 메인 동기화 시트
         print("=" * 60)
         print("=== 메인 동기화 시트 (pokervod.db) ===")
         print("=" * 60)
-        MAIN_ID = '1TW2ON5CQyIrL8aGQNYJ4OWkbZMaGmY9DoDG9VFXU60I'
+        MAIN_ID = "1TW2ON5CQyIrL8aGQNYJ4OWkbZMaGmY9DoDG9VFXU60I"
 
         try:
             meta = service.spreadsheets().get(spreadsheetId=MAIN_ID).execute()
-            sheets = meta.get('sheets', [])
+            sheets = meta.get("sheets", [])
             print(f"스프레드시트: {meta.get('properties', {}).get('title')}")
             print(f"시트 수: {len(sheets)}")
             print("\n시트 목록:")
             for s in sheets[:10]:
-                props = s.get('properties', {})
-                rows = props.get('gridProperties', {}).get('rowCount', 0)
+                props = s.get("properties", {})
+                rows = props.get("gridProperties", {}).get("rowCount", 0)
                 print(f"  - {props.get('title')}: {rows}행")
         except Exception as e:
             print(f"❌ 메인 시트 접근 실패: {e}")
@@ -48,27 +49,29 @@ def check_google_sheets():
         print("\n" + "=" * 60)
         print("=== Archive Team Hands 시트 ===")
         print("=" * 60)
-        ARCHIVE_ID = '1_RN_W_ZQclSZA0Iez6XniCXVtjkkd5HNZwiT6l-z6d4'
+        ARCHIVE_ID = "1_RN_W_ZQclSZA0Iez6XniCXVtjkkd5HNZwiT6l-z6d4"
 
         try:
             meta = service.spreadsheets().get(spreadsheetId=ARCHIVE_ID).execute()
-            sheets = meta.get('sheets', [])
+            sheets = meta.get("sheets", [])
             print(f"스프레드시트: {meta.get('properties', {}).get('title')}")
             print(f"시트 수: {len(sheets)}")
             print("\n시트 목록:")
             for s in sheets[:10]:
-                props = s.get('properties', {})
-                rows = props.get('gridProperties', {}).get('rowCount', 0)
+                props = s.get("properties", {})
+                rows = props.get("gridProperties", {}).get("rowCount", 0)
                 print(f"  - {props.get('title')}: {rows}행")
 
             # 첫 시트 헤더 읽기
             if sheets:
-                first_sheet = sheets[0].get('properties', {}).get('title')
-                result = service.spreadsheets().values().get(
-                    spreadsheetId=ARCHIVE_ID,
-                    range=f"'{first_sheet}'!A1:Z3"
-                ).execute()
-                values = result.get('values', [])
+                first_sheet = sheets[0].get("properties", {}).get("title")
+                result = (
+                    service.spreadsheets()
+                    .values()
+                    .get(spreadsheetId=ARCHIVE_ID, range=f"'{first_sheet}'!A1:Z3")
+                    .execute()
+                )
+                values = result.get("values", [])
                 print(f"\n첫 3행 미리보기 ({first_sheet}):")
                 for i, row in enumerate(values):
                     display = row[:6] if len(row) > 6 else row
@@ -89,8 +92,8 @@ def check_local_db():
     print("=" * 60)
 
     dbs = [
-        ('archive.db', 'C:/claude/archive-analyzer/data/output/archive.db'),
-        ('pokervod.db', 'D:/AI/claude01/shared-data/pokervod.db'),
+        ("archive.db", "C:/claude/archive-analyzer/data/output/archive.db"),
+        ("pokervod.db", "D:/AI/claude01/shared-data/pokervod.db"),
     ]
 
     for name, path in dbs:
@@ -101,7 +104,9 @@ def check_local_db():
             try:
                 conn = sqlite3.connect(path)
                 cursor = conn.cursor()
-                cursor.execute("SELECT name FROM sqlite_master WHERE type='table' ORDER BY name")
+                cursor.execute(
+                    "SELECT name FROM sqlite_master WHERE type='table' ORDER BY name"
+                )
                 tables = cursor.fetchall()
                 print(f"   테이블 ({len(tables)}개):")
                 for t in tables[:8]:
@@ -117,6 +122,6 @@ def check_local_db():
             print(f"\n❌ {name}: 파일 없음 ({path})")
 
 
-if __name__ == '__main__':
+if __name__ == "__main__":
     check_google_sheets()
     check_local_db()

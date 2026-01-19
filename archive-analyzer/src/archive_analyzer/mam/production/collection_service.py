@@ -37,9 +37,7 @@ class CollectionService(ICollectionService):
         # TODO: 구현
         raise NotImplementedError
 
-    async def add_asset_to_collection(
-        self, collection_id: str, asset_id: str
-    ) -> bool:
+    async def add_asset_to_collection(self, collection_id: str, asset_id: str) -> bool:
         """컬렉션에 자산 추가"""
         # TODO: 구현
         raise NotImplementedError

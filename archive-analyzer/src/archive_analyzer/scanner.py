@@ -109,7 +109,9 @@ class ArchiveScanner:
         if self._progress_callback and self._start_time:
             elapsed = (datetime.now() - self._start_time).total_seconds()
             fps = self._processed_count / elapsed if elapsed > 0 else 0
-            remaining = (self._total_count - self._processed_count) / fps if fps > 0 else 0
+            remaining = (
+                (self._total_count - self._processed_count) / fps if fps > 0 else 0
+            )
 
             progress = ScanProgress(
                 scan_id=self._scan_id or "",
@@ -145,7 +147,11 @@ class ArchiveScanner:
             filename=info.name,
             extension=info.extension,
             size_bytes=info.size,
-            modified_at=datetime.fromtimestamp(info.modified_time) if info.modified_time else None,
+            modified_at=(
+                datetime.fromtimestamp(info.modified_time)
+                if info.modified_time
+                else None
+            ),
             file_type=file_type.value,
             parent_folder=parent,
             scan_status="scanned",
@@ -198,7 +204,9 @@ class ArchiveScanner:
         else:
             self._total_count = checkpoint.total_files if checkpoint else 0
             if self._total_count == 0:
-                logger.info("Scanning without file count (progress percentage unavailable)")
+                logger.info(
+                    "Scanning without file count (progress percentage unavailable)"
+                )
 
         # 체크포인트 생성/업데이트
         if not checkpoint:
@@ -216,7 +224,9 @@ class ArchiveScanner:
         stats_by_type = {}
 
         try:
-            for info in self.connector.scan_directory(self.archive_path, recursive=True):
+            for info in self.connector.scan_directory(
+                self.archive_path, recursive=True
+            ):
                 # 디렉토리 건너뛰기
                 if info.is_dir:
                     continue

@@ -39,9 +39,7 @@ class JobService(IJobService):
         # TODO: 구현
         raise NotImplementedError
 
-    async def update_job_status(
-        self, job_id: str, status: JobStatus, **kwargs
-    ) -> bool:
+    async def update_job_status(self, job_id: str, status: JobStatus, **kwargs) -> bool:
         """작업 상태 업데이트"""
         # TODO: 구현
         raise NotImplementedError

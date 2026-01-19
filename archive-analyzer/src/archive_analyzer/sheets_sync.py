@@ -192,7 +192,9 @@ class SheetsClient:
             except APIError as e:
                 if e.response.status_code == 429:
                     # Truncated Exponential Backoff
-                    wait_time = min((2**attempt) + random.uniform(0, 1), self.MAX_BACKOFF)
+                    wait_time = min(
+                        (2**attempt) + random.uniform(0, 1), self.MAX_BACKOFF
+                    )
                     print(
                         f"    Rate limit (429), backoff {wait_time:.1f}s (attempt {attempt + 1}/{self.MAX_RETRIES})"
                     )
@@ -204,7 +206,9 @@ class SheetsClient:
                     raise
         raise Exception(f"Max retries ({self.MAX_RETRIES}) exceeded")
 
-    def get_or_create_worksheet(self, name: str, headers: List[str]) -> gspread.Worksheet:
+    def get_or_create_worksheet(
+        self, name: str, headers: List[str]
+    ) -> gspread.Worksheet:
         """워크시트 가져오기 또는 생성"""
         try:
             worksheet = self._with_retry(self.spreadsheet.worksheet, name)
@@ -224,7 +228,9 @@ class SheetsClient:
         except gspread.WorksheetNotFound:
             return []
 
-    def update_worksheet(self, worksheet_name: str, headers: List[str], rows: List[List[Any]]):
+    def update_worksheet(
+        self, worksheet_name: str, headers: List[str], rows: List[List[Any]]
+    ):
         """워크시트 전체 업데이트"""
         worksheet = self.get_or_create_worksheet(worksheet_name, headers)
 
@@ -283,7 +289,9 @@ class DatabaseClient:
                 return col["name"]
         return None
 
-    def get_all_records(self, table_name: str) -> Tuple[List[str], List[Dict[str, Any]]]:
+    def get_all_records(
+        self, table_name: str
+    ) -> Tuple[List[str], List[Dict[str, Any]]]:
         """테이블의 모든 레코드 가져오기"""
         conn = self.get_connection()
         cursor = conn.execute(f"SELECT * FROM {table_name}")
@@ -325,7 +333,9 @@ class DatabaseClient:
         conn.commit()
         conn.close()
 
-    def bulk_upsert(self, table_name: str, records: List[Dict[str, Any]], pk_column: str):
+    def bulk_upsert(
+        self, table_name: str, records: List[Dict[str, Any]], pk_column: str
+    ):
         """여러 레코드 일괄 삽입/업데이트"""
         if not records:
             return
@@ -378,7 +388,9 @@ class SheetsSyncService:
             # 데이터를 시트 형식으로 변환
             sheet_rows = []
             for row in rows:
-                sheet_rows.append([self._serialize_value(row.get(col)) for col in columns])
+                sheet_rows.append(
+                    [self._serialize_value(row.get(col)) for col in columns]
+                )
 
             self.sheets.update_worksheet(table_name, columns, sheet_rows)
             print(f"    -> {len(rows)} rows synced")
@@ -478,7 +490,9 @@ class SheetsSyncService:
 
             # display_title 자동 생성 (비어있으면)
             if table_name in ["catalogs", "subcatalogs", "files", "hands"]:
-                typed_record = self._auto_generate_display_title(table_name, typed_record)
+                typed_record = self._auto_generate_display_title(
+                    table_name, typed_record
+                )
 
             sheet_pks.add(str(pk_value))
 
@@ -553,7 +567,9 @@ class SheetsSyncService:
 
         return converted
 
-    def _auto_calculate_subcatalog_fields(self, record: Dict[str, Any]) -> Dict[str, Any]:
+    def _auto_calculate_subcatalog_fields(
+        self, record: Dict[str, Any]
+    ) -> Dict[str, Any]:
         """subcatalogs: sub1/sub2/sub3 기반으로 파생 필드 자동 계산
 
         Google Sheets에서 sub1, sub2, sub3만 수정하면:
@@ -723,11 +739,19 @@ class SheetsSyncService:
 def main():
     import argparse
 
-    parser = argparse.ArgumentParser(description="Google Sheets <-> SQLite Sync Service")
-    parser.add_argument("--init", action="store_true", help="Initialize sheets from database")
+    parser = argparse.ArgumentParser(
+        description="Google Sheets <-> SQLite Sync Service"
+    )
+    parser.add_argument(
+        "--init", action="store_true", help="Initialize sheets from database"
+    )
     parser.add_argument("--sync", action="store_true", help="Run one-time sync")
-    parser.add_argument("--daemon", action="store_true", help="Run as background service")
-    parser.add_argument("--interval", type=int, default=30, help="Sync interval in seconds")
+    parser.add_argument(
+        "--daemon", action="store_true", help="Run as background service"
+    )
+    parser.add_argument(
+        "--interval", type=int, default=30, help="Sync interval in seconds"
+    )
 
     args = parser.parse_args()
 

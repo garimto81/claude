@@ -14,14 +14,14 @@ from typing import Dict, List, Optional
 
 try:
     from rapidfuzz import fuzz
+
     FUZZY_AVAILABLE = True
 except ImportError:
     FUZZY_AVAILABLE = False
     print("Warning: rapidfuzz not installed. Fuzzy matching disabled.")
 
 logging.basicConfig(
-    level=logging.INFO,
-    format='%(asctime)s - %(levelname)s - %(message)s'
+    level=logging.INFO, format="%(asctime)s - %(levelname)s - %(message)s"
 )
 logger = logging.getLogger(__name__)
 
@@ -32,50 +32,44 @@ logger = logging.getLogger(__name__)
 
 PROJECT_TO_PATH = {
     # WSOP Paradise
-    'WSOP PARADISE': 'WSOP-PARADISE',
-    'WSOP Paradise': 'WSOP-PARADISE',
-    '2024 WSOP PARADISE': 'WSOP-PARADISE',
-    '2023 WSOP PARADISE': 'WSOP-PARADISE',
-
+    "WSOP PARADISE": "WSOP-PARADISE",
+    "WSOP Paradise": "WSOP-PARADISE",
+    "2024 WSOP PARADISE": "WSOP-PARADISE",
+    "2023 WSOP PARADISE": "WSOP-PARADISE",
     # Hustler Casino Live
-    'Hustler Casino Live': 'HCL',
-
+    "Hustler Casino Live": "HCL",
     # Poker After Dark
-    'PAD (POKER AFTER DARK) SEASON 13': 'PAD',
-    'Poker After Dark S12': 'PAD',
-    'Poker After Dark Seanson 13': 'PAD',
-
+    "PAD (POKER AFTER DARK) SEASON 13": "PAD",
+    "Poker After Dark S12": "PAD",
+    "Poker After Dark Seanson 13": "PAD",
     # WSOP Circuit
-    '2024 WSOP Circuit Los Angeles': 'WSOP-C',
-
+    "2024 WSOP Circuit Los Angeles": "WSOP-C",
     # WSOP Las Vegas (현재)
-    'WSOP': 'WSOP-LAS VEGAS',
-    '2024 WSOP': 'WSOP-LAS VEGAS',
-    'WSOP 2025': 'WSOP-LAS VEGAS',
-    '2025 World Series Of Poker': 'WSOP-LAS VEGAS',
-
+    "WSOP": "WSOP-LAS VEGAS",
+    "2024 WSOP": "WSOP-LAS VEGAS",
+    "WSOP 2025": "WSOP-LAS VEGAS",
+    "2025 World Series Of Poker": "WSOP-LAS VEGAS",
     # WSOP Europe
-    'WSOPE': 'WSOP-EUROPE',
-    '2024 WSOPE': 'WSOP-EUROPE',
-
+    "WSOPE": "WSOP-EUROPE",
+    "2024 WSOPE": "WSOP-EUROPE",
     # GGMillions
-    'GGMillion$': 'GGMillions',
-
+    "GGMillion$": "GGMillions",
     # MPP
-    'Mediterranean Poker Party MPP': 'MPP',
+    "Mediterranean Poker Party MPP": "MPP",
 }
 
 # 연도 → Archive Path 매핑
 YEAR_TO_ARCHIVE = {
-    (1973, 2002): 'WSOP Archive (1973-2002)',
-    (2003, 2010): 'WSOP Archive (2003-2010)',
-    (2011, 2016): 'WSOP Archive (2011-2016)',
+    (1973, 2002): "WSOP Archive (1973-2002)",
+    (2003, 2010): "WSOP Archive (2003-2010)",
+    (2011, 2016): "WSOP Archive (2011-2016)",
 }
 
 
 @dataclass
 class MediaFile:
     """미디어 파일 정보"""
+
     id: int
     filename: str
     path: str
@@ -90,6 +84,7 @@ class MediaFile:
 @dataclass
 class MatchResult:
     """매칭 결과"""
+
     iconik_id: str
     media_file_id: int
     media_filename: str
@@ -100,17 +95,17 @@ class MatchResult:
 def normalize_filename(filename: str) -> str:
     """파일명 정규화"""
     # 확장자 제거
-    name = re.sub(r'\.(mp4|mov|avi|mkv|mxf|m4v)$', '', filename, flags=re.IGNORECASE)
+    name = re.sub(r"\.(mp4|mov|avi|mkv|mxf|m4v)$", "", filename, flags=re.IGNORECASE)
     # 특수문자를 공백으로
-    name = re.sub(r'[_\-\.\[\]\(\)]', ' ', name)
+    name = re.sub(r"[_\-\.\[\]\(\)]", " ", name)
     # 다중 공백 제거
-    name = re.sub(r'\s+', ' ', name)
+    name = re.sub(r"\s+", " ", name)
     return name.lower().strip()
 
 
 def extract_year(text: str) -> Optional[int]:
     """텍스트에서 연도 추출"""
-    match = re.search(r'(19[7-9]\d|20[0-2]\d)', text)
+    match = re.search(r"(19[7-9]\d|20[0-2]\d)", text)
     if match:
         return int(match.group(1))
     return None
@@ -130,20 +125,20 @@ def parse_media_path(path: str) -> Dict[str, str]:
     예: \\\\...\\ARCHIVE\\WSOP\\WSOP-BR\\WSOP-PARADISE\\2024...
     """
     result = {
-        'category': '',
-        'sub_category': '',
-        'location': '',
-        'year_folder': '',
-        'archive_path': '',
+        "category": "",
+        "sub_category": "",
+        "location": "",
+        "year_folder": "",
+        "archive_path": "",
     }
 
     # 경로 정규화
-    parts = path.replace('/', '\\').split('\\')
+    parts = path.replace("/", "\\").split("\\")
 
     # ARCHIVE 위치 찾기
     archive_idx = -1
     for i, p in enumerate(parts):
-        if p.upper() == 'ARCHIVE':
+        if p.upper() == "ARCHIVE":
             archive_idx = i
             break
 
@@ -151,36 +146,36 @@ def parse_media_path(path: str) -> Dict[str, str]:
         return result
 
     # 카테고리 (WSOP, HCL, PAD, etc.)
-    result['category'] = parts[archive_idx + 1]
+    result["category"] = parts[archive_idx + 1]
 
     # ARCHIVE 이후 경로
-    remaining = parts[archive_idx + 1:]
-    result['archive_path'] = '\\'.join(remaining)
+    remaining = parts[archive_idx + 1 :]
+    result["archive_path"] = "\\".join(remaining)
 
     # WSOP 세부 분류
-    if result['category'] == 'WSOP' and len(remaining) > 1:
+    if result["category"] == "WSOP" and len(remaining) > 1:
         sub = remaining[1]
-        result['sub_category'] = sub
+        result["sub_category"] = sub
 
         # WSOP-BR 내부 (PARADISE, LAS VEGAS, EUROPE)
-        if sub == 'WSOP-BR' and len(remaining) > 2:
-            result['location'] = remaining[2]
+        if sub == "WSOP-BR" and len(remaining) > 2:
+            result["location"] = remaining[2]
             if len(remaining) > 3:
-                result['year_folder'] = remaining[3]
+                result["year_folder"] = remaining[3]
 
         # WSOP ARCHIVE (PRE-2016)
-        elif 'ARCHIVE' in sub.upper() or 'PRE-2016' in sub.upper():
-            result['sub_category'] = 'WSOP ARCHIVE (PRE-2016)'
+        elif "ARCHIVE" in sub.upper() or "PRE-2016" in sub.upper():
+            result["sub_category"] = "WSOP ARCHIVE (PRE-2016)"
             if len(remaining) > 2:
-                result['year_folder'] = remaining[2]
+                result["year_folder"] = remaining[2]
 
     # HCL
-    elif result['category'] == 'HCL' and len(remaining) > 1:
-        result['year_folder'] = remaining[1]
+    elif result["category"] == "HCL" and len(remaining) > 1:
+        result["year_folder"] = remaining[1]
 
     # PAD
-    elif result['category'] == 'PAD' and len(remaining) > 1:
-        result['sub_category'] = remaining[1]
+    elif result["category"] == "PAD" and len(remaining) > 1:
+        result["sub_category"] = remaining[1]
 
     return result
 
@@ -204,17 +199,17 @@ def load_media_metadata(csv_path: str, db_path: str) -> int:
     cursor.execute("DELETE FROM media_files")
 
     loaded = 0
-    with open(csv_path, 'r', encoding='utf-8-sig') as f:
+    with open(csv_path, "r", encoding="utf-8-sig") as f:
         reader = csv.DictReader(f)
 
         for row in reader:
-            file_id = row.get('ID', '')
+            file_id = row.get("ID", "")
             if not file_id:
                 continue
 
-            path = row.get('Path', '')
-            filename = row.get('Filename', '')
-            folder = row.get('Folder', '')
+            path = row.get("Path", "")
+            filename = row.get("Filename", "")
+            folder = row.get("Folder", "")
 
             # Path 파싱
             parsed = parse_media_path(path)
@@ -224,7 +219,7 @@ def load_media_metadata(csv_path: str, db_path: str) -> int:
 
             # Duration 파싱
             duration = None
-            dur_str = row.get('Duration (sec)', '')
+            dur_str = row.get("Duration (sec)", "")
             if dur_str:
                 try:
                     duration = float(dur_str)
@@ -233,33 +228,36 @@ def load_media_metadata(csv_path: str, db_path: str) -> int:
 
             # Size 파싱
             size = None
-            size_str = row.get('Size (bytes)', '')
+            size_str = row.get("Size (bytes)", "")
             if size_str:
                 try:
                     size = int(size_str)
                 except ValueError:
                     pass
 
-            cursor.execute("""
+            cursor.execute(
+                """
                 INSERT OR REPLACE INTO media_files
                 (id, filename, path, folder, container, size_bytes, duration_sec,
                  category, sub_category, location, year_folder, archive_path, normalized_name)
                 VALUES (?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?)
-            """, (
-                int(file_id),
-                filename,
-                path,
-                folder,
-                row.get('Container', ''),
-                size,
-                duration,
-                parsed['category'],
-                parsed['sub_category'],
-                parsed['location'],
-                parsed['year_folder'],
-                parsed['archive_path'],
-                normalized,
-            ))
+            """,
+                (
+                    int(file_id),
+                    filename,
+                    path,
+                    folder,
+                    row.get("Container", ""),
+                    size,
+                    duration,
+                    parsed["category"],
+                    parsed["sub_category"],
+                    parsed["location"],
+                    parsed["year_folder"],
+                    parsed["archive_path"],
+                    normalized,
+                ),
+            )
 
             loaded += 1
 
@@ -284,17 +282,19 @@ def load_media_files(db_path: str) -> List[MediaFile]:
 
     files = []
     for row in cursor.fetchall():
-        files.append(MediaFile(
-            id=row['id'],
-            filename=row['filename'],
-            path=row['path'],
-            folder=row['folder'] or '',
-            category=row['category'] or '',
-            sub_category=row['sub_category'] or '',
-            location=row['location'] or '',
-            year_folder=row['year_folder'] or '',
-            normalized_name=row['normalized_name'] or '',
-        ))
+        files.append(
+            MediaFile(
+                id=row["id"],
+                filename=row["filename"],
+                path=row["path"],
+                folder=row["folder"] or "",
+                category=row["category"] or "",
+                sub_category=row["sub_category"] or "",
+                location=row["location"] or "",
+                year_folder=row["year_folder"] or "",
+                normalized_name=row["normalized_name"] or "",
+            )
+        )
 
     conn.close()
     return files
@@ -315,15 +315,17 @@ def load_unmatched_clips(db_path: str) -> List[Dict]:
 
     clips = []
     for row in cursor.fetchall():
-        clips.append({
-            'iconik_id': row['iconik_id'],
-            'title': row['title'] or '',
-            'description': row['description'] or '',
-            'project_name': row['project_name'] or '',
-            'episode_event': row['episode_event'] or '',
-            'players_tags': row['players_tags'] or '',
-            'year': row['year'],
-        })
+        clips.append(
+            {
+                "iconik_id": row["iconik_id"],
+                "title": row["title"] or "",
+                "description": row["description"] or "",
+                "project_name": row["project_name"] or "",
+                "episode_event": row["episode_event"] or "",
+                "players_tags": row["players_tags"] or "",
+                "year": row["year"],
+            }
+        )
 
     conn.close()
     return clips
@@ -336,19 +338,19 @@ def build_media_index(media_files: List[MediaFile]) -> Dict[str, List[MediaFile]
     for mf in media_files:
         # 카테고리별 인덱스
         if mf.category:
-            index[f'cat:{mf.category}'].append(mf)
+            index[f"cat:{mf.category}"].append(mf)
 
         # 서브카테고리별 인덱스
         if mf.sub_category:
-            index[f'sub:{mf.sub_category}'].append(mf)
+            index[f"sub:{mf.sub_category}"].append(mf)
 
         # Location별 인덱스
         if mf.location:
-            index[f'loc:{mf.location}'].append(mf)
+            index[f"loc:{mf.location}"].append(mf)
 
         # Archive Path별 인덱스
         if mf.year_folder:
-            index[f'year:{mf.year_folder}'].append(mf)
+            index[f"year:{mf.year_folder}"].append(mf)
 
     return index
 
@@ -357,13 +359,12 @@ def build_media_index(media_files: List[MediaFile]) -> Dict[str, List[MediaFile]
 # 매칭 전략들
 # ============================================================
 
+
 def match_by_project_path(
-    clip: Dict,
-    media_index: Dict[str, List[MediaFile]],
-    all_media: List[MediaFile]
+    clip: Dict, media_index: Dict[str, List[MediaFile]], all_media: List[MediaFile]
 ) -> Optional[MatchResult]:
     """Strategy 1: ProjectName → Path 직접 매칭"""
-    project = clip['project_name']
+    project = clip["project_name"]
 
     if not project:
         return None
@@ -376,26 +377,28 @@ def match_by_project_path(
     # 해당 경로의 파일들 찾기
     candidates = []
     for mf in all_media:
-        if target_path in mf.path or target_path in mf.location or target_path in mf.sub_category:
+        if (
+            target_path in mf.path
+            or target_path in mf.location
+            or target_path in mf.sub_category
+        ):
             candidates.append(mf)
 
     if not candidates:
         return None
 
     # 파일명 유사도로 최적 매칭
-    return find_best_match(clip, candidates, 'project_path')
+    return find_best_match(clip, candidates, "project_path")
 
 
 def match_by_year_archive(
-    clip: Dict,
-    media_index: Dict[str, List[MediaFile]],
-    all_media: List[MediaFile]
+    clip: Dict, media_index: Dict[str, List[MediaFile]], all_media: List[MediaFile]
 ) -> Optional[MatchResult]:
     """Strategy 2: 연도 기반 Archive Path 매칭"""
     # 연도 추출 (project_name 또는 title에서)
-    year = clip.get('year')
+    year = clip.get("year")
     if not year:
-        year = extract_year(clip['project_name'] + ' ' + clip['title'])
+        year = extract_year(clip["project_name"] + " " + clip["title"])
 
     if not year:
         return None
@@ -406,28 +409,30 @@ def match_by_year_archive(
         return None
 
     # 해당 Archive의 파일들
-    candidates = [mf for mf in all_media if archive_path in mf.path or archive_path in mf.sub_category]
+    candidates = [
+        mf
+        for mf in all_media
+        if archive_path in mf.path or archive_path in mf.sub_category
+    ]
 
     if not candidates:
         return None
 
-    return find_best_match(clip, candidates, 'year_archive')
+    return find_best_match(clip, candidates, "year_archive")
 
 
 def match_subclip_parent(
-    clip: Dict,
-    media_index: Dict[str, List[MediaFile]],
-    all_media: List[MediaFile]
+    clip: Dict, media_index: Dict[str, List[MediaFile]], all_media: List[MediaFile]
 ) -> Optional[MatchResult]:
     """Strategy 3: Subclip → 부모 파일 매칭"""
-    title = clip['title']
+    title = clip["title"]
 
     # Subclip 패턴 확인
-    if '_subclip' not in title.lower() and 'subclip' not in title.lower():
+    if "_subclip" not in title.lower() and "subclip" not in title.lower():
         return None
 
     # 부모 파일명 추출
-    parent_name = re.split(r'_subclip|_Subclip|subclip', title, flags=re.IGNORECASE)[0]
+    parent_name = re.split(r"_subclip|_Subclip|subclip", title, flags=re.IGNORECASE)[0]
     parent_normalized = normalize_filename(parent_name)
 
     if len(parent_normalized) < 5:
@@ -435,7 +440,7 @@ def match_subclip_parent(
 
     # 프로젝트 기반 후보 필터링
     candidates = all_media
-    project = clip['project_name']
+    project = clip["project_name"]
     if project and project in PROJECT_TO_PATH:
         target = PROJECT_TO_PATH[project]
         candidates = [mf for mf in all_media if target in mf.path]
@@ -452,10 +457,10 @@ def match_subclip_parent(
             # 단순 포함 검사
             if parent_normalized in mf.normalized_name:
                 return MatchResult(
-                    iconik_id=clip['iconik_id'],
+                    iconik_id=clip["iconik_id"],
                     media_file_id=mf.id,
                     media_filename=mf.filename,
-                    match_method='subclip_parent',
+                    match_method="subclip_parent",
                     confidence=0.80,
                 )
         else:
@@ -466,10 +471,10 @@ def match_subclip_parent(
 
     if best_match and best_score >= 70:
         return MatchResult(
-            iconik_id=clip['iconik_id'],
+            iconik_id=clip["iconik_id"],
             media_file_id=best_match.id,
             media_filename=best_match.filename,
-            match_method='subclip_parent',
+            match_method="subclip_parent",
             confidence=min(0.95, best_score / 100),
         )
 
@@ -477,22 +482,20 @@ def match_subclip_parent(
 
 
 def match_by_filename_similarity(
-    clip: Dict,
-    media_index: Dict[str, List[MediaFile]],
-    all_media: List[MediaFile]
+    clip: Dict, media_index: Dict[str, List[MediaFile]], all_media: List[MediaFile]
 ) -> Optional[MatchResult]:
     """Strategy 4: 파일명 유사도 매칭"""
     if not FUZZY_AVAILABLE:
         return None
 
-    title_normalized = normalize_filename(clip['title'])
+    title_normalized = normalize_filename(clip["title"])
 
     if len(title_normalized) < 5:
         return None
 
     # 프로젝트 기반 후보 필터링
     candidates = all_media
-    project = clip['project_name']
+    project = clip["project_name"]
     if project:
         # PRE-2016 연도 프로젝트
         year = extract_year(project)
@@ -520,10 +523,10 @@ def match_by_filename_similarity(
 
     if best_match and best_score >= 75:
         return MatchResult(
-            iconik_id=clip['iconik_id'],
+            iconik_id=clip["iconik_id"],
             media_file_id=best_match.id,
             media_filename=best_match.filename,
-            match_method='filename_similarity',
+            match_method="filename_similarity",
             confidence=min(0.95, best_score / 100),
         )
 
@@ -531,22 +534,20 @@ def match_by_filename_similarity(
 
 
 def match_by_players(
-    clip: Dict,
-    media_index: Dict[str, List[MediaFile]],
-    all_media: List[MediaFile]
+    clip: Dict, media_index: Dict[str, List[MediaFile]], all_media: List[MediaFile]
 ) -> Optional[MatchResult]:
     """Strategy 5: 선수 이름 + 연도 매칭"""
-    players_str = clip['players_tags']
+    players_str = clip["players_tags"]
     if not players_str:
         return None
 
     # 선수 이름 추출
-    players = [p.strip().lower() for p in players_str.split(',') if p.strip()]
+    players = [p.strip().lower() for p in players_str.split(",") if p.strip()]
     if not players:
         return None
 
     # 연도 추출
-    year = clip.get('year') or extract_year(clip['project_name'] + ' ' + clip['title'])
+    year = clip.get("year") or extract_year(clip["project_name"] + " " + clip["title"])
 
     # 후보 필터링
     candidates = all_media
@@ -560,13 +561,13 @@ def match_by_players(
         filename_lower = mf.filename.lower()
         for player in players:
             # 성(surname)만 매칭 (공백 이후)
-            surname = player.split()[-1] if ' ' in player else player
+            surname = player.split()[-1] if " " in player else player
             if len(surname) >= 3 and surname in filename_lower:
                 return MatchResult(
-                    iconik_id=clip['iconik_id'],
+                    iconik_id=clip["iconik_id"],
                     media_file_id=mf.id,
                     media_filename=mf.filename,
-                    match_method='player_name',
+                    match_method="player_name",
                     confidence=0.75,
                 )
 
@@ -574,20 +575,18 @@ def match_by_players(
 
 
 def find_best_match(
-    clip: Dict,
-    candidates: List[MediaFile],
-    method: str
+    clip: Dict, candidates: List[MediaFile], method: str
 ) -> Optional[MatchResult]:
     """후보 중 최적 매칭 찾기"""
     if not candidates:
         return None
 
-    title_normalized = normalize_filename(clip['title'])
+    title_normalized = normalize_filename(clip["title"])
 
     if not FUZZY_AVAILABLE:
         # Fuzzy 없으면 첫 번째 후보 반환
         return MatchResult(
-            iconik_id=clip['iconik_id'],
+            iconik_id=clip["iconik_id"],
             media_file_id=candidates[0].id,
             media_filename=candidates[0].filename,
             match_method=method,
@@ -605,7 +604,7 @@ def find_best_match(
 
     if best_match and best_score >= 60:
         return MatchResult(
-            iconik_id=clip['iconik_id'],
+            iconik_id=clip["iconik_id"],
             media_file_id=best_match.id,
             media_filename=best_match.filename,
             match_method=method,
@@ -641,11 +640,11 @@ def run_matching(db_path: str) -> Dict[str, int]:
     matched_ids = set()
 
     strategies = [
-        ('project_path', match_by_project_path),
-        ('subclip_parent', match_subclip_parent),
-        ('year_archive', match_by_year_archive),
-        ('filename_similarity', match_by_filename_similarity),
-        ('player_name', match_by_players),
+        ("project_path", match_by_project_path),
+        ("subclip_parent", match_subclip_parent),
+        ("year_archive", match_by_year_archive),
+        ("filename_similarity", match_by_filename_similarity),
+        ("player_name", match_by_players),
     ]
 
     for strategy_name, strategy_func in strategies:
@@ -653,13 +652,13 @@ def run_matching(db_path: str) -> Dict[str, int]:
         strategy_matches = 0
 
         for clip in unmatched_clips:
-            if clip['iconik_id'] in matched_ids:
+            if clip["iconik_id"] in matched_ids:
                 continue
 
             result = strategy_func(clip, media_index, media_files)
             if result:
                 results.append(result)
-                matched_ids.add(clip['iconik_id'])
+                matched_ids.add(clip["iconik_id"])
                 strategy_matches += 1
 
         logger.info(f"  {strategy_name}: {strategy_matches} matches")
@@ -670,9 +669,9 @@ def run_matching(db_path: str) -> Dict[str, int]:
 
     # 통계
     stats = {
-        'total_unmatched': len(unmatched_clips),
-        'new_matches': len(results),
-        'remaining_unmatched': len(unmatched_clips) - len(results),
+        "total_unmatched": len(unmatched_clips),
+        "new_matches": len(results),
+        "remaining_unmatched": len(unmatched_clips) - len(results),
     }
 
     # 방법별 통계
@@ -680,7 +679,7 @@ def run_matching(db_path: str) -> Dict[str, int]:
     for r in results:
         method_counts[r.match_method] += 1
 
-    stats['by_method'] = dict(method_counts)
+    stats["by_method"] = dict(method_counts)
 
     return stats
 
@@ -691,19 +690,22 @@ def save_match_results(db_path: str, results: List[MatchResult]):
     cursor = conn.cursor()
 
     for result in results:
-        cursor.execute("""
+        cursor.execute(
+            """
             UPDATE clip_metadata
             SET file_id = ?,
                 matched_file_path = ?,
                 match_confidence = ?,
                 updated_at = CURRENT_TIMESTAMP
             WHERE iconik_id = ?
-        """, (
-            result.media_file_id,
-            result.media_filename,
-            result.confidence,
-            result.iconik_id,
-        ))
+        """,
+            (
+                result.media_file_id,
+                result.media_filename,
+                result.confidence,
+                result.iconik_id,
+            ),
+        )
 
     conn.commit()
     conn.close()
@@ -714,13 +716,13 @@ def save_match_results(db_path: str, results: List[MatchResult]):
 def sanitize_text(text: str) -> str:
     """텍스트 필드에서 줄바꿈 및 특수문자 정리"""
     if not text:
-        return ''
+        return ""
     # 줄바꿈을 공백으로 치환
-    text = text.replace('\r\n', ' ').replace('\n', ' ').replace('\r', ' ')
+    text = text.replace("\r\n", " ").replace("\n", " ").replace("\r", " ")
     # 탭을 공백으로 치환
-    text = text.replace('\t', ' ')
+    text = text.replace("\t", " ")
     # 다중 공백 제거
-    text = re.sub(r'\s+', ' ', text)
+    text = re.sub(r"\s+", " ", text)
     return text.strip()
 
 
@@ -744,69 +746,93 @@ def export_merged_csv(db_path: str, output_path: str):
     conn.close()
 
     headers = [
-        'iconik_id', 'title', 'description',
-        'file_id', 'matched_file_path', 'match_confidence', 'is_matched',
-        'time_start_ms', 'time_end_ms',
-        'project_name', 'year', 'location', 'venue', 'episode_event',
-        'source', 'game_type', 'tournament',
-        'players_tags', 'hand_grade', 'hand_tag', 'epic_hand', 'poker_play_tags',
-        'adjective', 'emotion',
-        'is_badbeat', 'is_bluff', 'is_suckout', 'is_cooler',
-        'runout_tag', 'postflop', 'allin_tag',
-        'created_at',
+        "iconik_id",
+        "title",
+        "description",
+        "file_id",
+        "matched_file_path",
+        "match_confidence",
+        "is_matched",
+        "time_start_ms",
+        "time_end_ms",
+        "project_name",
+        "year",
+        "location",
+        "venue",
+        "episode_event",
+        "source",
+        "game_type",
+        "tournament",
+        "players_tags",
+        "hand_grade",
+        "hand_tag",
+        "epic_hand",
+        "poker_play_tags",
+        "adjective",
+        "emotion",
+        "is_badbeat",
+        "is_bluff",
+        "is_suckout",
+        "is_cooler",
+        "runout_tag",
+        "postflop",
+        "allin_tag",
+        "created_at",
     ]
 
     matched_count = 0
     unmatched_count = 0
 
-    with open(output_path, 'w', encoding='utf-8-sig', newline='') as f:
+    with open(output_path, "w", encoding="utf-8-sig", newline="") as f:
         writer = csv.writer(f)
         writer.writerow(headers)
 
         for row in rows:
             row_dict = dict(row)
-            is_matched = 'Y' if row_dict['file_id'] else 'N'
+            is_matched = "Y" if row_dict["file_id"] else "N"
 
-            if row_dict['file_id']:
+            if row_dict["file_id"]:
                 matched_count += 1
             else:
                 unmatched_count += 1
 
             # 텍스트 필드 정리 (줄바꿈 제거)
-            writer.writerow([
-                row_dict['iconik_id'],
-                sanitize_text(row_dict['title']),
-                sanitize_text(row_dict['description']),
-                row_dict['file_id'],
-                row_dict['matched_file_path'],
-                row_dict['match_confidence'],
-                is_matched,
-                row_dict['time_start_ms'],
-                row_dict['time_end_ms'],
-                row_dict['project_name'],
-                row_dict['year'],
-                row_dict['location'],
-                row_dict['venue'],
-                row_dict['episode_event'],
-                row_dict['source'],
-                row_dict['game_type'],
-                row_dict['tournament'],
-                row_dict['players_tags'],
-                row_dict['hand_grade'],
-                row_dict['hand_tag'],
-                row_dict['epic_hand'],
-                row_dict['poker_play_tags'],
-                row_dict['adjective'],
-                row_dict['emotion'],
-                row_dict['is_badbeat'],
-                row_dict['is_bluff'],
-                row_dict['is_suckout'],
-                row_dict['is_cooler'],
-                row_dict['runout_tag'],
-                row_dict['postflop'],
-                row_dict['allin_tag'],
-                row_dict['created_at'],
-            ])
+            writer.writerow(
+                [
+                    row_dict["iconik_id"],
+                    sanitize_text(row_dict["title"]),
+                    sanitize_text(row_dict["description"]),
+                    row_dict["file_id"],
+                    row_dict["matched_file_path"],
+                    row_dict["match_confidence"],
+                    is_matched,
+                    row_dict["time_start_ms"],
+                    row_dict["time_end_ms"],
+                    row_dict["project_name"],
+                    row_dict["year"],
+                    row_dict["location"],
+                    row_dict["venue"],
+                    row_dict["episode_event"],
+                    row_dict["source"],
+                    row_dict["game_type"],
+                    row_dict["tournament"],
+                    row_dict["players_tags"],
+                    row_dict["hand_grade"],
+                    row_dict["hand_tag"],
+                    row_dict["epic_hand"],
+                    row_dict["poker_play_tags"],
+                    row_dict["adjective"],
+                    row_dict["emotion"],
+                    row_dict["is_badbeat"],
+                    row_dict["is_bluff"],
+                    row_dict["is_suckout"],
+                    row_dict["is_cooler"],
+                    row_dict["runout_tag"],
+                    row_dict["postflop"],
+                    row_dict["allin_tag"],
+                    row_dict["created_at"],
+                ]
+            )
 
     logger.info(f"Exported CSV: {output_path}")
     logger.info(f"  Matched: {matched_count}, Unmatched: {unmatched_count}")
@@ -817,11 +843,17 @@ def export_merged_csv(db_path: str, output_path: str):
 def main():
     import argparse
 
-    parser = argparse.ArgumentParser(description='Path 기반 iconik ↔ media_metadata 매칭')
-    parser.add_argument('--media-csv', '-m', required=True, help='media_metadata.csv 경로')
-    parser.add_argument('--db', '-d', required=True, help='데이터베이스 경로')
-    parser.add_argument('--output', '-o', help='출력 CSV 경로')
-    parser.add_argument('--load-only', action='store_true', help='media_metadata만 로드')
+    parser = argparse.ArgumentParser(
+        description="Path 기반 iconik ↔ media_metadata 매칭"
+    )
+    parser.add_argument(
+        "--media-csv", "-m", required=True, help="media_metadata.csv 경로"
+    )
+    parser.add_argument("--db", "-d", required=True, help="데이터베이스 경로")
+    parser.add_argument("--output", "-o", help="출력 CSV 경로")
+    parser.add_argument(
+        "--load-only", action="store_true", help="media_metadata만 로드"
+    )
 
     args = parser.parse_args()
 
@@ -849,7 +881,7 @@ def main():
     print(f"  남은 미매칭: {stats['remaining_unmatched']}개")
 
     print("\n  [방법별 매칭]")
-    for method, count in stats.get('by_method', {}).items():
+    for method, count in stats.get("by_method", {}).items():
         print(f"    {method}: {count}개")
 
     # 3. CSV 내보내기

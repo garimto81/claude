@@ -131,7 +131,10 @@ class FFprobeExtractor:
         """FFprobe 설치 확인"""
         try:
             result = subprocess.run(
-                [self.ffprobe_path, "-version"], capture_output=True, text=True, timeout=10
+                [self.ffprobe_path, "-version"],
+                capture_output=True,
+                text=True,
+                timeout=10,
             )
             if result.returncode != 0:
                 raise RuntimeError("FFprobe not working properly")
@@ -177,7 +180,9 @@ class FFprobeExtractor:
 
             if result.returncode != 0:
                 info.extraction_status = "failed"
-                info.extraction_error = result.stderr or "FFprobe returned non-zero exit code"
+                info.extraction_error = (
+                    result.stderr or "FFprobe returned non-zero exit code"
+                )
                 return info
 
             # JSON 파싱
@@ -251,7 +256,9 @@ class FFprobeExtractor:
                     info.audio_codec_long = stream.get("codec_long_name")
                     info.audio_channels = stream.get("channels")
                     info.audio_sample_rate = (
-                        int(stream.get("sample_rate", 0)) if stream.get("sample_rate") else None
+                        int(stream.get("sample_rate", 0))
+                        if stream.get("sample_rate")
+                        else None
                     )
 
                     # 오디오 비트레이트
@@ -324,7 +331,9 @@ class SMBMediaExtractor:
             info.file_size = file_info.size
 
             # 임시 파일로 다운로드
-            temp_path = self._download_for_analysis(smb_path, file_info.size, full_download)
+            temp_path = self._download_for_analysis(
+                smb_path, file_info.size, full_download
+            )
 
             try:
                 # FFprobe로 분석
@@ -364,9 +373,15 @@ class SMBMediaExtractor:
                 info.extracted_at = datetime.now()
 
                 # 부분 다운로드로 실패한 경우 전체 다운로드 시도 (#36 - 재시도 1회 제한)
-                if info.extraction_status == "failed" and not full_download and _retry_count == 0:
+                if (
+                    info.extraction_status == "failed"
+                    and not full_download
+                    and _retry_count == 0
+                ):
                     logger.info(f"Retrying with full download: {smb_path}")
-                    return self.extract(smb_path, file_id, full_download=True, _retry_count=1)
+                    return self.extract(
+                        smb_path, file_id, full_download=True, _retry_count=1
+                    )
 
             finally:
                 # 임시 파일 삭제
@@ -380,7 +395,9 @@ class SMBMediaExtractor:
 
         return info
 
-    def _download_for_analysis(self, smb_path: str, file_size: int, full_download: bool) -> str:
+    def _download_for_analysis(
+        self, smb_path: str, file_size: int, full_download: bool
+    ) -> str:
         """분석을 위한 임시 다운로드
 
         Args:
@@ -487,7 +504,9 @@ class MediaMetadataExtractor:
         self._failed = 0
         self._lock = threading.Lock()  # #23 - 스레드 안전성
 
-    def set_progress_callback(self, callback: Callable[[ExtractionProgress], None]) -> None:
+    def set_progress_callback(
+        self, callback: Callable[[ExtractionProgress], None]
+    ) -> None:
         """진행률 콜백 설정"""
         self._progress_callback = callback
 

@@ -1,10 +1,11 @@
 """DB 파일의 실제 존재 여부 확인"""
+
 import sqlite3
 import sys
 from concurrent.futures import ThreadPoolExecutor, as_completed
 from pathlib import Path
 
-sys.stdout.reconfigure(encoding='utf-8')
+sys.stdout.reconfigure(encoding="utf-8")
 
 
 def check_file_exists(nas_path):
@@ -16,9 +17,9 @@ def check_file_exists(nas_path):
 
 
 def main():
-    conn = sqlite3.connect('D:/AI/claude01/shared-data/pokervod.db')
+    conn = sqlite3.connect("D:/AI/claude01/shared-data/pokervod.db")
     cursor = conn.cursor()
-    cursor.execute('SELECT id, nas_path FROM files')
+    cursor.execute("SELECT id, nas_path FROM files")
     files = cursor.fetchall()
     conn.close()
 
@@ -56,16 +57,16 @@ def main():
     print("\n=== 카탈로그별 누락 현황 ===")
     catalog_missing = {}
     for file_id, path in missing:
-        if 'ARCHIVE' in path:
-            parts = path.split('ARCHIVE')
+        if "ARCHIVE" in path:
+            parts = path.split("ARCHIVE")
             if len(parts) > 1:
-                sub = parts[1].lstrip('/').lstrip('\\')
-                folder = sub.split('/')[0].split('\\')[0]
+                sub = parts[1].lstrip("/").lstrip("\\")
+                folder = sub.split("/")[0].split("\\")[0]
                 catalog_missing[folder] = catalog_missing.get(folder, 0) + 1
 
     for catalog, count in sorted(catalog_missing.items(), key=lambda x: -x[1]):
         print(f"  {catalog}: {count}")
 
 
-if __name__ == '__main__':
+if __name__ == "__main__":
     main()

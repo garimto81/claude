@@ -32,33 +32,36 @@ from typing import Dict, List, Optional, Tuple
 try:
     from rapidfuzz import fuzz, process
     from rapidfuzz.distance import Levenshtein
+
     RAPIDFUZZ_AVAILABLE = True
 except ImportError:
     RAPIDFUZZ_AVAILABLE = False
     print("Warning: RapidFuzz not installed. Using fallback matching.")
 
 # UTF-8 설정
-os.environ['PYTHONIOENCODING'] = 'utf-8'
-if sys.platform == 'win32':
+os.environ["PYTHONIOENCODING"] = "utf-8"
+if sys.platform == "win32":
     try:
-        sys.stdout.reconfigure(encoding='utf-8', errors='replace')
-        sys.stderr.reconfigure(encoding='utf-8', errors='replace')
+        sys.stdout.reconfigure(encoding="utf-8", errors="replace")
+        sys.stderr.reconfigure(encoding="utf-8", errors="replace")
     except:
         pass
 
 
 class ConfidenceLevel(Enum):
     """매칭 신뢰도 등급"""
-    HIGH = "high"        # 0.85+: 단일 정확 매칭, 자동 승인
-    MEDIUM = "medium"    # 0.6-0.85: 높은 신뢰도, 선택적 검토
-    LOW = "low"          # 0.4-0.6: 검토 필요
-    REVIEW = "review"    # <0.4: 수동 검토 필수
+
+    HIGH = "high"  # 0.85+: 단일 정확 매칭, 자동 승인
+    MEDIUM = "medium"  # 0.6-0.85: 높은 신뢰도, 선택적 검토
+    LOW = "low"  # 0.4-0.6: 검토 필요
+    REVIEW = "review"  # <0.4: 수동 검토 필수
     UNMATCHED = "unmatched"
 
 
 @dataclass
 class MatchCandidate:
     """매칭 후보"""
+
     file_id: int
     filename: str
     path: str
@@ -96,41 +99,39 @@ def parse_timecode(timecode: str) -> tuple:
     tc = timecode.strip()
 
     # 공백-대시-공백 패턴 우선 (가장 명확한 구분자)
-    if ' - ' in tc:
-        parts = tc.split(' - ', 1)
+    if " - " in tc:
+        parts = tc.split(" - ", 1)
         return parts[0].strip(), parts[1].strip() if len(parts) > 1 else ""
 
     # 대시만 있는 패턴
-    if '-' in tc:
+    if "-" in tc:
         # 시간 형식 패턴:
         # H:MM:SS-H:MM:SS (예: 3:23:20-3:26:30)
         # MM:SS-MM:SS (예: 37:35-40:44)
         # M:SS-M:SS (예: 11:01-11:08)
         # 0H:MM:SS-0H:MM:SS (예: 04:49:06-4:59:24)
         match = re.match(
-            r'^(\d{1,2}:\d{2}:\d{2})\s*-\s*(\d{1,2}:\d{2}:\d{2})$',  # H:MM:SS-H:MM:SS
-            tc
+            r"^(\d{1,2}:\d{2}:\d{2})\s*-\s*(\d{1,2}:\d{2}:\d{2})$",  # H:MM:SS-H:MM:SS
+            tc,
         )
         if match:
             return match.group(1), match.group(2)
 
         match = re.match(
-            r'^(\d{1,2}:\d{2})\s*-\s*(\d{1,2}:\d{2})$',  # MM:SS-MM:SS or M:SS-M:SS
-            tc
+            r"^(\d{1,2}:\d{2})\s*-\s*(\d{1,2}:\d{2})$", tc  # MM:SS-MM:SS or M:SS-M:SS
         )
         if match:
             return match.group(1), match.group(2)
 
         # 혼합 패턴: H:MM:SS-MM:SS 또는 MM:SS-H:MM:SS
         match = re.match(
-            r'^(\d{1,2}:\d{2}(?::\d{2})?)\s*-\s*(\d{1,2}:\d{2}(?::\d{2})?)$',
-            tc
+            r"^(\d{1,2}:\d{2}(?::\d{2})?)\s*-\s*(\d{1,2}:\d{2}(?::\d{2})?)$", tc
         )
         if match:
             return match.group(1), match.group(2)
 
         # 매칭 실패시 단순 분리 (첫 번째 대시 기준)
-        parts = tc.split('-', 1)
+        parts = tc.split("-", 1)
         return parts[0].strip(), parts[1].strip() if len(parts) > 1 else ""
 
     # 대시 없음 - 시작 시간만 있는 경우
@@ -140,8 +141,9 @@ def parse_timecode(timecode: str) -> tuple:
 @dataclass
 class ClipInfo:
     """CSV 클립 정보"""
+
     clip_id: str = ""  # 고유 식별자: {SourceCode}-R{RowNum} (예: 24W-R1, 25W-R15)
-    row_num: int = 0   # 원본 CSV 내 행 번호 (헤더 다음부터 1)
+    row_num: int = 0  # 원본 CSV 내 행 번호 (헤더 다음부터 1)
     file_no: str = ""
     event_number: str = ""
     event_name: str = ""
@@ -165,7 +167,7 @@ class ClipInfo:
     match_confidence: float = 0.0
     match_method: str = ""
     # 다중 후보 매칭 결과 (신규)
-    candidates: List['MatchCandidate'] = field(default_factory=list)
+    candidates: List["MatchCandidate"] = field(default_factory=list)
     confidence_level: ConfidenceLevel = ConfidenceLevel.UNMATCHED
     needs_review: bool = False
 
@@ -173,6 +175,7 @@ class ClipInfo:
 @dataclass
 class FileInfo:
     """DB 파일 정보"""
+
     id: int
     filename: str
     path: str
@@ -207,11 +210,11 @@ class ClipMatcher:
         # 소문자 변환
         text = text.lower()
         # 특수문자 제거/정규화
-        text = re.sub(r'[_\-\.]+', ' ', text)
-        text = re.sub(r'\$', '', text)
-        text = re.sub(r'[^\w\s]', ' ', text)
+        text = re.sub(r"[_\-\.]+", " ", text)
+        text = re.sub(r"\$", "", text)
+        text = re.sub(r"[^\w\s]", " ", text)
         # 다중 공백 정리
-        text = re.sub(r'\s+', ' ', text).strip()
+        text = re.sub(r"\s+", " ", text).strip()
         return text
 
     def _extract_tokens(self, text: str) -> List[str]:
@@ -219,37 +222,50 @@ class ClipMatcher:
         normalized = self._normalize_text(text)
         tokens = normalized.split()
         # 불용어 제거
-        stopwords = {'the', 'a', 'an', 'and', 'or', 'of', 'to', 'in', 'for', 'with', 'on', 'at'}
+        stopwords = {
+            "the",
+            "a",
+            "an",
+            "and",
+            "or",
+            "of",
+            "to",
+            "in",
+            "for",
+            "with",
+            "on",
+            "at",
+        }
         return [t for t in tokens if t not in stopwords and len(t) > 1]
 
     def _extract_event_number(self, text: str) -> str:
         """이벤트 번호 추출 (Event #58, ev-01, #13 등)"""
         patterns = [
-            r'event\s*#?\s*(\d+)',
-            r'ev[ent]*[\-_\s]*(\d+)',
-            r'#(\d+)',
-            r'bracelet\s*event\s*#?\s*(\d+)',
+            r"event\s*#?\s*(\d+)",
+            r"ev[ent]*[\-_\s]*(\d+)",
+            r"#(\d+)",
+            r"bracelet\s*event\s*#?\s*(\d+)",
         ]
         for pattern in patterns:
             match = re.search(pattern, text.lower())
             if match:
-                return match.group(1).lstrip('0') or '0'
+                return match.group(1).lstrip("0") or "0"
         return ""
 
     def _extract_year(self, text: str) -> str:
         """연도 추출 (2024, 2025 등)"""
-        match = re.search(r'20(2[0-9])', text)
+        match = re.search(r"20(2[0-9])", text)
         if match:
             return f"20{match.group(1)}"
         return ""
 
     def _extract_day(self, text: str) -> str:
         """Day 정보 추출"""
-        match = re.search(r'day\s*(\d+[a-d]?)', text.lower())
+        match = re.search(r"day\s*(\d+[a-d]?)", text.lower())
         if match:
             return match.group(1)
-        if 'final' in text.lower():
-            return 'final'
+        if "final" in text.lower():
+            return "final"
         return ""
 
     def _load_files(self):
@@ -257,11 +273,11 @@ class ClipMatcher:
         conn = sqlite3.connect(self.db_path)
         cursor = conn.cursor()
 
-        cursor.execute('''
+        cursor.execute("""
             SELECT id, filename, path, parent_folder
             FROM files
             WHERE file_type = 'video'
-        ''')
+        """)
 
         for row in cursor.fetchall():
             file_id, filename, path, parent_folder = row
@@ -283,7 +299,7 @@ class ClipMatcher:
                 tokens=tokens,
                 year=year,
                 event_number=event_num,
-                day=day
+                day=day,
             )
 
             self.files[file_id] = file_info
@@ -306,10 +322,10 @@ class ClipMatcher:
             return None
 
         # 경로 정규화
-        search_path = clip.nas_folder_link.replace('/', '\\').lower()
+        search_path = clip.nas_folder_link.replace("/", "\\").lower()
 
         for file_id, file_info in self.files.items():
-            file_path = file_info.path.replace('/', '\\').lower()
+            file_path = file_info.path.replace("/", "\\").lower()
             if search_path in file_path or file_path in search_path:
                 return (file_id, 1.0)
 
@@ -325,7 +341,9 @@ class ClipMatcher:
             return None
 
         # 이벤트 번호 추출
-        event_num = self._extract_event_number(clip.event_number + " " + clip.event_name)
+        event_num = self._extract_event_number(
+            clip.event_number + " " + clip.event_name
+        )
         if not event_num:
             return None
 
@@ -335,7 +353,10 @@ class ClipMatcher:
         # 선수명 추출
         player_names = []
         if clip.players:
-            player_names = [p.strip().lower() for p in re.split(r'\s+vs\s+', clip.players, flags=re.IGNORECASE)]
+            player_names = [
+                p.strip().lower()
+                for p in re.split(r"\s+vs\s+", clip.players, flags=re.IGNORECASE)
+            ]
 
         # 2024 파일 패턴으로 검색
         candidates = []
@@ -343,11 +364,11 @@ class ClipMatcher:
             fname_lower = file_info.filename.lower()
 
             # wsop-2024 패턴 확인
-            if 'wsop-2024' not in fname_lower and '2024' not in file_info.path.lower():
+            if "wsop-2024" not in fname_lower and "2024" not in file_info.path.lower():
                 continue
 
             # 이벤트 번호 패턴 매칭 (ev-58, ev58 등)
-            ev_patterns = [f'ev-{event_num}', f'ev{event_num}', f'-{event_num}-']
+            ev_patterns = [f"ev-{event_num}", f"ev{event_num}", f"-{event_num}-"]
             if not any(p in fname_lower for p in ev_patterns):
                 continue
 
@@ -361,7 +382,11 @@ class ClipMatcher:
             day_filtered = []
             for fid in candidates:
                 fname = self.files[fid].filename.lower()
-                if f'day{day}' in fname or f'day-{day}' in fname or f'day{day[0]}' in fname:
+                if (
+                    f"day{day}" in fname
+                    or f"day-{day}" in fname
+                    or f"day{day[0]}" in fname
+                ):
                     day_filtered.append(fid)
             if day_filtered:
                 candidates = day_filtered
@@ -390,7 +415,10 @@ class ClipMatcher:
             return None
 
         # 선수명 추출
-        player_names = [p.strip().lower() for p in re.split(r'\s+vs\s+', clip.players, flags=re.IGNORECASE)]
+        player_names = [
+            p.strip().lower()
+            for p in re.split(r"\s+vs\s+", clip.players, flags=re.IGNORECASE)
+        ]
         if not player_names or len(player_names[0]) < 3:
             return None
 
@@ -424,7 +452,7 @@ class ClipMatcher:
     def _is_main_event(self, text: str) -> bool:
         """Main Event 여부 확인"""
         lower = text.lower()
-        return 'main event' in lower or 'me day' in lower or 'me-day' in lower
+        return "main event" in lower or "me day" in lower or "me-day" in lower
 
     def _match_main_event(self, clip: ClipInfo) -> Optional[Tuple[int, float]]:
         """Main Event 전용 매칭"""
@@ -436,14 +464,16 @@ class ClipMatcher:
 
         # Part 정보 추출
         part = ""
-        part_match = re.search(r'part\s*(\d+)', clip.event_name.lower())
+        part_match = re.search(r"part\s*(\d+)", clip.event_name.lower())
         if part_match:
             part = part_match.group(1)
 
         # Main Event 파일 후보 검색
         candidates = []
         for file_id, file_info in self.files.items():
-            if self._is_main_event(file_info.filename) or self._is_main_event(file_info.path):
+            if self._is_main_event(file_info.filename) or self._is_main_event(
+                file_info.path
+            ):
                 candidates.append(file_id)
 
         if not candidates:
@@ -464,7 +494,7 @@ class ClipMatcher:
                 if day.lower() == file_day.lower():
                     day_filtered.append(fid)
                 # Day 숫자만 일치하는 경우
-                elif day.rstrip('abcd') == file_day.rstrip('abcd'):
+                elif day.rstrip("abcd") == file_day.rstrip("abcd"):
                     day_filtered.append(fid)
             if day_filtered:
                 candidates = day_filtered
@@ -474,7 +504,9 @@ class ClipMatcher:
             part_filtered = []
             for fid in candidates:
                 file_part = ""
-                file_part_match = re.search(r'part\s*(\d+)', self.files[fid].filename.lower())
+                file_part_match = re.search(
+                    r"part\s*(\d+)", self.files[fid].filename.lower()
+                )
                 if file_part_match:
                     file_part = file_part_match.group(1)
                 if file_part == part:
@@ -493,7 +525,9 @@ class ClipMatcher:
             for fid in candidates:
                 file_tokens = set(self.files[fid].tokens)
                 if clip_tokens and file_tokens:
-                    score = len(clip_tokens & file_tokens) / len(clip_tokens | file_tokens)
+                    score = len(clip_tokens & file_tokens) / len(
+                        clip_tokens | file_tokens
+                    )
                     if score > best_score:
                         best_score = score
                         best_match = fid
@@ -505,7 +539,9 @@ class ClipMatcher:
 
     def _match_by_event(self, clip: ClipInfo) -> Optional[Tuple[int, float]]:
         """이벤트 번호 + 연도 기반 매칭"""
-        event_num = self._extract_event_number(clip.event_number + " " + clip.event_name)
+        event_num = self._extract_event_number(
+            clip.event_number + " " + clip.event_name
+        )
         year = clip.source_year or self._extract_year(clip.event_name)
         day = self._extract_day(clip.event_name)
 
@@ -540,7 +576,9 @@ class ClipMatcher:
             for fid in candidates:
                 file_tokens = set(self.files[fid].tokens)
                 if clip_tokens and file_tokens:
-                    score = len(clip_tokens & file_tokens) / len(clip_tokens | file_tokens)
+                    score = len(clip_tokens & file_tokens) / len(
+                        clip_tokens | file_tokens
+                    )
                     if score > best_score:
                         best_score = score
                         best_match = fid
@@ -578,12 +616,15 @@ class ClipMatcher:
 
             # Jaccard 유사도
             file_tokens = set(file_info.tokens)
-            jaccard = len(clip_tokens & file_tokens) / len(clip_tokens | file_tokens) if (clip_tokens | file_tokens) else 0
+            jaccard = (
+                len(clip_tokens & file_tokens) / len(clip_tokens | file_tokens)
+                if (clip_tokens | file_tokens)
+                else 0
+            )
 
             # SequenceMatcher 유사도
-            seq_score = SequenceMatcher(None,
-                self._normalize_text(search_text),
-                file_info.normalized_name[:200]
+            seq_score = SequenceMatcher(
+                None, self._normalize_text(search_text), file_info.normalized_name[:200]
             ).ratio()
 
             # 종합 점수
@@ -598,7 +639,9 @@ class ClipMatcher:
 
         return None
 
-    def _get_confidence_level(self, score: float, num_candidates: int) -> ConfidenceLevel:
+    def _get_confidence_level(
+        self, score: float, num_candidates: int
+    ) -> ConfidenceLevel:
         """점수와 후보 수로 신뢰도 등급 결정"""
         if score >= 0.85 and num_candidates == 1:
             return ConfidenceLevel.HIGH
@@ -609,8 +652,9 @@ class ClipMatcher:
         else:
             return ConfidenceLevel.REVIEW
 
-    def match_with_candidates(self, clip: ClipInfo, max_candidates: int = 5,
-                               score_cutoff: float = 40.0) -> ClipInfo:
+    def match_with_candidates(
+        self, clip: ClipInfo, max_candidates: int = 5, score_cutoff: float = 40.0
+    ) -> ClipInfo:
         """RapidFuzz 기반 다중 후보 매칭
 
         Args:
@@ -633,13 +677,15 @@ class ClipMatcher:
             clip.match_confidence = result[1]
             clip.match_method = "path"
             clip.confidence_level = ConfidenceLevel.HIGH
-            clip.candidates = [MatchCandidate(
-                file_id=result[0],
-                filename=file_info.filename,
-                path=file_info.path,
-                score=100.0,
-                scorer_name="exact_path"
-            )]
+            clip.candidates = [
+                MatchCandidate(
+                    file_id=result[0],
+                    filename=file_info.filename,
+                    path=file_info.path,
+                    score=100.0,
+                    scorer_name="exact_path",
+                )
+            ]
             return clip
 
         # 1.5. 2024 PokerGo 클립 패턴 매칭
@@ -649,14 +695,18 @@ class ClipMatcher:
             clip.matched_file_id = result[0]
             clip.match_confidence = result[1]
             clip.match_method = "2024_pattern"
-            clip.confidence_level = ConfidenceLevel.HIGH if result[1] >= 0.85 else ConfidenceLevel.MEDIUM
-            clip.candidates = [MatchCandidate(
-                file_id=result[0],
-                filename=file_info.filename,
-                path=file_info.path,
-                score=result[1] * 100,
-                scorer_name="2024_pattern"
-            )]
+            clip.confidence_level = (
+                ConfidenceLevel.HIGH if result[1] >= 0.85 else ConfidenceLevel.MEDIUM
+            )
+            clip.candidates = [
+                MatchCandidate(
+                    file_id=result[0],
+                    filename=file_info.filename,
+                    path=file_info.path,
+                    score=result[1] * 100,
+                    scorer_name="2024_pattern",
+                )
+            ]
             return clip
 
         # 2. 검색 쿼리 구성
@@ -675,7 +725,9 @@ class ClipMatcher:
 
         # 3. 연도/이벤트 기반 사전 필터링으로 검색 범위 축소
         year = clip.source_year or self._extract_year(clip.event_name)
-        event_num = self._extract_event_number(clip.event_number + " " + clip.event_name)
+        event_num = self._extract_event_number(
+            clip.event_number + " " + clip.event_name
+        )
 
         # 후보 풀 구성
         candidate_pool = set()
@@ -687,7 +739,9 @@ class ClipMatcher:
         # Main Event의 경우 특별 처리
         if self._is_main_event(clip.event_name):
             for fid, finfo in self.files.items():
-                if self._is_main_event(finfo.filename) or self._is_main_event(finfo.path):
+                if self._is_main_event(finfo.filename) or self._is_main_event(
+                    finfo.path
+                ):
                     candidate_pool.add(fid)
 
         # 연도로 필터링 (후보 풀이 비어있으면 연도 기준으로 시작)
@@ -725,7 +779,7 @@ class ClipMatcher:
             choices,
             scorer=fuzz.token_set_ratio,
             limit=max_candidates * 2,
-            score_cutoff=score_cutoff
+            score_cutoff=score_cutoff,
         )
         for choice, score, key in matches:
             all_matches.append((key, score, "token_set_ratio"))
@@ -736,7 +790,7 @@ class ClipMatcher:
             choices,
             scorer=fuzz.token_sort_ratio,
             limit=max_candidates,
-            score_cutoff=score_cutoff
+            score_cutoff=score_cutoff,
         )
         for choice, score, key in matches:
             all_matches.append((key, score, "token_sort_ratio"))
@@ -747,7 +801,7 @@ class ClipMatcher:
             choices,
             scorer=fuzz.partial_ratio,
             limit=max_candidates,
-            score_cutoff=score_cutoff
+            score_cutoff=score_cutoff,
         )
         for choice, score, key in matches:
             all_matches.append((key, score, "partial_ratio"))
@@ -766,13 +820,15 @@ class ClipMatcher:
             combined_score = best_score * 0.7 + avg_score * 0.3
 
             finfo = self.files[fid]
-            final_candidates.append(MatchCandidate(
-                file_id=fid,
-                filename=finfo.filename,
-                path=finfo.path,
-                score=combined_score,
-                scorer_name=best_scorer
-            ))
+            final_candidates.append(
+                MatchCandidate(
+                    file_id=fid,
+                    filename=finfo.filename,
+                    path=finfo.path,
+                    score=combined_score,
+                    scorer_name=best_scorer,
+                )
+            )
 
         # 점수순 정렬 후 상위 N개
         final_candidates.sort(key=lambda x: -x.score)
@@ -792,8 +848,7 @@ class ClipMatcher:
                     clip.needs_review = True
 
             clip.confidence_level = self._get_confidence_level(
-                top_score,
-                len([c for c in clip.candidates if c.score >= score_cutoff])
+                top_score, len([c for c in clip.candidates if c.score >= score_cutoff])
             )
         else:
             # 7. Fallback: 선수명 기반 매칭 시도
@@ -804,13 +859,15 @@ class ClipMatcher:
                 clip.match_confidence = result[1]
                 clip.match_method = "players"
                 clip.confidence_level = ConfidenceLevel.LOW
-                clip.candidates = [MatchCandidate(
-                    file_id=result[0],
-                    filename=file_info.filename,
-                    path=file_info.path,
-                    score=result[1] * 100,
-                    scorer_name="players"
-                )]
+                clip.candidates = [
+                    MatchCandidate(
+                        file_id=result[0],
+                        filename=file_info.filename,
+                        path=file_info.path,
+                        score=result[1] * 100,
+                        scorer_name="players",
+                    )
+                ]
                 clip.needs_review = True  # 선수명 매칭은 항상 검토 필요
             else:
                 clip.confidence_level = ConfidenceLevel.UNMATCHED
@@ -861,14 +918,14 @@ class ClipMatcher:
         """CSV 파일 로드"""
         clips = []
 
-        with open(csv_path, 'r', encoding='utf-8') as f:
+        with open(csv_path, "r", encoding="utf-8") as f:
             reader = csv.reader(f)
             rows = list(reader)
 
         # 헤더 찾기 (File No. 컬럼)
         header_row = None
         for i, row in enumerate(rows):
-            if any('File No' in str(cell) for cell in row):
+            if any("File No" in str(cell) for cell in row):
                 header_row = i
                 break
 
@@ -881,39 +938,47 @@ class ClipMatcher:
         col_idx = {}
         for i, col in enumerate(header):
             col_lower = col.lower().strip()
-            if 'file no' in col_lower:
-                col_idx['file_no'] = i
-            elif 'event' in col_lower and 'name' in col_lower:
-                col_idx['event_name'] = i
-            elif col_lower == 'event':
-                col_idx['event_number'] = i
-            elif 'nas folder' in col_lower or 'folder link' in col_lower:
-                col_idx['nas_folder'] = i
-            elif 'player' in col_lower:
-                col_idx['players'] = i
-            elif 'hand' in col_lower:
-                col_idx['hands'] = i
-            elif 'timecode' in col_lower:
-                col_idx['timecode'] = i
-            elif 'short' in col_lower:
-                col_idx['shorts'] = i
-            elif 'caption' in col_lower:
-                col_idx['caption'] = i
-            elif 'key point' in col_lower or 'key_point' in col_lower:
-                col_idx['key_point'] = i
-            elif 'youtube' in col_lower and 'title' in col_lower:
-                col_idx['youtube_title'] = i
+            if "file no" in col_lower:
+                col_idx["file_no"] = i
+            elif "event" in col_lower and "name" in col_lower:
+                col_idx["event_name"] = i
+            elif col_lower == "event":
+                col_idx["event_number"] = i
+            elif "nas folder" in col_lower or "folder link" in col_lower:
+                col_idx["nas_folder"] = i
+            elif "player" in col_lower:
+                col_idx["players"] = i
+            elif "hand" in col_lower:
+                col_idx["hands"] = i
+            elif "timecode" in col_lower:
+                col_idx["timecode"] = i
+            elif "short" in col_lower:
+                col_idx["shorts"] = i
+            elif "caption" in col_lower:
+                col_idx["caption"] = i
+            elif "key point" in col_lower or "key_point" in col_lower:
+                col_idx["key_point"] = i
+            elif "youtube" in col_lower and "title" in col_lower:
+                col_idx["youtube_title"] = i
 
         # 데이터 파싱
         row_num = 0  # CSV 내 고유 행 번호 (헤더 다음부터 1)
-        for row in rows[header_row + 1:]:
+        for row in rows[header_row + 1 :]:
             row_num += 1
             if len(row) < 3:
                 continue
 
             # 빈 행 스킵
-            file_no = row[col_idx.get('file_no', 0)] if col_idx.get('file_no') is not None else ""
-            event_name = row[col_idx.get('event_name', 1)] if col_idx.get('event_name') is not None else ""
+            file_no = (
+                row[col_idx.get("file_no", 0)]
+                if col_idx.get("file_no") is not None
+                else ""
+            )
+            event_name = (
+                row[col_idx.get("event_name", 1)]
+                if col_idx.get("event_name") is not None
+                else ""
+            )
 
             if not file_no and not event_name:
                 continue
@@ -927,24 +992,69 @@ class ClipMatcher:
                 clip_id=clip_id,
                 row_num=row_num,
                 file_no=file_no,
-                event_number=row[col_idx.get('event_number', 0)] if col_idx.get('event_number') is not None and len(row) > col_idx.get('event_number', 0) else "",
+                event_number=(
+                    row[col_idx.get("event_number", 0)]
+                    if col_idx.get("event_number") is not None
+                    and len(row) > col_idx.get("event_number", 0)
+                    else ""
+                ),
                 event_name=event_name,
-                nas_folder_link=row[col_idx.get('nas_folder', 0)] if col_idx.get('nas_folder') is not None and len(row) > col_idx.get('nas_folder', 0) else "",
-                players=row[col_idx.get('players', 0)] if col_idx.get('players') is not None and len(row) > col_idx.get('players', 0) else "",
-                hands=row[col_idx.get('hands', 0)] if col_idx.get('hands') is not None and len(row) > col_idx.get('hands', 0) else "",
-                timecode=row[col_idx.get('timecode', 0)] if col_idx.get('timecode') is not None and len(row) > col_idx.get('timecode', 0) else "",
-                caption=row[col_idx.get('caption', 0)] if col_idx.get('caption') is not None and len(row) > col_idx.get('caption', 0) else "",
-                key_point=row[col_idx.get('key_point', 0)] if col_idx.get('key_point') is not None and len(row) > col_idx.get('key_point', 0) else "",
-                youtube_title=row[col_idx.get('youtube_title', 0)] if col_idx.get('youtube_title') is not None and len(row) > col_idx.get('youtube_title', 0) else "",
-                is_shorts='TRUE' in str(row[col_idx.get('shorts', 0)]).upper() if col_idx.get('shorts') is not None and len(row) > col_idx.get('shorts', 0) else False,
+                nas_folder_link=(
+                    row[col_idx.get("nas_folder", 0)]
+                    if col_idx.get("nas_folder") is not None
+                    and len(row) > col_idx.get("nas_folder", 0)
+                    else ""
+                ),
+                players=(
+                    row[col_idx.get("players", 0)]
+                    if col_idx.get("players") is not None
+                    and len(row) > col_idx.get("players", 0)
+                    else ""
+                ),
+                hands=(
+                    row[col_idx.get("hands", 0)]
+                    if col_idx.get("hands") is not None
+                    and len(row) > col_idx.get("hands", 0)
+                    else ""
+                ),
+                timecode=(
+                    row[col_idx.get("timecode", 0)]
+                    if col_idx.get("timecode") is not None
+                    and len(row) > col_idx.get("timecode", 0)
+                    else ""
+                ),
+                caption=(
+                    row[col_idx.get("caption", 0)]
+                    if col_idx.get("caption") is not None
+                    and len(row) > col_idx.get("caption", 0)
+                    else ""
+                ),
+                key_point=(
+                    row[col_idx.get("key_point", 0)]
+                    if col_idx.get("key_point") is not None
+                    and len(row) > col_idx.get("key_point", 0)
+                    else ""
+                ),
+                youtube_title=(
+                    row[col_idx.get("youtube_title", 0)]
+                    if col_idx.get("youtube_title") is not None
+                    and len(row) > col_idx.get("youtube_title", 0)
+                    else ""
+                ),
+                is_shorts=(
+                    "TRUE" in str(row[col_idx.get("shorts", 0)]).upper()
+                    if col_idx.get("shorts") is not None
+                    and len(row) > col_idx.get("shorts", 0)
+                    else False
+                ),
                 source_csv=csv_name,
                 source_year=source_year,
-                source_code=source_code
+                source_code=source_code,
             )
 
             # 타임코드 파싱
-            if clip.timecode and '-' in clip.timecode:
-                parts = clip.timecode.split('-')
+            if clip.timecode and "-" in clip.timecode:
+                parts = clip.timecode.split("-")
                 clip.timecode_start = parts[0].strip()
                 clip.timecode_end = parts[1].strip() if len(parts) > 1 else ""
 
@@ -956,7 +1066,9 @@ class ClipMatcher:
 
         return clips
 
-    def match_all(self, clips: List[ClipInfo], use_rapidfuzz: bool = True) -> Dict[str, int]:
+    def match_all(
+        self, clips: List[ClipInfo], use_rapidfuzz: bool = True
+    ) -> Dict[str, int]:
         """모든 클립 매칭 및 통계 반환
 
         Args:
@@ -992,13 +1104,7 @@ class ClipMatcher:
             - 'review': 수동 검토 필수
             - 'unmatched': 매칭 실패
         """
-        result = {
-            'high': [],
-            'medium': [],
-            'low': [],
-            'review': [],
-            'unmatched': []
-        }
+        result = {"high": [], "medium": [], "low": [], "review": [], "unmatched": []}
 
         for clip in clips:
             self.match_with_candidates(clip)
@@ -1042,17 +1148,27 @@ class ClipMatcher:
             for clip in unmatched[:10]:
                 print(f"  - {clip.event_number} {clip.event_name[:40]}...")
 
-
-    def export_unmatched_report(self, clips: List[ClipInfo], output_path: str = "unmatched_clips.csv"):
+    def export_unmatched_report(
+        self, clips: List[ClipInfo], output_path: str = "unmatched_clips.csv"
+    ):
         """미매칭 클립 리포트 CSV 출력"""
         unmatched = [c for c in clips if not c.matched_file_id]
 
-        with open(output_path, 'w', encoding='utf-8-sig', newline='') as f:
+        with open(output_path, "w", encoding="utf-8-sig", newline="") as f:
             writer = csv.writer(f)
-            writer.writerow([
-                'Source CSV', 'Year', 'File No', 'Event Number', 'Event Name',
-                'Players', 'Timecode', 'Key Point', 'Suggested Files'
-            ])
+            writer.writerow(
+                [
+                    "Source CSV",
+                    "Year",
+                    "File No",
+                    "Event Number",
+                    "Event Name",
+                    "Players",
+                    "Timecode",
+                    "Key Point",
+                    "Suggested Files",
+                ]
+            )
 
             for clip in unmatched:
                 # 유사 파일 후보 추천
@@ -1068,54 +1184,75 @@ class ClipMatcher:
                 suggestions = []
                 for fid, score in top_files:
                     if fid in self.files:
-                        suggestions.append(f"{self.files[fid].filename[:40]}... (score:{score})")
+                        suggestions.append(
+                            f"{self.files[fid].filename[:40]}... (score:{score})"
+                        )
 
-                writer.writerow([
-                    clip.source_csv,
-                    clip.source_year,
-                    clip.file_no,
-                    clip.event_number,
-                    clip.event_name[:60],
-                    clip.players[:30] if clip.players else "",
-                    clip.timecode,
-                    clip.key_point[:40] if clip.key_point else "",
-                    " | ".join(suggestions) if suggestions else "No suggestions"
-                ])
+                writer.writerow(
+                    [
+                        clip.source_csv,
+                        clip.source_year,
+                        clip.file_no,
+                        clip.event_number,
+                        clip.event_name[:60],
+                        clip.players[:30] if clip.players else "",
+                        clip.timecode,
+                        clip.key_point[:40] if clip.key_point else "",
+                        " | ".join(suggestions) if suggestions else "No suggestions",
+                    ]
+                )
 
         print(f"\nExported unmatched report: {output_path} ({len(unmatched)} clips)")
         return output_path
 
-    def export_matched_report(self, clips: List[ClipInfo], output_path: str = "matched_clips.csv"):
+    def export_matched_report(
+        self, clips: List[ClipInfo], output_path: str = "matched_clips.csv"
+    ):
         """매칭된 클립 리포트 CSV 출력"""
         matched = [c for c in clips if c.matched_file_id]
 
-        with open(output_path, 'w', encoding='utf-8-sig', newline='') as f:
+        with open(output_path, "w", encoding="utf-8-sig", newline="") as f:
             writer = csv.writer(f)
-            writer.writerow([
-                'Source CSV', 'Year', 'File No', 'Event Name', 'Players', 'Timecode',
-                'Match Method', 'Confidence', 'Matched File ID', 'Matched Filename', 'Matched Path'
-            ])
+            writer.writerow(
+                [
+                    "Source CSV",
+                    "Year",
+                    "File No",
+                    "Event Name",
+                    "Players",
+                    "Timecode",
+                    "Match Method",
+                    "Confidence",
+                    "Matched File ID",
+                    "Matched Filename",
+                    "Matched Path",
+                ]
+            )
 
             for clip in matched:
                 file_info = self.files.get(clip.matched_file_id)
-                writer.writerow([
-                    clip.source_csv,
-                    clip.source_year,
-                    clip.file_no,
-                    clip.event_name[:50],
-                    clip.players[:30] if clip.players else "",
-                    clip.timecode,
-                    clip.match_method,
-                    f"{clip.match_confidence:.2f}",
-                    clip.matched_file_id,
-                    file_info.filename if file_info else "",
-                    file_info.path[:80] if file_info else ""
-                ])
+                writer.writerow(
+                    [
+                        clip.source_csv,
+                        clip.source_year,
+                        clip.file_no,
+                        clip.event_name[:50],
+                        clip.players[:30] if clip.players else "",
+                        clip.timecode,
+                        clip.match_method,
+                        f"{clip.match_confidence:.2f}",
+                        clip.matched_file_id,
+                        file_info.filename if file_info else "",
+                        file_info.path[:80] if file_info else "",
+                    ]
+                )
 
         print(f"\nExported matched report: {output_path} ({len(matched)} clips)")
         return output_path
 
-    def suggest_files(self, search_query: str, limit: int = 10) -> List[Tuple[int, str, float]]:
+    def suggest_files(
+        self, search_query: str, limit: int = 10
+    ) -> List[Tuple[int, str, float]]:
         """검색어로 파일 후보 추천 (수동 매칭 지원)"""
         tokens = set(self._extract_tokens(search_query))
         if not tokens:
@@ -1126,69 +1263,96 @@ class ClipMatcher:
             for file_id in self.by_token.get(token, []):
                 candidate_scores[file_id] += 1
 
-        top_candidates = sorted(candidate_scores.items(), key=lambda x: -x[1])[:limit * 2]
+        top_candidates = sorted(candidate_scores.items(), key=lambda x: -x[1])[
+            : limit * 2
+        ]
 
         results = []
         for file_id, token_hits in top_candidates:
             file_info = self.files[file_id]
             # 상세 유사도
             file_tokens = set(file_info.tokens)
-            jaccard = len(tokens & file_tokens) / len(tokens | file_tokens) if (tokens | file_tokens) else 0
+            jaccard = (
+                len(tokens & file_tokens) / len(tokens | file_tokens)
+                if (tokens | file_tokens)
+                else 0
+            )
             results.append((file_id, file_info.filename, jaccard))
 
         results.sort(key=lambda x: -x[2])
         return results[:limit]
 
-    def export_review_report(self, clips: List[ClipInfo], output_path: str = "review_report.csv"):
+    def export_review_report(
+        self, clips: List[ClipInfo], output_path: str = "review_report.csv"
+    ):
         """수동 검토용 상세 리포트 (다중 후보 포함)
 
         복수 후보가 있는 클립들을 검토할 수 있는 상세 리포트 생성.
         각 클립에 대해 최대 5개의 후보 파일과 점수를 표시.
         """
         # 검토 필요한 클립만 필터링 (needs_review 또는 LOW/REVIEW 등급)
-        review_clips = [c for c in clips if
-                        c.needs_review or
-                        c.confidence_level in (ConfidenceLevel.LOW, ConfidenceLevel.REVIEW) or
-                        (c.candidates and len(c.candidates) > 1)]
+        review_clips = [
+            c
+            for c in clips
+            if c.needs_review
+            or c.confidence_level in (ConfidenceLevel.LOW, ConfidenceLevel.REVIEW)
+            or (c.candidates and len(c.candidates) > 1)
+        ]
 
-        with open(output_path, 'w', encoding='utf-8-sig', newline='') as f:
+        with open(output_path, "w", encoding="utf-8-sig", newline="") as f:
             writer = csv.writer(f)
             # 헤더
-            writer.writerow([
-                'Clip ID', 'Source CSV', 'Year', 'Event Name', 'Players',
-                'Confidence Level', 'Needs Review', 'Top Score',
-                'Candidate 1 (ID|Filename|Score)',
-                'Candidate 2 (ID|Filename|Score)',
-                'Candidate 3 (ID|Filename|Score)',
-                'Candidate 4 (ID|Filename|Score)',
-                'Candidate 5 (ID|Filename|Score)',
-            ])
+            writer.writerow(
+                [
+                    "Clip ID",
+                    "Source CSV",
+                    "Year",
+                    "Event Name",
+                    "Players",
+                    "Confidence Level",
+                    "Needs Review",
+                    "Top Score",
+                    "Candidate 1 (ID|Filename|Score)",
+                    "Candidate 2 (ID|Filename|Score)",
+                    "Candidate 3 (ID|Filename|Score)",
+                    "Candidate 4 (ID|Filename|Score)",
+                    "Candidate 5 (ID|Filename|Score)",
+                ]
+            )
 
             for i, clip in enumerate(review_clips, 1):
                 # 후보 정보 포맷팅
                 candidates_info = []
                 for cand in clip.candidates[:5]:
-                    candidates_info.append(f"{cand.file_id}|{cand.filename[:40]}|{cand.score:.1f}")
+                    candidates_info.append(
+                        f"{cand.file_id}|{cand.filename[:40]}|{cand.score:.1f}"
+                    )
                 # 빈 칸 채우기
                 while len(candidates_info) < 5:
                     candidates_info.append("")
 
-                writer.writerow([
-                    clip.file_no or f"clip_{i}",
-                    clip.source_csv,
-                    clip.source_year,
-                    clip.event_name[:60],
-                    clip.players[:30] if clip.players else "",
-                    clip.confidence_level.value,
-                    "YES" if clip.needs_review else "",
-                    f"{clip.match_confidence:.2f}" if clip.match_confidence else "",
-                    *candidates_info
-                ])
+                writer.writerow(
+                    [
+                        clip.file_no or f"clip_{i}",
+                        clip.source_csv,
+                        clip.source_year,
+                        clip.event_name[:60],
+                        clip.players[:30] if clip.players else "",
+                        clip.confidence_level.value,
+                        "YES" if clip.needs_review else "",
+                        f"{clip.match_confidence:.2f}" if clip.match_confidence else "",
+                        *candidates_info,
+                    ]
+                )
 
-        print(f"\nExported review report: {output_path} ({len(review_clips)} clips need review)")
+        print(
+            f"\nExported review report: {output_path} ({len(review_clips)} clips need review)"
+        )
         return output_path
 
-    def export_single_report(self, clips: List[ClipInfo], output_path: str = "data/output/match.csv"):
+    def export_single_report(
+        self, clips: List[ClipInfo], output_path: str = "data/output/match.csv"
+    ):
         """단일 통합 리포트 생성 (match.csv)
 
         모든 클립을 하나의 CSV 파일로 출력.
@@ -1199,27 +1363,46 @@ class ClipMatcher:
         output_path = Path(output_path)
         output_path.parent.mkdir(parents=True, exist_ok=True)
 
-        with open(output_path, 'w', encoding='utf-8-sig', newline='') as f:
+        with open(output_path, "w", encoding="utf-8-sig", newline="") as f:
             writer = csv.writer(f)
-            writer.writerow([
-                'Clip ID', 'File No', 'Source Code', 'Source CSV', 'Year',
-                'Event Name', 'Players', 'Timecode', 'Start At', 'End At',
-                'Match Level', 'Match Method', 'Confidence', 'Needs Review',
-                'Matched File ID', 'Matched Filename',
-                'Alt Candidate 1', 'Alt Candidate 2'
-            ])
+            writer.writerow(
+                [
+                    "Clip ID",
+                    "File No",
+                    "Source Code",
+                    "Source CSV",
+                    "Year",
+                    "Event Name",
+                    "Players",
+                    "Timecode",
+                    "Start At",
+                    "End At",
+                    "Match Level",
+                    "Match Method",
+                    "Confidence",
+                    "Needs Review",
+                    "Matched File ID",
+                    "Matched Filename",
+                    "Alt Candidate 1",
+                    "Alt Candidate 2",
+                ]
+            )
 
             for clip in clips:
-                file_info = self.files.get(clip.matched_file_id) if clip.matched_file_id else None
+                file_info = (
+                    self.files.get(clip.matched_file_id)
+                    if clip.matched_file_id
+                    else None
+                )
 
                 # Match Level 결정 (high/medium/low/unmatched)
                 if clip.confidence_level:
                     match_level = clip.confidence_level.value.lower()
                     # review 등급은 low로 통합
-                    if match_level == 'review':
-                        match_level = 'low'
+                    if match_level == "review":
+                        match_level = "low"
                 else:
-                    match_level = 'unmatched'
+                    match_level = "unmatched"
 
                 # 대안 후보들
                 alt_candidates = []
@@ -1229,11 +1412,19 @@ class ClipMatcher:
                     alt_candidates.append("")
 
                 # 줄바꿈 문자를 공백으로 치환 (CSV 일관성 유지)
-                clean_event_name = clip.event_name.replace('\n', ' ').replace('\r', ' ')[:50]
-                clean_players = (clip.players.replace('\n', ' ').replace('\r', ' ')[:30]
-                                if clip.players else "")
-                clean_timecode = (clip.timecode.replace('\n', ' ').replace('\r', ' ')
-                                 if clip.timecode else "")
+                clean_event_name = clip.event_name.replace("\n", " ").replace(
+                    "\r", " "
+                )[:50]
+                clean_players = (
+                    clip.players.replace("\n", " ").replace("\r", " ")[:30]
+                    if clip.players
+                    else ""
+                )
+                clean_timecode = (
+                    clip.timecode.replace("\n", " ").replace("\r", " ")
+                    if clip.timecode
+                    else ""
+                )
 
                 # Timecode 분리 (Start At, End At)
                 # 작은따옴표 접두사 추가 - 구글 시트에서 텍스트로 인식되도록
@@ -1241,25 +1432,27 @@ class ClipMatcher:
                 start_at = f"'{start_at}" if start_at else ""
                 end_at = f"'{end_at}" if end_at else ""
 
-                writer.writerow([
-                    clip.clip_id,
-                    clip.file_no,
-                    clip.source_code,
-                    clip.source_csv,
-                    clip.source_year,
-                    clean_event_name,
-                    clean_players,
-                    clean_timecode,
-                    start_at,
-                    end_at,
-                    match_level,
-                    clip.match_method,
-                    f"{clip.match_confidence:.2f}" if clip.match_confidence else "",
-                    "YES" if clip.needs_review else "",
-                    clip.matched_file_id or "",
-                    file_info.filename[:50] if file_info else "",
-                    *alt_candidates
-                ])
+                writer.writerow(
+                    [
+                        clip.clip_id,
+                        clip.file_no,
+                        clip.source_code,
+                        clip.source_csv,
+                        clip.source_year,
+                        clean_event_name,
+                        clean_players,
+                        clean_timecode,
+                        start_at,
+                        end_at,
+                        match_level,
+                        clip.match_method,
+                        f"{clip.match_confidence:.2f}" if clip.match_confidence else "",
+                        "YES" if clip.needs_review else "",
+                        clip.matched_file_id or "",
+                        file_info.filename[:50] if file_info else "",
+                        *alt_candidates,
+                    ]
+                )
 
         print(f"\nExported: {output_path} ({len(clips)} clips)")
 
@@ -1268,20 +1461,22 @@ class ClipMatcher:
         for clip in clips:
             if clip.confidence_level:
                 level = clip.confidence_level.value.lower()
-                if level == 'review':
-                    level = 'low'
+                if level == "review":
+                    level = "low"
             else:
-                level = 'unmatched'
+                level = "unmatched"
             stats[level] = stats.get(level, 0) + 1
 
         print("Match Level별 통계:")
-        for level in ['high', 'medium', 'low', 'unmatched']:
+        for level in ["high", "medium", "low", "unmatched"]:
             if level in stats:
                 print(f"  {level}: {stats[level]}")
 
         return output_path
 
-    def export_full_report(self, clips: List[ClipInfo], output_dir: str = "data/output") -> Dict[str, Path]:
+    def export_full_report(
+        self, clips: List[ClipInfo], output_dir: str = "data/output"
+    ) -> Dict[str, Path]:
         """신뢰도 등급별 분리 리포트 생성
 
         Args:
@@ -1295,16 +1490,12 @@ class ClipMatcher:
         output_dir.mkdir(parents=True, exist_ok=True)
 
         # 등급별 분류
-        by_level = {
-            'high': [],
-            'medium': [],
-            'low': [],
-            'review': [],
-            'unmatched': []
-        }
+        by_level = {"high": [], "medium": [], "low": [], "review": [], "unmatched": []}
 
         for clip in clips:
-            level = clip.confidence_level.value if clip.confidence_level else 'unmatched'
+            level = (
+                clip.confidence_level.value if clip.confidence_level else "unmatched"
+            )
             by_level[level].append(clip)
 
         output_paths = {}
@@ -1315,17 +1506,32 @@ class ClipMatcher:
 
             output_path = output_dir / f"match_{level}.csv"
 
-            with open(output_path, 'w', encoding='utf-8-sig', newline='') as f:
+            with open(output_path, "w", encoding="utf-8-sig", newline="") as f:
                 writer = csv.writer(f)
-                writer.writerow([
-                    'File No', 'Source CSV', 'Year', 'Event Name', 'Players', 'Timecode',
-                    'Match Method', 'Confidence', 'Needs Review',
-                    'Matched File ID', 'Matched Filename',
-                    'Alt Candidate 1', 'Alt Candidate 2'
-                ])
+                writer.writerow(
+                    [
+                        "File No",
+                        "Source CSV",
+                        "Year",
+                        "Event Name",
+                        "Players",
+                        "Timecode",
+                        "Match Method",
+                        "Confidence",
+                        "Needs Review",
+                        "Matched File ID",
+                        "Matched Filename",
+                        "Alt Candidate 1",
+                        "Alt Candidate 2",
+                    ]
+                )
 
                 for clip in level_clips:
-                    file_info = self.files.get(clip.matched_file_id) if clip.matched_file_id else None
+                    file_info = (
+                        self.files.get(clip.matched_file_id)
+                        if clip.matched_file_id
+                        else None
+                    )
 
                     # 대안 후보들
                     alt_candidates = []
@@ -1335,26 +1541,40 @@ class ClipMatcher:
                         alt_candidates.append("")
 
                     # 줄바꿈 문자를 공백으로 치환 (CSV 일관성 유지)
-                    clean_event_name = clip.event_name.replace('\n', ' ').replace('\r', ' ')[:50]
-                    clean_players = (clip.players.replace('\n', ' ').replace('\r', ' ')[:30]
-                                    if clip.players else "")
-                    clean_timecode = (clip.timecode.replace('\n', ' ').replace('\r', ' ')
-                                     if clip.timecode else "")
+                    clean_event_name = clip.event_name.replace("\n", " ").replace(
+                        "\r", " "
+                    )[:50]
+                    clean_players = (
+                        clip.players.replace("\n", " ").replace("\r", " ")[:30]
+                        if clip.players
+                        else ""
+                    )
+                    clean_timecode = (
+                        clip.timecode.replace("\n", " ").replace("\r", " ")
+                        if clip.timecode
+                        else ""
+                    )
 
-                    writer.writerow([
-                        clip.file_no,
-                        clip.source_csv,
-                        clip.source_year,
-                        clean_event_name,
-                        clean_players,
-                        clean_timecode,
-                        clip.match_method,
-                        f"{clip.match_confidence:.2f}" if clip.match_confidence else "",
-                        "YES" if clip.needs_review else "",
-                        clip.matched_file_id or "",
-                        file_info.filename[:50] if file_info else "",
-                        *alt_candidates
-                    ])
+                    writer.writerow(
+                        [
+                            clip.file_no,
+                            clip.source_csv,
+                            clip.source_year,
+                            clean_event_name,
+                            clean_players,
+                            clean_timecode,
+                            clip.match_method,
+                            (
+                                f"{clip.match_confidence:.2f}"
+                                if clip.match_confidence
+                                else ""
+                            ),
+                            "YES" if clip.needs_review else "",
+                            clip.matched_file_id or "",
+                            file_info.filename[:50] if file_info else "",
+                            *alt_candidates,
+                        ]
+                    )
 
             output_paths[level] = output_path
             print(f"Exported: {output_path} ({len(level_clips)} clips)")
@@ -1381,10 +1601,14 @@ class ClipMatcher:
         for c in clips:
             level_counts[c.confidence_level.value] += 1
 
-        for level in ['high', 'medium', 'low', 'review', 'unmatched']:
+        for level in ["high", "medium", "low", "review", "unmatched"]:
             count = level_counts.get(level, 0)
             pct = count / len(clips) * 100
-            indicator = "✓" if level == 'high' else "○" if level == 'medium' else "△" if level == 'low' else "✗"
+            indicator = (
+                "✓"
+                if level == "high"
+                else "○" if level == "medium" else "△" if level == "low" else "✗"
+            )
             print(f"  {indicator} {level.upper():10}: {count:4} ({pct:5.1f}%)")
 
         # 검토 필요 통계
@@ -1406,23 +1630,58 @@ class ClipMatcher:
                 print(f"\n  CSV: {clip.event_name[:50]}...")
                 for i, cand in enumerate(clip.candidates[:3], 1):
                     marker = "→" if i == 1 else " "
-                    print(f"    {marker} [{cand.file_id}] {cand.filename[:40]}... (score: {cand.score:.1f})")
+                    print(
+                        f"    {marker} [{cand.file_id}] {cand.filename[:40]}... (score: {cand.score:.1f})"
+                    )
 
 
 def main():
     """메인 함수"""
     import argparse
 
-    parser = argparse.ArgumentParser(description="Clip Matcher - CSV to Archive File Matching (with RapidFuzz)")
-    parser.add_argument('--export', action='store_true', help="Export matched/unmatched reports")
-    parser.add_argument('--full-report', action='store_true', help="Export full reports by confidence level (분리된 파일)")
-    parser.add_argument('--unified', action='store_true', help="Export unified match.csv with Match Level column (통합 파일)")
-    parser.add_argument('--output', type=str, default="data/output/match.csv", help="Output path for unified report")
-    parser.add_argument('--review-report', action='store_true', help="Export review report for ambiguous matches")
-    parser.add_argument('--search', type=str, help="Search for files matching query")
-    parser.add_argument('--legacy', action='store_true', help="Use legacy matching (without RapidFuzz)")
-    parser.add_argument('--max-candidates', type=int, default=5, help="Max candidates per clip (default: 5)")
-    parser.add_argument('--score-cutoff', type=float, default=40.0, help="Min score cutoff 0-100 (default: 40)")
+    parser = argparse.ArgumentParser(
+        description="Clip Matcher - CSV to Archive File Matching (with RapidFuzz)"
+    )
+    parser.add_argument(
+        "--export", action="store_true", help="Export matched/unmatched reports"
+    )
+    parser.add_argument(
+        "--full-report",
+        action="store_true",
+        help="Export full reports by confidence level (분리된 파일)",
+    )
+    parser.add_argument(
+        "--unified",
+        action="store_true",
+        help="Export unified match.csv with Match Level column (통합 파일)",
+    )
+    parser.add_argument(
+        "--output",
+        type=str,
+        default="data/output/match.csv",
+        help="Output path for unified report",
+    )
+    parser.add_argument(
+        "--review-report",
+        action="store_true",
+        help="Export review report for ambiguous matches",
+    )
+    parser.add_argument("--search", type=str, help="Search for files matching query")
+    parser.add_argument(
+        "--legacy", action="store_true", help="Use legacy matching (without RapidFuzz)"
+    )
+    parser.add_argument(
+        "--max-candidates",
+        type=int,
+        default=5,
+        help="Max candidates per clip (default: 5)",
+    )
+    parser.add_argument(
+        "--score-cutoff",
+        type=float,
+        default=40.0,
+        help="Min score cutoff 0-100 (default: 40)",
+    )
     args = parser.parse_args()
 
     print("=" * 70)
@@ -1445,7 +1704,10 @@ def main():
     csv_files = [
         ("data/input/WSOP HAND SELECTION -  2024 WSOP Clip Tracker.csv", "2024"),
         ("data/input/WSOP HAND SELECTION - 2025 WSOP Clip Tracker.csv", "2025"),
-        ("data/input/WSOP HAND SELECTION - 2025 WSOP Cyprus SC Clip Tracker.csv", "2025"),
+        (
+            "data/input/WSOP HAND SELECTION - 2025 WSOP Cyprus SC Clip Tracker.csv",
+            "2025",
+        ),
         ("data/input/WSOP HAND SELECTION - 2025 WSOP Europe Clip Tracker.csv", "2025"),
     ]
 
@@ -1466,9 +1728,13 @@ def main():
         stats = matcher.match_all(all_clips, use_rapidfuzz=False)
         matcher.print_results(all_clips)
     else:
-        print(f"\nMatching clips (RapidFuzz, max_candidates={args.max_candidates}, cutoff={args.score_cutoff})...")
+        print(
+            f"\nMatching clips (RapidFuzz, max_candidates={args.max_candidates}, cutoff={args.score_cutoff})..."
+        )
         for clip in all_clips:
-            matcher.match_with_candidates(clip, max_candidates=args.max_candidates, score_cutoff=args.score_cutoff)
+            matcher.match_with_candidates(
+                clip, max_candidates=args.max_candidates, score_cutoff=args.score_cutoff
+            )
         matcher.print_results_extended(all_clips)
 
     # 리포트 내보내기

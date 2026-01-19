@@ -72,8 +72,7 @@ def check_tables_exist(conn) -> dict:
     result = {}
     for table in TABLES.keys():
         cursor.execute(
-            "SELECT name FROM sqlite_master WHERE type='table' AND name=?",
-            (table,)
+            "SELECT name FROM sqlite_master WHERE type='table' AND name=?", (table,)
         )
         result[table] = cursor.fetchone() is not None
     return result
@@ -133,10 +132,13 @@ def migrate_players(conn, dry_run: bool = False) -> int:
                     print(f"    [DRY-RUN] hand_id={hand_id}, player={player_name}")
                 else:
                     try:
-                        cursor.execute("""
+                        cursor.execute(
+                            """
                             INSERT OR IGNORE INTO hand_players (hand_id, player_name, position)
                             VALUES (?, ?, ?)
-                        """, (hand_id, player_name.strip(), position))
+                        """,
+                            (hand_id, player_name.strip(), position),
+                        )
                         migrated += 1
                     except sqlite3.IntegrityError:
                         pass  # 중복 무시
@@ -182,10 +184,13 @@ def migrate_tags(conn, dry_run: bool = False) -> int:
                     print(f"    [DRY-RUN] hand_id={hand_id}, tag={tag}")
                 else:
                     try:
-                        cursor.execute("""
+                        cursor.execute(
+                            """
                             INSERT OR IGNORE INTO hand_tags (hand_id, tag)
                             VALUES (?, ?)
-                        """, (hand_id, tag.strip()))
+                        """,
+                            (hand_id, tag.strip()),
+                        )
                         migrated += 1
                     except sqlite3.IntegrityError:
                         pass  # 중복 무시
@@ -225,7 +230,9 @@ def show_stats(conn):
     cursor.execute("SELECT COUNT(*) FROM hands")
     total_hands = cursor.fetchone()[0]
 
-    cursor.execute("SELECT COUNT(*) FROM hands WHERE players IS NOT NULL AND players != '[]'")
+    cursor.execute(
+        "SELECT COUNT(*) FROM hands WHERE players IS NOT NULL AND players != '[]'"
+    )
     hands_with_players = cursor.fetchone()[0]
 
     cursor.execute("SELECT COUNT(*) FROM hands WHERE tags IS NOT NULL AND tags != '[]'")

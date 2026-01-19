@@ -170,7 +170,9 @@ def create_default_config() -> AnalyzerConfig:
 class SearchConfig:
     """MeiliSearch 검색 설정 (#25 - config.py로 통합)"""
 
-    host: str = field(default_factory=lambda: os.getenv("MEILISEARCH_URL", "http://localhost:7700"))
+    host: str = field(
+        default_factory=lambda: os.getenv("MEILISEARCH_URL", "http://localhost:7700")
+    )
     api_key: str = field(default_factory=lambda: os.getenv("MEILISEARCH_API_KEY", ""))
     files_index: str = "files"
     media_index: str = "media_info"
@@ -181,8 +183,12 @@ class SearchConfig:
 class PokervodSyncConfig:
     """pokervod.db 동기화 설정 (#25 - config.py로 통합)"""
 
-    archive_db: str = field(default_factory=lambda: os.getenv("ARCHIVE_DB_PATH", "data/output/archive.db"))
-    pokervod_db: str = field(default_factory=lambda: os.getenv("POKERVOD_DB_PATH", SHARED_DB_PATH))
+    archive_db: str = field(
+        default_factory=lambda: os.getenv("ARCHIVE_DB_PATH", "data/output/archive.db")
+    )
+    pokervod_db: str = field(
+        default_factory=lambda: os.getenv("POKERVOD_DB_PATH", SHARED_DB_PATH)
+    )
     nas_prefix: str = "//10.10.100.122/docker/GGPNAs/ARCHIVE"
     local_prefix: str = "Z:/GGPNAs/ARCHIVE"
     default_analysis_status: str = "pending"
@@ -194,14 +200,12 @@ class SheetsSyncConfig:
 
     credentials_path: Optional[str] = field(
         default_factory=lambda: os.getenv(
-            "CREDENTIALS_PATH",
-            "config/gcp-service-account.json"  # 상대경로 기본값
+            "CREDENTIALS_PATH", "config/gcp-service-account.json"  # 상대경로 기본값
         )
     )
     spreadsheet_id: Optional[str] = field(
         default_factory=lambda: os.getenv(
-            "SPREADSHEET_ID",
-            "1TW2ON5CQyIrL8aGQNYJ4OWkbZMaGmY9DoDG9VFXU60I"
+            "SPREADSHEET_ID", "1TW2ON5CQyIrL8aGQNYJ4OWkbZMaGmY9DoDG9VFXU60I"
         )
     )
     db_path: Optional[str] = field(
@@ -232,18 +236,26 @@ class AppConfig:
     """
 
     # SMB 설정
-    smb: SMBConfig = field(default_factory=lambda: SMBConfig(
-        server=os.getenv("SMB_SERVER", "10.10.100.122"),
-        share=os.getenv("SMB_SHARE", "docker"),
-        username=os.getenv("SMB_USERNAME", ""),
-        password=os.getenv("SMB_PASSWORD", ""),
-    ))
+    smb: SMBConfig = field(
+        default_factory=lambda: SMBConfig(
+            server=os.getenv("SMB_SERVER", "10.10.100.122"),
+            share=os.getenv("SMB_SHARE", "docker"),
+            username=os.getenv("SMB_USERNAME", ""),
+            password=os.getenv("SMB_PASSWORD", ""),
+        )
+    )
 
     # 분석기 설정
-    archive_path: str = field(default_factory=lambda: os.getenv("ARCHIVE_PATH", "GGPNAs/ARCHIVE"))
-    database_path: str = field(default_factory=lambda: os.getenv("DATABASE_PATH", SHARED_DB_PATH))
+    archive_path: str = field(
+        default_factory=lambda: os.getenv("ARCHIVE_PATH", "GGPNAs/ARCHIVE")
+    )
+    database_path: str = field(
+        default_factory=lambda: os.getenv("DATABASE_PATH", SHARED_DB_PATH)
+    )
     log_level: str = field(default_factory=lambda: os.getenv("LOG_LEVEL", "INFO"))
-    parallel_workers: int = field(default_factory=lambda: int(os.getenv("PARALLEL_WORKERS", "4")))
+    parallel_workers: int = field(
+        default_factory=lambda: int(os.getenv("PARALLEL_WORKERS", "4"))
+    )
     batch_size: int = field(default_factory=lambda: int(os.getenv("BATCH_SIZE", "100")))
 
     # 검색 설정
@@ -280,7 +292,9 @@ class AppConfig:
 
         search_data = data.get("search", {})
         search = SearchConfig(
-            host=search_data.get("host", os.getenv("MEILISEARCH_URL", "http://localhost:7700")),
+            host=search_data.get(
+                "host", os.getenv("MEILISEARCH_URL", "http://localhost:7700")
+            ),
             api_key=search_data.get("api_key", os.getenv("MEILISEARCH_API_KEY", "")),
             files_index=search_data.get("files_index", "files"),
             media_index=search_data.get("media_index", "media_info"),
@@ -291,7 +305,9 @@ class AppConfig:
         pokervod_sync = PokervodSyncConfig(
             archive_db=pokervod_data.get("archive_db", "data/output/archive.db"),
             pokervod_db=pokervod_data.get("pokervod_db", SHARED_DB_PATH),
-            nas_prefix=pokervod_data.get("nas_prefix", "//10.10.100.122/docker/GGPNAs/ARCHIVE"),
+            nas_prefix=pokervod_data.get(
+                "nas_prefix", "//10.10.100.122/docker/GGPNAs/ARCHIVE"
+            ),
             local_prefix=pokervod_data.get("local_prefix", "Z:/GGPNAs/ARCHIVE"),
         )
 

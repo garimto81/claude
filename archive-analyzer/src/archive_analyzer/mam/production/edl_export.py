@@ -25,9 +25,7 @@ class EdlExportService(IExportService):
         # TODO: 구현
         raise NotImplementedError
 
-    async def export_metadata(
-        self, assets: list[Asset], format: str = "json"
-    ) -> str:
+    async def export_metadata(self, assets: list[Asset], format: str = "json") -> str:
         """메타데이터 내보내기"""
         # TODO: 구현
         raise NotImplementedError

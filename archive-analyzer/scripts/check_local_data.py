@@ -1,5 +1,6 @@
 # -*- coding: utf-8 -*-
 """로컬 데이터 확인 스크립트"""
+
 import os
 import sqlite3
 
@@ -11,8 +12,8 @@ def check_local_db():
     print("=" * 60)
 
     dbs = [
-        ('archive.db', 'C:/claude/archive-analyzer/data/output/archive.db'),
-        ('pokervod.db', 'D:/AI/claude01/shared-data/pokervod.db'),
+        ("archive.db", "C:/claude/archive-analyzer/data/output/archive.db"),
+        ("pokervod.db", "D:/AI/claude01/shared-data/pokervod.db"),
     ]
 
     for name, path in dbs:
@@ -23,7 +24,9 @@ def check_local_db():
             try:
                 conn = sqlite3.connect(path)
                 cursor = conn.cursor()
-                cursor.execute("SELECT name FROM sqlite_master WHERE type='table' ORDER BY name")
+                cursor.execute(
+                    "SELECT name FROM sqlite_master WHERE type='table' ORDER BY name"
+                )
                 tables = cursor.fetchall()
                 print(f"   Tables ({len(tables)}):")
                 for t in tables[:10]:
@@ -48,7 +51,7 @@ def check_iconik_data():
     print("=== ICONIK DATA IN archive.db ===")
     print("=" * 60)
 
-    db_path = 'C:/claude/archive-analyzer/data/output/archive.db'
+    db_path = "C:/claude/archive-analyzer/data/output/archive.db"
     if not os.path.exists(db_path):
         print("[MISSING] archive.db not found")
         return
@@ -64,7 +67,11 @@ def check_iconik_data():
 
         cursor.execute("SELECT COUNT(*) FROM clip_metadata WHERE file_id IS NOT NULL")
         matched = cursor.fetchone()[0]
-        print(f"  - Matched: {matched} ({matched*100/total:.1f}%)" if total > 0 else "  - Matched: 0")
+        print(
+            f"  - Matched: {matched} ({matched*100/total:.1f}%)"
+            if total > 0
+            else "  - Matched: 0"
+        )
 
         cursor.execute("SELECT COUNT(*) FROM clip_metadata WHERE file_id IS NULL")
         unmatched = cursor.fetchone()[0]
@@ -93,7 +100,9 @@ def check_iconik_data():
         total = cursor.fetchone()[0]
         print(f"\nfiles: {total} files")
 
-        cursor.execute("SELECT file_type, COUNT(*) FROM files GROUP BY file_type ORDER BY COUNT(*) DESC")
+        cursor.execute(
+            "SELECT file_type, COUNT(*) FROM files GROUP BY file_type ORDER BY COUNT(*) DESC"
+        )
         types = cursor.fetchall()
         for t in types[:5]:
             print(f"  - {t[0]}: {t[1]}")
@@ -103,6 +112,6 @@ def check_iconik_data():
     conn.close()
 
 
-if __name__ == '__main__':
+if __name__ == "__main__":
     check_local_db()
     check_iconik_data()

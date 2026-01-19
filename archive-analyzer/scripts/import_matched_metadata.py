@@ -16,15 +16,14 @@ sys.path.insert(0, str(project_root / "src"))
 from archive_analyzer.database import Database
 
 logging.basicConfig(
-    level=logging.INFO,
-    format='%(asctime)s - %(levelname)s - %(message)s'
+    level=logging.INFO, format="%(asctime)s - %(levelname)s - %(message)s"
 )
 logger = logging.getLogger(__name__)
 
 
 def parse_int(value: str) -> int:
     """문자열을 정수로 변환"""
-    if not value or value.strip() == '':
+    if not value or value.strip() == "":
         return None
     try:
         return int(float(value))
@@ -41,42 +40,42 @@ def load_iconik_csv(csv_path: str) -> Dict[str, Dict]:
     """iconik CSV를 iconik_id로 인덱싱하여 로드"""
     clips = {}
 
-    with open(csv_path, 'r', encoding='utf-8-sig') as f:
+    with open(csv_path, "r", encoding="utf-8-sig") as f:
         reader = csv.DictReader(f)
 
         for row in reader:
-            iconik_id = row.get('id', '').strip()
+            iconik_id = row.get("id", "").strip()
             if not iconik_id:
                 continue
 
             clips[iconik_id] = {
-                'iconik_id': iconik_id,
-                'title': row.get('title', '').strip(),
-                'description': row.get('Description', '').strip(),
-                'time_start_ms': parse_int(row.get('time_start_ms', '')),
-                'time_end_ms': parse_int(row.get('time_end_ms', '')),
-                'project_name': row.get('ProjectName', '').strip(),
-                'year': parse_int(row.get('Year_', '')),
-                'location': row.get('Location', '').strip(),
-                'venue': row.get('Venue', '').strip(),
-                'episode_event': row.get('EpisodeEvent', '').strip(),
-                'source': row.get('Source', '').strip(),
-                'game_type': row.get('GameType', '').strip(),
-                'players_tags': row.get('PlayersTags', '').strip(),
-                'hand_grade': row.get('HandGrade', '').strip(),
-                'hand_tag': row.get('HANDTag', '').strip(),
-                'epic_hand': row.get('EPICHAND', '').strip(),
-                'tournament': row.get('Tournament', '').strip(),
-                'poker_play_tags': row.get('PokerPlayTags', '').strip(),
-                'adjective': row.get('Adjective', '').strip(),
-                'emotion': row.get('Emotion', '').strip(),
-                'is_badbeat': parse_bool_tag(row.get('Badbeat', '')),
-                'is_bluff': parse_bool_tag(row.get('Bluff', '')),
-                'is_suckout': parse_bool_tag(row.get('Suckout', '')),
-                'is_cooler': parse_bool_tag(row.get('Cooler', '')),
-                'runout_tag': row.get('RUNOUTTag', '').strip(),
-                'postflop': row.get('PostFlop', '').strip(),
-                'allin_tag': row.get('All-in', '').strip(),
+                "iconik_id": iconik_id,
+                "title": row.get("title", "").strip(),
+                "description": row.get("Description", "").strip(),
+                "time_start_ms": parse_int(row.get("time_start_ms", "")),
+                "time_end_ms": parse_int(row.get("time_end_ms", "")),
+                "project_name": row.get("ProjectName", "").strip(),
+                "year": parse_int(row.get("Year_", "")),
+                "location": row.get("Location", "").strip(),
+                "venue": row.get("Venue", "").strip(),
+                "episode_event": row.get("EpisodeEvent", "").strip(),
+                "source": row.get("Source", "").strip(),
+                "game_type": row.get("GameType", "").strip(),
+                "players_tags": row.get("PlayersTags", "").strip(),
+                "hand_grade": row.get("HandGrade", "").strip(),
+                "hand_tag": row.get("HANDTag", "").strip(),
+                "epic_hand": row.get("EPICHAND", "").strip(),
+                "tournament": row.get("Tournament", "").strip(),
+                "poker_play_tags": row.get("PokerPlayTags", "").strip(),
+                "adjective": row.get("Adjective", "").strip(),
+                "emotion": row.get("Emotion", "").strip(),
+                "is_badbeat": parse_bool_tag(row.get("Badbeat", "")),
+                "is_bluff": parse_bool_tag(row.get("Bluff", "")),
+                "is_suckout": parse_bool_tag(row.get("Suckout", "")),
+                "is_cooler": parse_bool_tag(row.get("Cooler", "")),
+                "runout_tag": row.get("RUNOUTTag", "").strip(),
+                "postflop": row.get("PostFlop", "").strip(),
+                "allin_tag": row.get("All-in", "").strip(),
             }
 
     return clips
@@ -86,19 +85,19 @@ def load_matched_csv(csv_path: str) -> Dict[str, Dict]:
     """매칭 결과 CSV 로드"""
     matches = {}
 
-    with open(csv_path, 'r', encoding='utf-8-sig') as f:
+    with open(csv_path, "r", encoding="utf-8-sig") as f:
         reader = csv.DictReader(f)
 
         for row in reader:
-            iconik_id = row.get('iconik_id', '').strip()
+            iconik_id = row.get("iconik_id", "").strip()
             if not iconik_id:
                 continue
 
             matches[iconik_id] = {
-                'matched_filename': row.get('matched_filename', '').strip(),
-                'matched_file_id': parse_int(row.get('matched_file_id', '')),
-                'match_method': row.get('match_method', '').strip(),
-                'match_confidence': float(row.get('confidence', '0') or '0'),
+                "matched_filename": row.get("matched_filename", "").strip(),
+                "matched_file_id": parse_int(row.get("matched_file_id", "")),
+                "match_method": row.get("match_method", "").strip(),
+                "match_confidence": float(row.get("confidence", "0") or "0"),
             }
 
     return matches
@@ -135,9 +134,9 @@ def merge_and_import(
             continue
 
         clip = iconik_clips[iconik_id].copy()
-        clip['file_id'] = match_info['matched_file_id']
-        clip['matched_file_path'] = match_info['matched_filename']
-        clip['match_confidence'] = match_info['match_confidence']
+        clip["file_id"] = match_info["matched_file_id"]
+        clip["matched_file_path"] = match_info["matched_filename"]
+        clip["match_confidence"] = match_info["match_confidence"]
 
         merged_clips.append(clip)
 
@@ -157,9 +156,9 @@ def merge_and_import(
     db.close()
 
     stats = {
-        'total_iconik': len(iconik_clips),
-        'total_matched': len(matches),
-        'imported': imported,
+        "total_iconik": len(iconik_clips),
+        "total_matched": len(matches),
+        "imported": imported,
     }
 
     logger.info(f"Import complete: {imported} clips imported")
@@ -179,19 +178,19 @@ def show_statistics(db_path: str = "archive.db"):
     print(f"  매칭된 클립: {stats['matched']:,}개")
     print(f"  미매칭 클립: {stats['unmatched']:,}개")
 
-    if stats['by_project']:
+    if stats["by_project"]:
         print("\n  [프로젝트별]")
-        for proj, count in stats['by_project'].items():
+        for proj, count in stats["by_project"].items():
             print(f"    {proj}: {count:,}개")
 
-    if stats['by_hand_grade']:
+    if stats["by_hand_grade"]:
         print("\n  [핸드 등급별]")
-        for grade, count in stats['by_hand_grade'].items():
+        for grade, count in stats["by_hand_grade"].items():
             print(f"    {grade}: {count:,}개")
 
-    if stats['by_event']:
+    if stats["by_event"]:
         print("\n  [이벤트별 (상위 15개)]")
-        for i, (event, count) in enumerate(stats['by_event'].items()):
+        for i, (event, count) in enumerate(stats["by_event"].items()):
             if i >= 15:
                 break
             print(f"    {event}: {count:,}개")
@@ -202,29 +201,15 @@ def show_statistics(db_path: str = "archive.db"):
 def main():
     import argparse
 
-    parser = argparse.ArgumentParser(
-        description='매칭된 iconik 메타데이터 DB 임포트'
+    parser = argparse.ArgumentParser(description="매칭된 iconik 메타데이터 DB 임포트")
+    parser.add_argument("--iconik", "-i", required=True, help="iconik CSV 파일 경로")
+    parser.add_argument(
+        "--matched", "-m", required=True, help="매칭 결과 CSV 파일 경로"
     )
     parser.add_argument(
-        '--iconik', '-i',
-        required=True,
-        help='iconik CSV 파일 경로'
+        "--db", "-d", default="archive.db", help="데이터베이스 경로 (기본: archive.db)"
     )
-    parser.add_argument(
-        '--matched', '-m',
-        required=True,
-        help='매칭 결과 CSV 파일 경로'
-    )
-    parser.add_argument(
-        '--db', '-d',
-        default='archive.db',
-        help='데이터베이스 경로 (기본: archive.db)'
-    )
-    parser.add_argument(
-        '--stats',
-        action='store_true',
-        help='통계만 출력'
-    )
+    parser.add_argument("--stats", action="store_true", help="통계만 출력")
 
     args = parser.parse_args()
 

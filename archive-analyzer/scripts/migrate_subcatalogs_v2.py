@@ -210,28 +210,40 @@ def create_wsop_hierarchy(cursor, dry_run: bool) -> int:
             # 업데이트
             print(f"  - 업데이트: {item['id']} (depth={item['depth']})")
             if not dry_run:
-                cursor.execute("""
+                cursor.execute(
+                    """
                     UPDATE subcatalogs SET
                         parent_id = ?,
                         depth = ?,
                         path = ?,
                         updated_at = ?
                     WHERE id = ?
-                """, (item["parent_id"], item["depth"], item["path"], now, item["id"]))
+                """,
+                    (item["parent_id"], item["depth"], item["path"], now, item["id"]),
+                )
         else:
             # 삽입
             print(f"  - 생성: {item['id']} (depth={item['depth']})")
             if not dry_run:
-                cursor.execute("""
+                cursor.execute(
+                    """
                     INSERT INTO subcatalogs (
                         id, catalog_id, parent_id, name, depth, path,
                         display_order, tournament_count, file_count,
                         created_at, updated_at
                     ) VALUES (?, ?, ?, ?, ?, ?, 0, 0, 0, ?, ?)
-                """, (
-                    item["id"], item["catalog_id"], item["parent_id"],
-                    item["name"], item["depth"], item["path"], now, now
-                ))
+                """,
+                    (
+                        item["id"],
+                        item["catalog_id"],
+                        item["parent_id"],
+                        item["name"],
+                        item["depth"],
+                        item["path"],
+                        now,
+                        now,
+                    ),
+                )
         count += 1
 
     return count
@@ -244,17 +256,73 @@ def create_other_catalogs(cursor, dry_run: bool) -> int:
 
     other_structure = [
         # HCL
-        {"id": "hcl-2025", "catalog_id": "HCL", "parent_id": None, "name": "HCL 2025", "depth": 1, "path": "hcl/2025"},
-        {"id": "hcl-clips", "catalog_id": "HCL", "parent_id": None, "name": "HCL Poker Clips", "depth": 1, "path": "hcl/clips"},
+        {
+            "id": "hcl-2025",
+            "catalog_id": "HCL",
+            "parent_id": None,
+            "name": "HCL 2025",
+            "depth": 1,
+            "path": "hcl/2025",
+        },
+        {
+            "id": "hcl-clips",
+            "catalog_id": "HCL",
+            "parent_id": None,
+            "name": "HCL Poker Clips",
+            "depth": 1,
+            "path": "hcl/clips",
+        },
         # PAD
-        {"id": "pad-s12", "catalog_id": "PAD", "parent_id": None, "name": "PAD Season 12", "depth": 1, "path": "pad/s12"},
-        {"id": "pad-s13", "catalog_id": "PAD", "parent_id": None, "name": "PAD Season 13", "depth": 1, "path": "pad/s13"},
+        {
+            "id": "pad-s12",
+            "catalog_id": "PAD",
+            "parent_id": None,
+            "name": "PAD Season 12",
+            "depth": 1,
+            "path": "pad/s12",
+        },
+        {
+            "id": "pad-s13",
+            "catalog_id": "PAD",
+            "parent_id": None,
+            "name": "PAD Season 13",
+            "depth": 1,
+            "path": "pad/s13",
+        },
         # MPP
-        {"id": "mpp-1m", "catalog_id": "MPP", "parent_id": None, "name": "$1M GTD Mystery Bounty", "depth": 1, "path": "mpp/1m"},
-        {"id": "mpp-2m", "catalog_id": "MPP", "parent_id": None, "name": "$2M GTD Grand Final", "depth": 1, "path": "mpp/2m"},
-        {"id": "mpp-5m", "catalog_id": "MPP", "parent_id": None, "name": "$5M GTD Main Event", "depth": 1, "path": "mpp/5m"},
+        {
+            "id": "mpp-1m",
+            "catalog_id": "MPP",
+            "parent_id": None,
+            "name": "$1M GTD Mystery Bounty",
+            "depth": 1,
+            "path": "mpp/1m",
+        },
+        {
+            "id": "mpp-2m",
+            "catalog_id": "MPP",
+            "parent_id": None,
+            "name": "$2M GTD Grand Final",
+            "depth": 1,
+            "path": "mpp/2m",
+        },
+        {
+            "id": "mpp-5m",
+            "catalog_id": "MPP",
+            "parent_id": None,
+            "name": "$5M GTD Main Event",
+            "depth": 1,
+            "path": "mpp/5m",
+        },
         # GGMillions
-        {"id": "ggmillions-main", "catalog_id": "GGMillions", "parent_id": None, "name": "GGMillions Main", "depth": 1, "path": "ggmillions/main"},
+        {
+            "id": "ggmillions-main",
+            "catalog_id": "GGMillions",
+            "parent_id": None,
+            "name": "GGMillions Main",
+            "depth": 1,
+            "path": "ggmillions/main",
+        },
     ]
 
     for item in other_structure:
@@ -264,27 +332,39 @@ def create_other_catalogs(cursor, dry_run: bool) -> int:
         if exists:
             print(f"  - 업데이트: {item['id']}")
             if not dry_run:
-                cursor.execute("""
+                cursor.execute(
+                    """
                     UPDATE subcatalogs SET
                         parent_id = ?,
                         depth = ?,
                         path = ?,
                         updated_at = ?
                     WHERE id = ?
-                """, (item["parent_id"], item["depth"], item["path"], now, item["id"]))
+                """,
+                    (item["parent_id"], item["depth"], item["path"], now, item["id"]),
+                )
         else:
             print(f"  - 생성: {item['id']}")
             if not dry_run:
-                cursor.execute("""
+                cursor.execute(
+                    """
                     INSERT INTO subcatalogs (
                         id, catalog_id, parent_id, name, depth, path,
                         display_order, tournament_count, file_count,
                         created_at, updated_at
                     ) VALUES (?, ?, ?, ?, ?, ?, 0, 0, 0, ?, ?)
-                """, (
-                    item["id"], item["catalog_id"], item["parent_id"],
-                    item["name"], item["depth"], item["path"], now, now
-                ))
+                """,
+                    (
+                        item["id"],
+                        item["catalog_id"],
+                        item["parent_id"],
+                        item["name"],
+                        item["depth"],
+                        item["path"],
+                        now,
+                        now,
+                    ),
+                )
         count += 1
 
     return count
@@ -300,15 +380,20 @@ def ensure_catalogs_exist(cursor, dry_run: bool) -> None:
         if not cursor.fetchone():
             print(f"  - 카탈로그 생성: {catalog_id}")
             if not dry_run:
-                cursor.execute("""
+                cursor.execute(
+                    """
                     INSERT INTO catalogs (id, name, created_at, updated_at)
                     VALUES (?, ?, ?, ?)
-                """, (catalog_id, catalog_id, now, now))
+                """,
+                    (catalog_id, catalog_id, now, now),
+                )
 
 
 def main():
     parser = argparse.ArgumentParser(description="subcatalogs 다단계 마이그레이션")
-    parser.add_argument("--dry-run", action="store_true", help="실제 변경 없이 시뮬레이션")
+    parser.add_argument(
+        "--dry-run", action="store_true", help="실제 변경 없이 시뮬레이션"
+    )
     parser.add_argument("--db", type=str, default=POKERVOD_DB, help="pokervod.db 경로")
     args = parser.parse_args()
 

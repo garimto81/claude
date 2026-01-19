@@ -110,7 +110,9 @@ class SyncServiceController:
                     "--port",
                     str(self.config.web_port),
                 ],
-                creationflags=subprocess.CREATE_NO_WINDOW if sys.platform == "win32" else 0,
+                creationflags=(
+                    subprocess.CREATE_NO_WINDOW if sys.platform == "win32" else 0
+                ),
             )
 
             # 동기화 데몬 시작
@@ -126,7 +128,9 @@ class SyncServiceController:
                     "--pokervod-db",
                     self.config.pokervod_db,
                 ],
-                creationflags=subprocess.CREATE_NO_WINDOW if sys.platform == "win32" else 0,
+                creationflags=(
+                    subprocess.CREATE_NO_WINDOW if sys.platform == "win32" else 0
+                ),
             )
 
             self._running = True
@@ -207,7 +211,9 @@ def show_settings_dialog(config: TrayConfig, on_save: callable) -> None:
     ).grid(row=0, column=2)
 
     # Pokervod DB
-    ttk.Label(main_frame, text="Pokervod DB:").grid(row=1, column=0, sticky=tk.W, pady=5)
+    ttk.Label(main_frame, text="Pokervod DB:").grid(
+        row=1, column=0, sticky=tk.W, pady=5
+    )
     pokervod_db_var = tk.StringVar(value=config.pokervod_db)
     pokervod_db_entry = ttk.Entry(main_frame, textvariable=pokervod_db_var, width=40)
     pokervod_db_entry.grid(row=1, column=1, padx=5, pady=5)
@@ -222,7 +228,9 @@ def show_settings_dialog(config: TrayConfig, on_save: callable) -> None:
     ).grid(row=1, column=2)
 
     # NAS Mount Path
-    ttk.Label(main_frame, text="NAS Mount Path:").grid(row=2, column=0, sticky=tk.W, pady=5)
+    ttk.Label(main_frame, text="NAS Mount Path:").grid(
+        row=2, column=0, sticky=tk.W, pady=5
+    )
     nas_path_var = tk.StringVar(value=config.nas_mount_path)
     nas_path_entry = ttk.Entry(main_frame, textvariable=nas_path_var, width=40)
     nas_path_entry.grid(row=2, column=1, padx=5, pady=5)
@@ -236,7 +244,9 @@ def show_settings_dialog(config: TrayConfig, on_save: callable) -> None:
     ).grid(row=2, column=2)
 
     # Sync Interval
-    ttk.Label(main_frame, text="Sync Interval (sec):").grid(row=3, column=0, sticky=tk.W, pady=5)
+    ttk.Label(main_frame, text="Sync Interval (sec):").grid(
+        row=3, column=0, sticky=tk.W, pady=5
+    )
     interval_var = tk.IntVar(value=config.sync_interval)
     interval_spin = ttk.Spinbox(
         main_frame,
@@ -294,8 +304,12 @@ def show_settings_dialog(config: TrayConfig, on_save: callable) -> None:
         messagebox.showinfo("Settings", "Settings saved successfully!")
         root.destroy()
 
-    ttk.Button(btn_frame, text="Save", command=save_settings, width=15).pack(side=tk.LEFT, padx=10)
-    ttk.Button(btn_frame, text="Cancel", command=root.destroy, width=15).pack(side=tk.LEFT, padx=10)
+    ttk.Button(btn_frame, text="Save", command=save_settings, width=15).pack(
+        side=tk.LEFT, padx=10
+    )
+    ttk.Button(btn_frame, text="Cancel", command=root.destroy, width=15).pack(
+        side=tk.LEFT, padx=10
+    )
 
     root.mainloop()
 
@@ -465,7 +479,9 @@ def main():
     import argparse
 
     parser = argparse.ArgumentParser(description="NAS Auto Sync System Tray App")
-    parser.add_argument("--settings", action="store_true", help="Open settings dialog only")
+    parser.add_argument(
+        "--settings", action="store_true", help="Open settings dialog only"
+    )
 
     args = parser.parse_args()
 
