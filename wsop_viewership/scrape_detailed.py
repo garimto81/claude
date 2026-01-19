@@ -14,11 +14,11 @@ def parse_exact_views(view_text: str) -> int:
         return 0
 
     # 숫자만 추출 (쉼표 포함)
-    numbers = re.findall(r'[\d,]+', view_text)
+    numbers = re.findall(r"[\d,]+", view_text)
     if numbers:
         num_str = max(numbers, key=len)
         try:
-            return int(num_str.replace(',', ''))
+            return int(num_str.replace(",", ""))
         except ValueError:
             pass
     return 0
@@ -47,12 +47,14 @@ async def scrape_pokergo_streams():
         context = await browser.new_context(
             viewport={"width": 1920, "height": 1080},
             user_agent="Mozilla/5.0 (Windows NT 10.0; Win64; x64) AppleWebKit/537.36 (KHTML, like Gecko) Chrome/120.0.0.0 Safari/537.36",
-            locale="en-US"
+            locale="en-US",
         )
         page = await context.new_page()
 
         print("PokerGO YouTube 채널 접속 중...")
-        await page.goto("https://www.youtube.com/@PokerGO/streams", wait_until="networkidle")
+        await page.goto(
+            "https://www.youtube.com/@PokerGO/streams", wait_until="networkidle"
+        )
         await asyncio.sleep(5)
 
         print("영상 목록 로드 중...")
@@ -108,26 +110,28 @@ async def scrape_pokergo_streams():
         # WSOP 2025 필터링 (제목에 2025 또는 최근 영상)
         wsop_2025_videos = []
         for v in videos_data:
-            title = v.get('title', '')
-            if 'wsop' not in title.lower():
+            title = v.get("title", "")
+            if "wsop" not in title.lower():
                 continue
 
-            if '2025' not in title:
+            if "2025" not in title:
                 continue
 
-            duration_text = v.get('duration', '')
+            duration_text = v.get("duration", "")
             duration_minutes = parse_duration_to_minutes(duration_text)
 
             if duration_minutes < 60:
                 continue
 
-            wsop_2025_videos.append({
-                'title': title,
-                'url': v.get('url', ''),
-                'duration': duration_text,
-                'duration_minutes': duration_minutes,
-                'metadata': v.get('metadata', '')
-            })
+            wsop_2025_videos.append(
+                {
+                    "title": title,
+                    "url": v.get("url", ""),
+                    "duration": duration_text,
+                    "duration_minutes": duration_minutes,
+                    "metadata": v.get("metadata", ""),
+                }
+            )
 
         print(f"\nWSOP 2025 (1시간+) 영상: {len(wsop_2025_videos)}개")
 
@@ -137,11 +141,17 @@ async def scrape_pokergo_streams():
             detail_page = await context.new_page()
 
             for i, video in enumerate(wsop_2025_videos):
-                title_short = video['title'][:45] + "..." if len(video['title']) > 45 else video['title']
+                title_short = (
+                    video["title"][:45] + "..."
+                    if len(video["title"]) > 45
+                    else video["title"]
+                )
                 print(f"  [{i+1}/{len(wsop_2025_videos)}] {title_short}")
 
                 try:
-                    await detail_page.goto(video['url'], wait_until="domcontentloaded", timeout=20000)
+                    await detail_page.goto(
+                        video["url"], wait_until="domcontentloaded", timeout=20000
+                    )
                     await asyncio.sleep(2)
 
                     view_text = await detail_page.evaluate("""
@@ -160,12 +170,12 @@ async def scrape_pokergo_streams():
                     """)
 
                     views = parse_exact_views(view_text)
-                    video['views'] = views
+                    video["views"] = views
                     print(f"    -> {views:,} views")
 
-                except Exception as e:
-                    video['views'] = 0
-                    print(f"    -> 오류")
+                except Exception:
+                    video["views"] = 0
+                    print("    -> 오류")
 
                 await asyncio.sleep(0.3)
 
@@ -178,7 +188,7 @@ async def scrape_pokergo_streams():
 async def main():
     videos = await scrape_pokergo_streams()
 
-    total_views = sum(v.get('views', 0) for v in videos)
+    total_views = sum(v.get("views", 0) for v in videos)
 
     print("\n" + "=" * 100)
     print("WSOP 2025 영상 분석 결과 (1시간 이상)")
@@ -193,14 +203,15 @@ async def main():
         print(f"{i}. {v['title']}")
         print(f"   재생시간: {v['duration']} | 조회수: {v['views']:,}")
 
-    with open('wsop_2025_data.json', 'w', encoding='utf-8') as f:
-        json.dump({
-            'total_videos': len(videos),
-            'total_views': total_views,
-            'videos': videos
-        }, f, ensure_ascii=False, indent=2)
+    with open("wsop_2025_data.json", "w", encoding="utf-8") as f:
+        json.dump(
+            {"total_videos": len(videos), "total_views": total_views, "videos": videos},
+            f,
+            ensure_ascii=False,
+            indent=2,
+        )
 
-    print(f"\n데이터가 wsop_2025_data.json에 저장되었습니다.")
+    print("\n데이터가 wsop_2025_data.json에 저장되었습니다.")
 
 
 if __name__ == "__main__":

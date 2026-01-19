@@ -7,7 +7,6 @@ Google Docs → 로컬 Markdown 캐시 동기화.
 import logging
 import re
 from datetime import datetime
-import os
 from pathlib import Path
 from typing import Any, Dict, List, Optional
 

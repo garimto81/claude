@@ -32,36 +32,30 @@ class AgentUsageAnalyzer:
             # Return default config
             return {
                 "enabled": True,
-                "log_analysis": {
-                    "max_log_size_mb": 10,
-                    "parse_timeout_seconds": 5
-                },
+                "log_analysis": {"max_log_size_mb": 10, "parse_timeout_seconds": 5},
                 "improvement": {
                     "auto_generate": True,
                     "model": "claude-sonnet-4-20250514",
-                    "max_suggestions": 5
+                    "max_suggestions": 5,
                 },
                 "git_metadata": {
                     "enabled": True,
                     "use_trailer": True,
-                    "amend_commit": True
+                    "amend_commit": True,
                 },
-                "notification": {
-                    "console_output": True,
-                    "save_to_file": True
-                }
+                "notification": {"console_output": True, "save_to_file": True},
             }
 
-        with open(self.config_path, 'r', encoding='utf-8') as f:
+        with open(self.config_path, "r", encoding="utf-8") as f:
             return json.load(f)
 
     def detect_claude_log_dir(self) -> Optional[Path]:
         """Detect Claude Code log directory based on OS"""
-        if os.name == 'nt':  # Windows
-            appdata = os.getenv('APPDATA')
+        if os.name == "nt":  # Windows
+            appdata = os.getenv("APPDATA")
             if appdata:
                 return Path(appdata) / "Claude" / "logs"
-        elif sys.platform == 'darwin':  # macOS
+        elif sys.platform == "darwin":  # macOS
             home = Path.home()
             return home / "Library" / "Logs" / "Claude"
         else:  # Linux
@@ -111,7 +105,7 @@ class AgentUsageAnalyzer:
         suggestions_file = self.repo_root / ".claude" / "improvement-suggestions.md"
         suggestions_file.parent.mkdir(parents=True, exist_ok=True)
 
-        with open(suggestions_file, 'a', encoding='utf-8') as f:
+        with open(suggestions_file, "a", encoding="utf-8") as f:
             f.write(f"\n## {datetime.now().strftime('%Y-%m-%d %H:%M:%S')}\n\n")
             for improvement in improvements:
                 f.write(f"### Failed Agent: {improvement['agent']}\n")
@@ -185,7 +179,7 @@ def main():
         # Silently fail - don't block the commit
         # Log to file for debugging
         error_log = Path(__file__).parent.parent / "optimizer-error.log"
-        with open(error_log, 'a', encoding='utf-8') as f:
+        with open(error_log, "a", encoding="utf-8") as f:
             f.write(f"{datetime.now()}: {str(e)}\n")
 
 

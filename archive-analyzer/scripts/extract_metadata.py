@@ -16,14 +16,13 @@ Usage:
     python extract_metadata.py --workers 4  # 병렬 워커 수 지정
 """
 
-import sys
-import os
 import argparse
+import os
+import sys
 import threading
-from pathlib import Path
-from datetime import datetime
 from concurrent.futures import ThreadPoolExecutor, as_completed
-from queue import Queue
+from datetime import datetime
+from pathlib import Path
 
 # Windows 콘솔 UTF-8 설정 (먼저 환경변수 설정)
 os.environ['PYTHONIOENCODING'] = 'utf-8'
@@ -43,10 +42,9 @@ if sys.platform == 'win32':
 sys.path.insert(0, str(Path(__file__).parent.parent / "src"))
 
 from archive_analyzer.config import SMBConfig
-from archive_analyzer.smb_connector import SMBConnector
 from archive_analyzer.database import Database
-from archive_analyzer.media_extractor import SMBMediaExtractor, ExtractionProgress
-
+from archive_analyzer.media_extractor import ExtractionProgress, SMBMediaExtractor
+from archive_analyzer.smb_connector import SMBConnector
 
 # 설정
 SERVER = "10.10.100.122"

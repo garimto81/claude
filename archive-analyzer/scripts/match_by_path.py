@@ -5,13 +5,12 @@ iconik 클립과 아카이브 파일을 매칭합니다.
 """
 
 import csv
+import logging
 import re
 import sqlite3
-import logging
-from pathlib import Path
-from typing import Dict, List, Optional, Tuple
 from collections import defaultdict
 from dataclasses import dataclass
+from typing import Dict, List, Optional
 
 try:
     from rapidfuzz import fuzz

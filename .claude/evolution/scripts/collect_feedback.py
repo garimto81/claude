@@ -32,42 +32,25 @@ from track_agent_usage import get_tracker
 def main():
     parser = argparse.ArgumentParser(
         description="Agent 피드백 수집 CLI",
-        epilog="Example: python collect_feedback.py context7-engineer --rating 5"
+        epilog="Example: python collect_feedback.py context7-engineer --rating 5",
     )
 
-    parser.add_argument(
-        'agent',
-        help='Agent 이름 (예: context7-engineer)'
-    )
+    parser.add_argument("agent", help="Agent 이름 (예: context7-engineer)")
 
     parser.add_argument(
-        '--rating', '-r',
-        type=int,
-        choices=range(1, 6),
-        help='평점 (1-5)'
+        "--rating", "-r", type=int, choices=range(1, 6), help="평점 (1-5)"
     )
 
-    parser.add_argument(
-        '--comment', '-c',
-        help='코멘트'
-    )
+    parser.add_argument("--comment", "-c", help="코멘트")
 
     parser.add_argument(
-        '--effectiveness', '-e',
-        type=int,
-        choices=range(0, 11),
-        help='효과성 (0-10)'
+        "--effectiveness", "-e", type=int, choices=range(0, 11), help="효과성 (0-10)"
     )
 
-    parser.add_argument(
-        '--suggestion', '-s',
-        help='개선 제안'
-    )
+    parser.add_argument("--suggestion", "-s", help="개선 제안")
 
     parser.add_argument(
-        '--interactive', '-i',
-        action='store_true',
-        help='인터랙티브 모드 (질문 형식)'
+        "--interactive", "-i", action="store_true", help="인터랙티브 모드 (질문 형식)"
     )
 
     args = parser.parse_args()
@@ -91,7 +74,7 @@ def main():
                     rating=args.rating,
                     comment=args.comment,
                     effectiveness=effectiveness,
-                    suggestions=args.suggestion
+                    suggestions=args.suggestion,
                 )
 
         tracker.flush()

@@ -18,23 +18,25 @@ from pathlib import Path
 
 LOG_FILE = Path(".agent-quality.jsonl")
 
+
 def get_previous_score(agent, task):
     """이전 점수 가져오기"""
     if not LOG_FILE.exists():
         return 5.0
 
     try:
-        with open(LOG_FILE, 'r') as f:
+        with open(LOG_FILE, "r") as f:
             lines = f.readlines()
 
         for line in reversed(lines):
             log = json.loads(line.strip())
-            if log['agent'] == agent and log['task'] == task:
-                return log['score']
+            if log["agent"] == agent and log["task"] == task:
+                return log["score"]
     except Exception:
         pass
 
     return 5.0
+
 
 def get_attempt_count(agent, task):
     """시도 횟수 계산"""
@@ -43,15 +45,16 @@ def get_attempt_count(agent, task):
 
     count = 0
     try:
-        with open(LOG_FILE, 'r') as f:
+        with open(LOG_FILE, "r") as f:
             for line in f:
                 log = json.loads(line.strip())
-                if log['agent'] == agent and log['task'] == task:
+                if log["agent"] == agent and log["task"] == task:
                     count += 1
     except Exception:
         pass
 
     return count + 1
+
 
 def calculate_score(previous_score, attempt, status):
     """점수 계산
@@ -71,6 +74,7 @@ def calculate_score(previous_score, attempt, status):
         # 실패: -1.0
         return max(0.0, previous_score - 1.0)
 
+
 def log_quality(agent, phase, task, status, error=None, duration=0):
     """품질 로그 기록"""
     previous_score = get_previous_score(agent, task)
@@ -87,15 +91,15 @@ def log_quality(agent, phase, task, status, error=None, duration=0):
         "score": round(score, 1),
         "duration": duration,
         "previous_score": previous_score,
-        "fixed": attempt > 1 and status == "pass"
+        "fixed": attempt > 1 and status == "pass",
     }
 
     if error:
         log_entry["error"] = error
 
     # 파일에 추가
-    with open(LOG_FILE, 'a') as f:
-        f.write(json.dumps(log_entry) + '\n')
+    with open(LOG_FILE, "a") as f:
+        f.write(json.dumps(log_entry) + "\n")
 
     # 결과 출력
     if status == "pass":
@@ -112,13 +116,20 @@ def log_quality(agent, phase, task, status, error=None, duration=0):
 
     return score
 
+
 def main():
     if len(sys.argv) < 5:
-        print("Usage: python .claude/track.py <agent> <phase> <task> <status> [error] [duration]")
+        print(
+            "Usage: python .claude/track.py <agent> <phase> <task> <status> [error] [duration]"
+        )
         print()
         print("Example:")
-        print("  python .claude/track.py 'context7-engineer' 'Phase 0' 'Verify docs' 'pass'")
-        print("  python .claude/track.py 'debugger' 'Phase 1' 'Fix bug' 'fail' 'TypeError' 2.5")
+        print(
+            "  python .claude/track.py 'context7-engineer' 'Phase 0' 'Verify docs' 'pass'"
+        )
+        print(
+            "  python .claude/track.py 'debugger' 'Phase 1' 'Fix bug' 'fail' 'TypeError' 2.5"
+        )
         sys.exit(1)
 
     agent = sys.argv[1]
@@ -133,6 +144,7 @@ def main():
         sys.exit(1)
 
     log_quality(agent, phase, task, status, error, duration)
+
 
 if __name__ == "__main__":
     main()

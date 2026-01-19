@@ -6,7 +6,6 @@ clip_metadata_full.csv와 iconik_matched.csv를 합쳐서
 
 import csv
 import sqlite3
-from pathlib import Path
 
 
 def merge_and_export(db_path: str, output_csv: str):

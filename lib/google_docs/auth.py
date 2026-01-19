@@ -37,7 +37,7 @@ TOKEN_FILE = PROJECT_ROOT / "json" / "token.json"
 # Google Docs + Drive 권한
 SCOPES = [
     "https://www.googleapis.com/auth/documents",
-    "https://www.googleapis.com/auth/drive"
+    "https://www.googleapis.com/auth/drive",
 ]
 
 # 공유 폴더 ID (Google AI Studio 폴더)

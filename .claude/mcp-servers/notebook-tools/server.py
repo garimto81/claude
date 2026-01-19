@@ -36,7 +36,10 @@ class NotebookToolsServer:
                 "inputSchema": {
                     "type": "object",
                     "properties": {
-                        "notebook_path": {"type": "string", "description": "노트북 파일 경로"},
+                        "notebook_path": {
+                            "type": "string",
+                            "description": "노트북 파일 경로",
+                        },
                         "cell_index": {"type": "integer", "description": "셀 인덱스"},
                         "new_source": {"type": "string", "description": "새 소스 코드"},
                         "cell_type": {"type": "string", "enum": ["code", "markdown"]},
@@ -63,7 +66,10 @@ class NotebookToolsServer:
                     "type": "object",
                     "properties": {
                         "notebook_path": {"type": "string"},
-                        "format": {"type": "string", "enum": ["html", "pdf", "py", "md"]},
+                        "format": {
+                            "type": "string",
+                            "enum": ["html", "pdf", "py", "md"],
+                        },
                         "output_path": {"type": "string"},
                     },
                     "required": ["notebook_path", "format"],
@@ -71,7 +77,13 @@ class NotebookToolsServer:
             },
         ]
 
-    def notebook_edit(self, notebook_path: str, cell_index: int, new_source: str, cell_type: str = "code") -> dict:
+    def notebook_edit(
+        self,
+        notebook_path: str,
+        cell_index: int,
+        new_source: str,
+        cell_type: str = "code",
+    ) -> dict:
         """노트북 셀 편집"""
         try:
             with open(notebook_path, "r", encoding="utf-8") as f:
@@ -94,9 +106,14 @@ class NotebookToolsServer:
         """노트북 셀 실행 (nbclient 필요)"""
         return {"success": False, "error": "nbclient 패키지 필요: pip install nbclient"}
 
-    def notebook_export(self, notebook_path: str, format: str, output_path: str = None) -> dict:
+    def notebook_export(
+        self, notebook_path: str, format: str, output_path: str = None
+    ) -> dict:
         """노트북 내보내기 (nbconvert 필요)"""
-        return {"success": False, "error": "nbconvert 패키지 필요: pip install nbconvert"}
+        return {
+            "success": False,
+            "error": "nbconvert 패키지 필요: pip install nbconvert",
+        }
 
     def handle_request(self, request: dict) -> dict:
         """MCP JSON-RPC 요청 처리"""
@@ -111,7 +128,7 @@ class NotebookToolsServer:
             result = {
                 "protocolVersion": "2024-11-05",
                 "capabilities": {"tools": {}},
-                "serverInfo": {"name": "notebook-tools", "version": "1.0.0"}
+                "serverInfo": {"name": "notebook-tools", "version": "1.0.0"},
             }
         elif method == "notifications/initialized":
             return None  # No response for notifications
@@ -122,7 +139,9 @@ class NotebookToolsServer:
             arguments = params.get("arguments", {})
             if tool_name in self.tools:
                 tool_result = self.tools[tool_name](**arguments)
-                result = {"content": [{"type": "text", "text": json.dumps(tool_result)}]}
+                result = {
+                    "content": [{"type": "text", "text": json.dumps(tool_result)}]
+                }
             else:
                 error = {"code": -32601, "message": f"Unknown tool: {tool_name}"}
         else:
@@ -144,7 +163,7 @@ class NotebookToolsServer:
                 error_response = {
                     "jsonrpc": "2.0",
                     "id": None,
-                    "error": {"code": -32700, "message": "Parse error"}
+                    "error": {"code": -32700, "message": "Parse error"},
                 }
                 print(json.dumps(error_response), flush=True)
 

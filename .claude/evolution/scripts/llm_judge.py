@@ -27,7 +27,8 @@ from typing import Dict, Optional
 from pathlib import Path
 
 from dotenv import load_dotenv
-load_dotenv(Path(__file__).parent.parent / '.env')
+
+load_dotenv(Path(__file__).parent.parent / ".env")
 
 try:
     import anthropic
@@ -40,6 +41,7 @@ except ImportError:
 @dataclass
 class JudgeScore:
     """LLM Judge 평가 점수"""
+
     quality: float  # 0-10
     relevance: float  # 0-10
     completeness: float  # 0-10
@@ -62,7 +64,7 @@ class LLMJudge:
 
     def __init__(self):
         """Initialize Claude API client"""
-        api_key = os.getenv('ANTHROPIC_API_KEY')
+        api_key = os.getenv("ANTHROPIC_API_KEY")
         if not api_key:
             raise ValueError("ANTHROPIC_API_KEY not found in environment")
 
@@ -75,7 +77,7 @@ class LLMJudge:
         task: str,
         output: str,
         expected: Optional[str] = None,
-        context: Optional[str] = None
+        context: Optional[str] = None,
     ) -> JudgeScore:
         """
         Agent 출력 품질 평가
@@ -96,7 +98,7 @@ class LLMJudge:
             response = self.client.messages.create(
                 model=self.model,
                 max_tokens=1000,
-                messages=[{"role": "user", "content": prompt}]
+                messages=[{"role": "user", "content": prompt}],
             )
 
             result = response.content[0].text
@@ -111,7 +113,7 @@ class LLMJudge:
                 relevance=5.0,
                 completeness=5.0,
                 accuracy=5.0,
-                reasoning=f"Error during evaluation: {e}"
+                reasoning=f"Error during evaluation: {e}",
             )
 
     def _build_evaluation_prompt(
@@ -120,7 +122,7 @@ class LLMJudge:
         task: str,
         output: str,
         expected: Optional[str],
-        context: Optional[str]
+        context: Optional[str],
     ) -> str:
         """평가 프롬프트 생성"""
         prompt = f"""You are an expert evaluator assessing the quality of AI agent outputs.
@@ -170,7 +172,7 @@ Be objective and fair in your assessment.
         import re
 
         # JSON 추출
-        json_match = re.search(r'```json\s*(.*?)\s*```', result, re.DOTALL)
+        json_match = re.search(r"```json\s*(.*?)\s*```", result, re.DOTALL)
         if json_match:
             json_str = json_match.group(1)
         else:
@@ -180,11 +182,11 @@ Be objective and fair in your assessment.
         try:
             data = json.loads(json_str)
             return JudgeScore(
-                quality=float(data.get('quality', 5.0)),
-                relevance=float(data.get('relevance', 5.0)),
-                completeness=float(data.get('completeness', 5.0)),
-                accuracy=float(data.get('accuracy', 5.0)),
-                reasoning=data.get('reasoning', 'No reasoning provided')
+                quality=float(data.get("quality", 5.0)),
+                relevance=float(data.get("relevance", 5.0)),
+                completeness=float(data.get("completeness", 5.0)),
+                accuracy=float(data.get("accuracy", 5.0)),
+                reasoning=data.get("reasoning", "No reasoning provided"),
             )
         except json.JSONDecodeError:
             # Fallback
@@ -193,7 +195,7 @@ Be objective and fair in your assessment.
                 relevance=5.0,
                 completeness=5.0,
                 accuracy=5.0,
-                reasoning="Failed to parse evaluation"
+                reasoning="Failed to parse evaluation",
             )
 
     def evaluate_code_quality(self, code: str, language: str = "python") -> JudgeScore:
@@ -236,7 +238,7 @@ Provide JSON format:
             response = self.client.messages.create(
                 model=self.model,
                 max_tokens=1000,
-                messages=[{"role": "user", "content": prompt}]
+                messages=[{"role": "user", "content": prompt}],
             )
 
             result = response.content[0].text
@@ -285,14 +287,15 @@ Which output is better? Provide:
             response = self.client.messages.create(
                 model=self.model,
                 max_tokens=1000,
-                messages=[{"role": "user", "content": prompt}]
+                messages=[{"role": "user", "content": prompt}],
             )
 
             result = response.content[0].text
 
             import json
             import re
-            json_match = re.search(r'```json\s*(.*?)\s*```', result, re.DOTALL)
+
+            json_match = re.search(r"```json\s*(.*?)\s*```", result, re.DOTALL)
             if json_match:
                 data = json.loads(json_match.group(1))
                 return data
@@ -301,7 +304,7 @@ Which output is better? Provide:
                     "winner": "tie",
                     "score_a": 5.0,
                     "score_b": 5.0,
-                    "reasoning": "Failed to parse"
+                    "reasoning": "Failed to parse",
                 }
 
         except Exception as e:
@@ -309,7 +312,7 @@ Which output is better? Provide:
                 "winner": "tie",
                 "score_a": 5.0,
                 "score_b": 5.0,
-                "reasoning": f"Error: {e}"
+                "reasoning": f"Error: {e}",
             }
 
 
@@ -331,7 +334,7 @@ def main():
         4. New hooks: useId, useDeferredValue, useTransition
 
         All features are production-ready and documented at react.dev""",
-        expected="Comprehensive verification of React 18 features"
+        expected="Comprehensive verification of React 18 features",
     )
 
     print(f"Quality: {score.quality}/10")

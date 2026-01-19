@@ -18,6 +18,7 @@ PROJECT_DIR = Path(__file__).parent.parent.parent
 @dataclass
 class GitStatus:
     """Git 상태"""
+
     branch: str = ""
     is_main: bool = False
     uncommitted_files: int = 0
@@ -30,6 +31,7 @@ class GitStatus:
 @dataclass
 class CodeStatus:
     """코드 상태"""
+
     tests_passing: Optional[bool] = None
     test_failures: int = 0
     lint_errors: int = 0
@@ -39,6 +41,7 @@ class CodeStatus:
 @dataclass
 class ProjectStatus:
     """프로젝트 상태"""
+
     open_issues: list = None
     open_prs: list = None
     pending_todos: list = None
@@ -53,6 +56,7 @@ class ProjectStatus:
 @dataclass
 class SessionStatus:
     """세션 상태"""
+
     last_action: str = ""
     in_progress_task: str = ""
     last_user_request: str = ""
@@ -61,6 +65,7 @@ class SessionStatus:
 @dataclass
 class AnalysisResult:
     """분석 결과"""
+
     git: GitStatus
     code: CodeStatus
     project: ProjectStatus
@@ -75,11 +80,7 @@ def run_command(cmd: list, cwd: Path = PROJECT_DIR) -> tuple[bool, str]:
     """명령 실행"""
     try:
         result = subprocess.run(
-            cmd,
-            capture_output=True,
-            text=True,
-            cwd=str(cwd),
-            timeout=30
+            cmd, capture_output=True, text=True, cwd=str(cwd), timeout=30
         )
         return result.returncode == 0, result.stdout.strip()
     except Exception as e:
@@ -99,7 +100,9 @@ def analyze_git() -> GitStatus:
     # 커밋되지 않은 파일
     success, output = run_command(["git", "status", "--porcelain"])
     if success:
-        status.uncommitted_files = len([line for line in output.split("\n") if line.strip()])
+        status.uncommitted_files = len(
+            [line for line in output.split("\n") if line.strip()]
+        )
 
     # 푸시되지 않은 커밋
     success, output = run_command(["git", "rev-list", "--count", "@{u}..HEAD"])
@@ -107,7 +110,9 @@ def analyze_git() -> GitStatus:
         status.unpushed_commits = int(output)
 
     # ahead/behind
-    success, output = run_command(["git", "rev-list", "--left-right", "--count", "@{u}...HEAD"])
+    success, output = run_command(
+        ["git", "rev-list", "--left-right", "--count", "@{u}...HEAD"]
+    )
     if success:
         parts = output.split()
         if len(parts) == 2:
@@ -133,7 +138,9 @@ def analyze_code() -> CodeStatus:
     else:
         # 에러 개수 추출 시도
         lines = output.split("\n")
-        status.lint_errors = len([line for line in lines if line.strip() and not line.startswith("Found")])
+        status.lint_errors = len(
+            [line for line in lines if line.strip() and not line.startswith("Found")]
+        )
 
     return status
 
@@ -143,7 +150,9 @@ def analyze_project() -> ProjectStatus:
     status = ProjectStatus()
 
     # GitHub 이슈
-    success, output = run_command(["gh", "issue", "list", "--json", "number,title,labels", "-L", "10"])
+    success, output = run_command(
+        ["gh", "issue", "list", "--json", "number,title,labels", "-L", "10"]
+    )
     if success:
         try:
             status.open_issues = json.loads(output)
@@ -151,7 +160,9 @@ def analyze_project() -> ProjectStatus:
             pass
 
     # GitHub PR
-    success, output = run_command(["gh", "pr", "list", "--json", "number,title,state", "-L", "5"])
+    success, output = run_command(
+        ["gh", "pr", "list", "--json", "number,title,state", "-L", "5"]
+    )
     if success:
         try:
             status.open_prs = json.loads(output)
@@ -194,13 +205,14 @@ def analyze_all() -> AnalysisResult:
         git=analyze_git(),
         code=analyze_code(),
         project=analyze_project(),
-        session=analyze_session()
+        session=analyze_session(),
     )
 
 
 # ============================================
 # Tier 2: 자율 발견 함수들
 # ============================================
+
 
 def discover_lint_issues() -> tuple[int, str]:
     """린트 이슈 탐색 (우선순위 6)"""
@@ -220,18 +232,18 @@ def discover_todo_comments() -> list[dict]:
     """TODO/FIXME 코멘트 탐색 (우선순위 8)"""
     todos = []
     # git grep으로 TODO/FIXME 찾기
-    success, output = run_command(
-        ["git", "grep", "-n", "-E", "(TODO|FIXME|XXX|HACK):"]
-    )
+    success, output = run_command(["git", "grep", "-n", "-E", "(TODO|FIXME|XXX|HACK):"])
     if success and output:
         for line in output.split("\n")[:10]:  # 상위 10개만
             parts = line.split(":", 2)
             if len(parts) >= 3:
-                todos.append({
-                    "file": parts[0],
-                    "line": parts[1],
-                    "content": parts[2].strip()[:50]
-                })
+                todos.append(
+                    {
+                        "file": parts[0],
+                        "line": parts[1],
+                        "content": parts[2].strip()[:50],
+                    }
+                )
     return todos
 
 
@@ -245,11 +257,13 @@ def discover_dependency_updates() -> list[dict]:
         try:
             outdated = json.loads(output)
             for pkg in outdated[:5]:  # 상위 5개만
-                updates.append({
-                    "name": pkg.get("name", ""),
-                    "current": pkg.get("version", ""),
-                    "latest": pkg.get("latest_version", "")
-                })
+                updates.append(
+                    {
+                        "name": pkg.get("name", ""),
+                        "current": pkg.get("version", ""),
+                        "latest": pkg.get("latest_version", ""),
+                    }
+                )
         except (json.JSONDecodeError, TypeError):
             pass
 
@@ -291,7 +305,7 @@ def discover_next_task() -> Optional["NextAction"]:
             action_type="discover",
             description=f"린트 이슈 수정 ({lint_count}개)",
             command="/check --fix",
-            reason=f"자율 발견: {lint_file}에서 린트 이슈 발견"
+            reason=f"자율 발견: {lint_file}에서 린트 이슈 발견",
         )
 
     # 8. TODO/FIXME 코멘트
@@ -303,7 +317,7 @@ def discover_next_task() -> Optional["NextAction"]:
             action_type="discover",
             description=f"TODO 해결 ({len(todos)}개)",
             command=f"/issue create \"TODO: {first['content']}\"",
-            reason=f"자율 발견: {first['file']}:{first['line']}에 TODO"
+            reason=f"자율 발견: {first['file']}:{first['line']}에 TODO",
         )
 
     # 10. 의존성 업데이트
@@ -315,7 +329,7 @@ def discover_next_task() -> Optional["NextAction"]:
             action_type="discover",
             description=f"의존성 업데이트 ({len(outdated)}개)",
             command=f"/work \"의존성 업데이트: {pkg['name']}\"",
-            reason=f"자율 발견: {pkg['name']} {pkg['current']} → {pkg['latest']}"
+            reason=f"자율 발견: {pkg['name']} {pkg['current']} → {pkg['latest']}",
         )
 
     # 11. 보안 취약점
@@ -326,7 +340,7 @@ def discover_next_task() -> Optional["NextAction"]:
             action_type="discover",
             description=f"보안 취약점 수정 ({vulns[0]['count']}개)",
             command="/check --security",
-            reason="자율 발견: 보안 취약점 발견"
+            reason="자율 발견: 보안 취약점 발견",
         )
 
     # Tier 2에서도 발견 못함
@@ -336,8 +350,11 @@ def discover_next_task() -> Optional["NextAction"]:
 @dataclass
 class NextAction:
     """다음 작업"""
+
     priority: int  # 1=긴급, 2=진행중, 3=대기, 4=계획, 5=개선, 6-11=자율발견, 99=대기
-    action_type: str  # fix, commit, push, pr, issue, todo, refactor, discover, wait, none
+    action_type: (
+        str  # fix, commit, push, pr, issue, todo, refactor, discover, wait, none
+    )
     description: str
     command: str  # 실행할 명령
     reason: str  # 왜 이 작업인지
@@ -358,7 +375,7 @@ def decide_next_action(analysis: AnalysisResult) -> NextAction:
             action_type="fix",
             description="Git 충돌 해결",
             command="/debug conflict",
-            reason="충돌이 발생해서 먼저 해결해야 합니다"
+            reason="충돌이 발생해서 먼저 해결해야 합니다",
         )
 
     # 2. 긴급: 테스트 실패
@@ -368,7 +385,7 @@ def decide_next_action(analysis: AnalysisResult) -> NextAction:
             action_type="fix",
             description="테스트 수정",
             command="/debug test",
-            reason=f"테스트 {code.test_failures}개 실패 중"
+            reason=f"테스트 {code.test_failures}개 실패 중",
         )
 
     # 3. 긴급: 린트 에러
@@ -378,7 +395,7 @@ def decide_next_action(analysis: AnalysisResult) -> NextAction:
             action_type="fix",
             description="린트 에러 수정",
             command="/check --fix",
-            reason=f"린트 에러 {code.lint_errors}개 발견"
+            reason=f"린트 에러 {code.lint_errors}개 발견",
         )
 
     # 4. 진행중: 커밋 필요
@@ -388,7 +405,7 @@ def decide_next_action(analysis: AnalysisResult) -> NextAction:
             action_type="commit",
             description="변경사항 커밋",
             command="/commit",
-            reason=f"{git.uncommitted_files}개 파일이 커밋되지 않음"
+            reason=f"{git.uncommitted_files}개 파일이 커밋되지 않음",
         )
 
     # 5. 진행중: 푸시 필요
@@ -398,7 +415,7 @@ def decide_next_action(analysis: AnalysisResult) -> NextAction:
             action_type="push",
             description="커밋 푸시",
             command="git push",
-            reason=f"{git.unpushed_commits}개 커밋이 푸시되지 않음"
+            reason=f"{git.unpushed_commits}개 커밋이 푸시되지 않음",
         )
 
     # 6. 진행중: PR 생성 (기능 브랜치에서)
@@ -408,7 +425,7 @@ def decide_next_action(analysis: AnalysisResult) -> NextAction:
             action_type="pr",
             description="PR 생성",
             command="/create pr",
-            reason=f"브랜치 {git.branch}에 {git.ahead}개 커밋 있음"
+            reason=f"브랜치 {git.branch}에 {git.ahead}개 커밋 있음",
         )
 
     # 7. 대기중: PR 리뷰/머지
@@ -419,7 +436,7 @@ def decide_next_action(analysis: AnalysisResult) -> NextAction:
             action_type="pr",
             description=f"PR #{pr['number']} 처리",
             command=f"/pr review #{pr['number']}",
-            reason=f"대기 중인 PR: {pr['title']}"
+            reason=f"대기 중인 PR: {pr['title']}",
         )
 
     # 8. 대기중: 이슈 해결
@@ -437,7 +454,7 @@ def decide_next_action(analysis: AnalysisResult) -> NextAction:
             action_type="issue",
             description=f"이슈 #{issue['number']} 해결",
             command=f"/issue fix {issue['number']}",
-            reason=f"열린 이슈: {issue['title']}"
+            reason=f"열린 이슈: {issue['title']}",
         )
 
     # 9. 계획됨: Todo 진행
@@ -448,7 +465,7 @@ def decide_next_action(analysis: AnalysisResult) -> NextAction:
             action_type="todo",
             description=f"Todo 진행: {todo.get('content', '')}",
             command=f"/work \"{todo.get('content', '')}\"",
-            reason="미완료 Todo 항목 있음"
+            reason="미완료 Todo 항목 있음",
         )
 
     # 10. 개선: 린트 경고 수정
@@ -458,7 +475,7 @@ def decide_next_action(analysis: AnalysisResult) -> NextAction:
             action_type="fix",
             description="린트 경고 수정",
             command="/check --fix",
-            reason=f"린트 경고 {code.lint_errors}개"
+            reason=f"린트 경고 {code.lint_errors}개",
         )
 
     # ============================================
@@ -475,7 +492,7 @@ def decide_next_action(analysis: AnalysisResult) -> NextAction:
         action_type="wait",
         description="대기 중 (재탐색 예정)",
         command="",
-        reason="Tier 1, 2 모두 완료. 잠시 후 재탐색합니다."
+        reason="Tier 1, 2 모두 완료. 잠시 후 재탐색합니다.",
     )
 
 
@@ -518,11 +535,19 @@ def format_analysis(analysis: AnalysisResult) -> str:
 def format_decision(action: NextAction) -> str:
     """판단 결과 포맷팅"""
     priority_map = {
-        1: "🚨 긴급", 2: "⚡ 진행중", 3: "📋 대기", 4: "📝 계획", 5: "✨ 개선",
+        1: "🚨 긴급",
+        2: "⚡ 진행중",
+        3: "📋 대기",
+        4: "📝 계획",
+        5: "✨ 개선",
         # Tier 2: 자율 발견
-        6: "🔍 자율발견:품질", 7: "🔍 자율발견:커버리지", 8: "🔍 자율발견:TODO",
-        9: "🔍 자율발견:문서화", 10: "🔍 자율발견:의존성", 11: "🔍 자율발견:보안",
-        99: "⏸️ 대기중"
+        6: "🔍 자율발견:품질",
+        7: "🔍 자율발견:커버리지",
+        8: "🔍 자율발견:TODO",
+        9: "🔍 자율발견:문서화",
+        10: "🔍 자율발견:의존성",
+        11: "🔍 자율발견:보안",
+        99: "⏸️ 대기중",
     }
     lines = []
     lines.append("")
@@ -560,7 +585,7 @@ def main():
                 "project": asdict(analysis.project),
                 "session": asdict(analysis.session),
             },
-            "next_action": asdict(action)
+            "next_action": asdict(action),
         }
         print(json.dumps(result, indent=2, ensure_ascii=False))
 

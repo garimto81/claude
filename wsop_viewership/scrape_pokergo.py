@@ -4,7 +4,6 @@ PokerGO YouTube 채널에서 WSOP 2025 관련 영상 데이터 수집
 """
 
 import asyncio
-import json
 import re
 from playwright.async_api import async_playwright
 
@@ -18,25 +17,25 @@ def parse_views(view_text: str) -> int:
     text = view_text.lower()
 
     # 한글 "회" 또는 영어 "views" 제거
-    text = re.sub(r'(조회수|회|views?|view|\s)', '', text)
+    text = re.sub(r"(조회수|회|views?|view|\s)", "", text)
 
     # K/M/만/억 처리
     multiplier = 1
-    if 'k' in text:
+    if "k" in text:
         multiplier = 1000
-        text = text.replace('k', '')
-    elif 'm' in text:
+        text = text.replace("k", "")
+    elif "m" in text:
         multiplier = 1000000
-        text = text.replace('m', '')
-    elif '만' in text:
+        text = text.replace("m", "")
+    elif "만" in text:
         multiplier = 10000
-        text = text.replace('만', '')
-    elif '억' in text:
+        text = text.replace("만", "")
+    elif "억" in text:
         multiplier = 100000000
-        text = text.replace('억', '')
+        text = text.replace("억", "")
 
     # 쉼표 제거
-    text = text.replace(',', '').replace('.', '.').strip()
+    text = text.replace(",", "").replace(".", ".").strip()
 
     try:
         return int(float(text) * multiplier)
@@ -113,12 +112,14 @@ async def scrape_pokergo_streams():
         context = await browser.new_context(
             viewport={"width": 1920, "height": 1080},
             user_agent="Mozilla/5.0 (Windows NT 10.0; Win64; x64) AppleWebKit/537.36 (KHTML, like Gecko) Chrome/120.0.0.0 Safari/537.36",
-            locale="en-US"  # 영어로 설정하여 일관된 형식 유지
+            locale="en-US",  # 영어로 설정하여 일관된 형식 유지
         )
         page = await context.new_page()
 
         print("PokerGO YouTube 채널 접속 중...")
-        await page.goto("https://www.youtube.com/@PokerGO/streams", wait_until="networkidle")
+        await page.goto(
+            "https://www.youtube.com/@PokerGO/streams", wait_until="networkidle"
+        )
         await asyncio.sleep(5)
 
         # 스크롤해서 더 많은 영상 로드
@@ -176,44 +177,46 @@ async def scrape_pokergo_streams():
         total_views = 0
 
         for v in videos_data:
-            title = v.get('title', '')
-            if 'wsop' not in title.lower():
+            title = v.get("title", "")
+            if "wsop" not in title.lower():
                 continue
 
-            duration_text = v.get('duration', '')
+            duration_text = v.get("duration", "")
             duration_minutes = parse_duration_to_minutes(duration_text)
 
             # 메타데이터에서 조회수 추출
-            metadata = v.get('metadata', '') or v.get('allText', '')
+            metadata = v.get("metadata", "") or v.get("allText", "")
 
             # 조회수 추출 (여러 패턴 지원)
             views = 0
             # 영어: "123K views", "1.2M views"
-            views_match = re.search(r'([\d,.]+)\s*([KkMm])?\s*views?', metadata)
+            views_match = re.search(r"([\d,.]+)\s*([KkMm])?\s*views?", metadata)
             if views_match:
                 num = views_match.group(1)
-                unit = views_match.group(2) or ''
+                unit = views_match.group(2) or ""
                 views = parse_views(f"{num}{unit}")
 
             # 한글: "조회수 123만회", "조회수 1.2K회"
             if views == 0:
-                views_match = re.search(r'조회수\s*([\d,.]+)\s*([KkMm만억])?\s*회?', metadata)
+                views_match = re.search(
+                    r"조회수\s*([\d,.]+)\s*([KkMm만억])?\s*회?", metadata
+                )
                 if views_match:
                     num = views_match.group(1)
-                    unit = views_match.group(2) or ''
+                    unit = views_match.group(2) or ""
                     views = parse_views(f"{num}{unit}")
 
             # 2025년 체크 (제목 + 메타데이터)
             is_2025 = is_2025_video(metadata, title)
 
             video_info = {
-                'title': title,
-                'duration': duration_text,
-                'duration_minutes': duration_minutes,
-                'views': views,
-                'metadata': metadata[:100],
-                'is_2025': is_2025,
-                'is_long': duration_minutes >= 60
+                "title": title,
+                "duration": duration_text,
+                "duration_minutes": duration_minutes,
+                "views": views,
+                "metadata": metadata[:100],
+                "is_2025": is_2025,
+                "is_long": duration_minutes >= 60,
             }
             all_wsop.append(video_info)
 
@@ -234,12 +237,18 @@ async def main():
     print("=" * 130)
 
     if all_wsop:
-        print(f"\n{'#':<4} {'제목':<55} {'시간':<12} {'조회수':>15} {'2025':>6} {'1h+':>5}")
+        print(
+            f"\n{'#':<4} {'제목':<55} {'시간':<12} {'조회수':>15} {'2025':>6} {'1h+':>5}"
+        )
         print("-" * 130)
 
         for i, v in enumerate(all_wsop, 1):
-            title_short = v["title"][:52] + "..." if len(v["title"]) > 55 else v["title"]
-            print(f"{i:<4} {title_short:<55} {v['duration']:<12} {v['views']:>15,} {'Y' if v['is_2025'] else 'N':>6} {'Y' if v['is_long'] else 'N':>5}")
+            title_short = (
+                v["title"][:52] + "..." if len(v["title"]) > 55 else v["title"]
+            )
+            print(
+                f"{i:<4} {title_short:<55} {v['duration']:<12} {v['views']:>15,} {'Y' if v['is_2025'] else 'N':>6} {'Y' if v['is_long'] else 'N':>5}"
+            )
 
         print(f"\n총 {len(all_wsop)}개 WSOP 영상 발견")
 
@@ -253,7 +262,9 @@ async def main():
             print("\n[디버그] 상위 10개 영상:")
             for v in all_wsop[:10]:
                 print(f"  제목: {v['title'][:50]}")
-                print(f"    시간: {v['duration']} ({v['duration_minutes']:.0f}분) | 조회수: {v['views']:,} | 2025: {v['is_2025']}")
+                print(
+                    f"    시간: {v['duration']} ({v['duration_minutes']:.0f}분) | 조회수: {v['views']:,} | 2025: {v['is_2025']}"
+                )
                 print(f"    메타: {v['metadata'][:60]}")
                 print()
         return

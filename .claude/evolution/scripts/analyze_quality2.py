@@ -37,12 +37,11 @@ from typing import Dict, List, Optional
 from collections import defaultdict
 
 # Fix encoding for Windows console
-if sys.platform == 'win32':
-    sys.stdout = io.TextIOWrapper(sys.stdout.buffer, encoding='utf-8', errors='replace')
+if sys.platform == "win32":
+    sys.stdout = io.TextIOWrapper(sys.stdout.buffer, encoding="utf-8", errors="replace")
 
 # Import core logic
 from agent_quality_v2 import AgentQuality
-
 
 LOG_FILE = Path(".agent-quality-v2.jsonl")
 
@@ -53,7 +52,7 @@ def load_logs(
     version: Optional[str] = None,
     task: Optional[str] = None,
     start_date: Optional[str] = None,
-    end_date: Optional[str] = None
+    end_date: Optional[str] = None,
 ) -> List[Dict]:
     """로그 파일 로드 (필터링 지원)"""
     if not log_file.exists():
@@ -61,28 +60,30 @@ def load_logs(
         return []
 
     logs = []
-    with open(log_file, 'r') as f:
+    with open(log_file, "r") as f:
         for line in f:
             try:
                 log = json.loads(line.strip())
 
                 # 필터링
-                if agent and log.get('agent') != agent:
+                if agent and log.get("agent") != agent:
                     continue
-                if version and log.get('version') != version:
+                if version and log.get("version") != version:
                     continue
-                if task and log.get('task') != task:
+                if task and log.get("task") != task:
                     continue
 
                 # 날짜 필터
                 if start_date or end_date:
-                    log_date = datetime.fromisoformat(log['timestamp'].replace('Z', '+00:00'))
+                    log_date = datetime.fromisoformat(
+                        log["timestamp"].replace("Z", "+00:00")
+                    )
                     if start_date:
-                        start = datetime.fromisoformat(start_date + 'T00:00:00+00:00')
+                        start = datetime.fromisoformat(start_date + "T00:00:00+00:00")
                         if log_date < start:
                             continue
                     if end_date:
-                        end = datetime.fromisoformat(end_date + 'T23:59:59+00:00')
+                        end = datetime.fromisoformat(end_date + "T23:59:59+00:00")
                         if log_date > end:
                             continue
 
@@ -107,12 +108,14 @@ def print_summary(logs: List[Dict]):
     agents = defaultdict(lambda: {"versions": defaultdict(list)})
 
     for log in logs:
-        agent_name = log['agent']
-        version = log.get('version', '1.0.0')
+        agent_name = log["agent"]
+        version = log.get("version", "1.0.0")
         agents[agent_name]["versions"][version].append(log)
 
     # Agent별 점수 계산
-    print(f"{'Agent':<25} {'Version':<10} {'Score':<8} {'Conf':<6} {'Grade':<6} {'Status':<15}")
+    print(
+        f"{'Agent':<25} {'Version':<10} {'Score':<8} {'Conf':<6} {'Grade':<6} {'Status':<15}"
+    )
     print("-" * 70)
 
     for agent_name, data in sorted(agents.items()):
@@ -122,14 +125,14 @@ def print_summary(logs: List[Dict]):
 
             # 로그를 tasks 구조로 변환
             for log in version_logs:
-                task = log['task']
+                task = log["task"]
                 quality.tasks[task]["attempts"].append(log)
 
             # 점수 계산
             score = quality.get_score()
 
-            if score['avg_success_rate'] is not None:
-                uncertainty = 1 - score['confidence']
+            if score["avg_success_rate"] is not None:
+                uncertainty = 1 - score["confidence"]
                 score_display = f"{score['weighted_avg']:.0%}±{uncertainty:.0%}"
 
                 print(
@@ -145,7 +148,7 @@ def print_summary(logs: List[Dict]):
 
     # 전체 통계
     total_attempts = len(logs)
-    total_success = sum(1 for log in logs if log['status'] == 'pass')
+    total_success = sum(1 for log in logs if log["status"] == "pass")
     overall_rate = total_success / total_attempts if total_attempts > 0 else 0
 
     print("\n전체 통계:")
@@ -156,7 +159,10 @@ def print_summary(logs: List[Dict]):
 
     # 날짜 범위
     if logs:
-        dates = [datetime.fromisoformat(log['timestamp'].replace('Z', '+00:00')) for log in logs]
+        dates = [
+            datetime.fromisoformat(log["timestamp"].replace("Z", "+00:00"))
+            for log in logs
+        ]
         print(f"  기간: {min(dates).date()} ~ {max(dates).date()}")
 
     print()
@@ -173,7 +179,7 @@ def print_agent_detail(agent_name: str, version: Optional[str] = None):
     # Version별 분류
     versions = defaultdict(list)
     for log in logs:
-        v = log.get('version', '1.0.0')
+        v = log.get("version", "1.0.0")
         versions[v].append(log)
 
     # 각 버전 분석
@@ -182,7 +188,7 @@ def print_agent_detail(agent_name: str, version: Optional[str] = None):
 
         # 로그 로드
         for log in v_logs:
-            task = log['task']
+            task = log["task"]
             quality.tasks[task]["attempts"].append(log)
 
         # 리포트 출력
@@ -200,10 +206,10 @@ def print_agent_detail(agent_name: str, version: Optional[str] = None):
         for v in sorted(versions.keys()):
             quality = AgentQuality(agent_name, v)
             for log in versions[v]:
-                quality.tasks[log['task']]["attempts"].append(log)
+                quality.tasks[log["task"]]["attempts"].append(log)
 
             score = quality.get_score()
-            if score['avg_success_rate'] is not None:
+            if score["avg_success_rate"] is not None:
                 print(
                     f"{v:<10} "
                     f"{score['weighted_avg']:.1%}    "
@@ -230,9 +236,9 @@ def print_trend_analysis():
     daily_stats = defaultdict(lambda: {"success": 0, "total": 0})
 
     for log in logs:
-        date = datetime.fromisoformat(log['timestamp'].replace('Z', '+00:00')).date()
+        date = datetime.fromisoformat(log["timestamp"].replace("Z", "+00:00")).date()
         daily_stats[date]["total"] += 1
-        if log['status'] == 'pass':
+        if log["status"] == "pass":
             daily_stats[date]["success"] += 1
 
     print("날짜별 성공률:")
@@ -241,7 +247,7 @@ def print_trend_analysis():
 
     for date in sorted(daily_stats.keys()):
         stats = daily_stats[date]
-        rate = stats['success'] / stats['total']
+        rate = stats["success"] / stats["total"]
         bar = "█" * int(rate * 20)
 
         print(f"{date} {rate:.1%} {bar:<20} ({stats['total']})")
@@ -251,7 +257,7 @@ def print_trend_analysis():
     # Agent별 추세
     agents = defaultdict(list)
     for log in logs:
-        agents[log['agent']].append(log)
+        agents[log["agent"]].append(log)
 
     print("\nAgent별 추세:")
     print(f"{'Agent':<25} {'Trend':<15} {'Recent Rate':<12}")
@@ -259,11 +265,13 @@ def print_trend_analysis():
 
     for agent_name, agent_logs in sorted(agents.items()):
         # 최근 10개
-        recent = sorted(agent_logs, key=lambda x: x['timestamp'])[-10:]
-        recent_rate = sum(1 for log in recent if log['status'] == 'pass') / len(recent)
+        recent = sorted(agent_logs, key=lambda x: x["timestamp"])[-10:]
+        recent_rate = sum(1 for log in recent if log["status"] == "pass") / len(recent)
 
         # 전체
-        total_rate = sum(1 for log in agent_logs if log['status'] == 'pass') / len(agent_logs)
+        total_rate = sum(1 for log in agent_logs if log["status"] == "pass") / len(
+            agent_logs
+        )
 
         # 추세
         if recent_rate > total_rate + 0.15:
@@ -293,7 +301,7 @@ def print_alerts():
     # Agent별 분류
     agents = defaultdict(list)
     for log in logs:
-        agents[log['agent']].append(log)
+        agents[log["agent"]].append(log)
 
     alerts = []
 
@@ -301,28 +309,30 @@ def print_alerts():
         quality = AgentQuality(agent_name)
 
         for log in agent_logs:
-            quality.tasks[log['task']]["attempts"].append(log)
+            quality.tasks[log["task"]]["attempts"].append(log)
 
         score = quality.get_score()
 
-        if score['avg_success_rate'] is not None:
+        if score["avg_success_rate"] is not None:
             # 경고 조건
-            if score['weighted_avg'] < 0.6:
-                alerts.append({
-                    "agent": agent_name,
-                    "score": score['weighted_avg'],
-                    "grade": score['grade'],
-                    "status": score['status'],
-                    "confidence": score['confidence'],
-                    "trend": score['trend']
-                })
+            if score["weighted_avg"] < 0.6:
+                alerts.append(
+                    {
+                        "agent": agent_name,
+                        "score": score["weighted_avg"],
+                        "grade": score["grade"],
+                        "status": score["status"],
+                        "confidence": score["confidence"],
+                        "trend": score["trend"],
+                    }
+                )
 
     if not alerts:
         print("✅ 경고 없음 - 모든 Agent 정상")
         return
 
     # 심각도 순 정렬
-    alerts.sort(key=lambda x: x['score'])
+    alerts.sort(key=lambda x: x["score"])
 
     print(f"{'Agent':<25} {'Score':<10} {'Grade':<6} {'Status':<15} {'Trend':<12}")
     print("-" * 70)
@@ -354,17 +364,19 @@ def print_task_analysis(task_name: str):
     # Agent별 분류
     agents = defaultdict(list)
     for log in logs:
-        agents[log['agent']].append(log)
+        agents[log["agent"]].append(log)
 
-    print(f"{'Agent':<25} {'Attempts':<10} {'Success':<8} {'Rate':<10} {'Avg Duration':<12}")
+    print(
+        f"{'Agent':<25} {'Attempts':<10} {'Success':<8} {'Rate':<10} {'Avg Duration':<12}"
+    )
     print("-" * 70)
 
     for agent_name, task_logs in sorted(agents.items()):
         attempts = len(task_logs)
-        successes = sum(1 for log in task_logs if log['status'] == 'pass')
+        successes = sum(1 for log in task_logs if log["status"] == "pass")
         rate = successes / attempts
 
-        durations = [log['duration'] for log in task_logs if log.get('duration', 0) > 0]
+        durations = [log["duration"] for log in task_logs if log.get("duration", 0) > 0]
         avg_duration = sum(durations) / len(durations) if durations else 0
 
         print(
@@ -389,20 +401,22 @@ def main():
   python analyze_quality2.py --trend
   python analyze_quality2.py --alerts
   python analyze_quality2.py --task "Fix TypeError"
-"""
+""",
     )
 
-    parser.add_argument('--summary', action='store_true', help='전체 요약')
-    parser.add_argument('--agent', help='특정 Agent 분석')
-    parser.add_argument('--version', help='특정 Agent Version')
-    parser.add_argument('--task', help='특정 Task 분석')
-    parser.add_argument('--trend', action='store_true', help='추세 분석')
-    parser.add_argument('--alerts', action='store_true', help='경고 확인')
+    parser.add_argument("--summary", action="store_true", help="전체 요약")
+    parser.add_argument("--agent", help="특정 Agent 분석")
+    parser.add_argument("--version", help="특정 Agent Version")
+    parser.add_argument("--task", help="특정 Task 분석")
+    parser.add_argument("--trend", action="store_true", help="추세 분석")
+    parser.add_argument("--alerts", action="store_true", help="경고 확인")
 
-    parser.add_argument('--start', help='시작 날짜 (YYYY-MM-DD)')
-    parser.add_argument('--end', help='종료 날짜 (YYYY-MM-DD)')
+    parser.add_argument("--start", help="시작 날짜 (YYYY-MM-DD)")
+    parser.add_argument("--end", help="종료 날짜 (YYYY-MM-DD)")
 
-    parser.add_argument('--log-file', type=Path, default=LOG_FILE, help='로그 파일 경로')
+    parser.add_argument(
+        "--log-file", type=Path, default=LOG_FILE, help="로그 파일 경로"
+    )
 
     args = parser.parse_args()
 

@@ -4,8 +4,8 @@ DB에 저장된 전체 클립 메타데이터를 CSV 파일로 내보냅니다.
 """
 
 import csv
-import sys
 import sqlite3
+import sys
 from pathlib import Path
 
 # 프로젝트 src 경로 추가

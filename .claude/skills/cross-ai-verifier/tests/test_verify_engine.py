@@ -15,6 +15,7 @@ import pytest
 @dataclass
 class VerifyResult:
     """검증 결과."""
+
     provider: str
     issues: list[dict] = field(default_factory=list)
     suggestions: list[str] = field(default_factory=list)
@@ -26,6 +27,7 @@ class VerifyResult:
 @dataclass
 class VerificationReport:
     """검증 보고서."""
+
     file_path: str | None = None
     language: str = "python"
     focus: str = "all"
@@ -34,7 +36,9 @@ class VerificationReport:
 
     def summary(self) -> str:
         total_issues = len(self.aggregated.get("issues", []))
-        high = sum(1 for i in self.aggregated.get("issues", []) if i.get("severity") == "high")
+        high = sum(
+            1 for i in self.aggregated.get("issues", []) if i.get("severity") == "high"
+        )
         providers = ", ".join(self.aggregated.get("providers_used", []))
         confidence = self.aggregated.get("avg_confidence", 0) * 100
         return f"""
@@ -60,8 +64,9 @@ class VerificationReport:
 FOCUS_PROMPTS = {
     "security": "보안 취약점을 분석하세요: SQL Injection, XSS",
     "bugs": "논리 오류 및 버그를 검사하세요",
-    "all": "종합적인 코드 리뷰를 수행하세요"
+    "all": "종합적인 코드 리뷰를 수행하세요",
 }
+
 
 def build_verify_prompt(code: str, language: str, focus: str) -> str:
     focus_instruction = FOCUS_PROMPTS.get(focus, FOCUS_PROMPTS["all"])
@@ -98,9 +103,11 @@ class ProviderRouter:
 
         return {
             "issues": all_issues,
-            "avg_confidence": sum(confidences) / len(confidences) if confidences else 0.0,
+            "avg_confidence": (
+                sum(confidences) / len(confidences) if confidences else 0.0
+            ),
             "providers_used": providers_used,
-            "errors": errors
+            "errors": errors,
         }
 
 
@@ -154,7 +161,7 @@ class TestVerifyResult:
             provider="openai",
             issues=[{"severity": "high", "line": 10, "message": "test"}],
             suggestions=["suggestion1"],
-            confidence=0.85
+            confidence=0.85,
         )
 
         assert result.provider == "openai"
@@ -163,10 +170,7 @@ class TestVerifyResult:
 
     def test_verify_result_with_error(self):
         """에러 포함 VerifyResult."""
-        result = VerifyResult(
-            provider="gemini",
-            error="API 오류"
-        )
+        result = VerifyResult(provider="gemini", error="API 오류")
 
         assert result.error == "API 오류"
         assert len(result.issues) == 0
@@ -202,13 +206,13 @@ class TestProviderRouter:
             VerifyResult(
                 provider="openai",
                 issues=[{"severity": "high", "line": 10, "message": "issue1"}],
-                confidence=0.8
+                confidence=0.8,
             ),
             VerifyResult(
                 provider="gemini",
                 issues=[{"severity": "medium", "line": 20, "message": "issue2"}],
-                confidence=0.9
-            )
+                confidence=0.9,
+            ),
         ]
 
         aggregated = router.aggregate_results(results)
@@ -223,7 +227,7 @@ class TestProviderRouter:
 
         results = [
             VerifyResult(provider="openai", confidence=0.8, issues=[]),
-            VerifyResult(provider="gemini", error="timeout")
+            VerifyResult(provider="gemini", error="timeout"),
         ]
 
         aggregated = router.aggregate_results(results)
@@ -242,12 +246,10 @@ class TestVerificationReport:
             language="python",
             focus="security",
             aggregated={
-                "issues": [
-                    {"severity": "high", "line": 1, "message": "test"}
-                ],
+                "issues": [{"severity": "high", "line": 1, "message": "test"}],
                 "providers_used": ["openai"],
-                "avg_confidence": 0.9
-            }
+                "avg_confidence": 0.9,
+            },
         )
 
         summary = report.summary()

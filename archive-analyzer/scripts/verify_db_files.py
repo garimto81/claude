@@ -1,8 +1,8 @@
 """DB 파일의 실제 존재 여부 확인"""
-import sys
 import sqlite3
-from pathlib import Path
+import sys
 from concurrent.futures import ThreadPoolExecutor, as_completed
+from pathlib import Path
 
 sys.stdout.reconfigure(encoding='utf-8')
 
@@ -43,17 +43,17 @@ def main():
             if (i + 1) % 500 == 0:
                 print(f"  확인: {i + 1}/{len(files)}")
 
-    print(f"\n=== 결과 ===")
+    print("\n=== 결과 ===")
     print(f"존재하는 파일: {len(existing)}")
     print(f"누락된 파일: {len(missing)}")
 
     if missing:
-        print(f"\n=== 누락된 파일 샘플 (최대 10개) ===")
+        print("\n=== 누락된 파일 샘플 (최대 10개) ===")
         for file_id, path in missing[:10]:
             print(f"  ID {file_id}: {path[:80]}...")
 
     # 카탈로그별 누락 현황
-    print(f"\n=== 카탈로그별 누락 현황 ===")
+    print("\n=== 카탈로그별 누락 현황 ===")
     catalog_missing = {}
     for file_id, path in missing:
         if 'ARCHIVE' in path:

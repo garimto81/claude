@@ -41,8 +41,10 @@ class ImageInserter:
             drive_service: Google Drive API 서비스 (없으면 자동 생성)
         """
         self.credentials = credentials
-        self.docs_service = docs_service or build('docs', 'v1', credentials=credentials)
-        self.drive_service = drive_service or build('drive', 'v3', credentials=credentials)
+        self.docs_service = docs_service or build("docs", "v1", credentials=credentials)
+        self.drive_service = drive_service or build(
+            "drive", "v3", credentials=credentials
+        )
 
     def upload_to_drive(
         self,
@@ -67,45 +69,44 @@ class ImageInserter:
 
         # 파일 메타데이터
         file_metadata = {
-            'name': file_name or file_path.name,
+            "name": file_name or file_path.name,
         }
 
         if folder_id:
-            file_metadata['parents'] = [folder_id]
+            file_metadata["parents"] = [folder_id]
 
         # MIME 타입 결정
         suffix = file_path.suffix.lower()
         mime_types = {
-            '.png': 'image/png',
-            '.jpg': 'image/jpeg',
-            '.jpeg': 'image/jpeg',
-            '.gif': 'image/gif',
-            '.webp': 'image/webp',
-            '.svg': 'image/svg+xml',
+            ".png": "image/png",
+            ".jpg": "image/jpeg",
+            ".jpeg": "image/jpeg",
+            ".gif": "image/gif",
+            ".webp": "image/webp",
+            ".svg": "image/svg+xml",
         }
-        mimetype = mime_types.get(suffix, 'image/png')
+        mimetype = mime_types.get(suffix, "image/png")
 
         # 업로드
-        media = MediaFileUpload(
-            str(file_path),
-            mimetype=mimetype,
-            resumable=True
+        media = MediaFileUpload(str(file_path), mimetype=mimetype, resumable=True)
+
+        file = (
+            self.drive_service.files()
+            .create(
+                body=file_metadata,
+                media_body=media,
+                fields="id, webContentLink, webViewLink",
+            )
+            .execute()
         )
 
-        file = self.drive_service.files().create(
-            body=file_metadata,
-            media_body=media,
-            fields='id, webContentLink, webViewLink'
-        ).execute()
-
-        file_id = file.get('id')
+        file_id = file.get("id")
 
         # 공개 권한 설정
         if make_public:
             try:
                 self.drive_service.permissions().create(
-                    fileId=file_id,
-                    body={'type': 'anyone', 'role': 'reader'}
+                    fileId=file_id, body={"type": "anyone", "role": "reader"}
                 ).execute()
             except Exception as e:
                 print(f"공개 권한 설정 실패: {e}")
@@ -134,20 +135,19 @@ class ImageInserter:
         Returns:
             성공 여부
         """
-        requests = [{
-            'insertInlineImage': {
-                'location': {'index': position},
-                'uri': image_url,
-                'objectSize': {
-                    'width': {'magnitude': width, 'unit': 'PT'}
+        requests = [
+            {
+                "insertInlineImage": {
+                    "location": {"index": position},
+                    "uri": image_url,
+                    "objectSize": {"width": {"magnitude": width, "unit": "PT"}},
                 }
             }
-        }]
+        ]
 
         try:
             self.docs_service.documents().batchUpdate(
-                documentId=doc_id,
-                body={'requests': requests}
+                documentId=doc_id, body={"requests": requests}
             ).execute()
             return True
         except Exception as e:
@@ -170,18 +170,18 @@ class ImageInserter:
             텍스트 끝 위치 (없으면 None)
         """
         doc = self.docs_service.documents().get(documentId=doc_id).execute()
-        body_content = doc.get('body', {}).get('content', [])
+        body_content = doc.get("body", {}).get("content", [])
 
         for element in body_content:
-            if 'paragraph' in element:
-                para = element['paragraph']
-                for para_element in para.get('elements', []):
-                    text_run = para_element.get('textRun', {})
-                    content = text_run.get('content', '')
+            if "paragraph" in element:
+                para = element["paragraph"]
+                for para_element in para.get("elements", []):
+                    text_run = para_element.get("textRun", {})
+                    content = text_run.get("content", "")
 
                     if search_text in content:
                         # 텍스트 끝 위치 반환
-                        return para_element.get('endIndex', 0)
+                        return para_element.get("endIndex", 0)
 
         return None
 
@@ -216,28 +216,24 @@ class ImageInserter:
         requests = []
 
         if add_newline:
-            requests.append({
-                'insertText': {
-                    'location': {'index': position},
-                    'text': '\n'
-                }
-            })
+            requests.append(
+                {"insertText": {"location": {"index": position}, "text": "\n"}}
+            )
             position += 1
 
-        requests.append({
-            'insertInlineImage': {
-                'location': {'index': position},
-                'uri': image_url,
-                'objectSize': {
-                    'width': {'magnitude': width, 'unit': 'PT'}
+        requests.append(
+            {
+                "insertInlineImage": {
+                    "location": {"index": position},
+                    "uri": image_url,
+                    "objectSize": {"width": {"magnitude": width, "unit": "PT"}},
                 }
             }
-        })
+        )
 
         try:
             self.docs_service.documents().batchUpdate(
-                documentId=doc_id,
-                body={'requests': requests}
+                documentId=doc_id, body={"requests": requests}
             ).execute()
             return True
         except Exception as e:
@@ -264,47 +260,46 @@ class ImageInserter:
             성공 여부
         """
         doc = self.docs_service.documents().get(documentId=doc_id).execute()
-        body_content = doc.get('body', {}).get('content', [])
+        body_content = doc.get("body", {}).get("content", [])
 
         for i, element in enumerate(body_content):
-            if 'paragraph' in element:
-                para = element['paragraph']
-                para_style = para.get('paragraphStyle', {})
-                named_style = para_style.get('namedStyleType', '')
+            if "paragraph" in element:
+                para = element["paragraph"]
+                para_style = para.get("paragraphStyle", {})
+                named_style = para_style.get("namedStyleType", "")
 
                 # 제목인지 확인
-                if 'HEADING' in named_style:
-                    for para_element in para.get('elements', []):
-                        text_run = para_element.get('textRun', {})
-                        content = text_run.get('content', '').strip()
+                if "HEADING" in named_style:
+                    for para_element in para.get("elements", []):
+                        text_run = para_element.get("textRun", {})
+                        content = text_run.get("content", "").strip()
 
                         if heading_text in content:
                             # 다음 요소의 시작 위치에 삽입
-                            end_index = element.get('endIndex', 0)
+                            end_index = element.get("endIndex", 0)
 
                             # 줄바꿈 + 이미지 삽입
                             requests = [
                                 {
-                                    'insertText': {
-                                        'location': {'index': end_index},
-                                        'text': '\n'
+                                    "insertText": {
+                                        "location": {"index": end_index},
+                                        "text": "\n",
                                     }
                                 },
                                 {
-                                    'insertInlineImage': {
-                                        'location': {'index': end_index + 1},
-                                        'uri': image_url,
-                                        'objectSize': {
-                                            'width': {'magnitude': width, 'unit': 'PT'}
-                                        }
+                                    "insertInlineImage": {
+                                        "location": {"index": end_index + 1},
+                                        "uri": image_url,
+                                        "objectSize": {
+                                            "width": {"magnitude": width, "unit": "PT"}
+                                        },
                                     }
-                                }
+                                },
                             ]
 
                             try:
                                 self.docs_service.documents().batchUpdate(
-                                    documentId=doc_id,
-                                    body={'requests': requests}
+                                    documentId=doc_id, body={"requests": requests}
                                 ).execute()
                                 return True
                             except Exception as e:
@@ -329,20 +324,21 @@ class ImageInserter:
         Returns:
             성공 여부
         """
-        requests = [{
-            'deleteContentRange': {
-                'range': {
-                    'segmentId': '',
-                    'startIndex': 0,  # 실제 인덱스로 교체 필요
-                    'endIndex': 1,
+        requests = [
+            {
+                "deleteContentRange": {
+                    "range": {
+                        "segmentId": "",
+                        "startIndex": 0,  # 실제 인덱스로 교체 필요
+                        "endIndex": 1,
+                    }
                 }
             }
-        }]
+        ]
 
         try:
             self.docs_service.documents().batchUpdate(
-                documentId=doc_id,
-                body={'requests': requests}
+                documentId=doc_id, body={"requests": requests}
             ).execute()
             return True
         except Exception as e:

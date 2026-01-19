@@ -10,10 +10,10 @@ Issue #57: NAS 스캔 문제 해결 스크립트
 2. NAS 재스캔
 3. 새 데이터로 업데이트
 """
-import sys
 import sqlite3
-from pathlib import Path
+import sys
 from datetime import datetime
+from pathlib import Path
 
 sys.stdout.reconfigure(encoding='utf-8')
 
@@ -71,7 +71,7 @@ def cleanup_invalid_records(db_path, path_column='path', dry_run=True):
         conn.commit()
         print(f"  삭제 완료: {len(invalid_ids)} 레코드")
 
-    cursor.execute(f'SELECT COUNT(*) FROM files')
+    cursor.execute('SELECT COUNT(*) FROM files')
     remaining = cursor.fetchone()[0]
     print(f"  남은 레코드: {remaining}")
 

@@ -32,12 +32,12 @@ class PluginManager:
         if not self.registry_path.exists():
             return {"plugins": [], "remoteRepositories": []}
 
-        with open(self.registry_path, 'r') as f:
+        with open(self.registry_path, "r") as f:
             return json.load(f)
 
     def _save_registry(self):
         """Save plugin registry"""
-        with open(self.registry_path, 'w') as f:
+        with open(self.registry_path, "w") as f:
             json.dump(self.registry, f, indent=2)
 
     def list_plugins(self, verbose: bool = False):
@@ -99,8 +99,7 @@ class PluginManager:
 
         # Find plugin
         plugin = next(
-            (p for p in self.registry.get("plugins", []) if p["id"] == plugin_id),
-            None
+            (p for p in self.registry.get("plugins", []) if p["id"] == plugin_id), None
         )
 
         if not plugin:
@@ -139,12 +138,13 @@ class PluginManager:
 
         # Check if already installed
         existing = next(
-            (p for p in self.registry.get("plugins", []) if p["id"] == plugin_id),
-            None
+            (p for p in self.registry.get("plugins", []) if p["id"] == plugin_id), None
         )
 
         if existing:
-            print(f"⚠️  Plugin {plugin_id} is already installed (version {existing['version']})")
+            print(
+                f"⚠️  Plugin {plugin_id} is already installed (version {existing['version']})"
+            )
             print("   Use 'update' command to upgrade")
             return
 
@@ -157,8 +157,7 @@ class PluginManager:
     def info(self, plugin_id: str):
         """Show detailed info about a plugin"""
         plugin = next(
-            (p for p in self.registry.get("plugins", []) if p["id"] == plugin_id),
-            None
+            (p for p in self.registry.get("plugins", []) if p["id"] == plugin_id), None
         )
 
         if not plugin:
@@ -177,9 +176,9 @@ class PluginManager:
             print(f"  Repository: {upstream['repository']}")
             print(f"  License: {upstream['license']}")
             print(f"  Author: {upstream['author']['name']}")
-            if 'email' in upstream['author']:
+            if "email" in upstream["author"]:
                 print(f"  Email: {upstream['author']['email']}")
-            if 'url' in upstream['author']:
+            if "url" in upstream["author"]:
                 print(f"  URL: {upstream['author']['url']}")
 
         if plugin.get("source"):
@@ -215,29 +214,33 @@ Examples:
   python scripts/plugin_manager.py check-updates
   python scripts/plugin_manager.py diff-upstream python-development
   python scripts/plugin_manager.py install python-development@1.3.0
-        """
+        """,
     )
 
-    subparsers = parser.add_subparsers(dest='command', help='Commands')
+    subparsers = parser.add_subparsers(dest="command", help="Commands")
 
     # List command
-    parser_list = subparsers.add_parser('list', help='List installed plugins')
-    parser_list.add_argument('-v', '--verbose', action='store_true', help='Verbose output')
+    parser_list = subparsers.add_parser("list", help="List installed plugins")
+    parser_list.add_argument(
+        "-v", "--verbose", action="store_true", help="Verbose output"
+    )
 
     # Info command
-    parser_info = subparsers.add_parser('info', help='Show plugin details')
-    parser_info.add_argument('plugin_id', help='Plugin ID')
+    parser_info = subparsers.add_parser("info", help="Show plugin details")
+    parser_info.add_argument("plugin_id", help="Plugin ID")
 
     # Check updates command
-    subparsers.add_parser('check-updates', help='Check for available updates')
+    subparsers.add_parser("check-updates", help="Check for available updates")
 
     # Diff upstream command
-    parser_diff = subparsers.add_parser('diff-upstream', help='Compare with upstream')
-    parser_diff.add_argument('plugin_id', help='Plugin ID')
+    parser_diff = subparsers.add_parser("diff-upstream", help="Compare with upstream")
+    parser_diff.add_argument("plugin_id", help="Plugin ID")
 
     # Install command
-    parser_install = subparsers.add_parser('install', help='Install plugin')
-    parser_install.add_argument('plugin_spec', help='Plugin ID with optional version (e.g., name@1.0.0)')
+    parser_install = subparsers.add_parser("install", help="Install plugin")
+    parser_install.add_argument(
+        "plugin_spec", help="Plugin ID with optional version (e.g., name@1.0.0)"
+    )
 
     args = parser.parse_args()
 
@@ -247,15 +250,15 @@ Examples:
 
     manager = PluginManager()
 
-    if args.command == 'list':
+    if args.command == "list":
         manager.list_plugins(verbose=args.verbose)
-    elif args.command == 'info':
+    elif args.command == "info":
         manager.info(args.plugin_id)
-    elif args.command == 'check-updates':
+    elif args.command == "check-updates":
         manager.check_updates()
-    elif args.command == 'diff-upstream':
+    elif args.command == "diff-upstream":
         manager.diff_upstream(args.plugin_id)
-    elif args.command == 'install':
+    elif args.command == "install":
         manager.install(args.plugin_spec)
 
 

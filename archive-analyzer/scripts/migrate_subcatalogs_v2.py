@@ -342,7 +342,7 @@ def main():
         if not args.dry_run:
             conn.commit()
 
-        print(f"\n=== 완료 ===")
+        print("\n=== 완료 ===")
         print(f"WSOP: {wsop_count}개")
         print(f"기타: {other_count}개")
         print(f"총계: {wsop_count + other_count}개")

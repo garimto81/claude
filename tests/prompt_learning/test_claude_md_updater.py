@@ -12,7 +12,7 @@ import sys
 from pathlib import Path
 
 # 패키지로 임포트 가능하도록 경로 추가
-sys.path.insert(0, os.path.join(os.path.dirname(__file__), '..', '..', 'src', 'agents'))
+sys.path.insert(0, os.path.join(os.path.dirname(__file__), "..", "..", "src", "agents"))
 
 from prompt_learning.claude_md_updater import (
     ClaudeMDUpdater,
@@ -36,7 +36,7 @@ class TestUpdateProposal:
             original_content="old",
             proposed_content="new",
             reason="테스트 이유",
-            confidence=0.85
+            confidence=0.85,
         )
         assert proposal.proposal_id == "test-1"
         assert proposal.confidence == 0.85
@@ -49,7 +49,7 @@ class TestUpdateProposal:
             original_content="",
             proposed_content="",
             reason="",
-            confidence=0.9
+            confidence=0.9,
         )
         assert proposal.is_high_confidence is True
 
@@ -61,7 +61,7 @@ class TestUpdateProposal:
             original_content="",
             proposed_content="",
             reason="",
-            confidence=0.5
+            confidence=0.5,
         )
         assert proposal.is_high_confidence is False
 
@@ -73,7 +73,7 @@ class TestUpdateProposal:
             original_content="old",
             proposed_content="new",
             reason="reason",
-            confidence=0.8
+            confidence=0.8,
         )
         d = proposal.to_dict()
         assert d["proposal_id"] == "test-1"
@@ -116,7 +116,7 @@ class TestGenerateProposal:
             first_seen="",
             last_seen="",
             affected_sessions=[],
-            trend="stable"
+            trend="stable",
         )
         proposal = updater.generate_proposal(pattern)
         assert proposal is not None
@@ -134,7 +134,7 @@ class TestGenerateProposal:
             first_seen="",
             last_seen="",
             affected_sessions=[],
-            trend="increasing"
+            trend="increasing",
         )
         proposal = updater.generate_proposal(pattern)
         assert proposal is not None
@@ -151,7 +151,7 @@ class TestGenerateProposal:
             first_seen="",
             last_seen="",
             affected_sessions=[],
-            trend="stable"
+            trend="stable",
         )
         proposal = updater.generate_proposal(pattern)
         assert proposal is not None
@@ -168,7 +168,7 @@ class TestGenerateProposal:
             first_seen="",
             last_seen="",
             affected_sessions=[],
-            trend="stable"
+            trend="stable",
         )
         proposal = updater.generate_proposal(pattern)
         assert proposal is None
@@ -184,7 +184,7 @@ class TestGenerateProposal:
             first_seen="",
             last_seen="",
             affected_sessions=[],
-            trend="stable"
+            trend="stable",
         )
         pattern2 = Pattern(
             pattern_id="tdd-1",
@@ -194,13 +194,13 @@ class TestGenerateProposal:
             first_seen="",
             last_seen="",
             affected_sessions=[],
-            trend="stable"
+            trend="stable",
         )
         report = PatternReport(
             total_patterns=2,
             critical_patterns=0,
             patterns=[pattern1, pattern2],
-            recommendations=[]
+            recommendations=[],
         )
         proposals = updater.generate_proposals_from_report(report)
         assert len(proposals) == 2
@@ -226,7 +226,7 @@ class TestPreviewChanges:
             first_seen="",
             last_seen="",
             affected_sessions=[],
-            trend="stable"
+            trend="stable",
         )
         updater.generate_proposal(pattern)
         preview = updater.preview_changes()
@@ -253,7 +253,9 @@ class TestApplyProposals:
 
     def test_apply_no_proposals(self):
         """적용할 제안 없음"""
-        with tempfile.NamedTemporaryFile(mode='w', suffix='.md', delete=False, encoding='utf-8') as f:
+        with tempfile.NamedTemporaryFile(
+            mode="w", suffix=".md", delete=False, encoding="utf-8"
+        ) as f:
             f.write("# CLAUDE.md\n")
             temp_path = f.name
 
@@ -267,7 +269,9 @@ class TestApplyProposals:
 
     def test_apply_with_backup(self):
         """백업과 함께 적용"""
-        with tempfile.NamedTemporaryFile(mode='w', suffix='.md', delete=False, encoding='utf-8') as f:
+        with tempfile.NamedTemporaryFile(
+            mode="w", suffix=".md", delete=False, encoding="utf-8"
+        ) as f:
             f.write("# CLAUDE.md\n\n## 1. Critical Instructions\n\nSome content.\n")
             temp_path = f.name
 
@@ -281,7 +285,7 @@ class TestApplyProposals:
                 first_seen="",
                 last_seen="",
                 affected_sessions=[],
-                trend="stable"
+                trend="stable",
             )
             updater.generate_proposal(pattern)
             result = updater.apply_proposals(backup=True)
@@ -308,7 +312,7 @@ class TestRollback:
 
     def test_rollback_backup_not_found(self):
         """백업 파일 없음"""
-        with tempfile.NamedTemporaryFile(mode='w', suffix='.md', delete=False) as f:
+        with tempfile.NamedTemporaryFile(mode="w", suffix=".md", delete=False) as f:
             temp_path = f.name
 
         try:
@@ -320,11 +324,15 @@ class TestRollback:
 
     def test_rollback_success(self):
         """롤백 성공"""
-        with tempfile.NamedTemporaryFile(mode='w', suffix='.md', delete=False, encoding='utf-8') as f:
+        with tempfile.NamedTemporaryFile(
+            mode="w", suffix=".md", delete=False, encoding="utf-8"
+        ) as f:
             f.write("modified content")
             temp_path = f.name
 
-        with tempfile.NamedTemporaryFile(mode='w', suffix='.md.backup', delete=False, encoding='utf-8') as f:
+        with tempfile.NamedTemporaryFile(
+            mode="w", suffix=".md.backup", delete=False, encoding="utf-8"
+        ) as f:
             f.write("original content")
             backup_path = f.name
 
@@ -355,7 +363,7 @@ class TestProposalManagement:
             first_seen="",
             last_seen="",
             affected_sessions=[],
-            trend="stable"
+            trend="stable",
         )
         updater.generate_proposal(pattern)
         proposals = updater.get_proposals()
@@ -372,7 +380,7 @@ class TestProposalManagement:
             first_seen="",
             last_seen="",
             affected_sessions=[],
-            trend="stable"
+            trend="stable",
         )
         updater.generate_proposal(pattern)
         assert len(updater.get_proposals()) == 1
@@ -400,7 +408,7 @@ class TestConvenienceFunctions:
             first_seen="",
             last_seen="",
             affected_sessions=[],
-            trend="stable"
+            trend="stable",
         )
         proposal = propose_update(pattern, "/path/to/CLAUDE.md")
         assert proposal is not None

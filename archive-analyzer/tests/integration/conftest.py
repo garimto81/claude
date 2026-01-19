@@ -3,7 +3,6 @@
 #22: 통합 테스트용 공통 픽스처
 """
 
-import os
 import sqlite3
 import tempfile
 from pathlib import Path

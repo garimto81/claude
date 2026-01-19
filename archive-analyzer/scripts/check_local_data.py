@@ -3,6 +3,7 @@
 import os
 import sqlite3
 
+
 def check_local_db():
     """로컬 데이터베이스 확인"""
     print("=" * 60)

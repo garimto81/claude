@@ -7,7 +7,6 @@ import os
 from dataclasses import dataclass, field
 from typing import Optional
 
-
 # Model Tiering Strategy
 # 문서에서는 간략히 'sonnet', 'haiku'로 표기
 AGENT_MODEL_TIERS = {

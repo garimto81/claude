@@ -11,7 +11,7 @@ import os
 import sys
 
 # 패키지로 임포트 가능하도록 경로 추가
-sys.path.insert(0, os.path.join(os.path.dirname(__file__), '..', '..', 'src', 'agents'))
+sys.path.insert(0, os.path.join(os.path.dirname(__file__), "..", "..", "src", "agents"))
 
 from prompt_learning.dspy_optimizer import (
     DSPyOptimizer,
@@ -33,7 +33,7 @@ class TestPhaseSignature:
             phase=0,
             input_fields=["content"],
             output_fields=["is_valid"],
-            instructions="검증 수행"
+            instructions="검증 수행",
         )
         assert sig.phase == 0
         assert "content" in sig.input_fields
@@ -42,10 +42,7 @@ class TestPhaseSignature:
     def test_to_dict(self):
         """딕셔너리 변환"""
         sig = PhaseSignature(
-            phase=1,
-            input_fields=["a", "b"],
-            output_fields=["c"],
-            instructions="test"
+            phase=1, input_fields=["a", "b"], output_fields=["c"], instructions="test"
         )
         d = sig.to_dict()
         assert d["phase"] == 1
@@ -58,7 +55,7 @@ class TestPhaseSignature:
             "input_fields": ["x"],
             "output_fields": ["y"],
             "instructions": "inst",
-            "examples": [{"in": 1, "out": 2}]
+            "examples": [{"in": 1, "out": 2}],
         }
         sig = PhaseSignature.from_dict(data)
         assert sig.phase == 2
@@ -105,7 +102,7 @@ class TestDSPyOptimizer:
             phase=5,
             input_fields=["test"],
             output_fields=["result"],
-            instructions="new phase"
+            instructions="new phase",
         )
         opt.set_signature(5, new_sig)
         assert opt.get_signature(5) == new_sig
@@ -180,7 +177,7 @@ class TestOptimizationResult:
             status=OptimizationStatus.COMPLETED,
             original_score=0.6,
             optimized_score=0.8,
-            improvement=0.2
+            improvement=0.2,
         )
         assert result.is_successful is True
 
@@ -190,7 +187,7 @@ class TestOptimizationResult:
             status=OptimizationStatus.FAILED,
             original_score=0.6,
             optimized_score=0.6,
-            improvement=0.0
+            improvement=0.0,
         )
         assert result.is_successful is False
 
@@ -200,7 +197,7 @@ class TestOptimizationResult:
             status=OptimizationStatus.COMPLETED,
             original_score=0.6,
             optimized_score=0.6,
-            improvement=0.0
+            improvement=0.0,
         )
         assert result.is_successful is False
 
@@ -214,7 +211,7 @@ class TestPersistence:
         initial_examples = len(opt.signatures[0].examples)
         opt.add_example(0, {"test": "example"})
 
-        with tempfile.NamedTemporaryFile(mode='w', suffix='.json', delete=False) as f:
+        with tempfile.NamedTemporaryFile(mode="w", suffix=".json", delete=False) as f:
             temp_path = f.name
 
         try:

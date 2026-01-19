@@ -16,6 +16,7 @@ from .auth import DEFAULT_FOLDER_ID
 @dataclass
 class ConvertResult:
     """변환 결과"""
+
     source_file: Path
     success: bool
     doc_url: Optional[str] = None
@@ -48,7 +49,9 @@ class BatchConverter:
         if not files:
             return []
 
-        print(f"[BatchConverter] {len(files)}개 파일 변환 시작 (병렬도: {self.parallel})")
+        print(
+            f"[BatchConverter] {len(files)}개 파일 변환 시작 (병렬도: {self.parallel})"
+        )
 
         tasks = [self._convert_single(file) for file in files]
         results = await asyncio.gather(*tasks, return_exceptions=False)
@@ -110,7 +113,7 @@ class BatchConverter:
 
     def _read_file(self, file_path: Path) -> str:
         """파일 읽기 (UTF-8)"""
-        return file_path.read_text(encoding='utf-8')
+        return file_path.read_text(encoding="utf-8")
 
     def convert_directory(
         self,
@@ -139,7 +142,9 @@ class BatchConverter:
             files = list(directory.glob(pattern))
 
         if not files:
-            print(f"[BatchConverter] {directory}에서 {pattern} 파일을 찾을 수 없습니다.")
+            print(
+                f"[BatchConverter] {directory}에서 {pattern} 파일을 찾을 수 없습니다."
+            )
             return []
 
         # 비동기 실행

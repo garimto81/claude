@@ -25,7 +25,9 @@ def load_usage_data() -> dict:
 def save_usage_data(data: dict) -> None:
     """사용 데이터 저장"""
     LOG_FILE.parent.mkdir(parents=True, exist_ok=True)
-    LOG_FILE.write_text(json.dumps(data, indent=2, ensure_ascii=False), encoding="utf-8")
+    LOG_FILE.write_text(
+        json.dumps(data, indent=2, ensure_ascii=False), encoding="utf-8"
+    )
 
 
 def log_command(command: str, subcommand: str = None) -> None:
@@ -44,7 +46,7 @@ def log_command(command: str, subcommand: str = None) -> None:
         data["commands"][full_command] = {
             "count": 0,
             "first_used": timestamp,
-            "last_used": timestamp
+            "last_used": timestamp,
         }
 
     data["commands"][full_command]["count"] += 1
@@ -73,9 +75,7 @@ def show_stats() -> None:
 
     # 사용 빈도순 정렬
     sorted_commands = sorted(
-        data["commands"].items(),
-        key=lambda x: x[1]["count"],
-        reverse=True
+        data["commands"].items(), key=lambda x: x[1]["count"], reverse=True
     )
 
     print("커맨드별 사용 횟수:")

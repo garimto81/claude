@@ -33,36 +33,30 @@ class AgentUsageAnalyzer:
             # Return default config
             return {
                 "enabled": True,
-                "log_analysis": {
-                    "max_log_size_mb": 10,
-                    "parse_timeout_seconds": 5
-                },
+                "log_analysis": {"max_log_size_mb": 10, "parse_timeout_seconds": 5},
                 "improvement": {
                     "auto_generate": True,
                     "model": "claude-sonnet-4-20250514",
-                    "max_suggestions": 5
+                    "max_suggestions": 5,
                 },
                 "git_metadata": {
                     "enabled": True,
                     "use_trailer": True,
-                    "amend_commit": True
+                    "amend_commit": True,
                 },
-                "notification": {
-                    "console_output": True,
-                    "save_to_file": True
-                }
+                "notification": {"console_output": True, "save_to_file": True},
             }
 
-        with open(self.config_path, 'r', encoding='utf-8') as f:
+        with open(self.config_path, "r", encoding="utf-8") as f:
             return json.load(f)
 
     def detect_claude_log_dir(self) -> Optional[Path]:
         """Detect Claude Code log directory based on OS"""
-        if os.name == 'nt':  # Windows
-            appdata = os.getenv('APPDATA')
+        if os.name == "nt":  # Windows
+            appdata = os.getenv("APPDATA")
             if appdata:
                 return Path(appdata) / "Claude" / "logs"
-        elif sys.platform == 'darwin':  # macOS
+        elif sys.platform == "darwin":  # macOS
             home = Path.home()
             return home / "Library" / "Logs" / "Claude"
         else:  # Linux
@@ -96,40 +90,39 @@ class AgentUsageAnalyzer:
         # Regex patterns for log parsing
         # Pattern 1: Task execution start
         task_start_pattern = re.compile(
-            r'\[(\d{4}-\d{2}-\d{2}[T\s]\d{2}:\d{2}:\d{2}(?:\.\d+)?(?:Z)?)\].*?'
-            r'(?:Task execution started|Starting task|Agent execution|Invoking agent)',
-            re.IGNORECASE
+            r"\[(\d{4}-\d{2}-\d{2}[T\s]\d{2}:\d{2}:\d{2}(?:\.\d+)?(?:Z)?)\].*?"
+            r"(?:Task execution started|Starting task|Agent execution|Invoking agent)",
+            re.IGNORECASE,
         )
 
         # Pattern 2: Agent type
         agent_type_pattern = re.compile(
             r'(?:Agent type|agent_type|subagent_type):\s*["\']?([a-zA-Z0-9_-]+)["\']?',
-            re.IGNORECASE
+            re.IGNORECASE,
         )
 
         # Pattern 3: Prompt
         prompt_pattern = re.compile(
-            r'(?:Prompt|prompt|description):\s*["\']([^"\']{1,500})["\']',
-            re.IGNORECASE
+            r'(?:Prompt|prompt|description):\s*["\']([^"\']{1,500})["\']', re.IGNORECASE
         )
 
         # Pattern 4: Task completion
         task_complete_pattern = re.compile(
-            r'\[(\d{4}-\d{2}-\d{2}[T\s]\d{2}:\d{2}:\d{2}(?:\.\d+)?(?:Z)?)\].*?'
-            r'(?:Task (?:execution )?completed|Agent completed|Finished|Success).*?'
-            r'(?:\((\d+\.?\d*)\s*(?:s|sec|seconds?)?\))?',
-            re.IGNORECASE
+            r"\[(\d{4}-\d{2}-\d{2}[T\s]\d{2}:\d{2}:\d{2}(?:\.\d+)?(?:Z)?)\].*?"
+            r"(?:Task (?:execution )?completed|Agent completed|Finished|Success).*?"
+            r"(?:\((\d+\.?\d*)\s*(?:s|sec|seconds?)?\))?",
+            re.IGNORECASE,
         )
 
         # Pattern 5: Task failure
         task_failed_pattern = re.compile(
-            r'\[(\d{4}-\d{2}-\d{2}[T\s]\d{2}:\d{2}:\d{2}(?:\.\d+)?(?:Z)?)\].*?'
-            r'(?:ERROR|FAILED|Task failed|Agent failed|Exception):\s*(.+)',
-            re.IGNORECASE
+            r"\[(\d{4}-\d{2}-\d{2}[T\s]\d{2}:\d{2}:\d{2}(?:\.\d+)?(?:Z)?)\].*?"
+            r"(?:ERROR|FAILED|Task failed|Agent failed|Exception):\s*(.+)",
+            re.IGNORECASE,
         )
 
         try:
-            with open(log_path, 'r', encoding='utf-8', errors='ignore') as f:
+            with open(log_path, "r", encoding="utf-8", errors="ignore") as f:
                 current_task = None
                 lines = []
 
@@ -151,7 +144,7 @@ class AgentUsageAnalyzer:
                             "parameters": {},
                             "status": "unknown",
                             "duration": 0.0,
-                            "error": None
+                            "error": None,
                         }
                         continue
 
@@ -194,7 +187,7 @@ class AgentUsageAnalyzer:
         except Exception as e:
             # Log error but don't fail
             error_log = self.repo_root / ".claude" / "optimizer-error.log"
-            with open(error_log, 'a', encoding='utf-8') as f:
+            with open(error_log, "a", encoding="utf-8") as f:
                 f.write(f"{datetime.now()}: Log parsing error: {str(e)}\n")
 
         return agent_calls
@@ -208,11 +201,17 @@ class AgentUsageAnalyzer:
                 error = call.get("error", "").lower()
                 cause = "unknown"
 
-                if any(word in error for word in ["timeout", "timed out", "time limit"]):
+                if any(
+                    word in error for word in ["timeout", "timed out", "time limit"]
+                ):
                     cause = "timeout"
-                elif any(word in error for word in ["not found", "cannot find", "missing"]):
+                elif any(
+                    word in error for word in ["not found", "cannot find", "missing"]
+                ):
                     cause = "missing_context"
-                elif any(word in error for word in ["invalid", "error", "failed to parse"]):
+                elif any(
+                    word in error for word in ["invalid", "error", "failed to parse"]
+                ):
                     cause = "parameter_error"
                 elif len(call.get("prompt", "")) < 20:
                     cause = "ambiguous_prompt"
@@ -233,9 +232,10 @@ class AgentUsageAnalyzer:
         try:
             # Check if anthropic is available
             import anthropic
+
             client = anthropic.Anthropic()
 
-            for failure in failures[:self.config["improvement"]["max_suggestions"]]:
+            for failure in failures[: self.config["improvement"]["max_suggestions"]]:
                 prompt_text = f"""이 프롬프트가 Agent 실행에 실패했습니다:
 
 Agent: {failure['agent_type']}
@@ -248,18 +248,20 @@ Agent: {failure['agent_type']}
                 message = client.messages.create(
                     model=self.config["improvement"]["model"],
                     max_tokens=500,
-                    messages=[{"role": "user", "content": prompt_text}]
+                    messages=[{"role": "user", "content": prompt_text}],
                 )
 
                 improved_prompt = message.content[0].text.strip()
 
-                improvements.append({
-                    "agent": failure["agent_type"],
-                    "original_prompt": failure.get("prompt", ""),
-                    "error": failure.get("error", ""),
-                    "failure_cause": failure.get("failure_cause", "unknown"),
-                    "improved_prompt": improved_prompt
-                })
+                improvements.append(
+                    {
+                        "agent": failure["agent_type"],
+                        "original_prompt": failure.get("prompt", ""),
+                        "error": failure.get("error", ""),
+                        "failure_cause": failure.get("failure_cause", "unknown"),
+                        "improved_prompt": improved_prompt,
+                    }
+                )
 
         except ImportError:
             # anthropic not installed - skip
@@ -267,7 +269,7 @@ Agent: {failure['agent_type']}
         except Exception as e:
             # Log error but don't fail
             error_log = self.repo_root / ".claude" / "optimizer-error.log"
-            with open(error_log, 'a', encoding='utf-8') as f:
+            with open(error_log, "a", encoding="utf-8") as f:
                 f.write(f"{datetime.now()}: Improvement generation error: {str(e)}\n")
 
         return improvements
@@ -280,7 +282,7 @@ Agent: {failure['agent_type']}
         suggestions_file = self.repo_root / ".claude" / "improvement-suggestions.md"
         suggestions_file.parent.mkdir(parents=True, exist_ok=True)
 
-        with open(suggestions_file, 'a', encoding='utf-8') as f:
+        with open(suggestions_file, "a", encoding="utf-8") as f:
             f.write(f"\n## {datetime.now().strftime('%Y-%m-%d %H:%M:%S')}\n\n")
             for improvement in improvements:
                 f.write(f"### Failed Agent: {improvement['agent']}\n")
@@ -308,7 +310,7 @@ Agent: {failure['agent_type']}
             for call in agent_calls:
                 safe_call = {
                     "agent": call.get("agent_type", "unknown"),
-                    "status": call.get("status", "unknown")
+                    "status": call.get("status", "unknown"),
                 }
 
                 if call.get("duration"):
@@ -320,7 +322,9 @@ Agent: {failure['agent_type']}
                 safe_calls.append(safe_call)
 
             # Serialize to JSON (compact)
-            usage_json = json.dumps(safe_calls, separators=(',', ':'), ensure_ascii=False)
+            usage_json = json.dumps(
+                safe_calls, separators=(",", ":"), ensure_ascii=False
+            )
 
             # Get current commit message
             result = subprocess.run(
@@ -328,7 +332,7 @@ Agent: {failure['agent_type']}
                 capture_output=True,
                 text=True,
                 check=True,
-                cwd=self.repo_root
+                cwd=self.repo_root,
             )
             current_message = result.stdout.strip()
 
@@ -346,13 +350,13 @@ Agent: {failure['agent_type']}
                 check=True,
                 cwd=self.repo_root,
                 stdout=subprocess.DEVNULL,
-                stderr=subprocess.DEVNULL
+                stderr=subprocess.DEVNULL,
             )
 
         except Exception as e:
             # Log error but don't fail
             error_log = self.repo_root / ".claude" / "optimizer-error.log"
-            with open(error_log, 'a', encoding='utf-8') as f:
+            with open(error_log, "a", encoding="utf-8") as f:
                 f.write(f"{datetime.now()}: Git metadata error: {str(e)}\n")
 
     def notify(self, failures: List[Dict]):
@@ -373,9 +377,13 @@ Agent: {failure['agent_type']}
             print(f"    Error: {failure['error']}")
 
         try:
-            print("\n💡 See improvement suggestions: .claude/improvement-suggestions.md\n")
+            print(
+                "\n💡 See improvement suggestions: .claude/improvement-suggestions.md\n"
+            )
         except UnicodeEncodeError:
-            print("\n[i] See improvement suggestions: .claude/improvement-suggestions.md\n")
+            print(
+                "\n[i] See improvement suggestions: .claude/improvement-suggestions.md\n"
+            )
 
     def run(self):
         """Main execution"""
@@ -417,7 +425,7 @@ def main():
         # Silently fail - don't block the commit
         # Log to file for debugging
         error_log = Path(__file__).parent.parent / "optimizer-error.log"
-        with open(error_log, 'a', encoding='utf-8') as f:
+        with open(error_log, "a", encoding="utf-8") as f:
             f.write(f"{datetime.now()}: {str(e)}\n")
 
 

@@ -16,7 +16,9 @@ class BaseAIClient(ABC):
         self.model_name = model_name
 
     @abstractmethod
-    async def analyze(self, task: str, context: dict[str, Any] | None = None) -> dict[str, Any]:
+    async def analyze(
+        self, task: str, context: dict[str, Any] | None = None
+    ) -> dict[str, Any]:
         """Analyze task and return structured response.
 
         Args:
@@ -46,7 +48,10 @@ class BaseAIClient(ABC):
 
     @abstractmethod
     async def debate(
-        self, task: str, own_position: dict[str, Any], opposing_views: list[dict[str, Any]]
+        self,
+        task: str,
+        own_position: dict[str, Any],
+        opposing_views: list[dict[str, Any]],
     ) -> dict[str, Any]:
         """Participate in debate round.
 

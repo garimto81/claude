@@ -32,9 +32,7 @@ async def get_stats_overview(
 
     # Get top 5 augments
     top_augments_query = (
-        select(AugmentScore)
-        .order_by(AugmentScore.weighted_score.desc())
-        .limit(5)
+        select(AugmentScore).order_by(AugmentScore.weighted_score.desc()).limit(5)
     )
     top_augments_results = session.exec(top_augments_query).all()
 
@@ -52,9 +50,7 @@ async def get_stats_overview(
 
     # Get top 5 champions
     top_champions_query = (
-        select(ChampionScore)
-        .order_by(ChampionScore.weighted_score.desc())
-        .limit(5)
+        select(ChampionScore).order_by(ChampionScore.weighted_score.desc()).limit(5)
     )
     top_champions_results = session.exec(top_champions_query).all()
 

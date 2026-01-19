@@ -17,11 +17,11 @@ Usage:
     python scripts/generate_report.py --all -o data/output/
 """
 
-import sys
-import os
 import argparse
-from pathlib import Path
+import os
+import sys
 from datetime import datetime
+from pathlib import Path
 
 # Windows 콘솔 UTF-8 설정
 if sys.platform == 'win32':
@@ -32,7 +32,7 @@ if sys.platform == 'win32':
 sys.path.insert(0, str(Path(__file__).parent.parent / "src"))
 
 from archive_analyzer.database import Database
-from archive_analyzer.report_generator import ReportGenerator, ReportFormatter, ArchiveReport
+from archive_analyzer.report_generator import ReportFormatter, ReportGenerator
 
 
 def main():
@@ -111,7 +111,7 @@ Examples:
         report = generator.generate(archive_path=args.archive_path)
 
         if not args.quiet:
-            print(f"리포트 생성 완료!")
+            print("리포트 생성 완료!")
             print()
 
         # 출력

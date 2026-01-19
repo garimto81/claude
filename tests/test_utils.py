@@ -51,6 +51,7 @@ class TestTimer:
 
     def test_timer_measures_time(self, capsys):
         """타이머가 실행 시간을 측정"""
+
         @timer
         def slow_function():
             time.sleep(0.01)
@@ -65,6 +66,7 @@ class TestTimer:
 
     def test_timer_preserves_return_value(self):
         """타이머가 반환값을 보존"""
+
         @timer
         def add(a, b):
             return a + b
@@ -74,6 +76,7 @@ class TestTimer:
 
     def test_timer_preserves_function_name(self):
         """타이머가 함수 이름을 보존"""
+
         @timer
         def my_function():
             pass
@@ -87,6 +90,7 @@ class TestRunWithTimeout:
     @pytest.mark.asyncio
     async def test_successful_execution(self):
         """성공적인 실행"""
+
         async def fast_task():
             await asyncio.sleep(0.01)
             return "completed"
@@ -101,6 +105,7 @@ class TestRunWithTimeout:
     @pytest.mark.asyncio
     async def test_timeout_execution(self):
         """타임아웃 발생"""
+
         async def slow_task():
             await asyncio.sleep(10)
             return "completed"
@@ -116,6 +121,7 @@ class TestRunWithTimeout:
     @pytest.mark.asyncio
     async def test_exception_handling(self):
         """예외 처리"""
+
         async def failing_task():
             raise ValueError("Test error")
 
@@ -130,6 +136,7 @@ class TestRunWithTimeout:
     @pytest.mark.asyncio
     async def test_default_fallback_value(self):
         """기본 fallback 값"""
+
         async def failing_task():
             raise ValueError("Test error")
 

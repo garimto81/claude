@@ -30,7 +30,9 @@ class IndexCalculationError(GoogleDocsConverterError):
     """인덱스 계산 오류"""
 
     def __init__(self, message: str, expected: int = 0, actual: int = 0):
-        super().__init__(f"Index error: {message} (expected={expected}, actual={actual})")
+        super().__init__(
+            f"Index error: {message} (expected={expected}, actual={actual})"
+        )
         self.expected = expected
         self.actual = actual
 

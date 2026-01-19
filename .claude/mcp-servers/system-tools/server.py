@@ -50,7 +50,10 @@ class SystemToolsServer:
                 "inputSchema": {
                     "type": "object",
                     "properties": {
-                        "status": {"type": "string", "enum": ["running", "completed", "all"]},
+                        "status": {
+                            "type": "string",
+                            "enum": ["running", "completed", "all"],
+                        },
                     },
                 },
             },
@@ -60,13 +63,18 @@ class SystemToolsServer:
                 "inputSchema": {
                     "type": "object",
                     "properties": {
-                        "category": {"type": "string", "enum": ["cpu", "memory", "disk", "all"]},
+                        "category": {
+                            "type": "string",
+                            "enum": ["cpu", "memory", "disk", "all"],
+                        },
                     },
                 },
             },
         ]
 
-    def kill_process(self, pid: int = None, name: str = None, force: bool = False) -> dict:
+    def kill_process(
+        self, pid: int = None, name: str = None, force: bool = False
+    ) -> dict:
         """프로세스 종료"""
         if pid is None and name is None:
             return {"success": False, "error": "pid 또는 name 필요"}
@@ -120,7 +128,7 @@ class SystemToolsServer:
             result = {
                 "protocolVersion": "2024-11-05",
                 "capabilities": {"tools": {}},
-                "serverInfo": {"name": "system-tools", "version": "1.0.0"}
+                "serverInfo": {"name": "system-tools", "version": "1.0.0"},
             }
         elif method == "notifications/initialized":
             return None  # No response for notifications
@@ -131,7 +139,9 @@ class SystemToolsServer:
             arguments = params.get("arguments", {})
             if tool_name in self.tools:
                 tool_result = self.tools[tool_name](**arguments)
-                result = {"content": [{"type": "text", "text": json.dumps(tool_result)}]}
+                result = {
+                    "content": [{"type": "text", "text": json.dumps(tool_result)}]
+                }
             else:
                 error = {"code": -32601, "message": f"Unknown tool: {tool_name}"}
         else:
@@ -153,7 +163,7 @@ class SystemToolsServer:
                 error_response = {
                     "jsonrpc": "2.0",
                     "id": None,
-                    "error": {"code": -32700, "message": "Parse error"}
+                    "error": {"code": -32700, "message": "Parse error"},
                 }
                 print(json.dumps(error_response), flush=True)
 

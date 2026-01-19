@@ -340,21 +340,21 @@ def main():
                     print(f"   - {table}")
 
             if results["sample_data"]:
-                print(f"\n🔗 멀티 카탈로그 파일 샘플:")
+                print("\n🔗 멀티 카탈로그 파일 샘플:")
                 for row in results["sample_data"]:
                     print(f"   - File {row[0]}: [{row[1]}] ({row[2]}개 카탈로그)")
 
         elif args.rollback:
             print(f"{'🔍 롤백 시뮬레이션' if args.dry_run else '🗑️  롤백 실행'}\n")
             results = rollback(conn, dry_run=args.dry_run)
-            print(f"\n📊 결과:")
+            print("\n📊 결과:")
             print(f"   삭제된 테이블: {len(results['tables_dropped'])}")
 
         else:
             print(f"{'🔍 마이그레이션 시뮬레이션' if args.dry_run else '🚀 마이그레이션 실행'}\n")
             results = migrate(conn, dry_run=args.dry_run)
 
-            print(f"\n📊 결과:")
+            print("\n📊 결과:")
             print(f"   생성된 테이블: {len(results['tables_created'])}")
             print(f"   스킵된 테이블: {len(results['tables_skipped'])}")
             print(f"   생성된 인덱스: {len(results['indexes_created'])}")

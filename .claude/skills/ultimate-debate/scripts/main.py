@@ -12,6 +12,7 @@ sys.path.insert(0, str(Path(__file__).parent))
 # Core Engine 어댑터 사용 시도, 실패 시 레거시 모드
 try:
     from adapter import UltimateDebateAdapter, CORE_AVAILABLE, load_debate_context
+
     USE_ADAPTER = CORE_AVAILABLE
 except ImportError:
     USE_ADAPTER = False
@@ -138,7 +139,9 @@ def run_debate(task: str, max_rounds: int = 5, threshold: float = 0.8) -> dict:
     # Note: AI clients should be registered here
     # For now, runs with mock data
 
-    print(f"Starting debate: {debate.engine.task_id if USE_ADAPTER else debate.task_id}")
+    print(
+        f"Starting debate: {debate.engine.task_id if USE_ADAPTER else debate.task_id}"
+    )
     print(f"Task: {task}")
     print(f"Max rounds: {max_rounds}")
     print(f"Threshold: {threshold}\n")

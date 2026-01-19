@@ -38,13 +38,13 @@ def process_file(
         print(f"[FAIL] 파일을 찾을 수 없습니다: {file_path}")
         return None
 
-    content = file_path.read_text(encoding='utf-8')
+    content = file_path.read_text(encoding="utf-8")
 
     # 제목 추출 (첫 번째 H1 또는 파일명)
     if custom_title:
         title = custom_title
     else:
-        title_match = re.search(r'^#\s+(.+)$', content, re.MULTILINE)
+        title_match = re.search(r"^#\s+(.+)$", content, re.MULTILINE)
         title = title_match.group(1) if title_match else file_path.stem
 
     print(f"\n[FILE] {file_path.name}")
@@ -68,8 +68,8 @@ def process_file(
 def main():
     """CLI 메인 함수"""
     parser = argparse.ArgumentParser(
-        prog='python -m lib.google_docs',
-        description='PRD 마크다운을 Google Docs 네이티브 형식으로 변환',
+        prog="python -m lib.google_docs",
+        description="PRD 마크다운을 Google Docs 네이티브 형식으로 변환",
         formatter_class=argparse.RawDescriptionHelpFormatter,
         epilog="""
 Examples:
@@ -90,36 +90,53 @@ Examples:
 
   # 폴더에 문서 목록 조회
   python -m lib.google_docs list
-        """
+        """,
     )
 
-    subparsers = parser.add_subparsers(dest='command', help='명령')
+    subparsers = parser.add_subparsers(dest="command", help="명령")
 
     # convert 명령
-    convert_parser = subparsers.add_parser('convert', help='마크다운을 Google Docs로 변환')
-    convert_parser.add_argument('file', help='마크다운 파일 경로')
-    convert_parser.add_argument('--title', '-t', help='문서 제목 (기본: 파일에서 추출)')
-    convert_parser.add_argument('--folder', '-f', default=DEFAULT_FOLDER_ID,
-                                help=f'Google Drive 폴더 ID (기본: {DEFAULT_FOLDER_ID[:15]}...)')
-    convert_parser.add_argument('--toc', action='store_true', help='목차 포함')
-    convert_parser.add_argument('--native-tables', action='store_true',
-                                help='네이티브 Google Docs 테이블 사용 (실험적)')
-    convert_parser.add_argument('--no-folder', action='store_true',
-                                help='폴더 이동 없이 내 드라이브에 생성')
+    convert_parser = subparsers.add_parser(
+        "convert", help="마크다운을 Google Docs로 변환"
+    )
+    convert_parser.add_argument("file", help="마크다운 파일 경로")
+    convert_parser.add_argument("--title", "-t", help="문서 제목 (기본: 파일에서 추출)")
+    convert_parser.add_argument(
+        "--folder",
+        "-f",
+        default=DEFAULT_FOLDER_ID,
+        help=f"Google Drive 폴더 ID (기본: {DEFAULT_FOLDER_ID[:15]}...)",
+    )
+    convert_parser.add_argument("--toc", action="store_true", help="목차 포함")
+    convert_parser.add_argument(
+        "--native-tables",
+        action="store_true",
+        help="네이티브 Google Docs 테이블 사용 (실험적)",
+    )
+    convert_parser.add_argument(
+        "--no-folder", action="store_true", help="폴더 이동 없이 내 드라이브에 생성"
+    )
 
     # batch 명령
-    batch_parser = subparsers.add_parser('batch', help='여러 파일 배치 변환')
-    batch_parser.add_argument('files', nargs='+', help='마크다운 파일들 (glob 패턴 지원)')
-    batch_parser.add_argument('--folder', '-f', default=DEFAULT_FOLDER_ID,
-                              help='Google Drive 폴더 ID')
-    batch_parser.add_argument('--toc', action='store_true', help='목차 포함')
-    batch_parser.add_argument('--native-tables', action='store_true',
-                              help='네이티브 Google Docs 테이블 사용 (실험적)')
+    batch_parser = subparsers.add_parser("batch", help="여러 파일 배치 변환")
+    batch_parser.add_argument(
+        "files", nargs="+", help="마크다운 파일들 (glob 패턴 지원)"
+    )
+    batch_parser.add_argument(
+        "--folder", "-f", default=DEFAULT_FOLDER_ID, help="Google Drive 폴더 ID"
+    )
+    batch_parser.add_argument("--toc", action="store_true", help="목차 포함")
+    batch_parser.add_argument(
+        "--native-tables",
+        action="store_true",
+        help="네이티브 Google Docs 테이블 사용 (실험적)",
+    )
 
     # list 명령
-    list_parser = subparsers.add_parser('list', help='폴더의 문서 목록 조회')
-    list_parser.add_argument('--folder', '-f', default=DEFAULT_FOLDER_ID,
-                             help='Google Drive 폴더 ID')
+    list_parser = subparsers.add_parser("list", help="폴더의 문서 목록 조회")
+    list_parser.add_argument(
+        "--folder", "-f", default=DEFAULT_FOLDER_ID, help="Google Drive 폴더 ID"
+    )
 
     args = parser.parse_args()
 
@@ -131,7 +148,7 @@ Examples:
     print("Google Docs PRD Converter")
     print("=" * 60)
 
-    if args.command == 'convert':
+    if args.command == "convert":
         folder_id = None if args.no_folder else args.folder
         use_native = args.native_tables
 
@@ -154,14 +171,14 @@ Examples:
             print("[FAILED] 문서 생성 실패")
             sys.exit(1)
 
-    elif args.command == 'batch':
+    elif args.command == "batch":
         use_native = args.native_tables
 
         # 파일 목록 수집
         files = []
         for pattern in args.files:
             path = Path(pattern)
-            if '*' in pattern:
+            if "*" in pattern:
                 # glob 패턴
                 if path.is_absolute():
                     files.extend(path.parent.glob(path.name))
@@ -201,22 +218,26 @@ Examples:
             if url:
                 print(f"       {url}")
 
-    elif args.command == 'list':
+    elif args.command == "list":
         from googleapiclient.discovery import build
         from .auth import get_credentials
 
         creds = get_credentials()
-        drive_service = build('drive', 'v3', credentials=creds)
+        drive_service = build("drive", "v3", credentials=creds)
 
         query = f"'{args.folder}' in parents and mimeType='application/vnd.google-apps.document' and trashed=false"
 
-        results = drive_service.files().list(
-            q=query,
-            pageSize=50,
-            fields="files(id, name, modifiedTime, webViewLink)"
-        ).execute()
+        results = (
+            drive_service.files()
+            .list(
+                q=query,
+                pageSize=50,
+                fields="files(id, name, modifiedTime, webViewLink)",
+            )
+            .execute()
+        )
 
-        files = results.get('files', [])
+        files = results.get("files", [])
 
         print(f"\nDocument List ({len(files)}):")
         print("-" * 60)
@@ -228,5 +249,5 @@ Examples:
     print("=" * 60)
 
 
-if __name__ == '__main__':
+if __name__ == "__main__":
     main()

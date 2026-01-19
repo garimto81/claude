@@ -95,20 +95,21 @@ def main():
             session_info.append(f"🗑️ 임시 파일: {cleaned}개 삭제 완료")
 
         # 세션 상태 저장
-        save_session_state({
-            "branch": state.get("branch", "unknown"),
-            "pending_tasks": pending_tasks,
-            "temp_files": [os.path.basename(f) for f in temp_files],
-            "last_start": state.get("last_start"),
-        })
+        save_session_state(
+            {
+                "branch": state.get("branch", "unknown"),
+                "pending_tasks": pending_tasks,
+                "temp_files": [os.path.basename(f) for f in temp_files],
+                "last_start": state.get("last_start"),
+            }
+        )
 
         # 결과 출력
         if session_info:
             message = "\n".join(session_info)
-            print(json.dumps({
-                "continue": True,
-                "message": f"📍 세션 종료\n\n{message}"
-            }))
+            print(
+                json.dumps({"continue": True, "message": f"📍 세션 종료\n\n{message}"})
+            )
         else:
             print(json.dumps({"continue": True}))
 

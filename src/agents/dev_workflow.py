@@ -20,7 +20,6 @@ from langchain_core.messages import HumanMessage, SystemMessage
 
 from .config import AGENT_MODEL_TIERS
 
-
 # ============================================================================
 # State Definitions
 # ============================================================================
@@ -210,15 +209,13 @@ def architect_node(state: DevWorkflowState) -> dict:
 
     messages = [
         SystemMessage(content=ARCHITECT_PROMPT),
-        HumanMessage(
-            content=f"""
+        HumanMessage(content=f"""
 태스크: {state['task']}
 
 컨텍스트: {json.dumps(context, ensure_ascii=False, indent=2)}
 
 이 태스크에 대한 아키텍처를 설계하세요.
-"""
-        ),
+"""),
     ]
 
     try:
@@ -251,15 +248,13 @@ def coder_node(state: DevWorkflowState) -> dict:
 
     messages = [
         SystemMessage(content=CODER_PROMPT),
-        HumanMessage(
-            content=f"""
+        HumanMessage(content=f"""
 태스크: {state['task']}
 
 컨텍스트: {json.dumps(context, ensure_ascii=False, indent=2)}
 
 이 태스크를 구현하세요.
-"""
-        ),
+"""),
     ]
 
     try:
@@ -292,15 +287,13 @@ def tester_node(state: DevWorkflowState) -> dict:
 
     messages = [
         SystemMessage(content=TESTER_PROMPT),
-        HumanMessage(
-            content=f"""
+        HumanMessage(content=f"""
 태스크: {state['task']}
 
 컨텍스트: {json.dumps(context, ensure_ascii=False, indent=2)}
 
 이 태스크에 대한 테스트를 작성하세요.
-"""
-        ),
+"""),
     ]
 
     try:
@@ -333,15 +326,13 @@ def docs_node(state: DevWorkflowState) -> dict:
 
     messages = [
         SystemMessage(content=DOCS_PROMPT),
-        HumanMessage(
-            content=f"""
+        HumanMessage(content=f"""
 태스크: {state['task']}
 
 컨텍스트: {json.dumps(context, ensure_ascii=False, indent=2)}
 
 이 태스크에 대한 문서를 작성하세요.
-"""
-        ),
+"""),
     ]
 
     try:
@@ -391,8 +382,7 @@ def integrator_node(state: DevWorkflowState) -> dict:
 
     messages = [
         SystemMessage(content=system_prompt),
-        HumanMessage(
-            content=f"""
+        HumanMessage(content=f"""
 원본 태스크: {state['task']}
 
 아키텍처:
@@ -408,8 +398,7 @@ def integrator_node(state: DevWorkflowState) -> dict:
 {state.get('documentation', 'N/A')}
 
 위 결과를 통합하고 최종 보고서를 작성하세요.
-"""
-        ),
+"""),
     ]
 
     response = model.invoke(messages)

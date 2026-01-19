@@ -22,7 +22,9 @@ from collections import defaultdict
 class AgentQuality:
     """Agent 품질 추적 (v2.0)"""
 
-    def __init__(self, agent_name: str, version: str = "1.0.0", log_file: Optional[Path] = None):
+    def __init__(
+        self, agent_name: str, version: str = "1.0.0", log_file: Optional[Path] = None
+    ):
         self.agent = agent_name
         self.version = version
         self.log_file = log_file or Path(".agent-quality-v2.jsonl")
@@ -36,12 +38,12 @@ class AgentQuality:
         if not self.log_file.exists():
             return
 
-        with open(self.log_file, 'r') as f:
+        with open(self.log_file, "r") as f:
             for line in f:
                 try:
                     log = json.loads(line.strip())
-                    if log['agent'] == self.agent:
-                        task = log['task']
+                    if log["agent"] == self.agent:
+                        task = log["task"]
                         self.tasks[task]["attempts"].append(log)
                 except Exception:
                     pass
@@ -54,7 +56,7 @@ class AgentQuality:
         error: Optional[str] = None,
         auto_detected: bool = False,
         test_output: Optional[str] = None,
-        phase: Optional[str] = None
+        phase: Optional[str] = None,
     ):
         """
         Agent 사용 기록
@@ -76,7 +78,7 @@ class AgentQuality:
             "task": task,
             "status": status,
             "duration": duration,
-            "auto_detected": auto_detected
+            "auto_detected": auto_detected,
         }
 
         if error:
@@ -88,8 +90,8 @@ class AgentQuality:
         self.tasks[task]["attempts"].append(log_entry)
 
         # 파일에 기록
-        with open(self.log_file, 'a') as f:
-            f.write(json.dumps(log_entry) + '\n')
+        with open(self.log_file, "a") as f:
+            f.write(json.dumps(log_entry) + "\n")
 
     def calculate_task_statistics(self, attempts: List[Dict]) -> Dict:
         """Task 통계 계산"""
@@ -102,12 +104,12 @@ class AgentQuality:
                 "weighted_rate": None,
                 "avg_duration": None,
                 "last_status": None,
-                "confidence": 0.0
+                "confidence": 0.0,
             }
 
         # 기본 통계
         total = len(attempts)
-        successes = sum(1 for a in attempts if a['status'] == 'pass')
+        successes = sum(1 for a in attempts if a["status"] == "pass")
         failures = total - successes
 
         # 단순 성공률
@@ -122,15 +124,14 @@ class AgentQuality:
             total_weight = sum(weights)
 
             weighted_sum = sum(
-                w * (1 if a['status'] == 'pass' else 0)
-                for w, a in zip(weights, recent)
+                w * (1 if a["status"] == "pass" else 0) for w, a in zip(weights, recent)
             )
             weighted_rate = weighted_sum / total_weight
         else:
             weighted_rate = success_rate
 
         # 평균 duration
-        durations = [a['duration'] for a in attempts if a.get('duration', 0) > 0]
+        durations = [a["duration"] for a in attempts if a.get("duration", 0) > 0]
         avg_duration = sum(durations) / len(durations) if durations else 0
 
         # 신뢰도 (Wilson score interval 기반 단순화)
@@ -152,8 +153,8 @@ class AgentQuality:
             "success_rate": success_rate,
             "weighted_rate": weighted_rate,
             "avg_duration": round(avg_duration, 2),
-            "last_status": attempts[-1]['status'],
-            "confidence": confidence
+            "last_status": attempts[-1]["status"],
+            "confidence": confidence,
         }
 
     def calculate_trend(self, attempts: List[Dict]) -> str:
@@ -166,8 +167,12 @@ class AgentQuality:
         first_half = attempts[:mid]
         second_half = attempts[mid:]
 
-        first_rate = sum(1 for a in first_half if a['status'] == 'pass') / len(first_half)
-        second_rate = sum(1 for a in second_half if a['status'] == 'pass') / len(second_half)
+        first_rate = sum(1 for a in first_half if a["status"] == "pass") / len(
+            first_half
+        )
+        second_rate = sum(1 for a in second_half if a["status"] == "pass") / len(
+            second_half
+        )
 
         diff = second_rate - first_rate
 
@@ -215,7 +220,7 @@ class AgentQuality:
                 "status": "No data",
                 "trend": "insufficient_data",
                 "total_tasks": 0,
-                "tasks": {}
+                "tasks": {},
             }
 
         # Task별 통계 계산
@@ -227,14 +232,11 @@ class AgentQuality:
             stats = self.calculate_task_statistics(data["attempts"])
             trend = self.calculate_trend(data["attempts"])
 
-            task_stats[task] = {
-                **stats,
-                "trend": trend
-            }
+            task_stats[task] = {**stats, "trend": trend}
 
-            if stats['weighted_rate'] is not None:
-                task_rates.append(stats['weighted_rate'])
-                task_confidences.append(stats['confidence'])
+            if stats["weighted_rate"] is not None:
+                task_rates.append(stats["weighted_rate"])
+                task_confidences.append(stats["confidence"])
 
         # 전체 평균
         if task_rates:
@@ -245,7 +247,7 @@ class AgentQuality:
             all_attempts = []
             for data in self.tasks.values():
                 all_attempts.extend(data["attempts"])
-            all_attempts.sort(key=lambda x: x['timestamp'])
+            all_attempts.sort(key=lambda x: x["timestamp"])
             overall_trend = self.calculate_trend(all_attempts)
         else:
             avg_rate = 0.0
@@ -260,14 +262,14 @@ class AgentQuality:
             "status": self.get_status(avg_rate),
             "trend": overall_trend,
             "total_tasks": len(task_stats),
-            "tasks": task_stats
+            "tasks": task_stats,
         }
 
     def print_report(self):
         """리포트 출력"""
         score = self.get_score()
 
-        if score['avg_success_rate'] is None:
+        if score["avg_success_rate"] is None:
             print(f"\n❌ {self.agent}: No data")
             return
 
@@ -276,11 +278,15 @@ class AgentQuality:
         print(f"{'='*60}\n")
 
         # Overall
-        uncertainty = 1 - score['confidence']
-        print(f"Overall Score: {score['weighted_avg']:.0%} ± {uncertainty:.0%} (Grade: {score['grade']})")
+        uncertainty = 1 - score["confidence"]
+        print(
+            f"Overall Score: {score['weighted_avg']:.0%} ± {uncertainty:.0%} (Grade: {score['grade']})"
+        )
         print(f"Status: {score['status']}")
         print(f"Trend: {score['trend']}")
-        print(f"Confidence: {score['confidence']:.0%} ({sum(len(d['attempts']) for d in self.tasks.values())} total attempts)")
+        print(
+            f"Confidence: {score['confidence']:.0%} ({sum(len(d['attempts']) for d in self.tasks.values())} total attempts)"
+        )
         print()
 
         # Task breakdown
@@ -288,9 +294,14 @@ class AgentQuality:
         print(f"{'Task':<40} {'Rate':<8} {'Weight':<8} {'Conf':<6} {'Trend':<10}")
         print("-" * 80)
 
-        for task, stats in score['tasks'].items():
+        for task, stats in score["tasks"].items():
             task_display = task[:37] + "..." if len(task) > 40 else task
-            trend_icon = {"improving": "↗️", "stable": "→", "declining": "↘️", "insufficient_data": "?"}.get(stats['trend'], "?")
+            trend_icon = {
+                "improving": "↗️",
+                "stable": "→",
+                "declining": "↘️",
+                "insufficient_data": "?",
+            }.get(stats["trend"], "?")
 
             print(
                 f"{task_display:<40} "

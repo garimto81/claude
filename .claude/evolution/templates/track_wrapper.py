@@ -19,36 +19,37 @@ import argparse
 from pathlib import Path
 
 # Fix encoding for Windows console
-if sys.platform == 'win32':
-    sys.stdout = io.TextIOWrapper(sys.stdout.buffer, encoding='utf-8', errors='replace')
+if sys.platform == "win32":
+    sys.stdout = io.TextIOWrapper(sys.stdout.buffer, encoding="utf-8", errors="replace")
+
 
 # 전역 레포 경로 자동 감지
 def find_global_repo():
     """전역 레포 (claude01) 경로 찾기"""
     # 1. 환경변수에서 찾기
-    if 'CLAUDE_GLOBAL_REPO' in os.environ:
-        return Path(os.environ['CLAUDE_GLOBAL_REPO'])
+    if "CLAUDE_GLOBAL_REPO" in os.environ:
+        return Path(os.environ["CLAUDE_GLOBAL_REPO"])
 
     # 2. 상대 경로에서 찾기 (형제 디렉토리)
     current = Path.cwd()
 
     # 부모 디렉토리의 claude01 찾기
     parent = current.parent
-    if (parent / 'claude01').exists():
-        return parent / 'claude01'
+    if (parent / "claude01").exists():
+        return parent / "claude01"
 
     # 조부모 디렉토리의 claude01 찾기
     grandparent = parent.parent
-    if (grandparent / 'claude01').exists():
-        return grandparent / 'claude01'
+    if (grandparent / "claude01").exists():
+        return grandparent / "claude01"
 
     # 3. .env 파일에서 찾기
-    env_file = current / '.env'
+    env_file = current / ".env"
     if env_file.exists():
-        with open(env_file, 'r') as f:
+        with open(env_file, "r") as f:
             for line in f:
-                if line.startswith('CLAUDE_GLOBAL_REPO='):
-                    path = line.split('=', 1)[1].strip().strip('"').strip("'")
+                if line.startswith("CLAUDE_GLOBAL_REPO="):
+                    path = line.split("=", 1)[1].strip().strip('"').strip("'")
                     return Path(path)
 
     return None
@@ -71,7 +72,7 @@ if global_repo is None:
     sys.exit(1)
 
 # Python path에 추가
-evolution_path = global_repo / '.claude' / 'evolution'
+evolution_path = global_repo / ".claude" / "evolution"
 if not evolution_path.exists():
     print(f"❌ 전역 레포에 evolution 디렉토리가 없습니다: {evolution_path}")
     sys.exit(1)
@@ -91,18 +92,18 @@ except ImportError as e:
 def main():
     parser = argparse.ArgumentParser(
         description="Agent Quality Tracker (v2.0) - Sub-Repo Wrapper",
-        epilog="Example: python track_wrapper.py debugger 'Fix bug' pass --duration 1.5"
+        epilog="Example: python track_wrapper.py debugger 'Fix bug' pass --duration 1.5",
     )
 
-    parser.add_argument('agent', help='Agent 이름 (예: debugger)')
-    parser.add_argument('task', help='Task 이름 (예: Fix TypeError)')
-    parser.add_argument('status', choices=['pass', 'fail'], help='상태: pass 또는 fail')
+    parser.add_argument("agent", help="Agent 이름 (예: debugger)")
+    parser.add_argument("task", help="Task 이름 (예: Fix TypeError)")
+    parser.add_argument("status", choices=["pass", "fail"], help="상태: pass 또는 fail")
 
-    parser.add_argument('--version', default='1.0.0', help='Agent 버전 (기본: 1.0.0)')
-    parser.add_argument('--phase', help='Phase (예: Phase 1)')
-    parser.add_argument('--duration', type=float, default=0, help='실행 시간 (초)')
-    parser.add_argument('--error', help='에러 메시지 (실패 시)')
-    parser.add_argument('--auto-detected', action='store_true', help='자동 감지 여부')
+    parser.add_argument("--version", default="1.0.0", help="Agent 버전 (기본: 1.0.0)")
+    parser.add_argument("--phase", help="Phase (예: Phase 1)")
+    parser.add_argument("--duration", type=float, default=0, help="실행 시간 (초)")
+    parser.add_argument("--error", help="에러 메시지 (실패 시)")
+    parser.add_argument("--auto-detected", action="store_true", help="자동 감지 여부")
 
     args = parser.parse_args()
 
@@ -115,7 +116,7 @@ def main():
         duration=args.duration,
         error=args.error,
         auto_detected=args.auto_detected,
-        phase=args.phase
+        phase=args.phase,
     )
 
     # 결과 출력
@@ -130,11 +131,11 @@ def main():
 
     # 간단한 통계
     score = quality.get_score()
-    if score['avg_success_rate'] is not None:
-        task_stats = score['tasks'].get(args.task)
+    if score["avg_success_rate"] is not None:
+        task_stats = score["tasks"].get(args.task)
         if task_stats:
-            rate = task_stats['weighted_rate']
-            conf = task_stats['confidence']
+            rate = task_stats["weighted_rate"]
+            conf = task_stats["confidence"]
             print(f"   Task Score: {rate:.0%} (confidence: {conf:.0%})")
 
 

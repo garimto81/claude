@@ -19,7 +19,6 @@ Usage:
 import argparse
 import sqlite3
 import sys
-from datetime import datetime
 from pathlib import Path
 
 # Windows 콘솔 인코딩 설정

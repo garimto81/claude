@@ -23,7 +23,7 @@ def run_command(cmd: list, cwd: Path = PROJECT_DIR) -> Tuple[bool, str]:
             capture_output=True,
             text=True,
             cwd=str(cwd),
-            timeout=300  # 5분 타임아웃
+            timeout=300,  # 5분 타임아웃
         )
         return result.returncode == 0, result.stdout + result.stderr
     except subprocess.TimeoutExpired:
@@ -146,7 +146,9 @@ def recover_dependency_error(error_output: str) -> Tuple[bool, str]:
     return False, "requirements.txt 없음"
 
 
-def attempt_recovery(error_type: str, error_output: str, retry_count: int = 0, max_retries: int = 3) -> Tuple[bool, str]:
+def attempt_recovery(
+    error_type: str, error_output: str, retry_count: int = 0, max_retries: int = 3
+) -> Tuple[bool, str]:
     """에러 유형에 따른 복구 시도
 
     Args:
@@ -223,7 +225,7 @@ def main():
         "success": success,
         "error_type": error_type,
         "message": message,
-        "timestamp": datetime.now().isoformat()
+        "timestamp": datetime.now().isoformat(),
     }
 
     print(json.dumps(result, indent=2, ensure_ascii=False))

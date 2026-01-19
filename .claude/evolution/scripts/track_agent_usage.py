@@ -31,7 +31,8 @@ from pathlib import Path
 
 # Load environment variables
 from dotenv import load_dotenv
-load_dotenv(Path(__file__).parent.parent / '.env')
+
+load_dotenv(Path(__file__).parent.parent / ".env")
 
 try:
     from langfuse import Langfuse
@@ -46,9 +47,9 @@ class AgentTracker:
 
     def __init__(self):
         """Initialize Langfuse client"""
-        self.public_key = os.getenv('LANGFUSE_PUBLIC_KEY')
-        self.secret_key = os.getenv('LANGFUSE_SECRET_KEY')
-        self.host = os.getenv('LANGFUSE_HOST', 'http://localhost:3000')
+        self.public_key = os.getenv("LANGFUSE_PUBLIC_KEY")
+        self.secret_key = os.getenv("LANGFUSE_SECRET_KEY")
+        self.host = os.getenv("LANGFUSE_HOST", "http://localhost:3000")
 
         if not self.public_key or not self.secret_key:
             raise ValueError(
@@ -57,9 +58,7 @@ class AgentTracker:
             )
 
         self.client = Langfuse(
-            public_key=self.public_key,
-            secret_key=self.secret_key,
-            host=self.host
+            public_key=self.public_key, secret_key=self.secret_key, host=self.host
         )
 
         # Session info
@@ -72,7 +71,7 @@ class AgentTracker:
         agent_name: str,
         phase: Optional[str] = None,
         task: Optional[str] = None,
-        metadata: Optional[Dict[str, Any]] = None
+        metadata: Optional[Dict[str, Any]] = None,
     ):
         """
         Agent 실행 추적 컨텍스트 매니저
@@ -92,15 +91,15 @@ class AgentTracker:
         # Create trace
         trace = self.client.trace(
             name=f"agent-{agent_name}",
-            user_id=os.getenv('USER', 'unknown'),
+            user_id=os.getenv("USER", "unknown"),
             session_id=self.session_id,
             metadata={
                 "agent": agent_name,
                 "phase": phase,
                 "task": task,
                 "timestamp": datetime.now().isoformat(),
-                **(metadata or {})
-            }
+                **(metadata or {}),
+            },
         )
 
         self.current_trace = trace
@@ -111,9 +110,7 @@ class AgentTracker:
 
             # Success
             duration = time.time() - start_time
-            trace.update(
-                output={"status": "success", "duration_seconds": duration}
-            )
+            trace.update(output={"status": "success", "duration_seconds": duration})
             print(f"✅ Completed in {duration:.2f}s")
 
         except Exception as e:
@@ -123,7 +120,7 @@ class AgentTracker:
                 output={
                     "status": "error",
                     "error": str(e),
-                    "duration_seconds": duration
+                    "duration_seconds": duration,
                 }
             )
             print(f"❌ Error: {e}")
@@ -138,7 +135,7 @@ class AgentTracker:
         rating: int,
         comment: Optional[str] = None,
         effectiveness: Optional[float] = None,
-        suggestions: Optional[str] = None
+        suggestions: Optional[str] = None,
     ):
         """
         사용자 피드백 수집
@@ -164,9 +161,7 @@ class AgentTracker:
 
         # Rating (1-5 → 0-1 scale)
         self.current_trace.score(
-            name="user_rating",
-            value=rating / 5.0,
-            comment=comment
+            name="user_rating", value=rating / 5.0, comment=comment
         )
 
         # Effectiveness
@@ -174,7 +169,7 @@ class AgentTracker:
             self.current_trace.score(
                 name="effectiveness",
                 value=effectiveness,
-                comment="Agent effectiveness (0=poor, 1=excellent)"
+                comment="Agent effectiveness (0=poor, 1=excellent)",
             )
 
         # Suggestions
@@ -182,7 +177,7 @@ class AgentTracker:
             self.current_trace.score(
                 name="improvement_suggestion",
                 value=1.0,  # Binary: has suggestion
-                comment=suggestions
+                comment=suggestions,
             )
 
         print(f"💬 Feedback recorded: {rating}/5 stars")
@@ -229,7 +224,7 @@ class AgentTracker:
                 rating=rating,
                 comment=comment or None,
                 effectiveness=effectiveness,
-                suggestions=suggestions or None
+                suggestions=suggestions or None,
             )
 
             print("✅ 피드백이 저장되었습니다!\n")
@@ -245,6 +240,7 @@ class AgentTracker:
 # Global singleton
 _tracker = None
 
+
 def get_tracker() -> AgentTracker:
     """Get global tracker instance"""
     global _tracker
@@ -254,15 +250,20 @@ def get_tracker() -> AgentTracker:
 
 
 # Convenience functions
-def track_agent(agent_name: str, phase: Optional[str] = None, task: Optional[str] = None):
+def track_agent(
+    agent_name: str, phase: Optional[str] = None, task: Optional[str] = None
+):
     """Decorator for tracking agent functions"""
+
     def decorator(func):
         def wrapper(*args, **kwargs):
             tracker = get_tracker()
             with tracker.track(agent_name, phase=phase, task=task):
                 result = func(*args, **kwargs)
             return result
+
         return wrapper
+
     return decorator
 
 
@@ -283,10 +284,7 @@ if __name__ == "__main__":
         time.sleep(0.3)
 
     tracker.collect_feedback(
-        agent="context7-engineer",
-        rating=5,
-        comment="Test feedback",
-        effectiveness=0.9
+        agent="context7-engineer", rating=5, comment="Test feedback", effectiveness=0.9
     )
 
     # Test 3: Error handling

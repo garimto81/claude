@@ -66,6 +66,7 @@ class TestBenchmarkSequential:
 
     def test_sequential_with_failures(self):
         """일부 태스크 실패"""
+
         def failing_task():
             raise ValueError("Test error")
 
@@ -124,6 +125,7 @@ class TestBenchmarkParallel:
     @pytest.mark.asyncio
     async def test_parallel_with_async_tasks(self):
         """비동기 태스크 실행"""
+
         async def async_task():
             await asyncio.sleep(0.001)
 
@@ -136,6 +138,7 @@ class TestBenchmarkParallel:
     @pytest.mark.asyncio
     async def test_parallel_with_failures(self):
         """일부 태스크 실패"""
+
         def failing_task():
             raise ValueError("Test error")
 
@@ -148,6 +151,7 @@ class TestBenchmarkParallel:
     @pytest.mark.asyncio
     async def test_parallel_async_failure(self):
         """비동기 태스크 실패"""
+
         async def failing_async_task():
             raise ValueError("Async error")
 

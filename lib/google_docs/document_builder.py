@@ -24,9 +24,9 @@ class GoogleDocsBuilder:
 
     # 전역 표준 색상
     COLORS = {
-        "primary_blue": {"red": 0.10, "green": 0.30, "blue": 0.55},   # #1A4D8C
-        "accent_blue": {"red": 0.20, "green": 0.45, "blue": 0.70},    # #3373B3
-        "dark_gray": {"red": 0.25, "green": 0.25, "blue": 0.25},      # #404040
+        "primary_blue": {"red": 0.10, "green": 0.30, "blue": 0.55},  # #1A4D8C
+        "accent_blue": {"red": 0.20, "green": 0.45, "blue": 0.70},  # #3373B3
+        "dark_gray": {"red": 0.25, "green": 0.25, "blue": 0.25},  # #404040
         "table_header_bg": {"red": 0.90, "green": 0.90, "blue": 0.90},
     }
 
@@ -41,10 +41,10 @@ class GoogleDocsBuilder:
 
         # 정규식 패턴들
         patterns = [
-            (r'\*\*(.+?)\*\*', 'bold'),
-            (r'__(.+?)__', 'bold'),
-            (r'\*(.+?)\*', 'italic'),
-            (r'_(.+?)_', 'italic'),
+            (r"\*\*(.+?)\*\*", "bold"),
+            (r"__(.+?)__", "bold"),
+            (r"\*(.+?)\*", "italic"),
+            (r"_(.+?)_", "italic"),
         ]
 
         # 모든 매치 찾기
@@ -72,12 +72,14 @@ class GoogleDocsBuilder:
                 plain_parts.append(text[current_pos:start])
                 plain_offset += start - current_pos
 
-            styles.append({
-                'start': plain_offset,
-                'end': plain_offset + len(content),
-                'bold': style == 'bold',
-                'italic': style == 'italic',
-            })
+            styles.append(
+                {
+                    "start": plain_offset,
+                    "end": plain_offset + len(content),
+                    "bold": style == "bold",
+                    "italic": style == "italic",
+                }
+            )
 
             plain_parts.append(content)
             plain_offset += len(content)
@@ -86,7 +88,7 @@ class GoogleDocsBuilder:
         if current_pos < len(text):
             plain_parts.append(text[current_pos:])
 
-        return ''.join(plain_parts), styles
+        return "".join(plain_parts), styles
 
     def __init__(self, token_path: Optional[Path] = None):
         self.token_path = token_path or self.DEFAULT_TOKEN_PATH
@@ -138,17 +140,17 @@ class GoogleDocsBuilder:
 
     def create_document(self, title: str, folder_id: Optional[str] = None) -> str:
         """새 문서 생성"""
-        doc = self.docs_service.documents().create(
-            body={"title": title}
-        ).execute()
+        doc = self.docs_service.documents().create(body={"title": title}).execute()
         self.doc_id = doc["documentId"]
 
         # 폴더로 이동 (옵션)
         if folder_id:
             try:
-                file_info = self.drive_service.files().get(
-                    fileId=self.doc_id, fields="parents"
-                ).execute()
+                file_info = (
+                    self.drive_service.files()
+                    .get(fileId=self.doc_id, fields="parents")
+                    .execute()
+                )
                 current_parents = ",".join(file_info.get("parents", []))
                 self.drive_service.files().update(
                     fileId=self.doc_id,
@@ -164,8 +166,7 @@ class GoogleDocsBuilder:
         """페이지 스타일 적용 (A4, 72pt 여백, 115% 줄간격)"""
         requests = [self.style.get_page_style_request()]
         self.docs_service.documents().batchUpdate(
-            documentId=self.doc_id,
-            body={"requests": requests}
+            documentId=self.doc_id, body={"requests": requests}
         ).execute()
 
     def get_current_end_index(self) -> int:
@@ -180,12 +181,11 @@ class GoogleDocsBuilder:
 
         self.docs_service.documents().batchUpdate(
             documentId=self.doc_id,
-            body={"requests": [{
-                "insertText": {
-                    "location": {"index": index},
-                    "text": text
-                }
-            }]}
+            body={
+                "requests": [
+                    {"insertText": {"location": {"index": index}, "text": text}}
+                ]
+            },
         ).execute()
 
         return index + len(text)
@@ -200,26 +200,33 @@ class GoogleDocsBuilder:
         # 스타일 적용
         self.docs_service.documents().batchUpdate(
             documentId=self.doc_id,
-            body={"requests": [
-                {
-                    "updateTextStyle": {
-                        "range": {"startIndex": idx, "endIndex": idx + len(text)},
-                        "textStyle": {
-                            "foregroundColor": {"color": {"rgbColor": self.COLORS["primary_blue"]}},
-                            "bold": True,
-                            "fontSize": {"magnitude": 26, "unit": "PT"}
-                        },
-                        "fields": "foregroundColor,bold,fontSize"
-                    }
-                },
-                {
-                    "updateParagraphStyle": {
-                        "range": {"startIndex": idx, "endIndex": idx + len(text) + 1},
-                        "paragraphStyle": {"namedStyleType": "TITLE"},
-                        "fields": "namedStyleType"
-                    }
-                }
-            ]}
+            body={
+                "requests": [
+                    {
+                        "updateTextStyle": {
+                            "range": {"startIndex": idx, "endIndex": idx + len(text)},
+                            "textStyle": {
+                                "foregroundColor": {
+                                    "color": {"rgbColor": self.COLORS["primary_blue"]}
+                                },
+                                "bold": True,
+                                "fontSize": {"magnitude": 26, "unit": "PT"},
+                            },
+                            "fields": "foregroundColor,bold,fontSize",
+                        }
+                    },
+                    {
+                        "updateParagraphStyle": {
+                            "range": {
+                                "startIndex": idx,
+                                "endIndex": idx + len(text) + 1,
+                            },
+                            "paragraphStyle": {"namedStyleType": "TITLE"},
+                            "fields": "namedStyleType",
+                        }
+                    },
+                ]
+            },
         ).execute()
 
     def insert_heading(self, text: str, level: int = 1):
@@ -244,35 +251,36 @@ class GoogleDocsBuilder:
                     "textStyle": {
                         "foregroundColor": {"color": {"rgbColor": style["color"]}},
                         "bold": True,
-                        "fontSize": {"magnitude": style["size"], "unit": "PT"}
+                        "fontSize": {"magnitude": style["size"], "unit": "PT"},
                     },
-                    "fields": "foregroundColor,bold,fontSize"
+                    "fields": "foregroundColor,bold,fontSize",
                 }
             },
             {
                 "updateParagraphStyle": {
                     "range": {"startIndex": idx, "endIndex": idx + len(text) + 1},
                     "paragraphStyle": {"namedStyleType": f"HEADING_{level}"},
-                    "fields": "namedStyleType"
+                    "fields": "namedStyleType",
                 }
-            }
+            },
         ]
 
         # H1에 하단 구분선
         if style["border"]:
-            requests.append({
-                "updateParagraphStyle": {
-                    "range": {"startIndex": idx, "endIndex": idx + len(text) + 1},
-                    "paragraphStyle": {
-                        "borderBottom": self.style.get_h1_border_style()
-                    },
-                    "fields": "borderBottom"
+            requests.append(
+                {
+                    "updateParagraphStyle": {
+                        "range": {"startIndex": idx, "endIndex": idx + len(text) + 1},
+                        "paragraphStyle": {
+                            "borderBottom": self.style.get_h1_border_style()
+                        },
+                        "fields": "borderBottom",
+                    }
                 }
-            })
+            )
 
         self.docs_service.documents().batchUpdate(
-            documentId=self.doc_id,
-            body={"requests": requests}
+            documentId=self.doc_id, body={"requests": requests}
         ).execute()
 
     def insert_table(self, rows: list[list[str]]) -> int:
@@ -287,13 +295,17 @@ class GoogleDocsBuilder:
         # 1. 테이블 생성
         self.docs_service.documents().batchUpdate(
             documentId=self.doc_id,
-            body={"requests": [{
-                "insertTable": {
-                    "location": {"index": idx},
-                    "rows": num_rows,
-                    "columns": num_cols
-                }
-            }]}
+            body={
+                "requests": [
+                    {
+                        "insertTable": {
+                            "location": {"index": idx},
+                            "rows": num_rows,
+                            "columns": num_cols,
+                        }
+                    }
+                ]
+            },
         ).execute()
 
         # 2. 문서 다시 로드하여 테이블 구조 확인
@@ -321,30 +333,35 @@ class GoogleDocsBuilder:
                 cell_content = cell["content"]
                 if cell_content:
                     cell_start = cell_content[0]["startIndex"]
-                    original_text = rows[row_idx][col_idx] if col_idx < len(rows[row_idx]) else ""
+                    original_text = (
+                        rows[row_idx][col_idx] if col_idx < len(rows[row_idx]) else ""
+                    )
                     if original_text:
                         # 마크다운 파싱 (** 제거)
                         plain_text, styles = self._strip_markdown(original_text)
 
-                        requests.append({
-                            "insertText": {
-                                "location": {"index": cell_start},
-                                "text": plain_text  # 마크다운 기호 제거된 텍스트
+                        requests.append(
+                            {
+                                "insertText": {
+                                    "location": {"index": cell_start},
+                                    "text": plain_text,  # 마크다운 기호 제거된 텍스트
+                                }
                             }
-                        })
+                        )
 
                         # 스타일 정보 저장
                         if styles:
-                            cell_style_info.append({
-                                'cell_start': cell_start,
-                                'styles': styles,
-                                'row_idx': row_idx,
-                            })
+                            cell_style_info.append(
+                                {
+                                    "cell_start": cell_start,
+                                    "styles": styles,
+                                    "row_idx": row_idx,
+                                }
+                            )
 
         if requests:
             self.docs_service.documents().batchUpdate(
-                documentId=self.doc_id,
-                body={"requests": requests}
+                documentId=self.doc_id, body={"requests": requests}
             ).execute()
 
         # 4. 문서 재조회 후 스타일 적용
@@ -374,18 +391,27 @@ class GoogleDocsBuilder:
                                 if text:
                                     start = el["startIndex"]
                                     end = el["endIndex"] - 1
-                                    style_requests.append({
-                                        "updateTextStyle": {
-                                            "range": {"startIndex": start, "endIndex": end},
-                                            "textStyle": {
-                                                "bold": True,
-                                                "foregroundColor": {
-                                                    "color": {"rgbColor": self.COLORS["dark_gray"]}
-                                                }
-                                            },
-                                            "fields": "bold,foregroundColor"
+                                    style_requests.append(
+                                        {
+                                            "updateTextStyle": {
+                                                "range": {
+                                                    "startIndex": start,
+                                                    "endIndex": end,
+                                                },
+                                                "textStyle": {
+                                                    "bold": True,
+                                                    "foregroundColor": {
+                                                        "color": {
+                                                            "rgbColor": self.COLORS[
+                                                                "dark_gray"
+                                                            ]
+                                                        }
+                                                    },
+                                                },
+                                                "fields": "bold,foregroundColor",
+                                            }
                                         }
-                                    })
+                                    )
 
             # 4-2. 데이터 행 색상 + 인라인 스타일
             for row_idx in range(1, num_rows):
@@ -403,58 +429,70 @@ class GoogleDocsBuilder:
                                         start = el["startIndex"]
                                         end = el["endIndex"] - 1
                                         # 본문 색상 적용
-                                        style_requests.append({
-                                            "updateTextStyle": {
-                                                "range": {"startIndex": start, "endIndex": end},
-                                                "textStyle": {
-                                                    "foregroundColor": {
-                                                        "color": {"rgbColor": self.COLORS["dark_gray"]}
-                                                    }
-                                                },
-                                                "fields": "foregroundColor"
+                                        style_requests.append(
+                                            {
+                                                "updateTextStyle": {
+                                                    "range": {
+                                                        "startIndex": start,
+                                                        "endIndex": end,
+                                                    },
+                                                    "textStyle": {
+                                                        "foregroundColor": {
+                                                            "color": {
+                                                                "rgbColor": self.COLORS[
+                                                                    "dark_gray"
+                                                                ]
+                                                            }
+                                                        }
+                                                    },
+                                                    "fields": "foregroundColor",
+                                                }
                                             }
-                                        })
+                                        )
 
             # 4-3. 인라인 스타일 적용 (볼드, 이탤릭)
             for info in cell_style_info:
-                if info['row_idx'] == 0:  # 헤더는 이미 볼드
+                if info["row_idx"] == 0:  # 헤더는 이미 볼드
                     continue
 
-                row = table["tableRows"][info['row_idx']]
+                row = table["tableRows"][info["row_idx"]]
                 for cell in row["tableCells"]:
                     cell_content = cell["content"]
                     if cell_content:
                         para = cell_content[0]
                         if "paragraph" in para:
                             para_start = para.get("startIndex", 0)
-                            for style in info['styles']:
+                            for style in info["styles"]:
                                 style_fields = []
                                 text_style = {}
 
-                                if style.get('bold'):
-                                    text_style['bold'] = True
-                                    style_fields.append('bold')
+                                if style.get("bold"):
+                                    text_style["bold"] = True
+                                    style_fields.append("bold")
 
-                                if style.get('italic'):
-                                    text_style['italic'] = True
-                                    style_fields.append('italic')
+                                if style.get("italic"):
+                                    text_style["italic"] = True
+                                    style_fields.append("italic")
 
                                 if style_fields:
-                                    style_requests.append({
-                                        "updateTextStyle": {
-                                            "range": {
-                                                "startIndex": para_start + style['start'],
-                                                "endIndex": para_start + style['end']
-                                            },
-                                            "textStyle": text_style,
-                                            "fields": ",".join(style_fields)
+                                    style_requests.append(
+                                        {
+                                            "updateTextStyle": {
+                                                "range": {
+                                                    "startIndex": para_start
+                                                    + style["start"],
+                                                    "endIndex": para_start
+                                                    + style["end"],
+                                                },
+                                                "textStyle": text_style,
+                                                "fields": ",".join(style_fields),
+                                            }
                                         }
-                                    })
+                                    )
 
             if style_requests:
                 self.docs_service.documents().batchUpdate(
-                    documentId=self.doc_id,
-                    body={"requests": style_requests}
+                    documentId=self.doc_id, body={"requests": style_requests}
                 ).execute()
 
         return self.get_current_end_index()
@@ -468,13 +506,19 @@ class GoogleDocsBuilder:
         end_index = self.get_current_end_index()
         self.docs_service.documents().batchUpdate(
             documentId=self.doc_id,
-            body={"requests": [{
-                "updateParagraphStyle": {
-                    "range": {"startIndex": 1, "endIndex": end_index - 1},
-                    "paragraphStyle": {"lineSpacing": PAGE_SETTINGS['line_spacing']},
-                    "fields": "lineSpacing"
-                }
-            }]}
+            body={
+                "requests": [
+                    {
+                        "updateParagraphStyle": {
+                            "range": {"startIndex": 1, "endIndex": end_index - 1},
+                            "paragraphStyle": {
+                                "lineSpacing": PAGE_SETTINGS["line_spacing"]
+                            },
+                            "fields": "lineSpacing",
+                        }
+                    }
+                ]
+            },
         ).execute()
 
     def get_document_url(self) -> str:

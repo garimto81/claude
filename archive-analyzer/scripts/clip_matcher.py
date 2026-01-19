@@ -16,17 +16,17 @@
 - REVIEW (<0.4): 수동 검토 필수
 """
 
-import sys
+import csv
 import os
 import re
-import csv
 import sqlite3
-from pathlib import Path
-from dataclasses import dataclass, field
-from typing import Optional, List, Dict, Tuple
-from difflib import SequenceMatcher
+import sys
 from collections import defaultdict
+from dataclasses import dataclass, field
+from difflib import SequenceMatcher
 from enum import Enum
+from pathlib import Path
+from typing import Dict, List, Optional, Tuple
 
 # RapidFuzz import
 try:

@@ -19,7 +19,15 @@ class TestAgentModelTiers:
 
     def test_contains_required_tiers(self):
         """필수 tier가 모두 정의되어 있는지 확인"""
-        required_tiers = ["supervisor", "lead", "researcher", "coder", "reviewer", "validator", "default"]
+        required_tiers = [
+            "supervisor",
+            "lead",
+            "researcher",
+            "coder",
+            "reviewer",
+            "validator",
+            "default",
+        ]
         for tier in required_tiers:
             assert tier in AGENT_MODEL_TIERS, f"Missing tier: {tier}"
 
@@ -27,7 +35,9 @@ class TestAgentModelTiers:
         """모든 값이 유효한 모델 문자열인지 확인"""
         for tier, model in AGENT_MODEL_TIERS.items():
             assert isinstance(model, str), f"Tier '{tier}' has non-string value"
-            assert "claude" in model.lower(), f"Tier '{tier}' has invalid model: {model}"
+            assert (
+                "claude" in model.lower()
+            ), f"Tier '{tier}' has invalid model: {model}"
 
     def test_default_tier_exists(self):
         """default tier가 존재하는지 확인"""
@@ -43,7 +53,15 @@ class TestPhaseAgents:
 
     def test_contains_all_phases(self):
         """모든 phase가 정의되어 있는지 확인"""
-        expected_phases = ["phase_0", "phase_0.5", "phase_1", "phase_2", "phase_2.5", "phase_3", "phase_4"]
+        expected_phases = [
+            "phase_0",
+            "phase_0.5",
+            "phase_1",
+            "phase_2",
+            "phase_2.5",
+            "phase_3",
+            "phase_4",
+        ]
         for phase in expected_phases:
             assert phase in PHASE_AGENTS, f"Missing phase: {phase}"
 

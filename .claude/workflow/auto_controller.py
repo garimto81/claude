@@ -22,7 +22,9 @@ def load_state() -> dict:
 def save_state(state: dict) -> None:
     """상태 파일 저장"""
     state["lastUpdated"] = datetime.now().isoformat()
-    STATE_FILE.write_text(json.dumps(state, indent=2, ensure_ascii=False), encoding="utf-8")
+    STATE_FILE.write_text(
+        json.dumps(state, indent=2, ensure_ascii=False), encoding="utf-8"
+    )
 
 
 def get_default_state() -> dict:
@@ -41,15 +43,15 @@ def get_default_state() -> dict:
             "autoCommit": True,
             "autoPR": True,
             "skipOnError": True,
-            "retryCount": 3
+            "retryCount": 3,
         },
         "stats": {
             "totalTasks": 0,
             "completed": 0,
             "failed": 0,
             "skipped": 0,
-            "totalTime": 0
-        }
+            "totalTime": 0,
+        },
     }
 
 
@@ -69,7 +71,7 @@ def start(tasks: list = None, options: dict = None) -> dict:
         "completed": 0,
         "failed": 0,
         "skipped": 0,
-        "totalTime": 0
+        "totalTime": 0,
     }
     save_state(state)
     return state
@@ -176,7 +178,9 @@ def generate_report() -> str:
     if state["completedTasks"]:
         report.append("완료된 작업:")
         for task in state["completedTasks"]:
-            report.append(f"  - {task.get('title', task.get('description', 'Unknown'))}")
+            report.append(
+                f"  - {task.get('title', task.get('description', 'Unknown'))}"
+            )
 
     if state["failedTasks"]:
         report.append("")

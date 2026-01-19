@@ -251,8 +251,7 @@ def main():
     else:
         # PRD-NNNN 형식이면 단일 마이그레이션으로 처리
         if args.command and (
-            args.command.upper().startswith("PRD-")
-            or args.command.isdigit()
+            args.command.upper().startswith("PRD-") or args.command.isdigit()
         ):
             args.prd_id = args.command
             args.source_path = None
