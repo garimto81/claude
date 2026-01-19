@@ -11,6 +11,7 @@ Issue #57: NAS 스캔 문제 해결 스크립트
 3. 새 데이터로 업데이트
 """
 
+import os
 import sqlite3
 import sys
 from datetime import datetime
@@ -18,8 +19,15 @@ from pathlib import Path
 
 sys.stdout.reconfigure(encoding="utf-8")
 
-ARCHIVE_DB = "D:/AI/claude01/archive-analyzer/archive.db"
-POKERVOD_DB = "D:/AI/claude01/shared-data/pokervod.db"
+# 동적 프로젝트 루트 감지
+def _get_project_root() -> Path:
+    if env_root := os.environ.get("CLAUDE_PROJECT_DIR"):
+        return Path(env_root)
+    return Path(__file__).resolve().parent.parent.parent  # scripts → archive-analyzer → claude
+
+PROJECT_ROOT = _get_project_root()
+ARCHIVE_DB = str(PROJECT_ROOT / "archive-analyzer" / "archive.db")
+POKERVOD_DB = str(PROJECT_ROOT / "shared-data" / "pokervod.db")
 NAS_ARCHIVE = Path(r"\\10.10.100.122\docker\GGPNAs\ARCHIVE")
 
 
