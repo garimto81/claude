@@ -29,6 +29,7 @@ class MarkdownToDocsConverter:
         use_premium_style: bool = True,
         docs_service: Any = None,
         doc_id: str | None = None,
+        base_path: str | None = None,
     ):
         """
         Args:
@@ -40,8 +41,10 @@ class MarkdownToDocsConverter:
             use_premium_style: 파랑 계열 전문 문서 스타일 사용 여부
             docs_service: Google Docs API 서비스 (2단계 테이블 처리용)
             doc_id: 문서 ID (2단계 테이블 처리용)
+            base_path: 마크다운 파일의 기준 경로 (상대 이미지 경로 해석용)
         """
         self.content = content
+        self.base_path = base_path
         self.include_toc = include_toc
         self.use_native_tables = use_native_tables
         self.code_font = code_font
@@ -628,15 +631,24 @@ class MarkdownToDocsConverter:
 
     def _add_native_table_two_phase(self, table_data):
         """
-        최적화된 2단계 네이티브 테이블 처리 (v2.3.2+)
+        최적화된 2단계 네이티브 테이블 처리 (v2.3.3 - 인덱스 동기화 버그 수정)
 
-        API 호출 횟수: 3회 (기존 8회 → 62% 감소)
-        1. batchUpdate: 기존 요청 + insertTable
-        2. documents.get: 테이블 구조 조회
-        3. batchUpdate: 텍스트 + 셀 스타일 + 텍스트 스타일 통합
+        핵심 변경: 각 단계 후 문서를 재조회하여 current_index를 실제 문서 끝과 동기화
+
+        API 호출 횟수: 4회
+        1. batchUpdate: 기존 요청 실행
+        2. documents.get + batchUpdate: 테이블 구조 삽입
+        3. documents.get: 테이블 구조 조회
+        4. batchUpdate: 텍스트 + 셀 스타일 + 텍스트 스타일 통합
         """
-        # 1단계: 기존 요청 + insertTable 통합 실행
-        # 문서 조회하여 현재 끝 인덱스 확인
+        # 1단계: 기존 요청 먼저 실행 (테이블 전까지의 콘텐츠)
+        if self.requests:
+            self.docs_service.documents().batchUpdate(
+                documentId=self.doc_id, body={"requests": self.requests}
+            ).execute()
+            self.requests = []
+
+        # 문서 재조회하여 실제 끝 인덱스로 동기화
         doc = self.docs_service.documents().get(documentId=self.doc_id).execute()
         body = doc.get("body", {})
         content = body.get("content", [])
@@ -645,27 +657,24 @@ class MarkdownToDocsConverter:
         # 테이블 삽입 위치 (문서 끝 - 1)
         table_start_index = doc_end_index - 1
 
-        # 테이블 구조 요청 생성
+        # 2단계: 테이블 구조 삽입
         structure_request = self._table_renderer.render_table_structure(
             table_data, table_start_index
         )
 
-        # 기존 요청 + insertTable 통합 실행 [API 호출 #1]
         if structure_request:
-            combined_requests = self.requests + [structure_request]
             self.docs_service.documents().batchUpdate(
-                documentId=self.doc_id, body={"requests": combined_requests}
+                documentId=self.doc_id, body={"requests": [structure_request]}
             ).execute()
-            self.requests = []
 
-        # 2단계: 문서 재조회하여 실제 테이블 구조 확인 [API 호출 #2]
+        # 3단계: 문서 재조회하여 실제 테이블 구조 확인
         doc = self.docs_service.documents().get(documentId=self.doc_id).execute()
 
         # 마지막 테이블 요소 찾기
         table_element = self._find_last_table(doc)
 
         if table_element:
-            # 3단계: 통합 렌더링 (텍스트 + 셀 스타일 + 텍스트 스타일) [API 호출 #3]
+            # 4단계: 통합 렌더링 (텍스트 + 셀 스타일 + 텍스트 스타일)
             unified_requests = self._table_renderer.render_table_content_and_styles(
                 table_data, table_element
             )
@@ -674,20 +683,11 @@ class MarkdownToDocsConverter:
                     documentId=self.doc_id, body={"requests": unified_requests}
                 ).execute()
 
-            # 문서 끝 인덱스 업데이트 (테이블 끝 인덱스 + 여유)
-            table_end = self._table_renderer.get_table_end_index(table_element)
-            # 텍스트 삽입량 추정
-            text_length = sum(
-                len(cell)
-                for row in [table_data.headers] + table_data.rows
-                for cell in row
-            )
-            self.current_index = table_end + text_length
-        else:
-            # 테이블을 찾지 못한 경우 추정값 사용
-            self.current_index = (
-                table_start_index + self._estimate_table_size(table_data) - 1
-            )
+        # 문서 재조회하여 current_index를 실제 문서 끝과 동기화 (핵심 수정)
+        doc = self.docs_service.documents().get(documentId=self.doc_id).execute()
+        body = doc.get("body", {})
+        content = body.get("content", [])
+        self.current_index = content[-1].get("endIndex", 1) - 1 if content else 1
 
     def _find_last_table(self, doc: dict) -> dict | None:
         """문서에서 마지막 테이블 요소 찾기"""
@@ -926,10 +926,14 @@ class MarkdownToDocsConverter:
         self._add_text(f"{checkbox} {full_text}")
 
     def _add_quote(self, text: str):
-        """인용문 추가"""
-        start = self._add_text(f"│ {text}")
+        """인용문 추가 (인라인 포맷팅 지원)"""
+        # 인라인 포맷팅 파싱 (bold, italic, code, link 등)
+        result = self._parse_inline_formatting(text)
+        full_text = "".join(seg.text for seg in result.segments)
 
-        # 이탤릭 + 회색 스타일
+        start = self._add_text(f"│ {full_text}")
+
+        # 전체에 이탤릭 + 회색 기본 스타일
         self.requests.append(
             {
                 "updateTextStyle": {
@@ -947,6 +951,13 @@ class MarkdownToDocsConverter:
             }
         )
 
+        # 인라인 스타일 적용 ("│ " 다음부터)
+        current_pos = start + 2  # "│ " 건너뛰기
+        for segment in result.segments:
+            end_pos = current_pos + len(segment.text)
+            self._apply_segment_style(segment, current_pos, end_pos)
+            current_pos = end_pos
+
     def _add_image_block(self, url: str, alt_text: str = ""):
         """
         이미지 블록 추가 (2단계 삽입)
@@ -959,7 +970,7 @@ class MarkdownToDocsConverter:
             alt_text: 이미지 alt 텍스트
         """
         # 로컬 경로 감지 및 URL 정규화
-        normalized_url = self._normalize_image_url(url)
+        normalized_url, is_local = self._normalize_image_url(url)
 
         if normalized_url:
             # 이미지 삽입 위치 기록 (현재 인덱스)
@@ -968,6 +979,8 @@ class MarkdownToDocsConverter:
                     "index": self.current_index,
                     "url": normalized_url,
                     "alt": alt_text or "image",
+                    "is_local": is_local,  # 로컬 파일 여부 표시
+                    "original_url": url,  # 원본 경로 (디버깅용)
                 }
             )
 
@@ -1018,38 +1031,58 @@ class MarkdownToDocsConverter:
                 }
             )
 
-    def _normalize_image_url(self, url: str) -> str | None:
+    def _normalize_image_url(self, url: str) -> tuple[str | None, bool]:
         """
         이미지 URL 정규화
 
         HTTP/HTTPS URL은 그대로 반환
-        로컬 경로는 None 반환 (향후 Drive 업로드 구현 시 확장)
+        로컬 경로는 절대 경로로 변환하여 반환
 
         Args:
             url: 원본 URL 또는 경로
 
         Returns:
-            정규화된 URL 또는 None (로컬 파일)
+            (정규화된 URL 또는 경로, is_local_file) 튜플
+            - HTTP URL: (url, False)
+            - 로컬 파일: (절대 경로, True)
+            - 파일 없음: (None, False)
         """
+        import os
+        from pathlib import Path
+
         url = url.strip()
 
         # HTTP/HTTPS URL
         if url.startswith(("http://", "https://")):
-            return url
+            return url, False
 
         # Data URL (Base64 인코딩 이미지)
         if url.startswith("data:image/"):
-            return url
+            return url, False
 
-        # 로컬 경로 (상대 경로 또는 절대 경로)
-        # 향후 Drive 업로드 구현 시 여기서 처리
-        if url.startswith(("./", "../", "/", "C:", "D:")):
-            # 현재는 로컬 파일 미지원 - None 반환
-            # TODO: Drive 업로드 후 공개 URL 반환
-            return None
+        # 로컬 경로 처리
+        local_path = None
 
-        # 기타 (상대 경로로 가정)
-        return None
+        # 절대 경로
+        if url.startswith(("/", "C:", "D:", "E:")):
+            local_path = Path(url)
+        # 상대 경로 (base_path 기준)
+        elif url.startswith(("./", "../")) or not url.startswith("http"):
+            if self.base_path:
+                base = Path(self.base_path)
+                if base.is_file():
+                    base = base.parent
+                local_path = (base / url).resolve()
+            else:
+                # base_path 없으면 현재 디렉토리 기준
+                local_path = Path(url).resolve()
+
+        # 파일 존재 확인
+        if local_path and local_path.exists() and local_path.is_file():
+            return str(local_path), True
+
+        # 파일 없음
+        return None, False
 
     def _add_horizontal_rule(self):
         """수평선 추가 (SKILL.md 2.3 표준: ─ 반복 금지, 하단 구분선 사용)"""
@@ -1139,6 +1172,7 @@ def create_google_doc(
     include_toc: bool = False,
     use_native_tables: bool = True,
     apply_page_style: bool = True,
+    base_path: Optional[str] = None,
 ) -> str:
     """
     Google Docs 문서 생성
@@ -1150,6 +1184,7 @@ def create_google_doc(
         include_toc: 목차 포함 여부
         use_native_tables: 네이티브 테이블 사용 여부 (2단계 처리로 안정적)
         apply_page_style: 페이지 스타일 적용 여부 (A4, 72pt 여백, 115% 줄간격)
+        base_path: 마크다운 파일의 기준 경로 (상대 이미지 경로 해석용)
 
     Returns:
         str: 생성된 문서의 URL
@@ -1201,6 +1236,7 @@ def create_google_doc(
         use_native_tables=use_native_tables,
         docs_service=docs_service if use_native_tables else None,
         doc_id=doc_id if use_native_tables else None,
+        base_path=base_path,
     )
     requests = converter.parse()
 
@@ -1219,62 +1255,108 @@ def create_google_doc(
 
     # 5. 2단계 이미지 삽입 (placeholder → 실제 이미지)
     if converter._pending_images:
+        from pathlib import Path
+        from .image_inserter import ImageInserter
+
         try:
+            # ImageInserter 생성 (로컬 이미지 업로드용)
+            image_inserter = ImageInserter(creds, docs_service, drive_service)
+
             # 문서 현재 상태 조회
             doc = docs_service.documents().get(documentId=doc_id).execute()
             body_content = doc.get("body", {}).get("content", [])
 
+            # 로컬 이미지 업로드 및 URL 변환
+            uploaded_count = 0
+            for img_info in converter._pending_images:
+                if img_info.get("is_local", False):
+                    try:
+                        local_path = Path(img_info["url"])
+                        if local_path.exists():
+                            # Drive에 업로드 (문서가 있는 폴더에 저장)
+                            file_id, public_url = image_inserter.upload_to_drive(
+                                local_path,
+                                folder_id=target_folder,
+                                make_public=True,
+                            )
+                            img_info["url"] = public_url  # URL로 교체
+                            img_info["is_local"] = False
+                            uploaded_count += 1
+                    except Exception as upload_err:
+                        print(f"     이미지 업로드 실패 ({img_info.get('original_url', '')}): {upload_err}")
+
+            if uploaded_count > 0:
+                print(f"     로컬 이미지 {uploaded_count}개 업로드됨")
+
             # placeholder 텍스트 검색 및 이미지 삽입
-            image_requests = []
+            inserted_count = 0
             for img_info in reversed(
                 converter._pending_images
             ):  # 뒤에서부터 처리 (인덱스 유지)
-                placeholder = f"[🖼 {img_info['alt']}]"
+                # 로컬 이미지가 업로드 실패한 경우 건너뛰기
+                if img_info.get("is_local", False):
+                    continue
 
-                # placeholder 위치 찾기
-                placeholder_index = _find_text_index(body_content, placeholder)
+                # placeholder 검색 패턴 (닫는 ] 없이 검색 - textRun 분리 대응)
+                placeholder_pattern = f"[🖼 {img_info['alt']}"
+
+                # 문서 재조회 (인덱스 변경 반영)
+                doc = docs_service.documents().get(documentId=doc_id).execute()
+                body_content = doc.get("body", {}).get("content", [])
+
+                # placeholder 위치 찾기 (패턴으로 검색)
+                placeholder_index = _find_text_index(body_content, placeholder_pattern)
 
                 if placeholder_index is not None:
-                    # 1) placeholder 삭제
-                    image_requests.append(
-                        {
-                            "deleteContentRange": {
-                                "range": {
-                                    "startIndex": placeholder_index,
-                                    "endIndex": placeholder_index
-                                    + len(placeholder)
-                                    + 1,  # +1 for newline
-                                }
-                            }
-                        }
-                    )
+                    try:
+                        # placeholder 전체 길이 계산 (패턴 + "]" + "\n")
+                        # 원본 placeholder: [🖼 {alt}]\n
+                        placeholder_full = f"[🖼 {img_info['alt']}]"
+                        delete_length = len(placeholder_full) + 1  # +1 for newline
 
-                    # 2) 이미지 삽입
-                    image_requests.append(
-                        {
-                            "insertInlineImage": {
-                                "location": {"index": placeholder_index},
-                                "uri": img_info["url"],
-                                "objectSize": {
-                                    "width": {
-                                        "magnitude": 400,
-                                        "unit": "PT",
-                                    },  # 최대 너비 400pt
-                                },
-                            }
-                        }
-                    )
+                        # 1) placeholder 삭제
+                        docs_service.documents().batchUpdate(
+                            documentId=doc_id,
+                            body={
+                                "requests": [
+                                    {
+                                        "deleteContentRange": {
+                                            "range": {
+                                                "startIndex": placeholder_index,
+                                                "endIndex": placeholder_index + delete_length,
+                                            }
+                                        }
+                                    }
+                                ]
+                            },
+                        ).execute()
 
-            # 이미지 요청 실행 (각각 순차적으로)
-            for req in image_requests:
-                try:
-                    docs_service.documents().batchUpdate(
-                        documentId=doc_id, body={"requests": [req]}
-                    ).execute()
-                except Exception as img_err:
-                    print(f"     이미지 삽입 경고: {img_err}")
+                        # 2) 이미지 삽입
+                        docs_service.documents().batchUpdate(
+                            documentId=doc_id,
+                            body={
+                                "requests": [
+                                    {
+                                        "insertInlineImage": {
+                                            "location": {"index": placeholder_index},
+                                            "uri": img_info["url"],
+                                            "objectSize": {
+                                                "width": {
+                                                    "magnitude": 400,
+                                                    "unit": "PT",
+                                                },  # 최대 너비 400pt
+                                            },
+                                        }
+                                    }
+                                ]
+                            },
+                        ).execute()
+                        inserted_count += 1
+                    except Exception as img_err:
+                        print(f"     이미지 삽입 경고 ({img_info.get('alt', '')}): {img_err}")
 
-            print(f"     이미지 {len(converter._pending_images)}개 삽입됨")
+            if inserted_count > 0:
+                print(f"     이미지 {inserted_count}개 삽입됨")
         except Exception as e:
             print(f"     이미지 삽입 실패: {e}")
 

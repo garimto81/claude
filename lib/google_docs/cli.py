@@ -57,6 +57,7 @@ def process_file(
             folder_id=folder_id,
             include_toc=include_toc,
             use_native_tables=use_native_tables,
+            base_path=str(file_path),  # 이미지 상대 경로 해석용
         )
         print(f"[OK] {doc_url}")
         return doc_url
