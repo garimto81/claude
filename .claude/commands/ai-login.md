@@ -45,9 +45,10 @@ digest = hashlib.sha256(code_verifier.encode()).digest()
 code_challenge = base64.urlsafe_b64encode(digest).rstrip(b'=').decode()
 state = secrets.token_urlsafe(32)
 
-# OpenAI OAuth 설정 (Codex CLI 호환)
-CLIENT_ID = 'DRivsnm2Mu42T3KOpqdtwB3NYviHYzwD'
-AUTH_ENDPOINT = 'https://auth.openai.com/authorize'
+# OpenAI OAuth 설정 (Codex CLI 공식 Client ID)
+# 참고: https://github.com/openai/codex/blob/main/codex-rs/core/src/auth.rs
+CLIENT_ID = 'app_EMoamEEZ73f0CkXaXp7hrann'
+AUTH_ENDPOINT = 'https://auth.openai.com/oauth/authorize'
 REDIRECT_URI = 'http://localhost:1455/auth/callback'
 SCOPE = 'openid profile email offline_access'
 
