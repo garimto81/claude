@@ -73,6 +73,32 @@ def cleanup_tmpclaude_files() -> int:
     return cleaned
 
 
+def cleanup_malformed_folders() -> int:
+    """경로 버그로 생성된 비정상 폴더 삭제 (C:claude*, test_nas_data* 패턴)"""
+    import re
+    import shutil
+
+    cleaned = 0
+    try:
+        project_path = Path(PROJECT_DIR)
+        for item in project_path.iterdir():
+            if not item.is_dir():
+                continue
+            # 비정상 폴더 패턴 감지
+            # 1. 드라이브 문자가 포함된 폴더명 (예: C:claudegfx_json...)
+            # 2. 경로 구분자가 포함된 폴더명
+            if re.match(r'^[A-Z]:.*', item.name) or re.match(r'^test_nas_data[^/\\]+$', item.name):
+                try:
+                    if item.is_dir():
+                        shutil.rmtree(item)
+                        cleaned += 1
+                except Exception:
+                    pass
+    except Exception:
+        pass
+    return cleaned
+
+
 def load_previous_session() -> dict:
     """이전 세션 상태 로드"""
     if SESSION_FILE.exists():
@@ -108,6 +134,9 @@ def main():
         # 이전 세션 임시 파일 정리 (Claude Code Task 도구 버그 대응)
         cleaned_files = cleanup_tmpclaude_files()
 
+        # 비정상 폴더 정리 (경로 버그로 생성된 폴더)
+        cleaned_folders = cleanup_malformed_folders()
+
         # 이전 세션 로드
         prev_session = load_previous_session()
 
@@ -118,9 +147,14 @@ def main():
         # 세션 정보 생성
         session_info = []
 
-        # 임시 파일 정리 결과
-        if cleaned_files > 0:
-            session_info.append(f"🗑️ 임시 파일 정리: {cleaned_files}개 삭제")
+        # 임시 파일/폴더 정리 결과
+        if cleaned_files > 0 or cleaned_folders > 0:
+            msg = "🗑️ 정리 완료:"
+            if cleaned_files > 0:
+                msg += f" 임시 파일 {cleaned_files}개"
+            if cleaned_folders > 0:
+                msg += f" 비정상 폴더 {cleaned_folders}개"
+            session_info.append(msg)
 
         # 브랜치 경고 (main에서 작업 중인 경우)
         if branch in ["main", "master"]:

@@ -6,10 +6,23 @@ Phase 검증 병렬 실행기
 """
 
 import asyncio
+import os
 import time
 from dataclasses import dataclass
 from typing import Optional
 from pathlib import Path
+
+
+def _get_project_root() -> Path:
+    """프로젝트 루트 디렉토리를 동적으로 감지"""
+    if env_root := os.environ.get("CLAUDE_PROJECT_DIR"):
+        return Path(env_root)
+    # 스크립트 위치 기반 감지 (src/agents/ → 프로젝트 루트)
+    script_dir = Path(__file__).resolve().parent
+    project_root = script_dir.parent.parent
+    if (project_root / ".claude").exists():
+        return project_root
+    return Path.cwd()
 
 
 @dataclass
@@ -24,7 +37,7 @@ class ValidationResult:
 
 
 # 프로젝트 루트
-PROJECT_ROOT = Path("D:/AI/claude01")
+PROJECT_ROOT = _get_project_root()
 
 
 async def run_validator(phase: str, args: list[str] = None) -> ValidationResult:

@@ -1047,7 +1047,6 @@ class MarkdownToDocsConverter:
             - 로컬 파일: (절대 경로, True)
             - 파일 없음: (None, False)
         """
-        import os
         from pathlib import Path
 
         url = url.strip()
@@ -1331,7 +1330,7 @@ def create_google_doc(
                             },
                         ).execute()
 
-                        # 2) 이미지 삽입
+                        # 2) 이미지 삽입 (18cm = 510pt)
                         docs_service.documents().batchUpdate(
                             documentId=doc_id,
                             body={
@@ -1342,9 +1341,9 @@ def create_google_doc(
                                             "uri": img_info["url"],
                                             "objectSize": {
                                                 "width": {
-                                                    "magnitude": 400,
+                                                    "magnitude": 510,
                                                     "unit": "PT",
-                                                },  # 최대 너비 400pt
+                                                },  # 18cm = 510pt
                                             },
                                         }
                                     }

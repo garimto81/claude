@@ -38,12 +38,22 @@ class ParsedCellContent:
 class NativeTableRenderer:
     """마크다운 테이블을 Google Docs 네이티브 테이블로 변환 (2단계 방식)"""
 
-    # SKILL.md 2.3 표준 테이블 스타일
+    # SKILL.md 2.5 표준 테이블 스타일
     BODY_COLOR = {"red": 0.25, "green": 0.25, "blue": 0.25}  # #404040
     HEADER_BG_COLOR = {"red": 0.90, "green": 0.90, "blue": 0.90}  # #E6E6E6
     BORDER_COLOR = {"red": 0.80, "green": 0.80, "blue": 0.80}  # #CCCCCC
     CODE_BG_COLOR = {"red": 0.949, "green": 0.949, "blue": 0.949}  # #F2F2F2
     CELL_PADDING_PT = 5  # 5pt 패딩
+
+    # 18cm 기준 테이블 너비 (1cm ≈ 28.35pt)
+    TABLE_WIDTH_PT = 510  # 18cm = 510pt
+    # 컬럼 수에 따른 컬럼 너비 (pt)
+    COLUMN_WIDTHS = {
+        1: [510],           # 1열: 18cm
+        2: [255, 255],      # 2열: 9cm × 2
+        3: [170, 170, 170], # 3열: 6cm × 3
+        4: [127.5, 127.5, 127.5, 127.5],  # 4열: 4.5cm × 4
+    }
 
     def _parse_cell_inline_formatting(self, text: str) -> ParsedCellContent:
         """
@@ -523,11 +533,35 @@ class NativeTableRenderer:
                 )
 
         # =====================================================================
-        # Phase 2: 셀 스타일 적용 (테두리, 패딩, 헤더 배경)
+        # Phase 2: 컬럼 너비 + 셀 스타일 적용 (테두리, 패딩, 헤더 배경)
         # =====================================================================
         table_start_index = table_element.get("startIndex", 0)
         table = table_element.get("table", {})
         table_rows = table.get("tableRows", [])
+
+        # 컬럼 너비 설정 (18cm 기준 분배)
+        col_count = table_data.column_count
+        if col_count in self.COLUMN_WIDTHS:
+            col_widths = self.COLUMN_WIDTHS[col_count]
+        else:
+            # 5열 이상은 균등 분배
+            col_width = self.TABLE_WIDTH_PT / col_count
+            col_widths = [col_width] * col_count
+
+        for col_idx, width in enumerate(col_widths):
+            requests.append(
+                {
+                    "updateTableColumnProperties": {
+                        "tableStartLocation": {"index": table_start_index},
+                        "columnIndices": [col_idx],
+                        "tableColumnProperties": {
+                            "widthType": "FIXED_WIDTH",
+                            "width": {"magnitude": width, "unit": "PT"},
+                        },
+                        "fields": "widthType,width",
+                    }
+                }
+            )
 
         for row_idx, row in enumerate(table_rows):
             cells = row.get("tableCells", [])
