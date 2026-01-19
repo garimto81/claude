@@ -1,0 +1,288 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>WSOPTV - Hand Info Panel (NBA Game Info Style)</title>
+    <style>
+        * { margin: 0; padding: 0; box-sizing: border-box; }
+        body { font-family: -apple-system, BlinkMacSystemFont, 'Segoe UI', Roboto, sans-serif; background: #0a0a0a; color: #fff; padding: 24px; }
+
+        .panel-container {
+            max-width: 480px;
+            margin: 0 auto;
+        }
+
+        .panel {
+            background: #1a1a1a;
+            border-radius: 12px;
+            overflow: hidden;
+            margin-bottom: 16px;
+        }
+
+        .panel-header {
+            padding: 16px 20px;
+            background: #252525;
+            border-bottom: 1px solid #333;
+            display: flex;
+            justify-content: space-between;
+            align-items: center;
+        }
+        .panel-title { font-size: 14px; font-weight: bold; text-transform: uppercase; letter-spacing: 1px; }
+        .panel-badge { background: #e53935; padding: 4px 10px; border-radius: 4px; font-size: 11px; font-weight: bold; }
+
+        /* Info Grid */
+        .info-grid {
+            display: grid;
+            grid-template-columns: 1fr 1fr;
+            gap: 1px;
+            background: #333;
+        }
+        .info-item {
+            padding: 16px 20px;
+            background: #1a1a1a;
+        }
+        .info-item.full { grid-column: 1 / -1; }
+        .info-label { font-size: 10px; color: #888; text-transform: uppercase; letter-spacing: 0.5px; margin-bottom: 4px; }
+        .info-value { font-size: 14px; font-weight: 500; }
+        .info-value.highlight { color: #4CAF50; }
+        .info-link {
+            color: #4CAF50;
+            text-decoration: none;
+            display: flex;
+            align-items: center;
+            gap: 6px;
+        }
+        .info-link:hover { text-decoration: underline; }
+
+        /* Hand Summary */
+        .hand-summary {
+            padding: 16px 20px;
+        }
+        .summary-title { font-size: 12px; font-weight: bold; color: #888; margin-bottom: 12px; text-transform: uppercase; }
+
+        .summary-table {
+            width: 100%;
+            border-collapse: collapse;
+        }
+        .summary-table th,
+        .summary-table td {
+            padding: 8px 4px;
+            text-align: center;
+            font-size: 12px;
+        }
+        .summary-table th {
+            color: #888;
+            font-weight: normal;
+            font-size: 10px;
+            text-transform: uppercase;
+        }
+        .summary-table td { border-top: 1px solid #333; }
+        .summary-table .player-cell {
+            text-align: left;
+            font-weight: 500;
+        }
+        .summary-table .total { background: #252525; font-weight: bold; }
+        .summary-table .fold { color: #888; }
+        .summary-table .win { color: #4CAF50; }
+        .summary-table .loss { color: #e53935; }
+
+        /* Board Cards */
+        .board-section {
+            padding: 16px 20px;
+            background: #252525;
+            border-top: 1px solid #333;
+        }
+        .board-title { font-size: 10px; color: #888; text-transform: uppercase; margin-bottom: 12px; }
+        .board-cards {
+            display: flex;
+            gap: 8px;
+        }
+        .card {
+            width: 48px;
+            height: 64px;
+            background: #fff;
+            border-radius: 6px;
+            display: flex;
+            flex-direction: column;
+            align-items: center;
+            justify-content: center;
+            font-size: 18px;
+            font-weight: bold;
+        }
+        .card.hearts, .card.diamonds { color: #e53935; }
+        .card.spades, .card.clubs { color: #000; }
+        .card-rank { font-size: 16px; }
+        .card-suit { font-size: 14px; }
+        .card.hidden {
+            background: linear-gradient(135deg, #1e3a5f, #0d47a1);
+            color: transparent;
+        }
+
+        /* Action Tags */
+        .action-tags {
+            display: flex;
+            gap: 8px;
+            margin-top: 12px;
+        }
+        .action-tag {
+            font-size: 10px;
+            padding: 4px 10px;
+            border-radius: 4px;
+            background: #333;
+        }
+        .action-tag.winner { background: #4CAF50; color: #fff; }
+        .action-tag.pot { background: #ffd700; color: #000; }
+
+        /* Download Section */
+        .download-section {
+            padding: 16px 20px;
+            display: flex;
+            gap: 12px;
+        }
+        .download-btn {
+            flex: 1;
+            background: #333;
+            border: none;
+            color: #fff;
+            padding: 12px;
+            border-radius: 6px;
+            cursor: pointer;
+            font-size: 12px;
+            display: flex;
+            align-items: center;
+            justify-content: center;
+            gap: 8px;
+            transition: background 0.2s;
+        }
+        .download-btn:hover { background: #444; }
+        .download-icon { font-size: 16px; }
+    </style>
+</head>
+<body>
+    <div class="panel-container">
+        <!-- Hand Info Panel -->
+        <div class="panel">
+            <div class="panel-header">
+                <span class="panel-title">Hand Info</span>
+                <span class="panel-badge">Hand #47</span>
+            </div>
+
+            <div class="info-grid">
+                <div class="info-item">
+                    <div class="info-label">Date / Time</div>
+                    <div class="info-value">Jan 19, 2026 • 8:42 PM PT</div>
+                </div>
+                <div class="info-item">
+                    <div class="info-label">Blinds</div>
+                    <div class="info-value highlight">50K / 100K / 100K</div>
+                </div>
+                <div class="info-item full">
+                    <div class="info-label">Tournament</div>
+                    <div class="info-value">WSOP Main Event - Final Table (Day 8)</div>
+                </div>
+                <div class="info-item">
+                    <div class="info-label">Dealer</div>
+                    <div class="info-value">John Smith</div>
+                </div>
+                <div class="info-item">
+                    <div class="info-label">Broadcast</div>
+                    <div class="info-value">WSOPTV Plus+</div>
+                </div>
+                <div class="info-item full">
+                    <div class="info-label">Hand History</div>
+                    <div class="info-value">
+                        <a href="#" class="info-link">
+                            <span>&#128196;</span>
+                            Download PDF
+                        </a>
+                    </div>
+                </div>
+            </div>
+        </div>
+
+        <!-- Hand Summary (LINESCORES Style) -->
+        <div class="panel">
+            <div class="panel-header">
+                <span class="panel-title">Hand Summary</span>
+            </div>
+
+            <div class="hand-summary">
+                <table class="summary-table">
+                    <thead>
+                        <tr>
+                            <th class="player-cell">Player</th>
+                            <th>Preflop</th>
+                            <th>Flop</th>
+                            <th>Turn</th>
+                            <th>River</th>
+                            <th>Total</th>
+                        </tr>
+                    </thead>
+                    <tbody>
+                        <tr>
+                            <td class="player-cell">Phil Ivey</td>
+                            <td>$50K</td>
+                            <td>$200K</td>
+                            <td>$600K</td>
+                            <td>-</td>
+                            <td class="total win">+$600K</td>
+                        </tr>
+                        <tr>
+                            <td class="player-cell">D. Negreanu</td>
+                            <td>$150K</td>
+                            <td>$200K</td>
+                            <td class="fold">FOLD</td>
+                            <td>-</td>
+                            <td class="total loss">-$350K</td>
+                        </tr>
+                    </tbody>
+                </table>
+            </div>
+
+            <!-- Board Cards -->
+            <div class="board-section">
+                <div class="board-title">Community Cards</div>
+                <div class="board-cards">
+                    <div class="card hearts">
+                        <span class="card-rank">A</span>
+                        <span class="card-suit">&hearts;</span>
+                    </div>
+                    <div class="card spades">
+                        <span class="card-rank">K</span>
+                        <span class="card-suit">&spades;</span>
+                    </div>
+                    <div class="card diamonds">
+                        <span class="card-rank">7</span>
+                        <span class="card-suit">&diams;</span>
+                    </div>
+                    <div class="card clubs">
+                        <span class="card-rank">2</span>
+                        <span class="card-suit">&clubs;</span>
+                    </div>
+                    <div class="card hidden"></div>
+                </div>
+
+                <div class="action-tags">
+                    <span class="action-tag winner">Winner: Phil Ivey</span>
+                    <span class="action-tag pot">POT: $950,000</span>
+                </div>
+            </div>
+        </div>
+
+        <!-- Download Options -->
+        <div class="panel">
+            <div class="download-section">
+                <button class="download-btn">
+                    <span class="download-icon">&#128196;</span>
+                    Hand History (PDF)
+                </button>
+                <button class="download-btn">
+                    <span class="download-icon">&#128247;</span>
+                    Share Clip
+                </button>
+            </div>
+        </div>
+    </div>
+</body>
+</html>

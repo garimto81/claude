@@ -6,7 +6,7 @@
 | **Status** | Draft |
 | **Priority** | P2 |
 | **Created** | 2026-01-07 |
-| **Updated** | 2026-01-16 |
+| **Updated** | 2026-01-19 |
 | **Author** | Claude Code |
 | **Source** | michael_note.md, michael_vision_analysis.md |
 
@@ -67,20 +67,20 @@ WSOP(World Series of Poker) 공식 OTT 스트리밍 플랫폼 구축. 5개 플�
 ### Functional Requirements
 
 #### FR-1: 라이브 스트리밍
-| ID | 요구사항 | 우선순위 |
-|----|---------|:--------:|
-| FR-1.1 | 1080p Full HD 라이브 방송 | P0 |
-| FR-1.2 | HLS 프로토콜 기반 스트리밍 | P0 |
+| 요구사항 |
+|---------|
+| 1080p Full HD 라이브 방송 |
+| HLS 프로토콜 기반 스트리밍 |
 
 > **참고**: 지연 처리는 프로덕션 방송에서 담당. TV 솔루션은 받는대로 즉시 송출.
 
 #### FR-2: VOD & Quick VOD
-| ID | 요구사항 | 우선순위 |
-|----|---------|:--------:|
-| FR-2.1 | 라이브→VOD 즉시 전환 (Quick VOD) | P0 |
-| FR-2.2 | 시청 이력 및 이어보기 | P1 |
-| FR-2.3 | 챕터/구간 탐색 | P1 |
-| FR-2.4 | 다운로드 오프라인 시청 | P2 |
+| 요구사항 |
+|---------|
+| 라이브→VOD 즉시 전환 (Quick VOD) |
+| 시청 이력 및 이어보기 |
+| 챕터/구간 탐색 |
+| 다운로드 오프라인 시청 |
 
 #### FR-3: Timeshift (YouTube 대비 차별화)
 
@@ -89,15 +89,17 @@ WSOP(World Series of Poker) 공식 OTT 스트리밍 플랫폼 구축. 5개 플�
 | **YouTube** | 비활성화 | 비공개 전환 | 맛보기 역할 |
 | **WSOP TV** | **활성화** | **VOD로 보존** | 본 서비스 |
 
-| ID | 요구사항 | 우선순위 |
-|----|---------|:--------:|
-| FR-3.1 | 라이브 중 되감기 (Timeshift) | P0 |
-| FR-3.2 | 라이브 종료 즉시 VOD 자동 전환 (Quick VOD) | P0 |
-| FR-3.3 | Catchup TV (처음부터 재시청) | P1 |
+| 요구사항 |
+|---------|
+| 라이브 중 되감기 (Timeshift) |
+| 라이브 종료 즉시 VOD 자동 전환 (Quick VOD) |
+| Catchup TV (처음부터 재시청) |
 
 #### FR-4: Advanced Mode (Plus+ 전용)
 
 > **상세 스펙**: [PRD-0006 Advanced Mode](PRD-0006-advanced-mode.md)
+>
+> **UX 참조**: NBA TV/League Pass 1:1 매핑 전략 적용 - [NBA TV 분석 리포트](../reports/REPORT-2026-01-19-nbatv-reference-analysis.md)
 
 ##### FR-4.1: 3계층 동적 Multi-view
 
@@ -122,11 +124,11 @@ GG POKER 방송은 여러 개의 테이블을 전환하여 방송하는 방식.
 - PlayerCAM 지원 테이블 선택 시에만 PlayerCAM 레이어 활성화
 - 클릭/탭으로 메인 화면 전환, 레이아웃 동적 재배치
 
-| ID | 요구사항 | 우선순위 |
-|----|---------|:--------:|
-| FR-4.1.1 | 3계층 동적 Multi-view 레이아웃 | P0 |
-| FR-4.1.2 | 레이어 간 동적 전환 | P0 |
-| FR-4.1.3 | 피처 테이블별 PlayerCAM 활성화/비활성화 | P0 |
+| 요구사항 |
+|---------|
+| 3계층 동적 Multi-view 레이아웃 |
+| 레이어 간 동적 전환 |
+| 피처 테이블별 PlayerCAM 활성화/비활성화 |
 
 ##### FR-4.2: StatsView (2가지 구조)
 
@@ -142,28 +144,28 @@ GG POKER 방송은 여러 개의 테이블을 전환하여 방송하는 방식.
 - 구현 난이도: 높음 (고급 작업)
 - 우선순위: P1 (Phase 2)
 
-| ID | 요구사항 | 우선순위 |
-|----|---------|:--------:|
-| FR-4.2.1 | GGPoker HUD 연동 StatsView | P0 |
-| FR-4.2.2 | 대회 실시간 연동 StatsView | P1 |
-| FR-4.3 | View Mode Switcher | P0 |
+| 요구사항 |
+|---------|
+| GGPoker HUD 연동 StatsView |
+| 대회 실시간 연동 StatsView |
+| View Mode Switcher |
 
 > **제약사항**: TV 앱에서는 Advanced Mode 미지원 (리모컨 UX 제약)
 
 #### FR-5: 자막
-| ID | 요구사항 | 우선순위 |
-|----|---------|:--------:|
-| FR-5.1 | 20개국 언어 자막 지원 | P0 |
-| FR-5.2 | 영어 기반 번역 | P0 |
-| FR-5.3 | VOD 자막 우선 지원 | P0 |
-| FR-5.4 | 라이브 자막 (인력 투입) | P2 |
+| 요구사항 |
+|---------|
+| 20개국 언어 자막 지원 |
+| 영어 기반 번역 |
+| VOD 자막 우선 지원 |
+| 라이브 자막 (인력 투입) |
 
 #### FR-6: 인증 & 결제
-| ID | 요구사항 | 우선순위 |
-|----|---------|:--------:|
-| FR-6.1 | GGPass SSO 연동 (인증 + 빌링 통합) | P0 |
-| FR-6.2 | 구독 플랜 관리 (Plus/Plus+) | P0 |
-| FR-6.3 | 결제 필요 시 GGPass로 리다이렉트 | P0 |
+| 요구사항 |
+|---------|
+| GGPass SSO 연동 (인증 + 빌링 통합) |
+| 구독 플랜 관리 (Plus/Plus+) |
+| 결제 필요 시 GGPass로 리다이렉트 |
 
 #### FR-7: 구독 모델
 
@@ -177,23 +179,23 @@ GG POKER 방송은 여러 개의 테이블을 전환하여 방송하는 방식.
 ### Non-Functional Requirements
 
 #### NFR-1: 성능
-| ID | 요구사항 | 목표치 |
-|----|---------|-------|
-| NFR-1.1 | 동시접속 | 50만 사용자 |
-| NFR-1.2 | 초기 버퍼링 | < 3초 |
-| NFR-1.3 | 재버퍼링 비율 | < 1% |
+| 요구사항 | 목표치 |
+|---------|-------|
+| 동시접속 | 50만 사용자 |
+| 초기 버퍼링 | < 3초 |
+| 재버퍼링 비율 | < 1% |
 
 #### NFR-2: 보안
-| ID | 요구사항 | 목표치 |
-|----|---------|-------|
-| NFR-2.1 | DRM | Widevine, FairPlay, PlayReady |
-| NFR-2.2 | VPN 감지 | 80-90% 정확도 |
-| NFR-2.3 | 국가별 블랙아웃 | 지원 |
+| 요구사항 | 목표치 |
+|---------|-------|
+| DRM | Widevine, FairPlay, PlayReady |
+| VPN 감지 | 80-90% 정확도 |
+| 국가별 블랙아웃 | 지원 |
 
 #### NFR-3: 가용성
-| ID | 요구사항 | 목표치 |
-|----|---------|-------|
-| NFR-3.1 | 서비스 가용성 | 99.9% |
+| 요구사항 | 목표치 |
+|---------|-------|
+| 서비스 가용성 | 99.9% |
 
 ---
 
@@ -221,6 +223,8 @@ GG POKER 방송은 여러 개의 테이블을 전환하여 방송하는 방식.
 ## UI/UX Design
 
 ### Watch Screen
+
+> **UX 참조**: NBA TV Player Controls 스타일 적용 - [PRD-0006 플레이어 컨트롤](PRD-0006-advanced-mode.md#3-플레이어-컨트롤-ui-nba-player-controls-스타일)
 
 ![Watch Screen](../images/PRD-0002/watch-screen.png)
 
@@ -374,7 +378,8 @@ GG POKER 방송은 여러 개의 테이블을 전환하여 방송하는 방식.
 
 ## References
 
-- [PRD-0006 Advanced Mode](PRD-0006-advanced-mode.md)
+- [PRD-0006 Advanced Mode](PRD-0006-advanced-mode.md) - Advanced Mode 상세 스펙 (NBA TV 1:1 매핑)
+- [REPORT-2026-01-19 NBA TV 분석](../reports/REPORT-2026-01-19-nbatv-reference-analysis.md) - **NBA TV/League Pass UX 참조 소스**
 - [STRAT-0003 Cross-Promotion Strategy](../strategies/STRAT-0003-cross-promotion.md)
 - [STRAT-0007 Content Sourcing](../strategies/STRAT-0007-content-sourcing.md)
 
@@ -387,3 +392,4 @@ GG POKER 방송은 여러 개의 테이블을 전환하여 방송하는 방식.
 | 1.0 | 2026-01-07 | Claude Code | 최초 작성 |
 | 2.0 | 2026-01-16 | Claude Code | Problem Statement 수정, FR-1.3/1.4 삭제, FR-4 3계층 구조로 재설계, StatsView 2구조 추가, GGPass SSO+Billing 통합, 기술스택/Risks/Metrics 섹션 삭제, 목업 B&W 재설계 |
 | 2.1 | 2026-01-16 | Claude Code | FANCAM→PlayerCAM 용어 변경, 프로모션 양방향 흐름 추가, UX Flow/StatsView Layout 목업 추가 |
+| **2.2** | **2026-01-19** | **Claude Code** | **NBA TV 분석 리포트 참조 추가 (FR-4, Watch Screen, References 섹션)** |

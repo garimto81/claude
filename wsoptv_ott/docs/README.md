@@ -40,6 +40,7 @@
 
 | 문서 ID | 제목 | 날짜 |
 |---------|------|------|
+| [REPORT-2026-01-19-nbatv](reports/REPORT-2026-01-19-nbatv-reference-analysis.md) | **NBA TV 레퍼런스 분석** | 2026-01-19 |
 | [REPORT-2026-01-19](reports/REPORT-2026-01-19-document-consistency.md) | Document Consistency Report | 2026-01-19 |
 
 ---
@@ -50,7 +51,8 @@
 PRD-0002 (MVP - 중심 문서)
 │
 ├── PRD-0006 (Advanced Mode)
-│   └── ADR-0001 (3계층 Multi-View 근거)
+│   ├── ADR-0001 (3계층 Multi-View 근거)
+│   └── REPORT-2026-01-19-nbatv (NBA TV 1:1 매핑 소스) ★ NEW
 │
 ├── PRD-0005 (RFP)
 │
@@ -58,6 +60,21 @@ PRD-0002 (MVP - 중심 문서)
 │
 └── STRAT-0007 (Content Strategy)
 ```
+
+### NBA TV 레퍼런스 (UX 설계 기준)
+
+PRD-0006 Advanced Mode는 **NBA TV/League Pass의 검증된 UX를 1:1 매핑**하여 설계되었습니다.
+
+| NBA TV 요소 | WSOPTV 대응 |
+|------------|-------------|
+| Score Strip | Tournament Strip |
+| Multiview (4분할) | 4분할 Multiview |
+| Key Plays | Key Hands |
+| Play-by-Play | Hand-by-Hand Log |
+| Box Score | Player Stats |
+| Shot Charts | Position Analysis |
+
+**상세 매핑**: [NBA TV 분석 리포트](reports/REPORT-2026-01-19-nbatv-reference-analysis.md)
 
 ---
 
@@ -104,6 +121,19 @@ docs/
 
 ## 시각 자료
 
+### PRD-0006 NBA 스타일 목업 (NEW)
+
+| 목업 | 설명 | NBA 참조 |
+|------|------|----------|
+| [homepage-nba-style.html](mockups/PRD-0006/homepage-nba-style.html) | 홈페이지 레이아웃 | Score Strip, Hero Section |
+| [player-controls-nba-style.html](mockups/PRD-0006/player-controls-nba-style.html) | 플레이어 컨트롤바 | Streams/MultiView/Key Plays |
+| [streaming-options-modal.html](mockups/PRD-0006/streaming-options-modal.html) | 스트리밍 옵션 모달 | Broadcasts/Languages |
+| [key-hands-modal.html](mockups/PRD-0006/key-hands-modal.html) | Key Hands 모달 | Key Plays |
+| [hand-info-panel.html](mockups/PRD-0006/hand-info-panel.html) | Hand Info 패널 | Game Info |
+| [player-stats-table.html](mockups/PRD-0006/player-stats-table.html) | 선수 통계 테이블 | Box Score |
+| [hand-by-hand-log.html](mockups/PRD-0006/hand-by-hand-log.html) | 액션 로그 | Play-by-Play |
+| [position-analysis.html](mockups/PRD-0006/position-analysis.html) | 포지션 분석 | Shot Charts |
+
 ### 이미지 참조 규칙
 
 문서에서 이미지 참조 시:
@@ -130,4 +160,4 @@ docs/
 
 ---
 
-*Last Updated: 2026-01-19*
+*Last Updated: 2026-01-19 (NBA TV 레퍼런스 추가)*
