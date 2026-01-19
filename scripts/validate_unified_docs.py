@@ -69,7 +69,11 @@ def validate_filename(filename: str, doc_type: str) -> Optional[Violation]:
             message=f"Invalid filename pattern: {filename}",
             severity=Severity.ERROR,
             file_path=filename,
-            suggestion=f"Expected: {{NS}}-{{NNNN}}-{{slug}}.md" if doc_type == "prd" else "{{NS}}-{{NNNN}}.md"
+            suggestion=(
+                "Expected: {NS}-{NNNN}-{slug}.md"
+                if doc_type == "prd"
+                else "{{NS}}-{{NNNN}}.md"
+            ),
         )
 
     # 네임스페이스 검증
@@ -82,26 +86,30 @@ def validate_filename(filename: str, doc_type: str) -> Optional[Violation]:
                 message=f"Invalid namespace: {ns}",
                 severity=Severity.ERROR,
                 file_path=filename,
-                suggestion=f"Valid namespaces: {', '.join(VALID_NAMESPACES)}"
+                suggestion=f"Valid namespaces: {', '.join(VALID_NAMESPACES)}",
             )
 
     return None
 
 
-def check_prd_checklist_mapping(prds: set[str], checklists: set[str]) -> list[Violation]:
+def check_prd_checklist_mapping(
+    prds: set[str], checklists: set[str]
+) -> list[Violation]:
     """PRD-체크리스트 매핑 검증"""
     violations = []
 
     for prd_id in prds:
         if prd_id not in checklists:
-            violations.append(Violation(
-                rule_id="F004",
-                message=f"PRD without checklist: {prd_id}",
-                severity=Severity.WARNING,
-                file_path=f"prds/*/{prd_id}-*.md",
-                suggestion=f"Create checklists/*/{prd_id}.md",
-                auto_fixable=True
-            ))
+            violations.append(
+                Violation(
+                    rule_id="F004",
+                    message=f"PRD without checklist: {prd_id}",
+                    severity=Severity.WARNING,
+                    file_path=f"prds/*/{prd_id}-*.md",
+                    suggestion=f"Create checklists/*/{prd_id}.md",
+                    auto_fixable=True,
+                )
+            )
 
     return violations
 
@@ -111,12 +119,14 @@ def validate_registry(registry_path: Path, actual_prds: set[str]) -> list[Violat
     violations = []
 
     if not registry_path.exists():
-        violations.append(Violation(
-            rule_id="R001",
-            message="registry.json not found",
-            severity=Severity.ERROR,
-            file_path=str(registry_path)
-        ))
+        violations.append(
+            Violation(
+                rule_id="R001",
+                message="registry.json not found",
+                severity=Severity.ERROR,
+                file_path=str(registry_path),
+            )
+        )
         return violations
 
     with open(registry_path, encoding="utf-8") as f:
@@ -126,33 +136,39 @@ def validate_registry(registry_path: Path, actual_prds: set[str]) -> list[Violat
 
     # 레지스트리에 있지만 파일이 없는 경우
     for prd_id in registered_prds - actual_prds:
-        violations.append(Violation(
-            rule_id="R006",
-            message=f"Registered but file not found: {prd_id}",
-            severity=Severity.ERROR,
-            file_path="registry.json"
-        ))
+        violations.append(
+            Violation(
+                rule_id="R006",
+                message=f"Registered but file not found: {prd_id}",
+                severity=Severity.ERROR,
+                file_path="registry.json",
+            )
+        )
 
     # 파일이 있지만 레지스트리에 없는 경우
     for prd_id in actual_prds - registered_prds:
-        violations.append(Violation(
-            rule_id="R005",
-            message=f"File exists but not registered: {prd_id}",
-            severity=Severity.WARNING,
-            file_path="registry.json",
-            auto_fixable=True
-        ))
+        violations.append(
+            Violation(
+                rule_id="R005",
+                message=f"File exists but not registered: {prd_id}",
+                severity=Severity.WARNING,
+                file_path="registry.json",
+                auto_fixable=True,
+            )
+        )
 
     # 통계 검증
     stats = registry.get("statistics", {})
     if stats.get("total_prds") != len(actual_prds):
-        violations.append(Violation(
-            rule_id="R002",
-            message=f"Statistics mismatch: registry={stats.get('total_prds')}, actual={len(actual_prds)}",
-            severity=Severity.WARNING,
-            file_path="registry.json",
-            auto_fixable=True
-        ))
+        violations.append(
+            Violation(
+                rule_id="R002",
+                message=f"Statistics mismatch: registry={stats.get('total_prds')}, actual={len(actual_prds)}",
+                severity=Severity.WARNING,
+                file_path="registry.json",
+                auto_fixable=True,
+            )
+        )
 
     return violations
 
@@ -233,7 +249,9 @@ def run_validation(namespace: Optional[str] = None) -> ValidationReport:
     # 레지스트리 검증 (전체 검증일 때만)
     if namespace is None:
         all_prds, _ = scan_prds()
-        report.violations.extend(validate_registry(UNIFIED_PATH / "registry.json", all_prds))
+        report.violations.extend(
+            validate_registry(UNIFIED_PATH / "registry.json", all_prds)
+        )
 
     return report
 
@@ -317,10 +335,10 @@ def main():
                     "severity": v.severity.value,
                     "file_path": v.file_path,
                     "suggestion": v.suggestion,
-                    "auto_fixable": v.auto_fixable
+                    "auto_fixable": v.auto_fixable,
                 }
                 for v in report.violations
-            ]
+            ],
         }
         print(json.dumps(output, indent=2, ensure_ascii=False))
         sys.exit(0 if report.errors == 0 else 1)

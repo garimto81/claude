@@ -14,7 +14,7 @@ from pathlib import Path
 # 프로젝트 루트를 path에 추가
 sys.path.insert(0, str(Path(__file__).parent.parent / "src"))
 
-from archive_analyzer.sync import SyncService, SyncConfig
+from archive_analyzer.sync import SyncConfig, SyncService
 
 
 def main():
@@ -77,10 +77,10 @@ def main():
     if args.stats:
         print("\n=== 동기화 통계 ===")
         stats = service.get_sync_stats()
-        print(f"\narchive.db:")
+        print("\narchive.db:")
         print(f"  비디오 파일: {stats['archive_video_count']}개")
         print(f"  미디어 정보: {stats['archive_media_info_count']}개")
-        print(f"\npokervod.db:")
+        print("\npokervod.db:")
         print(f"  파일: {stats['pokervod_file_count']}개")
         print(f"  카탈로그: {stats['pokervod_catalog_count']}개")
         print(f"  서브카탈로그: {stats['pokervod_subcatalog_count']}개")
@@ -93,7 +93,7 @@ def main():
     if args.catalogs_only:
         print("카탈로그 동기화 중...")
         result = service.sync_catalogs(args.dry_run)
-        print(f"\n=== 카탈로그 동기화 결과 ===")
+        print("\n=== 카탈로그 동기화 결과 ===")
         print(f"  삽입: {result.inserted}개")
         print(f"  업데이트: {result.updated}개")
         if result.errors:
@@ -101,7 +101,7 @@ def main():
     elif args.files_only:
         print("파일 동기화 중...")
         result = service.sync_files(args.dry_run)
-        print(f"\n=== 파일 동기화 결과 ===")
+        print("\n=== 파일 동기화 결과 ===")
         print(f"  삽입: {result.inserted}개")
         print(f"  업데이트: {result.updated}개")
         if result.errors:
@@ -114,7 +114,7 @@ def main():
         print("전체 동기화 중...")
         results = service.run_full_sync(args.dry_run)
 
-        print(f"\n=== 동기화 결과 ===")
+        print("\n=== 동기화 결과 ===")
         for name, result in results.items():
             print(f"\n{name}:")
             print(f"  삽입: {result.inserted}개")

@@ -59,7 +59,9 @@ class TestRunValidator:
             result = await run_validator("99")
 
             assert result.success is False
-            assert "not found" in result.error.lower() or "script" in result.error.lower()
+            assert (
+                "not found" in result.error.lower() or "script" in result.error.lower()
+            )
 
     @pytest.mark.asyncio
     async def test_successful_validation(self):
@@ -127,7 +129,10 @@ class TestRunValidator:
             mock_script_path.__str__ = MagicMock(return_value="test_script.ps1")
             mock_root.__truediv__ = MagicMock(return_value=mock_script_path)
 
-            with patch("asyncio.create_subprocess_exec", side_effect=OSError("Command not found")):
+            with patch(
+                "asyncio.create_subprocess_exec",
+                side_effect=OSError("Command not found"),
+            ):
                 result = await run_validator("1")
 
                 assert result.success is False
@@ -146,7 +151,9 @@ class TestRunValidator:
             mock_script_path.__str__ = MagicMock(return_value="test_script.ps1")
             mock_root.__truediv__ = MagicMock(return_value=mock_script_path)
 
-            with patch("asyncio.create_subprocess_exec", return_value=mock_process) as mock_exec:
+            with patch(
+                "asyncio.create_subprocess_exec", return_value=mock_process
+            ) as mock_exec:
                 result = await run_validator("1", ["--verbose", "--dry-run"])
 
                 assert result.success is True
@@ -163,8 +170,12 @@ class TestRunValidatorsParallel:
     async def test_parallel_execution(self):
         """병렬 실행"""
         mock_results = [
-            ValidationResult(phase="1", success=True, output="OK", duration_seconds=1.0),
-            ValidationResult(phase="2", success=True, output="OK", duration_seconds=1.0),
+            ValidationResult(
+                phase="1", success=True, output="OK", duration_seconds=1.0
+            ),
+            ValidationResult(
+                phase="2", success=True, output="OK", duration_seconds=1.0
+            ),
         ]
 
         with patch("src.agents.phase_validator.run_validator") as mock_run:
@@ -178,9 +189,13 @@ class TestRunValidatorsParallel:
     @pytest.mark.asyncio
     async def test_with_args_map(self):
         """Phase별 인자 맵"""
-        mock_result = ValidationResult(phase="1", success=True, output="OK", duration_seconds=1.0)
+        mock_result = ValidationResult(
+            phase="1", success=True, output="OK", duration_seconds=1.0
+        )
 
-        with patch("src.agents.phase_validator.run_validator", return_value=mock_result) as mock_run:
+        with patch(
+            "src.agents.phase_validator.run_validator", return_value=mock_result
+        ) as mock_run:
             args_map = {"1": ["--verbose"], "2": ["--quick"]}
             await run_validators_parallel(["1", "2"], args_map)
 
@@ -229,7 +244,10 @@ class TestRunCommandAsync:
     @pytest.mark.asyncio
     async def test_exception_handling(self):
         """예외 처리"""
-        with patch("asyncio.create_subprocess_exec", side_effect=FileNotFoundError("Command not found")):
+        with patch(
+            "asyncio.create_subprocess_exec",
+            side_effect=FileNotFoundError("Command not found"),
+        ):
             result = await run_command_async("test", ["nonexistent"])
 
             assert result.success is False
@@ -242,8 +260,12 @@ class TestFormatValidationReport:
     def test_all_passed(self):
         """모든 검증 통과"""
         results = [
-            ValidationResult(phase="1", success=True, output="OK", duration_seconds=2.0),
-            ValidationResult(phase="2", success=True, output="OK", duration_seconds=3.0),
+            ValidationResult(
+                phase="1", success=True, output="OK", duration_seconds=2.0
+            ),
+            ValidationResult(
+                phase="2", success=True, output="OK", duration_seconds=3.0
+            ),
         ]
 
         report = format_validation_report(results)
@@ -257,8 +279,16 @@ class TestFormatValidationReport:
     def test_with_failures(self):
         """일부 검증 실패"""
         results = [
-            ValidationResult(phase="1", success=True, output="OK", duration_seconds=2.0),
-            ValidationResult(phase="2", success=False, output="", duration_seconds=3.0, error="Test failed"),
+            ValidationResult(
+                phase="1", success=True, output="OK", duration_seconds=2.0
+            ),
+            ValidationResult(
+                phase="2",
+                success=False,
+                output="",
+                duration_seconds=3.0,
+                error="Test failed",
+            ),
         ]
 
         report = format_validation_report(results)
@@ -279,8 +309,12 @@ class TestFormatValidationReport:
     def test_total_time_calculation(self):
         """총 소요 시간 계산"""
         results = [
-            ValidationResult(phase="1", success=True, output="OK", duration_seconds=2.5),
-            ValidationResult(phase="2", success=True, output="OK", duration_seconds=3.5),
+            ValidationResult(
+                phase="1", success=True, output="OK", duration_seconds=2.5
+            ),
+            ValidationResult(
+                phase="2", success=True, output="OK", duration_seconds=3.5
+            ),
         ]
 
         report = format_validation_report(results)
@@ -292,7 +326,13 @@ class TestFormatValidationReport:
         """긴 에러 메시지 잘림"""
         long_error = "A" * 200  # 200자 에러
         results = [
-            ValidationResult(phase="1", success=False, output="", duration_seconds=1.0, error=long_error),
+            ValidationResult(
+                phase="1",
+                success=False,
+                output="",
+                duration_seconds=1.0,
+                error=long_error,
+            ),
         ]
 
         report = format_validation_report(results)
@@ -308,6 +348,7 @@ class TestProjectRoot:
     def test_project_root_is_path(self):
         """PROJECT_ROOT가 Path 객체"""
         from pathlib import Path
+
         assert isinstance(PROJECT_ROOT, Path)
 
     def test_project_root_value(self):

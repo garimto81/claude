@@ -8,9 +8,10 @@ import json
 import logging
 from dataclasses import dataclass, field, asdict
 from datetime import datetime
-import os
 from pathlib import Path
 from typing import Dict, List, Optional, Any
+
+from .client import _get_project_root
 
 logger = logging.getLogger(__name__)
 
@@ -91,7 +92,9 @@ class MetadataManager:
     """PRD 메타데이터 관리자"""
 
     # 기본 레지스트리 경로
-    DEFAULT_REGISTRY_PATH = _get_project_root() / "tasks" / "prds" / ".prd-registry.json"
+    DEFAULT_REGISTRY_PATH = (
+        _get_project_root() / "tasks" / "prds" / ".prd-registry.json"
+    )
 
     def __init__(self, registry_path: Optional[Path] = None):
         """

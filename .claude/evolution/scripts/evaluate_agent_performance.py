@@ -35,10 +35,12 @@ from datetime import datetime, timedelta
 from dataclasses import dataclass
 
 from dotenv import load_dotenv
-load_dotenv(Path(__file__).parent.parent / '.env')
+
+load_dotenv(Path(__file__).parent.parent / ".env")
 
 try:
     from langfuse import Langfuse
+
     LANGFUSE_AVAILABLE = True
 except ImportError:
     LANGFUSE_AVAILABLE = False
@@ -51,6 +53,7 @@ except ImportError:
 @dataclass
 class PerformanceMetrics:
     """Agent 성능 메트릭"""
+
     agent_name: str
     total_runs: int
     success_rate: float  # 0-1
@@ -97,7 +100,13 @@ class PerformanceMetrics:
         # Error rate (10%) - inverse
         error_score = (1 - self.error_rate) * 10
 
-        total = success_score + rating_score + effectiveness_score + speed_score + error_score
+        total = (
+            success_score
+            + rating_score
+            + effectiveness_score
+            + speed_score
+            + error_score
+        )
         return round(total, 2)
 
     @property
@@ -137,16 +146,13 @@ class AgentEvaluator:
     def __init__(self):
         """Initialize Langfuse client"""
         self.client = Langfuse(
-            public_key=os.getenv('LANGFUSE_PUBLIC_KEY'),
-            secret_key=os.getenv('LANGFUSE_SECRET_KEY'),
-            host=os.getenv('LANGFUSE_HOST', 'http://localhost:3000')
+            public_key=os.getenv("LANGFUSE_PUBLIC_KEY"),
+            secret_key=os.getenv("LANGFUSE_SECRET_KEY"),
+            host=os.getenv("LANGFUSE_HOST", "http://localhost:3000"),
         )
 
     def get_agent_metrics(
-        self,
-        agent_name: str,
-        days: int = 7,
-        phase: Optional[str] = None
+        self, agent_name: str, days: int = 7, phase: Optional[str] = None
     ) -> PerformanceMetrics:
         """
         Agent의 성능 메트릭 계산
@@ -164,8 +170,7 @@ class AgentEvaluator:
         # Langfuse API로 데이터 가져오기
         try:
             traces_response = self.client.fetch_traces(
-                name=f"agent-{agent_name}",
-                from_timestamp=from_timestamp
+                name=f"agent-{agent_name}", from_timestamp=from_timestamp
             )
             traces = traces_response.data if traces_response else []
         except Exception as e:
@@ -175,8 +180,7 @@ class AgentEvaluator:
         # Phase 필터 적용
         if phase and traces:
             traces = [
-                t for t in traces
-                if t.metadata and t.metadata.get("phase") == phase
+                t for t in traces if t.metadata and t.metadata.get("phase") == phase
             ]
 
         # 데이터가 없으면 빈 메트릭 반환
@@ -191,7 +195,7 @@ class AgentEvaluator:
                 avg_effectiveness=None,
                 improvement_suggestions_count=0,
                 p95_duration=None,
-                retry_rate=None
+                retry_rate=None,
             )
 
         # 메트릭 계산
@@ -234,7 +238,11 @@ class AgentEvaluator:
         # 평균 계산
         avg_duration = sum(durations) / len(durations) if durations else 0.0
         avg_rating = sum(ratings) / len(ratings) if ratings else None
-        avg_effectiveness = sum(effectiveness_scores) / len(effectiveness_scores) if effectiveness_scores else None
+        avg_effectiveness = (
+            sum(effectiveness_scores) / len(effectiveness_scores)
+            if effectiveness_scores
+            else None
+        )
 
         # P95 duration 계산
         p95_duration = None
@@ -257,7 +265,7 @@ class AgentEvaluator:
             avg_effectiveness=avg_effectiveness,
             improvement_suggestions_count=suggestions_count,
             p95_duration=p95_duration,
-            retry_rate=None  # 추후 구현
+            retry_rate=None,  # 추후 구현
         )
 
         return metrics
@@ -296,16 +304,16 @@ class AgentEvaluator:
 
         # 순위 매기기
         sorted_agents = sorted(
-            results.items(),
-            key=lambda x: x[1].performance_score,
-            reverse=True
+            results.items(), key=lambda x: x[1].performance_score, reverse=True
         )
 
         return {
             "agents": results,
-            "ranking": [(agent, metrics.performance_score) for agent, metrics in sorted_agents],
+            "ranking": [
+                (agent, metrics.performance_score) for agent, metrics in sorted_agents
+            ],
             "best": sorted_agents[0][0],
-            "worst": sorted_agents[-1][0]
+            "worst": sorted_agents[-1][0],
         }
 
     def generate_report(self, agent_name: str, metrics: PerformanceMetrics) -> str:
@@ -393,13 +401,19 @@ class AgentEvaluator:
             report += "1. ⚠️ **Improve success rate**: Review failed traces and fix common errors\n"
 
         if metrics.avg_duration > 3.0:
-            report += "2. ⏱️ **Optimize speed**: Consider caching or parallel execution\n"
+            report += (
+                "2. ⏱️ **Optimize speed**: Consider caching or parallel execution\n"
+            )
 
         if metrics.avg_user_rating and metrics.avg_user_rating < 0.7:
-            report += "3. 📝 **Address user feedback**: Review improvement suggestions\n"
+            report += (
+                "3. 📝 **Address user feedback**: Review improvement suggestions\n"
+            )
 
         if metrics.error_rate > 0.1:
-            report += "4. 🐛 **Reduce errors**: Implement better error handling and retries\n"
+            report += (
+                "4. 🐛 **Reduce errors**: Implement better error handling and retries\n"
+            )
 
         if metrics.improvement_suggestions_count > 3:
             report += f"5. 🔧 **Process suggestions**: {metrics.improvement_suggestions_count} improvement ideas pending\n"
@@ -434,15 +448,18 @@ class AgentEvaluator:
             "performance_score": metrics.performance_score,
             "success_rate": metrics.success_rate,
             "avg_duration": metrics.avg_duration,
-            "avg_user_rating": metrics.avg_user_rating
+            "avg_user_rating": metrics.avg_user_rating,
         }
 
         # 저장
-        baseline_file = Path(__file__).parent.parent / "config" / f"{agent_name}-baseline.json"
+        baseline_file = (
+            Path(__file__).parent.parent / "config" / f"{agent_name}-baseline.json"
+        )
         baseline_file.parent.mkdir(exist_ok=True)
 
         import json
-        with open(baseline_file, 'w') as f:
+
+        with open(baseline_file, "w") as f:
             json.dump(baseline, f, indent=2)
 
         print(f"✅ Baseline saved: {baseline_file}")
@@ -451,11 +468,15 @@ class AgentEvaluator:
 
 def print_metrics_table(agents_metrics: Dict[str, PerformanceMetrics]):
     """메트릭 테이블 출력"""
-    print("\n" + "="*100)
-    print(f"{'Agent':<25} {'Runs':<8} {'Success':<10} {'Duration':<12} {'Rating':<10} {'Score':<8} {'Grade':<8} {'Status':<20}")
-    print("="*100)
+    print("\n" + "=" * 100)
+    print(
+        f"{'Agent':<25} {'Runs':<8} {'Success':<10} {'Duration':<12} {'Rating':<10} {'Score':<8} {'Grade':<8} {'Status':<20}"
+    )
+    print("=" * 100)
 
-    for agent, metrics in sorted(agents_metrics.items(), key=lambda x: x[1].performance_score, reverse=True):
+    for agent, metrics in sorted(
+        agents_metrics.items(), key=lambda x: x[1].performance_score, reverse=True
+    ):
         print(
             f"{agent:<25} "
             f"{metrics.total_runs:<8} "
@@ -467,7 +488,7 @@ def print_metrics_table(agents_metrics: Dict[str, PerformanceMetrics]):
             f"{metrics.status:<20}"
         )
 
-    print("="*100 + "\n")
+    print("=" * 100 + "\n")
 
 
 def main():
@@ -476,15 +497,15 @@ def main():
 
     parser = argparse.ArgumentParser(
         description="Agent 성능 평가 시스템",
-        epilog="Example: python evaluate_agent_performance.py --agent context7-engineer"
+        epilog="Example: python evaluate_agent_performance.py --agent context7-engineer",
     )
 
-    parser.add_argument('--agent', help='Agent 이름 (또는 "all")')
-    parser.add_argument('--phase', help='Phase 필터')
-    parser.add_argument('--days', type=int, default=7, help='최근 N일')
-    parser.add_argument('--report', action='store_true', help='상세 리포트 생성')
-    parser.add_argument('--baseline', action='store_true', help='Baseline 설정')
-    parser.add_argument('--compare', action='store_true', help='Agent 비교')
+    parser.add_argument("--agent", help='Agent 이름 (또는 "all")')
+    parser.add_argument("--phase", help="Phase 필터")
+    parser.add_argument("--days", type=int, default=7, help="최근 N일")
+    parser.add_argument("--report", action="store_true", help="상세 리포트 생성")
+    parser.add_argument("--baseline", action="store_true", help="Baseline 설정")
+    parser.add_argument("--compare", action="store_true", help="Agent 비교")
 
     args = parser.parse_args()
 
@@ -506,7 +527,7 @@ def main():
         "backend-architect",
         "data-scientist",
         "code-reviewer",
-        "task-decomposition"
+        "task-decomposition",
     ]
 
     if args.baseline:
@@ -534,7 +555,9 @@ def main():
     if args.agent:
         # 단일 Agent 평가
         print(f"📊 Evaluating {args.agent}...")
-        metrics = evaluator.get_agent_metrics(args.agent, days=args.days, phase=args.phase)
+        metrics = evaluator.get_agent_metrics(
+            args.agent, days=args.days, phase=args.phase
+        )
 
         print(f"\n{'='*60}")
         print(f"Agent: {metrics.agent_name}")
@@ -552,10 +575,14 @@ def main():
             # 상세 리포트
             report = evaluator.generate_report(args.agent, metrics)
 
-            report_file = Path(__file__).parent.parent / "data" / f"{args.agent}-report-{datetime.now().strftime('%Y%m%d')}.md"
+            report_file = (
+                Path(__file__).parent.parent
+                / "data"
+                / f"{args.agent}-report-{datetime.now().strftime('%Y%m%d')}.md"
+            )
             report_file.parent.mkdir(exist_ok=True)
 
-            with open(report_file, 'w', encoding='utf-8') as f:
+            with open(report_file, "w", encoding="utf-8") as f:
                 f.write(report)
 
             print(f"\n✅ Report saved: {report_file}")
@@ -567,7 +594,9 @@ def main():
 
         agents_metrics = {}
         for agent in all_agents:
-            metrics = evaluator.get_agent_metrics(agent, days=args.days, phase=args.phase)
+            metrics = evaluator.get_agent_metrics(
+                agent, days=args.days, phase=args.phase
+            )
             agents_metrics[agent] = metrics
 
         print_metrics_table(agents_metrics)

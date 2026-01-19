@@ -15,7 +15,6 @@ import argparse
 import json
 import sqlite3
 import sys
-from datetime import datetime
 from pathlib import Path
 
 # Windows 콘솔 인코딩 설정
@@ -232,7 +231,7 @@ def show_stats(conn):
     cursor.execute("SELECT COUNT(*) FROM hands WHERE tags IS NOT NULL AND tags != '[]'")
     hands_with_tags = cursor.fetchone()[0]
 
-    print(f"hands 테이블:")
+    print("hands 테이블:")
     print(f"  총 핸드 수: {total_hands}")
     print(f"  players 있는 핸드: {hands_with_players}")
     print(f"  tags 있는 핸드: {hands_with_tags}")
@@ -247,7 +246,7 @@ def show_stats(conn):
         cursor.execute("SELECT COUNT(DISTINCT player_name) FROM hand_players")
         unique_players = cursor.fetchone()[0]
 
-        print(f"\nhand_players 테이블:")
+        print("\nhand_players 테이블:")
         print(f"  총 레코드 수: {player_count}")
         print(f"  고유 플레이어 수: {unique_players}")
 
@@ -272,7 +271,7 @@ def show_stats(conn):
         cursor.execute("SELECT COUNT(DISTINCT tag) FROM hand_tags")
         unique_tags = cursor.fetchone()[0]
 
-        print(f"\nhand_tags 테이블:")
+        print("\nhand_tags 테이블:")
         print(f"  총 레코드 수: {tag_count}")
         print(f"  고유 태그 수: {unique_tags}")
 

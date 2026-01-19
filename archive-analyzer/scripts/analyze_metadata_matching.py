@@ -6,9 +6,9 @@
 import csv
 import re
 import sys
-from pathlib import Path
 from collections import defaultdict
-from typing import Optional, Dict, List, Tuple
+from pathlib import Path
+from typing import Dict, List, Optional
 
 # 프로젝트 src 경로 추가
 project_root = Path(__file__).parent.parent

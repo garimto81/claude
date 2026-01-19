@@ -31,21 +31,27 @@ def get_git_info() -> dict:
         # 현재 브랜치
         result = subprocess.run(
             ["git", "rev-parse", "--abbrev-ref", "HEAD"],
-            capture_output=True, text=True, cwd=str(PROJECT_DIR)
+            capture_output=True,
+            text=True,
+            cwd=str(PROJECT_DIR),
         )
         info["branch"] = result.stdout.strip()
 
         # 최근 커밋
         result = subprocess.run(
             ["git", "log", "-5", "--oneline"],
-            capture_output=True, text=True, cwd=str(PROJECT_DIR)
+            capture_output=True,
+            text=True,
+            cwd=str(PROJECT_DIR),
         )
         info["recent_commits"] = result.stdout.strip().split("\n")
 
         # 열린 PR
         result = subprocess.run(
             ["gh", "pr", "list", "--json", "number,title,url", "-L", "5"],
-            capture_output=True, text=True, cwd=str(PROJECT_DIR)
+            capture_output=True,
+            text=True,
+            cwd=str(PROJECT_DIR),
         )
         if result.returncode == 0:
             info["open_prs"] = json.loads(result.stdout)
@@ -148,7 +154,9 @@ def generate_markdown_report(state: dict) -> str:
         lines.append("2. Review and merge open PRs")
     if state.get("taskQueue"):
         lines.append("3. Run `/auto --resume` to continue pending tasks")
-    if not any([state.get("failedTasks"), git_info.get("open_prs"), state.get("taskQueue")]):
+    if not any(
+        [state.get("failedTasks"), git_info.get("open_prs"), state.get("taskQueue")]
+    ):
         lines.append("All tasks completed successfully!")
 
     return "\n".join(lines)

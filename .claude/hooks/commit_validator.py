@@ -14,7 +14,9 @@ import os
 PROJECT_DIR = os.environ.get("CLAUDE_PROJECT_DIR", "D:/AI/claude01")
 
 # Conventional Commits 패턴
-COMMIT_PATTERN = r"^(feat|fix|docs|style|refactor|perf|test|build|ci|chore|revert)(\(.+\))?: .+"
+COMMIT_PATTERN = (
+    r"^(feat|fix|docs|style|refactor|perf|test|build|ci|chore|revert)(\(.+\))?: .+"
+)
 
 # 민감 정보 패턴
 SENSITIVE_PATTERNS = [
@@ -47,7 +49,10 @@ def validate_commit_message(message: str) -> tuple[bool, str]:
     if re.match(COMMIT_PATTERN, first_line, re.IGNORECASE):
         return True, ""
 
-    return False, f"커밋 메시지 형식 오류: '{first_line[:50]}...'\n권장: feat|fix|docs|... : 설명"
+    return (
+        False,
+        f"커밋 메시지 형식 오류: '{first_line[:50]}...'\n권장: feat|fix|docs|... : 설명",
+    )
 
 
 def get_staged_files() -> list:
@@ -57,7 +62,7 @@ def get_staged_files() -> list:
             ["git", "diff", "--cached", "--name-only"],
             capture_output=True,
             text=True,
-            cwd=PROJECT_DIR
+            cwd=PROJECT_DIR,
         )
         return [f for f in result.stdout.strip().split("\n") if f]
     except Exception:
@@ -102,16 +107,20 @@ def main():
         if commit_message:
             is_valid, error = validate_commit_message(commit_message)
             if not is_valid:
-                print(json.dumps({
-                    "decision": "block",
-                    "reason": f"🚫 커밋 메시지 형식 오류\n\n"
-                              f"📌 {error}\n\n"
-                              f"💡 Conventional Commits 형식을 사용하세요:\n"
-                              f"   feat: 새 기능\n"
-                              f"   fix: 버그 수정\n"
-                              f"   docs: 문서 변경\n"
-                              f"   refactor: 코드 리팩토링"
-                }))
+                print(
+                    json.dumps(
+                        {
+                            "decision": "block",
+                            "reason": f"🚫 커밋 메시지 형식 오류\n\n"
+                            f"📌 {error}\n\n"
+                            f"💡 Conventional Commits 형식을 사용하세요:\n"
+                            f"   feat: 새 기능\n"
+                            f"   fix: 버그 수정\n"
+                            f"   docs: 문서 변경\n"
+                            f"   refactor: 코드 리팩토링",
+                        }
+                    )
+                )
                 return
 
         # 스테이징된 파일 민감 정보 검사
@@ -127,13 +136,17 @@ def main():
             if len(all_issues) > 5:
                 issue_list += f"\n  ... 외 {len(all_issues) - 5}개"
 
-            print(json.dumps({
-                "decision": "block",
-                "reason": f"🚫 민감 정보 감지\n\n"
-                          f"📌 발견된 문제:\n{issue_list}\n\n"
-                          f"💡 민감 정보를 환경 변수로 이동하세요.\n"
-                          f"   .env 파일 사용 후 .gitignore에 추가"
-            }))
+            print(
+                json.dumps(
+                    {
+                        "decision": "block",
+                        "reason": f"🚫 민감 정보 감지\n\n"
+                        f"📌 발견된 문제:\n{issue_list}\n\n"
+                        f"💡 민감 정보를 환경 변수로 이동하세요.\n"
+                        f"   .env 파일 사용 후 .gitignore에 추가",
+                    }
+                )
+            )
             return
 
         print(json.dumps({"decision": "approve"}))

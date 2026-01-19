@@ -92,7 +92,9 @@ def update_checklist_start(checklist_path: Path, task_info: dict) -> bool:
         data["stats"]["in_progress"] = data["stats"].get("in_progress", 0) + 1
 
         with open(checklist_path, "w", encoding="utf-8") as f:
-            yaml.dump(data, f, allow_unicode=True, default_flow_style=False, sort_keys=False)
+            yaml.dump(
+                data, f, allow_unicode=True, default_flow_style=False, sort_keys=False
+            )
 
         return True
     except Exception as e:
@@ -134,7 +136,9 @@ def main():
 
     if checklist_path:
         if update_checklist_start(checklist_path, task_info):
-            print(f"📋 체크리스트 작업 시작: {task_info['description']}", file=sys.stderr)
+            print(
+                f"📋 체크리스트 작업 시작: {task_info['description']}", file=sys.stderr
+            )
 
     # Hook은 항상 성공 반환 (차단하지 않음)
     print(json.dumps({"continue": True}))

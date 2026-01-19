@@ -82,30 +82,22 @@ def migrate_log_entry(entry: Dict) -> Dict:
 def migrate_file(input_path: Path, output_path: Path, dry_run: bool = False) -> Dict:
     """파일 마이그레이션"""
     if not input_path.exists():
-        return {
-            "success": False,
-            "error": f"입력 파일이 없습니다: {input_path}"
-        }
+        return {"success": False, "error": f"입력 파일이 없습니다: {input_path}"}
 
     # 기존 v2.0 파일 체크
     if output_path.exists() and not dry_run:
         return {
             "success": False,
             "error": f"출력 파일이 이미 존재합니다: {output_path}\n"
-                    f"기존 파일을 백업하거나 삭제한 후 다시 시도하세요."
+            f"기존 파일을 백업하거나 삭제한 후 다시 시도하세요.",
         }
 
-    stats = {
-        "total": 0,
-        "migrated": 0,
-        "skipped": 0,
-        "errors": []
-    }
+    stats = {"total": 0, "migrated": 0, "skipped": 0, "errors": []}
 
     # 마이그레이션
     migrated_entries = []
 
-    with open(input_path, 'r') as f:
+    with open(input_path, "r") as f:
         for line_num, line in enumerate(f, 1):
             stats["total"] += 1
 
@@ -137,15 +129,11 @@ def migrate_file(input_path: Path, output_path: Path, dry_run: bool = False) -> 
 
     # 출력 (dry-run이 아닌 경우)
     if not dry_run and migrated_entries:
-        with open(output_path, 'w') as f:
+        with open(output_path, "w") as f:
             for entry in migrated_entries:
-                f.write(json.dumps(entry) + '\n')
+                f.write(json.dumps(entry) + "\n")
 
-    return {
-        "success": True,
-        "stats": stats,
-        "dry_run": dry_run
-    }
+    return {"success": True, "stats": stats, "dry_run": dry_run}
 
 
 def print_report(result: Dict):
@@ -168,19 +156,19 @@ def print_report(result: Dict):
     print(f"마이그레이션: {stats['migrated']}")
     print(f"스킵: {stats['skipped']}")
 
-    if stats['errors']:
+    if stats["errors"]:
         print(f"\n⚠️ 경고 ({len(stats['errors'])}개):")
-        for error in stats['errors'][:10]:  # 최대 10개만
+        for error in stats["errors"][:10]:  # 최대 10개만
             print(f"  - {error}")
 
-        if len(stats['errors']) > 10:
+        if len(stats["errors"]) > 10:
             print(f"  ... 외 {len(stats['errors']) - 10}개")
 
     print()
 
     if dry_run:
         print("💡 실제 마이그레이션을 수행하려면 --dry-run 옵션을 제거하세요.")
-    elif stats['migrated'] > 0:
+    elif stats["migrated"] > 0:
         print("✅ v2.0 로그 파일이 생성되었습니다.")
         print("💡 이제 analyze_quality2.py를 사용하여 분석할 수 있습니다.")
 
@@ -201,41 +189,38 @@ def main():
 
   # 백업 생성
   python migrate_v1_to_v2.py --backup
-"""
+""",
     )
 
     parser.add_argument(
-        '--input',
+        "--input",
         type=Path,
-        default=Path('.agent-quality.jsonl'),
-        help='입력 파일 (v1.0 형식, 기본: .agent-quality.jsonl)'
+        default=Path(".agent-quality.jsonl"),
+        help="입력 파일 (v1.0 형식, 기본: .agent-quality.jsonl)",
     )
 
     parser.add_argument(
-        '--output',
+        "--output",
         type=Path,
-        default=Path('.agent-quality-v2.jsonl'),
-        help='출력 파일 (v2.0 형식, 기본: .agent-quality-v2.jsonl)'
+        default=Path(".agent-quality-v2.jsonl"),
+        help="출력 파일 (v2.0 형식, 기본: .agent-quality-v2.jsonl)",
     )
 
     parser.add_argument(
-        '--dry-run',
-        action='store_true',
-        help='실제 변환하지 않고 테스트만 수행'
+        "--dry-run", action="store_true", help="실제 변환하지 않고 테스트만 수행"
     )
 
     parser.add_argument(
-        '--backup',
-        action='store_true',
-        help='입력 파일을 .bak으로 백업'
+        "--backup", action="store_true", help="입력 파일을 .bak으로 백업"
     )
 
     args = parser.parse_args()
 
     # 백업 생성
     if args.backup and args.input.exists() and not args.dry_run:
-        backup_path = args.input.with_suffix('.jsonl.bak')
+        backup_path = args.input.with_suffix(".jsonl.bak")
         import shutil
+
         shutil.copy2(args.input, backup_path)
         print(f"✅ 백업 생성: {backup_path}")
 

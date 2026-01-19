@@ -41,20 +41,20 @@ class TestPromptOptimizer:
                 "agent_type": "context7-engineer",
                 "prompt": "Check docs",
                 "error": "Cannot find documentation",
-                "failure_cause": "ambiguous_prompt"
+                "failure_cause": "ambiguous_prompt",
             },
             {
                 "agent_type": "playwright-engineer",
                 "prompt": "Run tests",
                 "error": "Timeout after 30 seconds",
-                "failure_cause": "timeout"
+                "failure_cause": "timeout",
             },
             {
                 "agent_type": "test-automator",
                 "prompt": "Create test for user authentication module",
                 "error": "Missing test file",
-                "failure_cause": "missing_context"
-            }
+                "failure_cause": "missing_context",
+            },
         ]
 
     def test_generate_improvements_disabled(self, analyzer, sample_failures):
@@ -68,9 +68,13 @@ class TestPromptOptimizer:
         """Test successful prompt improvement generation"""
         # Mock the Anthropic module
         mock_anthropic, mock_client, mock_response = create_mock_anthropic()
-        mock_response.content = [Mock(text="Improved prompt: Verify the latest React 18 documentation from official sources")]
+        mock_response.content = [
+            Mock(
+                text="Improved prompt: Verify the latest React 18 documentation from official sources"
+            )
+        ]
 
-        with patch.dict('sys.modules', {'anthropic': mock_anthropic}):
+        with patch.dict("sys.modules", {"anthropic": mock_anthropic}):
             improvements = analyzer.generate_improvements(sample_failures)
 
         assert len(improvements) > 0
@@ -93,7 +97,7 @@ class TestPromptOptimizer:
                 "agent_type": f"test-agent-{i}",
                 "prompt": f"test prompt {i}",
                 "error": f"error {i}",
-                "failure_cause": "unknown"
+                "failure_cause": "unknown",
             }
             for i in range(10)
         ]
@@ -101,7 +105,7 @@ class TestPromptOptimizer:
         mock_anthropic, mock_client, _ = create_mock_anthropic()
 
         analyzer.config["improvement"]["max_suggestions"] = 3
-        with patch.dict('sys.modules', {'anthropic': mock_anthropic}):
+        with patch.dict("sys.modules", {"anthropic": mock_anthropic}):
             improvements = analyzer.generate_improvements(many_failures)
 
         assert len(improvements) <= 3
@@ -111,7 +115,7 @@ class TestPromptOptimizer:
         mock_anthropic, mock_client, _ = create_mock_anthropic()
 
         analyzer.config["improvement"]["model"] = "claude-sonnet-4-20250514"
-        with patch.dict('sys.modules', {'anthropic': mock_anthropic}):
+        with patch.dict("sys.modules", {"anthropic": mock_anthropic}):
             analyzer.generate_improvements(sample_failures[:1])
 
         # Verify the model parameter
@@ -119,9 +123,14 @@ class TestPromptOptimizer:
         call_kwargs = mock_client.messages.create.call_args[1]
         assert call_kwargs["model"] == "claude-sonnet-4-20250514"
 
-    def test_generate_improvements_anthropic_not_installed(self, analyzer, sample_failures):
+    def test_generate_improvements_anthropic_not_installed(
+        self, analyzer, sample_failures
+    ):
         """Test graceful handling when anthropic package is not installed"""
-        with patch('builtins.__import__', side_effect=ImportError("No module named 'anthropic'")):
+        with patch(
+            "builtins.__import__",
+            side_effect=ImportError("No module named 'anthropic'"),
+        ):
             improvements = analyzer.generate_improvements(sample_failures)
             assert len(improvements) == 0
 
@@ -133,7 +142,7 @@ class TestPromptOptimizer:
         # Ensure .claude directory exists
         (tmp_path / ".claude").mkdir(parents=True, exist_ok=True)
 
-        with patch.dict('sys.modules', {'anthropic': mock_anthropic}):
+        with patch.dict("sys.modules", {"anthropic": mock_anthropic}):
             improvements = analyzer.generate_improvements(sample_failures)
 
         # Should return empty list and log error
@@ -147,7 +156,7 @@ class TestPromptOptimizer:
         """Test that the prompt sent to Claude API is correctly formatted"""
         mock_anthropic, mock_client, _ = create_mock_anthropic()
 
-        with patch.dict('sys.modules', {'anthropic': mock_anthropic}):
+        with patch.dict("sys.modules", {"anthropic": mock_anthropic}):
             analyzer.generate_improvements(sample_failures[:1])
 
         # Check the prompt includes all necessary information
@@ -166,7 +175,7 @@ class TestPromptOptimizer:
                 "agent": "test-agent",
                 "original_prompt": "Test",
                 "error": "Test error",
-                "improved_prompt": "Improved test prompt"
+                "improved_prompt": "Improved test prompt",
             }
         ]
 
@@ -175,7 +184,7 @@ class TestPromptOptimizer:
         suggestions_file = tmp_path / ".claude" / "improvement-suggestions.md"
         assert suggestions_file.exists()
 
-        content = suggestions_file.read_text(encoding='utf-8')
+        content = suggestions_file.read_text(encoding="utf-8")
         assert "test-agent" in content
         assert "Test" in content
         assert "Improved test prompt" in content
@@ -184,20 +193,20 @@ class TestPromptOptimizer:
         """Test that save_improvements appends to existing file"""
         suggestions_file = tmp_path / ".claude" / "improvement-suggestions.md"
         suggestions_file.parent.mkdir(parents=True, exist_ok=True)
-        suggestions_file.write_text("Existing content\n", encoding='utf-8')
+        suggestions_file.write_text("Existing content\n", encoding="utf-8")
 
         improvements = [
             {
                 "agent": "test-agent",
                 "original_prompt": "Test",
                 "error": "Test error",
-                "improved_prompt": "Improved"
+                "improved_prompt": "Improved",
             }
         ]
 
         analyzer.save_improvements(improvements)
 
-        content = suggestions_file.read_text(encoding='utf-8')
+        content = suggestions_file.read_text(encoding="utf-8")
         assert "Existing content" in content
         assert "test-agent" in content
 
@@ -215,14 +224,14 @@ class TestPromptOptimizer:
                 "agent": "test-agent",
                 "original_prompt": "Original",
                 "error": "Error message",
-                "improved_prompt": "Improved"
+                "improved_prompt": "Improved",
             }
         ]
 
         analyzer.save_improvements(improvements)
 
         suggestions_file = tmp_path / ".claude" / "improvement-suggestions.md"
-        content = suggestions_file.read_text(encoding='utf-8')
+        content = suggestions_file.read_text(encoding="utf-8")
 
         # Check markdown formatting
         assert "##" in content  # Timestamp header
@@ -236,7 +245,7 @@ class TestPromptOptimizer:
         """Test that all failure metadata is preserved in improvements"""
         mock_anthropic, _, _ = create_mock_anthropic()
 
-        with patch.dict('sys.modules', {'anthropic': mock_anthropic}):
+        with patch.dict("sys.modules", {"anthropic": mock_anthropic}):
             improvements = analyzer.generate_improvements(sample_failures[:1])
 
         assert len(improvements) == 1

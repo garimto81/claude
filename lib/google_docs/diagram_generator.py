@@ -46,14 +46,13 @@ class DiagramGenerator:
         Args:
             templates_dir: HTML 템플릿 디렉토리 경로
         """
-        self.templates_dir = templates_dir or Path(__file__).parent / 'templates'
+        self.templates_dir = templates_dir or Path(__file__).parent / "templates"
 
         if Environment is None or FileSystemLoader is None:
             raise ImportError("jinja2가 설치되어 있지 않습니다. pip install jinja2")
 
         self.env = Environment(
-            loader=FileSystemLoader(str(self.templates_dir)),
-            autoescape=True
+            loader=FileSystemLoader(str(self.templates_dir)), autoescape=True
         )
 
     async def _generate_diagram_async(
@@ -78,7 +77,9 @@ class DiagramGenerator:
             생성된 PNG 파일 경로
         """
         if async_playwright is None:
-            raise ImportError("playwright가 설치되어 있지 않습니다. pip install playwright && playwright install chromium")
+            raise ImportError(
+                "playwright가 설치되어 있지 않습니다. pip install playwright && playwright install chromium"
+            )
 
         # 1. 템플릿 렌더링
         template = self.env.get_template(template_name)
@@ -86,10 +87,7 @@ class DiagramGenerator:
 
         # 2. 임시 HTML 파일 저장
         with tempfile.NamedTemporaryFile(
-            mode='w',
-            suffix='.html',
-            delete=False,
-            encoding='utf-8'
+            mode="w", suffix=".html", delete=False, encoding="utf-8"
         ) as f:
             f.write(html_content)
             temp_html_path = Path(f.name)
@@ -99,32 +97,33 @@ class DiagramGenerator:
             async with async_playwright() as p:
                 browser = await p.chromium.launch(headless=True)
                 page = await browser.new_page(
-                    viewport={'width': width, 'height': height or 1080}
+                    viewport={"width": width, "height": height or 1080}
                 )
 
                 # 파일 URL로 이동
-                await page.goto(f'file:///{temp_html_path.resolve()}')
+                await page.goto(f"file:///{temp_html_path.resolve()}")
 
                 # 콘텐츠 로드 대기
-                await page.wait_for_load_state('networkidle')
+                await page.wait_for_load_state("networkidle")
 
                 # 콘텐츠 높이에 맞게 viewport 조정
                 if height is None:
-                    content_height = await page.evaluate('document.body.scrollHeight')
-                    await page.set_viewport_size({
-                        'width': width,
-                        'height': content_height + 80  # 여유 공간
-                    })
+                    content_height = await page.evaluate("document.body.scrollHeight")
+                    await page.set_viewport_size(
+                        {"width": width, "height": content_height + 80}  # 여유 공간
+                    )
 
                 # 출력 디렉토리 생성
                 output_path.parent.mkdir(parents=True, exist_ok=True)
 
                 # 스크린샷 캡처 (.container 영역만)
-                container = await page.query_selector('.container')
+                container = await page.query_selector(".container")
                 if container:
-                    await container.screenshot(path=str(output_path), type='png')
+                    await container.screenshot(path=str(output_path), type="png")
                 else:
-                    await page.screenshot(path=str(output_path), full_page=True, type='png')
+                    await page.screenshot(
+                        path=str(output_path), full_page=True, type="png"
+                    )
 
                 await browser.close()
 
@@ -199,7 +198,7 @@ class DiagramGenerator:
         Returns:
             생성된 PNG 파일 경로
         """
-        return self.generate_diagram('architecture.html', data, output_path, width)
+        return self.generate_diagram("architecture.html", data, output_path, width)
 
     def generate_erd(
         self,
@@ -245,7 +244,7 @@ class DiagramGenerator:
         Returns:
             생성된 PNG 파일 경로
         """
-        return self.generate_diagram('erd.html', data, output_path, width)
+        return self.generate_diagram("erd.html", data, output_path, width)
 
     def generate_flowchart(
         self,
@@ -279,7 +278,7 @@ class DiagramGenerator:
         Returns:
             생성된 PNG 파일 경로
         """
-        return self.generate_diagram('flowchart.html', data, output_path, width)
+        return self.generate_diagram("flowchart.html", data, output_path, width)
 
     def generate_ui_mockup(
         self,
@@ -308,7 +307,7 @@ class DiagramGenerator:
         Returns:
             생성된 PNG 파일 경로
         """
-        return self.generate_diagram('ui-mockup.html', data, output_path, width)
+        return self.generate_diagram("ui-mockup.html", data, output_path, width)
 
     def render_html(
         self,
@@ -347,7 +346,7 @@ class DiagramGenerator:
         """
         html_content = self.render_html(template_name, data)
         output_path.parent.mkdir(parents=True, exist_ok=True)
-        output_path.write_text(html_content, encoding='utf-8')
+        output_path.write_text(html_content, encoding="utf-8")
         return output_path
 
 

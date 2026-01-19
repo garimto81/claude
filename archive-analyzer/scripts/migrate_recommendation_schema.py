@@ -369,7 +369,7 @@ def main():
             print(f"{'🔍 롤백 시뮬레이션' if args.dry_run else '🗑️  롤백 실행'}\n")
             results = rollback(conn, dry_run=args.dry_run)
 
-            print(f"\n📊 결과:")
+            print("\n📊 결과:")
             print(f"   삭제된 테이블: {len(results['tables_dropped'])}")
             print(f"   없는 테이블: {len(results['tables_not_found'])}")
 
@@ -377,13 +377,13 @@ def main():
             print(f"{'🔍 마이그레이션 시뮬레이션' if args.dry_run else '🚀 마이그레이션 실행'}\n")
             results = migrate(conn, dry_run=args.dry_run)
 
-            print(f"\n📊 결과:")
+            print("\n📊 결과:")
             print(f"   생성된 테이블: {len(results['tables_created'])}")
             print(f"   스킵된 테이블: {len(results['tables_skipped'])}")
             print(f"   생성된 인덱스: {len(results['indexes_created'])}")
 
             if results["data_inserted"]:
-                print(f"   삽입된 데이터:")
+                print("   삽입된 데이터:")
                 for data in results["data_inserted"]:
                     print(f"      - {data}")
 

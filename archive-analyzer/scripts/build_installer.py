@@ -13,7 +13,6 @@ Output:
     dist/NASAutoSync.exe      - Single file (with --onefile)
 """
 
-import os
 import shutil
 import subprocess
 import sys
@@ -183,7 +182,7 @@ def build_exe(onefile: bool = False, debug: bool = False):
     result = subprocess.run(opts, cwd=PROJECT_ROOT)
 
     if result.returncode == 0:
-        print(f"\nBuild successful!")
+        print("\nBuild successful!")
         if onefile:
             print(f"Output: {DIST_DIR / f'{APP_NAME}.exe'}")
         else:
@@ -264,7 +263,7 @@ def main():
     args = parser.parse_args()
 
     print("=" * 60)
-    print(f"NAS Auto Sync Installer Builder")
+    print("NAS Auto Sync Installer Builder")
     print(f"Version: {APP_VERSION}")
     print("=" * 60)
 
@@ -290,7 +289,7 @@ def main():
     print(f"     {DIST_DIR / APP_NAME / f'{APP_NAME}.exe'}")
     print("")
     print("  2. Create installer (requires Inno Setup):")
-    print(f"     iscc installer/setup.iss")
+    print("     iscc installer/setup.iss")
     print("=" * 60)
 
 

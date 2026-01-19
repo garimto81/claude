@@ -26,9 +26,9 @@ try:
     from google_docs import (
         MarkdownToDocsConverter,
         ImageInserter,
-        NotionStyle,
         get_default_style,
     )
+
     VISUALIZATION_AVAILABLE = True
 except ImportError:
     VISUALIZATION_AVAILABLE = False
@@ -51,9 +51,9 @@ class VisualizationConfig:
 
     enabled: bool = False
     mockup_dir: Path = None  # HTML 목업 디렉토리
-    image_dir: Path = None   # 스크린샷 저장 디렉토리
+    image_dir: Path = None  # 스크린샷 저장 디렉토리
     drive_folder_id: str = ""  # Google Drive 이미지 폴더 ID
-    image_width: int = 450   # 이미지 너비 (PT)
+    image_width: int = 450  # 이미지 너비 (PT)
     apply_notion_style: bool = True  # Notion 스타일 적용 여부
 
     def __post_init__(self):
@@ -677,26 +677,30 @@ class PRDService:
                     end_idx = element.get("endIndex", 0)
 
                     if heading_style:
-                        color = style.get_color(heading_style.get("color", "text_primary"))
+                        color = style.get_color(
+                            heading_style.get("color", "text_primary")
+                        )
 
-                        requests.append({
-                            "updateTextStyle": {
-                                "range": {
-                                    "startIndex": start_idx,
-                                    "endIndex": end_idx - 1,
-                                },
-                                "textStyle": {
-                                    "foregroundColor": {
-                                        "color": {"rgbColor": color}
+                        requests.append(
+                            {
+                                "updateTextStyle": {
+                                    "range": {
+                                        "startIndex": start_idx,
+                                        "endIndex": end_idx - 1,
                                     },
-                                    "fontSize": {
-                                        "magnitude": heading_style.get("size", 14),
-                                        "unit": "PT"
+                                    "textStyle": {
+                                        "foregroundColor": {
+                                            "color": {"rgbColor": color}
+                                        },
+                                        "fontSize": {
+                                            "magnitude": heading_style.get("size", 14),
+                                            "unit": "PT",
+                                        },
                                     },
-                                },
-                                "fields": "foregroundColor,fontSize"
+                                    "fields": "foregroundColor,fontSize",
+                                }
                             }
-                        })
+                        )
 
             if requests:
                 self.client.update_document(doc_id, requests)

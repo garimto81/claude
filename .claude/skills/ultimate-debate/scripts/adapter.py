@@ -8,7 +8,9 @@ import sys
 from pathlib import Path
 
 # Core Engine 패키지 경로 추가 (독립 서브 레포)
-PACKAGES_PATH = Path(__file__).parent.parent.parent.parent.parent / "ultimate-debate" / "src"
+PACKAGES_PATH = (
+    Path(__file__).parent.parent.parent.parent.parent / "ultimate-debate" / "src"
+)
 if str(PACKAGES_PATH) not in sys.path:
     sys.path.insert(0, str(PACKAGES_PATH))
 
@@ -21,6 +23,7 @@ try:
     from ultimate_debate.storage import ContextManager, ChunkManager, LoadLevel
     from ultimate_debate.comparison import SemanticComparator, HashComparator
     from ultimate_debate.strategies import StrategyType
+
     CORE_AVAILABLE = True
 except ImportError as e:
     CORE_AVAILABLE = False
@@ -94,6 +97,7 @@ class UltimateDebateAdapter:
 
 # Claude Code Skill 연동을 위한 헬퍼 함수들
 
+
 def create_debate(
     task: str,
     max_rounds: int = 5,
@@ -154,7 +158,9 @@ def load_debate_context(
             if model_file.name in ["CONSENSUS.md"]:
                 continue
             model_name = model_file.stem
-            round_data["models"][model_name] = chunker.load_level(model_file, load_level)
+            round_data["models"][model_name] = chunker.load_level(
+                model_file, load_level
+            )
 
         result["rounds"].append(round_data)
 

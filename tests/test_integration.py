@@ -67,7 +67,7 @@ description: "Review security vulnerabilities in auth module"
 [2025-01-13T10:05:10.300Z] Task completed (10.3 seconds)
 """
         log_file = tmp_path / "claude.log"
-        log_file.write_text(log_content, encoding='utf-8')
+        log_file.write_text(log_content, encoding="utf-8")
         return log_file
 
     def test_full_pipeline_parse_analyze_notify(self, analyzer, complete_log_file):
@@ -94,14 +94,24 @@ description: "Review security vulnerabilities in auth module"
         # Test notification (should not raise)
         analyzer.notify(failures)
 
-    def test_full_pipeline_with_improvements(self, analyzer, complete_log_file, tmp_path):
+    def test_full_pipeline_with_improvements(
+        self, analyzer, complete_log_file, tmp_path
+    ):
         """Test complete pipeline including improvement generation"""
         # Mock Claude API
         mock_anthropic, mock_client = create_mock_anthropic()
         mock_response1 = Mock()
-        mock_response1.content = [Mock(text="Improved: Run end-to-end authentication tests with explicit 60-second timeout and detailed element selectors")]
+        mock_response1.content = [
+            Mock(
+                text="Improved: Run end-to-end authentication tests with explicit 60-second timeout and detailed element selectors"
+            )
+        ]
         mock_response2 = Mock()
-        mock_response2.content = [Mock(text="Improved: Analyze the requirements for the user authentication feature and break down into sequential implementation steps")]
+        mock_response2.content = [
+            Mock(
+                text="Improved: Analyze the requirements for the user authentication feature and break down into sequential implementation steps"
+            )
+        ]
 
         mock_client.messages.create.side_effect = [mock_response1, mock_response2]
 
@@ -109,7 +119,7 @@ description: "Review security vulnerabilities in auth module"
         agent_calls = analyzer.parse_log_file(complete_log_file)
         failures = analyzer.analyze_failures(agent_calls)
 
-        with patch.dict('sys.modules', {'anthropic': mock_anthropic}):
+        with patch.dict("sys.modules", {"anthropic": mock_anthropic}):
             improvements = analyzer.generate_improvements(failures)
         analyzer.save_improvements(improvements)
 
@@ -120,13 +130,15 @@ description: "Review security vulnerabilities in auth module"
         suggestions_file = tmp_path / ".claude" / "improvement-suggestions.md"
         assert suggestions_file.exists()
 
-        content = suggestions_file.read_text(encoding='utf-8')
+        content = suggestions_file.read_text(encoding="utf-8")
         assert "playwright-engineer" in content
         assert "seq-engineer" in content
         assert "Improved:" in content
 
-    @patch('subprocess.run')
-    def test_full_pipeline_with_git_metadata(self, mock_run, analyzer, complete_log_file):
+    @patch("subprocess.run")
+    def test_full_pipeline_with_git_metadata(
+        self, mock_run, analyzer, complete_log_file
+    ):
         """Test complete pipeline including Git metadata storage"""
         # Mock git commands
         mock_log_result = Mock()
@@ -157,7 +169,9 @@ description: "Review security vulnerabilities in auth module"
         # Setup log directory
         log_dir = tmp_path / "logs"
         log_dir.mkdir(parents=True, exist_ok=True)
-        (log_dir / "claude.log").write_text(complete_log_file.read_text(), encoding='utf-8')
+        (log_dir / "claude.log").write_text(
+            complete_log_file.read_text(), encoding="utf-8"
+        )
 
         # Override log directory detection
         analyzer.log_dir = log_dir
@@ -200,7 +214,7 @@ description: "Review security vulnerabilities in auth module"
     "save_to_file": true
   }
 }"""
-        config_path.write_text(config_content, encoding='utf-8')
+        config_path.write_text(config_content, encoding="utf-8")
 
         # Create analyzer and verify config loaded
         analyzer = AgentUsageAnalyzer(tmp_path)
@@ -222,7 +236,7 @@ description: "Review security vulnerabilities in auth module"
         log_dir = tmp_path / "logs"
         log_dir.mkdir(parents=True, exist_ok=True)
         empty_log = log_dir / "empty.log"
-        empty_log.write_text("", encoding='utf-8')
+        empty_log.write_text("", encoding="utf-8")
 
         analyzer.log_dir = log_dir
         analyzer.run()  # Should complete without error
@@ -236,10 +250,11 @@ description: "Review security vulnerabilities in auth module"
 
         # If on Windows, should contain APPDATA
         import os
-        if os.name == 'nt' and os.getenv('APPDATA'):
+
+        if os.name == "nt" and os.getenv("APPDATA"):
             assert "Claude" in str(log_dir)
 
-    @patch('subprocess.run')
+    @patch("subprocess.run")
     def test_end_to_end_with_all_features(self, mock_run, complete_log_file, tmp_path):
         """Comprehensive E2E test with all features enabled"""
         # Setup
@@ -256,7 +271,7 @@ description: "Review security vulnerabilities in auth module"
         mock_run.return_value = mock_log_result
 
         # Run full workflow with patched anthropic
-        with patch.dict('sys.modules', {'anthropic': mock_anthropic}):
+        with patch.dict("sys.modules", {"anthropic": mock_anthropic}):
             analyzer.run()
 
         # Verify all components were called
@@ -284,7 +299,7 @@ Prompt: "한글 프롬프트 테스트 🚀"
 [2025-01-13T10:00:01Z] Success
 """
         log_file = tmp_path / "unicode.log"
-        log_file.write_text(log_content, encoding='utf-8')
+        log_file.write_text(log_content, encoding="utf-8")
 
         agent_calls = analyzer.parse_log_file(log_file)
 

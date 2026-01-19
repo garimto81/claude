@@ -9,6 +9,7 @@ from sqlmodel import Session, SQLModel, create_engine
 
 from src.api.main import app
 from src.api.deps import get_db
+
 # Import all models to ensure they are registered with SQLModel metadata
 from src.db.models import (
     AugmentScore,

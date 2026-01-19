@@ -12,7 +12,7 @@ def main():
     # BatchConverter 초기화
     converter = BatchConverter(
         folder_id=None,  # 기본 폴더 사용
-        parallel=3,      # 동시 3개씩 처리
+        parallel=3,  # 동시 3개씩 처리
     )
 
     # 예제 1: 파일 리스트 변환
@@ -54,7 +54,9 @@ def main():
 
     # 통계 출력
     success_count = sum(1 for r in results if r.success)
-    print(f"\n총 {len(results)}개 파일 처리: 성공 {success_count}, 실패 {len(results) - success_count}")
+    print(
+        f"\n총 {len(results)}개 파일 처리: 성공 {success_count}, 실패 {len(results) - success_count}"
+    )
 
 
 if __name__ == "__main__":

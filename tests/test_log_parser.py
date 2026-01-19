@@ -30,7 +30,7 @@ Prompt: "Verify latest React documentation"
 [2025-01-13T10:15:26.789Z] Task completed (3.3s)
 """
         log_file = tmp_path / "test.log"
-        log_file.write_text(log_content, encoding='utf-8')
+        log_file.write_text(log_content, encoding="utf-8")
         return log_file
 
     @pytest.fixture
@@ -42,7 +42,7 @@ description: "Run E2E tests"
 [2025-01-13 10:20:18] ERROR: Task failed: Timeout after 30 seconds
 """
         log_file = tmp_path / "test.log"
-        log_file.write_text(log_content, encoding='utf-8')
+        log_file.write_text(log_content, encoding="utf-8")
         return log_file
 
     @pytest.fixture
@@ -64,7 +64,7 @@ description: 'Fix type errors'
 [2025-01-13T10:02:30.789Z] Task completed (30.8s)
 """
         log_file = tmp_path / "test.log"
-        log_file.write_text(log_content, encoding='utf-8')
+        log_file.write_text(log_content, encoding="utf-8")
         return log_file
 
     def test_parse_successful_execution(self, analyzer, sample_log_success):
@@ -112,7 +112,7 @@ description: 'Fix type errors'
     def test_parse_empty_file(self, analyzer, tmp_path):
         """Test parsing an empty log file"""
         empty_log = tmp_path / "empty.log"
-        empty_log.write_text("", encoding='utf-8')
+        empty_log.write_text("", encoding="utf-8")
 
         result = analyzer.parse_log_file(empty_log)
         assert len(result) == 0
@@ -120,7 +120,7 @@ description: 'Fix type errors'
     def test_parse_invalid_format(self, analyzer, tmp_path):
         """Test parsing a log file with invalid format"""
         invalid_log = tmp_path / "invalid.log"
-        invalid_log.write_text("Random text without proper format\n", encoding='utf-8')
+        invalid_log.write_text("Random text without proper format\n", encoding="utf-8")
 
         result = analyzer.parse_log_file(invalid_log)
         assert len(result) == 0
@@ -131,7 +131,7 @@ description: 'Fix type errors'
         analyzer.config["log_analysis"]["max_log_size_mb"] = 0.001
 
         large_log = tmp_path / "large.log"
-        large_log.write_text("x" * 2000, encoding='utf-8')  # 2KB file
+        large_log.write_text("x" * 2000, encoding="utf-8")  # 2KB file
 
         result = analyzer.parse_log_file(large_log)
         assert len(result) == 0
@@ -143,7 +143,7 @@ agent_type: code-reviewer
 prompt: "Review code changes"
 """
         log_file = tmp_path / "test.log"
-        log_file.write_text(log_content, encoding='utf-8')
+        log_file.write_text(log_content, encoding="utf-8")
 
         result = analyzer.parse_log_file(log_file)
 
@@ -166,7 +166,7 @@ agent_type: test3
 [2025-01-13T12:00:02.789012Z] Task completed
 """
         log_file = tmp_path / "test.log"
-        log_file.write_text(log_content, encoding='utf-8')
+        log_file.write_text(log_content, encoding="utf-8")
 
         result = analyzer.parse_log_file(log_file)
 
@@ -188,7 +188,7 @@ description: "Description field"
 [2025-01-13T10:02:01Z] Task completed
 """
         log_file = tmp_path / "test.log"
-        log_file.write_text(log_content, encoding='utf-8')
+        log_file.write_text(log_content, encoding="utf-8")
 
         result = analyzer.parse_log_file(log_file)
 

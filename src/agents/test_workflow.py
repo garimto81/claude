@@ -20,7 +20,6 @@ from langchain_core.messages import HumanMessage, SystemMessage
 
 from .config import AGENT_MODEL_TIERS
 
-
 # ============================================================================
 # State Definitions
 # ============================================================================
@@ -253,14 +252,12 @@ def supervisor_node(state: TestWorkflowState) -> dict:
 
     messages = [
         SystemMessage(content=system_prompt),
-        HumanMessage(
-            content=f"""
+        HumanMessage(content=f"""
 테스트 대상: {state['target']}
 테스트 범위: {state.get('scope', '전체')}
 
 테스트 계획을 수립하세요.
-"""
-        ),
+"""),
     ]
 
     response = model.invoke(messages)
@@ -286,14 +283,12 @@ def unit_tester_node(state: TestWorkflowState) -> dict:
 
     messages = [
         SystemMessage(content=UNIT_TESTER_PROMPT),
-        HumanMessage(
-            content=f"""
+        HumanMessage(content=f"""
 테스트 대상: {state['target']}
 단위 테스트 범위: {test_plan.get('unit_scope', '전체 함수/클래스')}
 
 단위 테스트를 분석하고 결과를 보고하세요.
-"""
-        ),
+"""),
     ]
 
     try:
@@ -336,14 +331,12 @@ def integration_tester_node(state: TestWorkflowState) -> dict:
 
     messages = [
         SystemMessage(content=INTEGRATION_TESTER_PROMPT),
-        HumanMessage(
-            content=f"""
+        HumanMessage(content=f"""
 테스트 대상: {state['target']}
 통합 테스트 범위: {test_plan.get('integration_scope', '전체 API')}
 
 통합 테스트를 분석하고 결과를 보고하세요.
-"""
-        ),
+"""),
     ]
 
     try:
@@ -389,14 +382,12 @@ def e2e_tester_node(state: TestWorkflowState) -> dict:
 
     messages = [
         SystemMessage(content=E2E_TESTER_PROMPT),
-        HumanMessage(
-            content=f"""
+        HumanMessage(content=f"""
 테스트 대상: {state['target']}
 E2E 테스트 범위: {test_plan.get('e2e_scope', '주요 사용자 플로우')}
 
 E2E 테스트를 분석하고 결과를 보고하세요.
-"""
-        ),
+"""),
     ]
 
     try:
@@ -439,14 +430,12 @@ def security_tester_node(state: TestWorkflowState) -> dict:
 
     messages = [
         SystemMessage(content=SECURITY_TESTER_PROMPT),
-        HumanMessage(
-            content=f"""
+        HumanMessage(content=f"""
 테스트 대상: {state['target']}
 보안 테스트 범위: {test_plan.get('security_scope', 'OWASP Top 10')}
 
 보안 테스트를 분석하고 결과를 보고하세요.
-"""
-        ),
+"""),
     ]
 
     try:
@@ -501,8 +490,7 @@ def reporter_node(state: TestWorkflowState) -> dict:
 
     messages = [
         SystemMessage(content=system_prompt),
-        HumanMessage(
-            content=f"""
+        HumanMessage(content=f"""
 테스트 대상: {state['target']}
 
 단위 테스트:
@@ -518,8 +506,7 @@ E2E 테스트:
 {state.get('security_results', {}).get('output', 'N/A')}
 
 위 결과를 종합하여 최종 테스트 리포트를 작성하세요.
-"""
-        ),
+"""),
     ]
 
     response = model.invoke(messages)

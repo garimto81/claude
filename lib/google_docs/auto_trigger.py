@@ -5,7 +5,6 @@
 """
 
 from pathlib import Path
-from typing import Optional
 
 from .converter import create_google_doc
 from .auth import DEFAULT_FOLDER_ID
@@ -15,19 +14,19 @@ class AutoTriggerHandler:
     """자동 트리거 핸들러"""
 
     TRIGGERS = {
-        'keywords': [
-            'prd to gdocs',
-            'md to docs',
-            '--to-gdocs',
-            'google docs로',
-            'convert to google docs',
-            'gdocs',
+        "keywords": [
+            "prd to gdocs",
+            "md to docs",
+            "--to-gdocs",
+            "google docs로",
+            "convert to google docs",
+            "gdocs",
         ],
-        'file_patterns': [
-            'tasks/prds/*.md',
-            '**/PRD-*.md',
-            '**/prd-*.md',
-            'docs/prds/*.md',
+        "file_patterns": [
+            "tasks/prds/*.md",
+            "**/PRD-*.md",
+            "**/prd-*.md",
+            "docs/prds/*.md",
         ],
     }
 
@@ -56,13 +55,13 @@ class AutoTriggerHandler:
         # 키워드 기반 트리거
         if user_input:
             user_lower = user_input.lower()
-            if any(kw in user_lower for kw in self.TRIGGERS['keywords']):
+            if any(kw in user_lower for kw in self.TRIGGERS["keywords"]):
                 return True
 
         # 파일 패턴 기반 트리거
         if file_path:
             file_path = Path(file_path)
-            for pattern in self.TRIGGERS['file_patterns']:
+            for pattern in self.TRIGGERS["file_patterns"]:
                 if file_path.match(pattern):
                     return True
 
@@ -88,7 +87,7 @@ class AutoTriggerHandler:
 
             if target_path.is_file():
                 # 파일 읽기
-                content = target_path.read_text(encoding='utf-8')
+                content = target_path.read_text(encoding="utf-8")
                 title = target_path.stem
             else:
                 # 마크다운 텍스트로 간주
@@ -139,60 +138,60 @@ class AutoTriggerHandler:
 
         if not file_path.exists():
             return {
-                'should_convert': False,
-                'reason': '파일이 존재하지 않습니다',
-                'confidence': 0.0,
-                'file_path': file_path,
+                "should_convert": False,
+                "reason": "파일이 존재하지 않습니다",
+                "confidence": 0.0,
+                "file_path": file_path,
             }
 
         if not file_path.is_file():
             return {
-                'should_convert': False,
-                'reason': '파일이 아닙니다',
-                'confidence': 0.0,
-                'file_path': file_path,
+                "should_convert": False,
+                "reason": "파일이 아닙니다",
+                "confidence": 0.0,
+                "file_path": file_path,
             }
 
         # 확장자 확인
-        if file_path.suffix.lower() != '.md':
+        if file_path.suffix.lower() != ".md":
             return {
-                'should_convert': False,
-                'reason': '마크다운 파일이 아닙니다',
-                'confidence': 0.0,
-                'file_path': file_path,
+                "should_convert": False,
+                "reason": "마크다운 파일이 아닙니다",
+                "confidence": 0.0,
+                "file_path": file_path,
             }
 
         # 파일 패턴 매칭
         matched_patterns = []
-        for pattern in self.TRIGGERS['file_patterns']:
+        for pattern in self.TRIGGERS["file_patterns"]:
             if file_path.match(pattern):
                 matched_patterns.append(pattern)
 
         if matched_patterns:
             # 패턴 매칭 성공
-            confidence = 0.9 if 'PRD' in file_path.name.upper() else 0.7
+            confidence = 0.9 if "PRD" in file_path.name.upper() else 0.7
 
             return {
-                'should_convert': True,
-                'reason': f'파일 패턴 매칭: {", ".join(matched_patterns)}',
-                'confidence': confidence,
-                'file_path': file_path,
+                "should_convert": True,
+                "reason": f'파일 패턴 매칭: {", ".join(matched_patterns)}',
+                "confidence": confidence,
+                "file_path": file_path,
             }
 
         # 파일 크기 확인 (너무 크면 경고)
         file_size = file_path.stat().st_size
         if file_size > 1_000_000:  # 1MB
             return {
-                'should_convert': False,
-                'reason': f'파일이 너무 큽니다 ({file_size / 1024 / 1024:.1f} MB)',
-                'confidence': 0.0,
-                'file_path': file_path,
+                "should_convert": False,
+                "reason": f"파일이 너무 큽니다 ({file_size / 1024 / 1024:.1f} MB)",
+                "confidence": 0.0,
+                "file_path": file_path,
             }
 
         # 일반 마크다운 파일
         return {
-            'should_convert': False,
-            'reason': '자동 변환 패턴과 일치하지 않습니다',
-            'confidence': 0.3,
-            'file_path': file_path,
+            "should_convert": False,
+            "reason": "자동 변환 패턴과 일치하지 않습니다",
+            "confidence": 0.3,
+            "file_path": file_path,
         }

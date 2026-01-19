@@ -10,7 +10,7 @@ import sys
 import os
 
 # 패키지로 임포트 가능하도록 경로 추가
-sys.path.insert(0, os.path.join(os.path.dirname(__file__), '..', '..', 'src', 'agents'))
+sys.path.insert(0, os.path.join(os.path.dirname(__file__), "..", "..", "src", "agents"))
 
 from prompt_learning.pattern_detector import (
     PatternDetector,
@@ -18,7 +18,11 @@ from prompt_learning.pattern_detector import (
     PatternReport,
     detect_patterns_from_analyses,
 )
-from prompt_learning.failure_analyzer import FailureAnalysis, FailureCause, FailureCategory
+from prompt_learning.failure_analyzer import (
+    FailureAnalysis,
+    FailureCause,
+    FailureCategory,
+)
 
 
 class TestPattern:
@@ -34,7 +38,7 @@ class TestPattern:
             first_seen="2024-01-01T00:00:00",
             last_seen="2024-01-05T00:00:00",
             affected_sessions=["s1", "s2", "s3", "s4", "s5"],
-            trend="increasing"
+            trend="increasing",
         )
         assert pattern.pattern_id == "test-pattern"
         assert pattern.occurrence_count == 5
@@ -49,7 +53,7 @@ class TestPattern:
             first_seen="",
             last_seen="",
             affected_sessions=[],
-            trend="stable"
+            trend="stable",
         )
         assert pattern.is_critical is True
 
@@ -63,7 +67,7 @@ class TestPattern:
             first_seen="",
             last_seen="",
             affected_sessions=[],
-            trend="stable"
+            trend="stable",
         )
         assert pattern.is_critical is True
 
@@ -77,7 +81,7 @@ class TestPattern:
             first_seen="",
             last_seen="",
             affected_sessions=[],
-            trend="stable"
+            trend="stable",
         )
         assert pattern.is_critical is False
 
@@ -91,7 +95,7 @@ class TestPattern:
             first_seen="2024-01-01",
             last_seen="2024-01-03",
             affected_sessions=["s1", "s2", "s3"],
-            trend="stable"
+            trend="stable",
         )
         d = pattern.to_dict()
         assert d["pattern_id"] == "test"
@@ -104,10 +108,7 @@ class TestPatternReport:
     def test_to_markdown_empty(self):
         """빈 리포트 마크다운"""
         report = PatternReport(
-            total_patterns=0,
-            critical_patterns=0,
-            patterns=[],
-            recommendations=[]
+            total_patterns=0, critical_patterns=0, patterns=[], recommendations=[]
         )
         md = report.to_markdown()
         assert "# 반복 패턴 분석 리포트" in md
@@ -123,13 +124,13 @@ class TestPatternReport:
             first_seen="",
             last_seen="",
             affected_sessions=[],
-            trend="stable"
+            trend="stable",
         )
         report = PatternReport(
             total_patterns=1,
             critical_patterns=0,
             patterns=[pattern],
-            recommendations=["경로를 확인하세요"]
+            recommendations=["경로를 확인하세요"],
         )
         md = report.to_markdown()
         assert "path_error" in md
@@ -157,12 +158,10 @@ class TestPatternDetector:
             category=FailureCategory.PATH_ERROR,
             description="test",
             evidence="test",
-            confidence=0.8
+            confidence=0.8,
         )
         analysis = FailureAnalysis(
-            session_id="test-1",
-            causes=[cause],
-            severity="medium"
+            session_id="test-1", causes=[cause], severity="medium"
         )
         detector.add_analysis(analysis)
         # 내부 상태 확인
@@ -175,12 +174,10 @@ class TestPatternDetector:
             category=FailureCategory.PATH_ERROR,
             description="test",
             evidence="test",
-            confidence=0.8
+            confidence=0.8,
         )
         analysis = FailureAnalysis(
-            session_id="test-1",
-            causes=[cause],
-            severity="medium"
+            session_id="test-1", causes=[cause], severity="medium"
         )
         detector.add_analysis(analysis)
         patterns = detector.detect_patterns()
@@ -193,14 +190,12 @@ class TestPatternDetector:
             category=FailureCategory.PATH_ERROR,
             description="파일 없음",
             evidence="test",
-            confidence=0.8
+            confidence=0.8,
         )
 
         for i in range(3):
             analysis = FailureAnalysis(
-                session_id=f"test-{i}",
-                causes=[cause],
-                severity="medium"
+                session_id=f"test-{i}", causes=[cause], severity="medium"
             )
             detector.add_analysis(analysis)
 
@@ -216,26 +211,26 @@ class TestPatternDetector:
             category=FailureCategory.PATH_ERROR,
             description="path error",
             evidence="test",
-            confidence=0.8
+            confidence=0.8,
         )
         tool_cause = FailureCause(
             category=FailureCategory.TOOL_ERROR,
             description="tool error",
             evidence="test",
-            confidence=0.8
+            confidence=0.8,
         )
 
         for i in range(2):
-            detector.add_analysis(FailureAnalysis(
-                session_id=f"path-{i}",
-                causes=[path_cause],
-                severity="medium"
-            ))
-            detector.add_analysis(FailureAnalysis(
-                session_id=f"tool-{i}",
-                causes=[tool_cause],
-                severity="medium"
-            ))
+            detector.add_analysis(
+                FailureAnalysis(
+                    session_id=f"path-{i}", causes=[path_cause], severity="medium"
+                )
+            )
+            detector.add_analysis(
+                FailureAnalysis(
+                    session_id=f"tool-{i}", causes=[tool_cause], severity="medium"
+                )
+            )
 
         patterns = detector.detect_patterns()
         assert len(patterns) == 2
@@ -251,15 +246,15 @@ class TestTrend:
             category=FailureCategory.PATH_ERROR,
             description="test",
             evidence="test",
-            confidence=0.8
+            confidence=0.8,
         )
 
         for i in range(2):
-            detector.add_analysis(FailureAnalysis(
-                session_id=f"test-{i}",
-                causes=[cause],
-                severity="medium"
-            ))
+            detector.add_analysis(
+                FailureAnalysis(
+                    session_id=f"test-{i}", causes=[cause], severity="medium"
+                )
+            )
 
         patterns = detector.detect_patterns()
         assert patterns[0].trend == "stable"
@@ -282,15 +277,15 @@ class TestGenerateReport:
             category=FailureCategory.PATH_ERROR,
             description="test",
             evidence="test",
-            confidence=0.8
+            confidence=0.8,
         )
 
         for i in range(3):
-            detector.add_analysis(FailureAnalysis(
-                session_id=f"test-{i}",
-                causes=[cause],
-                severity="medium"
-            ))
+            detector.add_analysis(
+                FailureAnalysis(
+                    session_id=f"test-{i}", causes=[cause], severity="medium"
+                )
+            )
 
         report = detector.generate_report()
         assert report.total_patterns == 1
@@ -307,26 +302,28 @@ class TestCriticalPatterns:
             category=FailureCategory.PHASE_VIOLATION,
             description="phase error",
             evidence="test",
-            confidence=0.8
+            confidence=0.8,
         )
         normal_cause = FailureCause(
             category=FailureCategory.PATH_ERROR,
             description="path error",
             evidence="test",
-            confidence=0.8
+            confidence=0.8,
         )
 
         for i in range(2):
-            detector.add_analysis(FailureAnalysis(
-                session_id=f"critical-{i}",
-                causes=[critical_cause],
-                severity="critical"
-            ))
-            detector.add_analysis(FailureAnalysis(
-                session_id=f"normal-{i}",
-                causes=[normal_cause],
-                severity="medium"
-            ))
+            detector.add_analysis(
+                FailureAnalysis(
+                    session_id=f"critical-{i}",
+                    causes=[critical_cause],
+                    severity="critical",
+                )
+            )
+            detector.add_analysis(
+                FailureAnalysis(
+                    session_id=f"normal-{i}", causes=[normal_cause], severity="medium"
+                )
+            )
 
         critical = detector.get_critical_patterns()
         assert len(critical) == 1
@@ -343,15 +340,15 @@ class TestPatternByCategory:
             category=FailureCategory.PATH_ERROR,
             description="path",
             evidence="test",
-            confidence=0.8
+            confidence=0.8,
         )
 
         for i in range(2):
-            detector.add_analysis(FailureAnalysis(
-                session_id=f"test-{i}",
-                causes=[path_cause],
-                severity="medium"
-            ))
+            detector.add_analysis(
+                FailureAnalysis(
+                    session_id=f"test-{i}", causes=[path_cause], severity="medium"
+                )
+            )
 
         patterns = detector.get_pattern_by_category(FailureCategory.PATH_ERROR)
         assert len(patterns) == 1
@@ -370,13 +367,11 @@ class TestReset:
             category=FailureCategory.PATH_ERROR,
             description="test",
             evidence="test",
-            confidence=0.8
+            confidence=0.8,
         )
-        detector.add_analysis(FailureAnalysis(
-            session_id="test",
-            causes=[cause],
-            severity="medium"
-        ))
+        detector.add_analysis(
+            FailureAnalysis(session_id="test", causes=[cause], severity="medium")
+        )
 
         assert len(detector.detect_patterns()) == 1
         detector.reset()
@@ -392,7 +387,7 @@ class TestConvenienceFunction:
             category=FailureCategory.PATH_ERROR,
             description="test",
             evidence="test",
-            confidence=0.8
+            confidence=0.8,
         )
         analyses = [
             FailureAnalysis(session_id="s1", causes=[cause], severity="medium"),

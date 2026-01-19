@@ -25,6 +25,7 @@ from enum import Enum
 
 class ValidationResult(Enum):
     """Validation result status"""
+
     PASS = "✅ PASS"
     FAIL = "❌ FAIL"
     WARN = "⚠️  WARN"
@@ -94,7 +95,7 @@ class Phase0Validator(PhaseValidator):
         self.success(f"PRD file found: {prd_file}")
 
         # 2. Check minimum lines
-        with open(prd_file, 'r', encoding='utf-8') as f:
+        with open(prd_file, "r", encoding="utf-8") as f:
             lines = f.readlines()
 
         if len(lines) < 50:
@@ -138,7 +139,7 @@ class Phase05Validator(PhaseValidator):
         self.success(f"Task list found: {task_file}")
 
         # 2. Check Task 0.0 completed
-        with open(task_file, 'r', encoding='utf-8') as f:
+        with open(task_file, "r", encoding="utf-8") as f:
             content = f.read()
 
         # Look for Task 0.0 and check if checkboxes are marked
@@ -165,7 +166,9 @@ class Phase05Validator(PhaseValidator):
 
         if total_tasks > 0:
             progress = (completed_tasks / total_tasks) * 100
-            self.success(f"Overall progress: {completed_tasks}/{total_tasks} ({progress:.1f}%)")
+            self.success(
+                f"Overall progress: {completed_tasks}/{total_tasks} ({progress:.1f}%)"
+            )
         else:
             self.warn("No tasks with checkboxes found")
 
@@ -180,7 +183,13 @@ class Phase1Validator(PhaseValidator):
         print("\n🔍 Validating Phase 1 (1:1 Test Pairing)...")
 
         # Find all implementation files
-        src_patterns = ["src/**/*.py", "src/**/*.ts", "src/**/*.tsx", "src/**/*.js", "src/**/*.jsx"]
+        src_patterns = [
+            "src/**/*.py",
+            "src/**/*.ts",
+            "src/**/*.tsx",
+            "src/**/*.js",
+            "src/**/*.jsx",
+        ]
         src_files = []
         for pattern in src_patterns:
             src_files.extend(pathlib.Path(".").glob(pattern))
@@ -238,13 +247,17 @@ class Phase2Validator(PhaseValidator):
         print("\n🔍 Validating Phase 2 (Tests & Coverage)...")
 
         # Detect project type
-        if (pathlib.Path("package.json").exists()):
+        if pathlib.Path("package.json").exists():
             return self._validate_node(min_coverage)
-        elif (pathlib.Path("requirements.txt").exists() or
-              pathlib.Path("pyproject.toml").exists()):
+        elif (
+            pathlib.Path("requirements.txt").exists()
+            or pathlib.Path("pyproject.toml").exists()
+        ):
             return self._validate_python(min_coverage)
         else:
-            self.error("Cannot detect project type (no package.json or requirements.txt)")
+            self.error(
+                "Cannot detect project type (no package.json or requirements.txt)"
+            )
             return self.result()
 
     def _validate_python(self, min_coverage: int) -> ValidationResult:
@@ -255,7 +268,7 @@ class Phase2Validator(PhaseValidator):
                 ["pytest", "tests/", "-v", "--cov=src", "--cov-report=term"],
                 capture_output=True,
                 text=True,
-                timeout=300
+                timeout=300,
             )
 
             if result.returncode == 0:
@@ -275,7 +288,9 @@ class Phase2Validator(PhaseValidator):
                     if coverage >= min_coverage:
                         self.success(f"Coverage: {coverage}% (>= {min_coverage}%)")
                     else:
-                        self.error(f"Coverage too low: {coverage}% (minimum {min_coverage}%)")
+                        self.error(
+                            f"Coverage too low: {coverage}% (minimum {min_coverage}%)"
+                        )
                 else:
                     self.warn("Could not parse coverage percentage")
 
@@ -291,10 +306,7 @@ class Phase2Validator(PhaseValidator):
         try:
             # Run npm test
             result = subprocess.run(
-                ["npm", "test"],
-                capture_output=True,
-                text=True,
-                timeout=300
+                ["npm", "test"], capture_output=True, text=True, timeout=300
             )
 
             if result.returncode == 0:
@@ -324,12 +336,16 @@ Examples:
   python scripts/validate_phase_universal.py 1            # Validate Phase 1
   python scripts/validate_phase_universal.py 2            # Validate Phase 2
   python scripts/validate_phase_universal.py 2 --coverage 90  # Custom coverage
-        """
+        """,
     )
 
-    parser.add_argument("phase", type=str, help="Phase to validate (0, 0.5, 1, 2, 3, 5, 6)")
+    parser.add_argument(
+        "phase", type=str, help="Phase to validate (0, 0.5, 1, 2, 3, 5, 6)"
+    )
     parser.add_argument("prd_number", nargs="?", help="PRD number (for Phase 0, 0.5)")
-    parser.add_argument("--coverage", type=int, default=80, help="Minimum coverage % (Phase 2)")
+    parser.add_argument(
+        "--coverage", type=int, default=80, help="Minimum coverage % (Phase 2)"
+    )
     parser.add_argument("-v", "--verbose", action="store_true", help="Verbose output")
 
     args = parser.parse_args()
@@ -369,7 +385,15 @@ Examples:
             ps_script = pathlib.Path("scripts/validate-phase-4.ps1")
             if ps_script.exists():
                 print("   Delegating to validate-phase-4.ps1...")
-                res = subprocess.run(["powershell", "-ExecutionPolicy", "Bypass", "-File", str(ps_script)])
+                res = subprocess.run(
+                    [
+                        "powershell",
+                        "-ExecutionPolicy",
+                        "Bypass",
+                        "-File",
+                        str(ps_script),
+                    ]
+                )
                 sys.exit(res.returncode)
             else:
                 print("❌ scripts/validate-phase-4.ps1 not found")
@@ -377,7 +401,9 @@ Examples:
         else:
             # Simple cross-platform check
             # 1. Check for uncommitted changes
-            res = subprocess.run(["git", "status", "--porcelain"], capture_output=True, text=True)
+            res = subprocess.run(
+                ["git", "status", "--porcelain"], capture_output=True, text=True
+            )
             if res.stdout.strip():
                 print("❌ Uncommitted changes detected")
                 print(res.stdout)

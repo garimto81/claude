@@ -12,10 +12,14 @@ import os
 from pathlib import Path
 
 # 패키지로 임포트 가능하도록 경로 추가
-sys.path.insert(0, os.path.join(os.path.dirname(__file__), '..', '..', 'src', 'agents'))
+sys.path.insert(0, os.path.join(os.path.dirname(__file__), "..", "..", "src", "agents"))
 
 from prompt_learning.metrics import reset_collector
-from prompt_learning.failure_analyzer import FailureCause, FailureCategory, FailureAnalysis
+from prompt_learning.failure_analyzer import (
+    FailureCause,
+    FailureCategory,
+    FailureAnalysis,
+)
 from prompt_learning.session_parser import SessionParser
 from prompt_learning.pattern_detector import Pattern
 
@@ -43,7 +47,7 @@ def sample_failure_cause():
         description="Test path error",
         evidence="FileNotFoundError: /path/to/file",
         confidence=0.8,
-        suggestion="Use absolute paths"
+        suggestion="Use absolute paths",
     )
 
 
@@ -55,7 +59,7 @@ def sample_failure_analysis(sample_failure_cause):
         causes=[sample_failure_cause],
         severity="medium",
         affected_phase=1,
-        recommendations=["Check file paths"]
+        recommendations=["Check file paths"],
     )
 
 
@@ -88,7 +92,7 @@ def sample_pattern():
         first_seen="2024-01-01T00:00:00",
         last_seen="2024-01-05T00:00:00",
         affected_sessions=["s1", "s2", "s3", "s4", "s5"],
-        trend="stable"
+        trend="stable",
     )
 
 

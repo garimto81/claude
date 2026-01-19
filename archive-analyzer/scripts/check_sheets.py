@@ -1,6 +1,6 @@
 """Google Sheets 연동 상태 확인 스크립트"""
 import os
-import sys
+
 
 def check_google_sheets():
     """Google Sheets 연동 확인"""

@@ -10,7 +10,7 @@ import sys
 import os
 
 # 패키지로 임포트 가능하도록 경로 추가
-sys.path.insert(0, os.path.join(os.path.dirname(__file__), '..', '..', 'src', 'agents'))
+sys.path.insert(0, os.path.join(os.path.dirname(__file__), "..", "..", "src", "agents"))
 
 from prompt_learning.ab_test import (
     ABTestFramework,
@@ -41,7 +41,7 @@ class TestABTestConfig:
             test_id="test-2",
             control_prompt="a",
             treatment_prompt="b",
-            traffic_split=0.3
+            traffic_split=0.3,
         )
         assert config.traffic_split == 0.3
 
@@ -52,17 +52,14 @@ class TestABTestConfig:
                 test_id="test",
                 control_prompt="a",
                 treatment_prompt="b",
-                traffic_split=1.5
+                traffic_split=1.5,
             )
 
     def test_invalid_min_samples(self):
         """유효하지 않은 최소 샘플"""
         with pytest.raises(ValueError):
             ABTestConfig(
-                test_id="test",
-                control_prompt="a",
-                treatment_prompt="b",
-                min_samples=5
+                test_id="test", control_prompt="a", treatment_prompt="b", min_samples=5
             )
 
 
@@ -78,9 +75,7 @@ class TestABTestFramework:
         """테스트 생성"""
         framework = ABTestFramework()
         config = ABTestConfig(
-            test_id="test-1",
-            control_prompt="control",
-            treatment_prompt="treatment"
+            test_id="test-1", control_prompt="control", treatment_prompt="treatment"
         )
         test_id = framework.create_test(config)
         assert test_id == "test-1"
@@ -90,9 +85,7 @@ class TestABTestFramework:
         """일관된 변형 할당"""
         framework = ABTestFramework()
         config = ABTestConfig(
-            test_id="test-1",
-            control_prompt="a",
-            treatment_prompt="b"
+            test_id="test-1", control_prompt="a", treatment_prompt="b"
         )
         framework.create_test(config)
 
@@ -108,7 +101,7 @@ class TestABTestFramework:
             test_id="test-1",
             control_prompt="a",
             treatment_prompt="b",
-            traffic_split=0.5
+            traffic_split=0.5,
         )
         framework.create_test(config)
 
@@ -138,7 +131,7 @@ class TestABTestFramework:
         config = ABTestConfig(
             test_id="test-1",
             control_prompt="control prompt",
-            treatment_prompt="treatment prompt"
+            treatment_prompt="treatment prompt",
         )
         framework.create_test(config)
 
@@ -153,9 +146,7 @@ class TestSampleRecording:
         """샘플 기록"""
         framework = ABTestFramework()
         config = ABTestConfig(
-            test_id="test-1",
-            control_prompt="a",
-            treatment_prompt="b"
+            test_id="test-1", control_prompt="a", treatment_prompt="b"
         )
         framework.create_test(config)
 
@@ -164,7 +155,7 @@ class TestSampleRecording:
             user_id="user-1",
             input_data={"query": "test"},
             success=True,
-            latency_ms=100.5
+            latency_ms=100.5,
         )
 
         assert sample.success is True
@@ -180,7 +171,7 @@ class TestSampleRecording:
                 user_id="user-1",
                 input_data={},
                 success=True,
-                latency_ms=100
+                latency_ms=100,
             )
 
 
@@ -191,9 +182,7 @@ class TestResults:
         """빈 결과"""
         framework = ABTestFramework()
         config = ABTestConfig(
-            test_id="test-1",
-            control_prompt="a",
-            treatment_prompt="b"
+            test_id="test-1", control_prompt="a", treatment_prompt="b"
         )
         framework.create_test(config)
 
@@ -208,7 +197,7 @@ class TestResults:
             test_id="test-1",
             control_prompt="a",
             treatment_prompt="b",
-            traffic_split=0.5
+            traffic_split=0.5,
         )
         framework.create_test(config)
 
@@ -220,7 +209,7 @@ class TestResults:
                 user_id=f"user-{i}",
                 input_data={},
                 success=success,
-                latency_ms=100
+                latency_ms=100,
             )
 
         result = framework.get_results("test-1")
@@ -241,7 +230,7 @@ class TestResults:
             control_prompt="a",
             treatment_prompt="b",
             traffic_split=0.5,
-            min_samples=10
+            min_samples=10,
         )
         framework.create_test(config)
 
@@ -257,7 +246,7 @@ class TestResults:
                 user_id=f"user-{i}",
                 input_data={},
                 success=success,
-                latency_ms=100
+                latency_ms=100,
             )
 
         result = framework.get_results("test-1")
@@ -273,10 +262,7 @@ class TestSignificance:
         """샘플 부족"""
         framework = ABTestFramework()
         config = ABTestConfig(
-            test_id="test-1",
-            control_prompt="a",
-            treatment_prompt="b",
-            min_samples=100
+            test_id="test-1", control_prompt="a", treatment_prompt="b", min_samples=100
         )
         framework.create_test(config)
 
@@ -287,7 +273,7 @@ class TestSignificance:
                 user_id=f"user-{i}",
                 input_data={},
                 success=True,
-                latency_ms=100
+                latency_ms=100,
             )
 
         assert framework.is_test_complete("test-1") is False
@@ -300,9 +286,7 @@ class TestExport:
         """결과 내보내기"""
         framework = ABTestFramework()
         config = ABTestConfig(
-            test_id="test-1",
-            control_prompt="a",
-            treatment_prompt="b"
+            test_id="test-1", control_prompt="a", treatment_prompt="b"
         )
         framework.create_test(config)
 
@@ -313,7 +297,7 @@ class TestExport:
                 user_id=f"user-{i}",
                 input_data={},
                 success=i % 2 == 0,
-                latency_ms=100
+                latency_ms=100,
             )
 
         exported = framework.export_results("test-1")
@@ -333,7 +317,7 @@ class TestConvenienceFunction:
             test_id="quick-test",
             control_prompt="old",
             treatment_prompt="new",
-            traffic_split=0.3
+            traffic_split=0.3,
         )
         assert "quick-test" in framework.tests
         assert framework.tests["quick-test"].traffic_split == 0.3

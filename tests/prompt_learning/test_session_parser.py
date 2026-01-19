@@ -13,7 +13,7 @@ import json
 from pathlib import Path
 
 # 패키지로 임포트 가능하도록 경로 추가
-sys.path.insert(0, os.path.join(os.path.dirname(__file__), '..', '..', 'src', 'agents'))
+sys.path.insert(0, os.path.join(os.path.dirname(__file__), "..", "..", "src", "agents"))
 
 from prompt_learning.session_parser import (
     SessionParser,
@@ -30,13 +30,21 @@ class TestSessionEvent:
 
     def test_from_dict_user_message(self):
         """사용자 메시지 이벤트"""
-        data = {"type": "user", "content": {"text": "hello"}, "timestamp": "2024-01-01T00:00:00Z"}
+        data = {
+            "type": "user",
+            "content": {"text": "hello"},
+            "timestamp": "2024-01-01T00:00:00Z",
+        }
         event = SessionEvent.from_dict(data)
         assert event.event_type == EventType.USER_MESSAGE
 
     def test_from_dict_assistant_message(self):
         """어시스턴트 메시지 이벤트"""
-        data = {"type": "assistant", "content": {"text": "hi"}, "timestamp": "2024-01-01T00:00:00Z"}
+        data = {
+            "type": "assistant",
+            "content": {"text": "hi"},
+            "timestamp": "2024-01-01T00:00:00Z",
+        }
         event = SessionEvent.from_dict(data)
         assert event.event_type == EventType.ASSISTANT_MESSAGE
 
@@ -49,7 +57,12 @@ class TestSessionEvent:
 
     def test_from_dict_tool_result(self):
         """도구 결과 이벤트"""
-        data = {"tool": "Read", "tool_result": True, "success": True, "timestamp": "2024-01-01T00:00:00Z"}
+        data = {
+            "tool": "Read",
+            "tool_result": True,
+            "success": True,
+            "timestamp": "2024-01-01T00:00:00Z",
+        }
         event = SessionEvent.from_dict(data)
         assert event.event_type == EventType.TOOL_RESULT
 
@@ -116,7 +129,9 @@ not valid json
     def test_parse_file_success(self):
         """파일 파싱 성공"""
         parser = SessionParser()
-        with tempfile.NamedTemporaryFile(mode='w', suffix='.jsonl', delete=False, encoding='utf-8') as f:
+        with tempfile.NamedTemporaryFile(
+            mode="w", suffix=".jsonl", delete=False, encoding="utf-8"
+        ) as f:
             f.write('{"type": "user", "content": {"text": "test"}}\n')
             f.write('{"type": "assistant", "content": {"text": "response"}}\n')
             temp_path = f.name
@@ -171,7 +186,7 @@ class TestSessionSummary:
             tool_calls=1,
             errors=[],
             success=True,
-            duration_seconds=10.5
+            duration_seconds=10.5,
         )
         d = summary.to_dict()
         assert d["session_id"] == "test-123"
@@ -262,7 +277,9 @@ class TestUtilityFunctions:
             path1.write_text('{"type": "user", "content": {}}\n')
 
             path2 = Path(tmpdir) / "session2.jsonl"
-            path2.write_text('{"type": "user", "content": {}}\n{"type": "assistant", "content": {}}\n')
+            path2.write_text(
+                '{"type": "user", "content": {}}\n{"type": "assistant", "content": {}}\n'
+            )
 
             summaries = parse_multiple_sessions([path1, path2])
             assert len(summaries) == 2

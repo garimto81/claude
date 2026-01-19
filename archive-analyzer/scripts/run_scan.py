@@ -1,8 +1,8 @@
 #!/usr/bin/env python
 """아카이브 전체 스캔 실행 스크립트"""
 
-import sys
 import os
+import sys
 from pathlib import Path
 
 # Windows 콘솔 UTF-8 설정
@@ -14,10 +14,9 @@ if sys.platform == 'win32':
 sys.path.insert(0, str(Path(__file__).parent.parent / "src"))
 
 from archive_analyzer.config import SMBConfig
-from archive_analyzer.smb_connector import SMBConnector
 from archive_analyzer.database import Database
 from archive_analyzer.scanner import ArchiveScanner, ScanProgress
-
+from archive_analyzer.smb_connector import SMBConnector
 
 # 설정
 SERVER = "10.10.100.122"

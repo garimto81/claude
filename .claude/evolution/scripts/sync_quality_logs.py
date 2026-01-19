@@ -13,6 +13,7 @@ import shutil
 from pathlib import Path
 from typing import List, Dict
 
+
 class QualityLogSyncer:
     """품질 로그 동기화기"""
 
@@ -36,22 +37,22 @@ class QualityLogSyncer:
         if dest_file.exists():
             # 중복 제거 (timestamp 기준)
             existing_timestamps = set()
-            with open(dest_file, 'r') as f:
+            with open(dest_file, "r") as f:
                 for line in f:
                     try:
                         log = json.loads(line.strip())
-                        existing_timestamps.add(log['timestamp'])
+                        existing_timestamps.add(log["timestamp"])
                     except Exception:
                         pass
 
             # 새 로그만 추가
             new_count = 0
-            with open(log_file, 'r') as src:
-                with open(dest_file, 'a') as dst:
+            with open(log_file, "r") as src:
+                with open(dest_file, "a") as dst:
                     for line in src:
                         try:
                             log = json.loads(line.strip())
-                            if log['timestamp'] not in existing_timestamps:
+                            if log["timestamp"] not in existing_timestamps:
                                 dst.write(line)
                                 new_count += 1
                         except Exception:
@@ -63,7 +64,7 @@ class QualityLogSyncer:
             # 전체 복사
             shutil.copy(log_file, dest_file)
 
-            with open(log_file, 'r') as f:
+            with open(log_file, "r") as f:
                 total = sum(1 for _ in f)
 
             print(f"✅ {repo_name}: Synced {total} logs (initial)")
@@ -75,8 +76,8 @@ class QualityLogSyncer:
 
         results = {}
         for config in repo_configs:
-            repo_name = config['name']
-            repo_path = Path(config['path']).expanduser().resolve()
+            repo_name = config["name"]
+            repo_path = Path(config["path"]).expanduser().resolve()
 
             if not repo_path.exists():
                 print(f"⚠️  {repo_name}: Path not found - {repo_path}")
@@ -99,49 +100,49 @@ class QualityLogSyncer:
             repo_name = log_file.stem
             agent_scores = {}
 
-            with open(log_file, 'r') as f:
+            with open(log_file, "r") as f:
                 for line in f:
                     try:
                         log = json.loads(line.strip())
-                        agent = log['agent']
+                        agent = log["agent"]
 
                         if agent not in agent_scores:
                             agent_scores[agent] = {
-                                'current_score': log['score'],
-                                'total_attempts': 0,
-                                'passes': 0,
-                                'fails': 0,
-                                'avg_score': 0,
-                                'last_updated': log['timestamp'],
-                                'tasks': set()
+                                "current_score": log["score"],
+                                "total_attempts": 0,
+                                "passes": 0,
+                                "fails": 0,
+                                "avg_score": 0,
+                                "last_updated": log["timestamp"],
+                                "tasks": set(),
                             }
 
-                        agent_scores[agent]['current_score'] = log['score']
-                        agent_scores[agent]['total_attempts'] += 1
-                        agent_scores[agent]['last_updated'] = log['timestamp']
-                        agent_scores[agent]['tasks'].add(log['task'])
+                        agent_scores[agent]["current_score"] = log["score"]
+                        agent_scores[agent]["total_attempts"] += 1
+                        agent_scores[agent]["last_updated"] = log["timestamp"]
+                        agent_scores[agent]["tasks"].add(log["task"])
 
-                        if log['status'] == 'pass':
-                            agent_scores[agent]['passes'] += 1
+                        if log["status"] == "pass":
+                            agent_scores[agent]["passes"] += 1
                         else:
-                            agent_scores[agent]['fails'] += 1
+                            agent_scores[agent]["fails"] += 1
                     except Exception:
                         pass
 
             # 평균 점수 계산 & set → list 변환
             for agent in agent_scores:
-                total = agent_scores[agent]['total_attempts']
-                passes = agent_scores[agent]['passes']
-                agent_scores[agent]['avg_score'] = round(
-                    (passes / total) * 5.0, 1
-                ) if total > 0 else 0
-                agent_scores[agent]['tasks'] = list(agent_scores[agent]['tasks'])
+                total = agent_scores[agent]["total_attempts"]
+                passes = agent_scores[agent]["passes"]
+                agent_scores[agent]["avg_score"] = (
+                    round((passes / total) * 5.0, 1) if total > 0 else 0
+                )
+                agent_scores[agent]["tasks"] = list(agent_scores[agent]["tasks"])
 
             summary[repo_name] = agent_scores
 
         # 저장
         summary_file = self.data_dir / "quality-summary.json"
-        with open(summary_file, 'w') as f:
+        with open(summary_file, "w") as f:
             json.dump(summary, f, indent=2)
 
         print(f"\n📊 Summary saved: {summary_file}")
@@ -149,9 +150,9 @@ class QualityLogSyncer:
 
     def print_summary(self, summary: Dict):
         """요약 출력"""
-        print("\n" + "="*60)
+        print("\n" + "=" * 60)
         print("📊 Quality Summary")
-        print("="*60)
+        print("=" * 60)
 
         for repo, agents in summary.items():
             print(f"\n🔹 {repo}")
@@ -162,16 +163,14 @@ class QualityLogSyncer:
 
             # 점수별 정렬
             sorted_agents = sorted(
-                agents.items(),
-                key=lambda x: x[1]['current_score'],
-                reverse=True
+                agents.items(), key=lambda x: x[1]["current_score"], reverse=True
             )
 
             for agent, scores in sorted_agents:
                 # 상태 아이콘
-                if scores['current_score'] >= 4.0:
+                if scores["current_score"] >= 4.0:
                     status = "✅"
-                elif scores['current_score'] >= 3.0:
+                elif scores["current_score"] >= 3.0:
                     status = "⚠️"
                 else:
                     status = "❌"
@@ -183,7 +182,7 @@ class QualityLogSyncer:
                     f"{scores['passes']}✓ {scores['fails']}✗)"
                 )
 
-        print("="*60 + "\n")
+        print("=" * 60 + "\n")
 
 
 def load_repo_config(global_repo: Path) -> List[Dict]:
@@ -191,22 +190,22 @@ def load_repo_config(global_repo: Path) -> List[Dict]:
     config_file = global_repo / ".claude/evolution/config/repo-config.json"
 
     if config_file.exists():
-        with open(config_file, 'r') as f:
+        with open(config_file, "r") as f:
             data = json.load(f)
-            return data.get('repos', [])
+            return data.get("repos", [])
 
     # 기본 설정
     return [
         {
             "name": "sso-nextjs",
             "path": "~/AI/sso-nextjs",
-            "description": "SSO system with NextAuth + Supabase"
+            "description": "SSO system with NextAuth + Supabase",
         },
         {
             "name": "ojt-platform",
             "path": "~/AI/ojt-platform",
-            "description": "OJT platform"
-        }
+            "description": "OJT platform",
+        },
     ]
 
 
@@ -215,25 +214,17 @@ def main():
 
     parser = argparse.ArgumentParser(
         description="서브 레포 품질 로그 동기화",
-        epilog="Example: python sync_quality_logs.py --all"
+        epilog="Example: python sync_quality_logs.py --all",
     )
 
     parser.add_argument(
-        '--repos',
-        nargs='+',
-        help='특정 레포들만 동기화 (예: sso-nextjs ojt-platform)'
+        "--repos", nargs="+", help="특정 레포들만 동기화 (예: sso-nextjs ojt-platform)"
     )
 
-    parser.add_argument(
-        '--all',
-        action='store_true',
-        help='모든 레포 동기화'
-    )
+    parser.add_argument("--all", action="store_true", help="모든 레포 동기화")
 
     parser.add_argument(
-        '--summary-only',
-        action='store_true',
-        help='동기화 없이 요약만 생성'
+        "--summary-only", action="store_true", help="동기화 없이 요약만 생성"
     )
 
     args = parser.parse_args()
@@ -254,7 +245,7 @@ def main():
 
     # 필터링
     if args.repos:
-        repo_configs = [c for c in repo_configs if c['name'] in args.repos]
+        repo_configs = [c for c in repo_configs if c["name"] in args.repos]
 
     if not args.all and not args.repos:
         print("Usage: --repos <names> or --all")

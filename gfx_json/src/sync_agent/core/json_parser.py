@@ -10,7 +10,6 @@ import json
 import logging
 import re
 from dataclasses import dataclass, field
-from datetime import datetime
 from pathlib import Path
 from typing import Any
 
@@ -122,7 +121,9 @@ class JsonParser:
                 file_path=file_path,
             )
 
-    def parse_content(self, content: str, file_name: str, gfx_pc_id: str) -> ParseResult:
+    def parse_content(
+        self, content: str, file_name: str, gfx_pc_id: str
+    ) -> ParseResult:
         """문자열 내용 파싱.
 
         Args:
@@ -240,7 +241,9 @@ class JsonParser:
 
         return record
 
-    def _extract_session_id(self, data: dict[str, Any], file_name: str = "") -> int | None:
+    def _extract_session_id(
+        self, data: dict[str, Any], file_name: str = ""
+    ) -> int | None:
         """session_id 추출.
 
         다양한 형식 지원 (우선순위):
@@ -269,28 +272,30 @@ class JsonParser:
 
         # 파일명에서 GameID 추출 (fallback)
         if file_name:
-            match = re.search(r'GameID=(\d+)', file_name)
+            match = re.search(r"GameID=(\d+)", file_name)
             if match:
                 return int(match.group(1))
 
         return None
 
     # Supabase table_type ENUM 값 매핑
-    TABLE_TYPE_MAPPING: dict[str, str] = field(default_factory=lambda: {
-        # 정확한 매칭
-        "feature_table": "FEATURE_TABLE",
-        "main_table": "MAIN_TABLE",
-        "final_table": "FINAL_TABLE",
-        "side_table": "SIDE_TABLE",
-        "unknown": "UNKNOWN",
-        # 일반적인 값 매핑
-        "feature": "FEATURE_TABLE",
-        "main": "MAIN_TABLE",
-        "final": "FINAL_TABLE",
-        "side": "SIDE_TABLE",
-        "cash": "MAIN_TABLE",  # cash -> MAIN_TABLE
-        "tournament": "MAIN_TABLE",
-    })
+    TABLE_TYPE_MAPPING: dict[str, str] = field(
+        default_factory=lambda: {
+            # 정확한 매칭
+            "feature_table": "FEATURE_TABLE",
+            "main_table": "MAIN_TABLE",
+            "final_table": "FINAL_TABLE",
+            "side_table": "SIDE_TABLE",
+            "unknown": "UNKNOWN",
+            # 일반적인 값 매핑
+            "feature": "FEATURE_TABLE",
+            "main": "MAIN_TABLE",
+            "final": "FINAL_TABLE",
+            "side": "SIDE_TABLE",
+            "cash": "MAIN_TABLE",  # cash -> MAIN_TABLE
+            "tournament": "MAIN_TABLE",
+        }
+    )
 
     def _extract_table_type(self, data: dict[str, Any]) -> str | None:
         """table_type 추출.
@@ -406,7 +411,13 @@ class JsonParser:
         - {"createdAt": "..."}
         """
         # PascalCase 우선 (문서 기준 - 02-GFX-JSON-DB.md)
-        for key in ["CreatedDateTimeUTC", "created_at", "created_datetime_utc", "timestamp", "createdAt"]:
+        for key in [
+            "CreatedDateTimeUTC",
+            "created_at",
+            "created_datetime_utc",
+            "timestamp",
+            "createdAt",
+        ]:
             if key in data and data[key]:
                 return str(data[key])
 

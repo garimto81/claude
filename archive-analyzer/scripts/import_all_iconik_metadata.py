@@ -4,10 +4,10 @@
 """
 
 import csv
-import sys
 import logging
+import sys
 from pathlib import Path
-from typing import Dict, List, Any
+from typing import Dict, List
 
 # 프로젝트 src 경로 추가
 project_root = Path(__file__).parent.parent

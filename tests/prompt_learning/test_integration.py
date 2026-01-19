@@ -11,7 +11,7 @@ import os
 from pathlib import Path
 
 # 패키지로 임포트 가능하도록 경로 추가
-sys.path.insert(0, os.path.join(os.path.dirname(__file__), '..', '..', 'src', 'agents'))
+sys.path.insert(0, os.path.join(os.path.dirname(__file__), "..", "..", "src", "agents"))
 
 from prompt_learning.session_parser import SessionParser
 from prompt_learning.failure_analyzer import FailureAnalyzer, FailureCategory
@@ -51,7 +51,9 @@ class TestFullPipeline:
         assert len(patterns) >= 1
         assert any(p.category == FailureCategory.PATH_ERROR for p in patterns)
 
-    def test_pattern_to_claude_md_update(self, temp_dir, sample_pattern, sample_claude_md_content):
+    def test_pattern_to_claude_md_update(
+        self, temp_dir, sample_pattern, sample_claude_md_content
+    ):
         """패턴 감지 → CLAUDE.md 업데이트 제안"""
         # CLAUDE.md 생성
         claude_md_path = temp_dir / "CLAUDE.md"
@@ -65,7 +67,9 @@ class TestFullPipeline:
         assert proposal.section == "1. Critical Instructions"
         assert "경로" in proposal.proposed_content
 
-    def test_full_learning_cycle(self, temp_dir, sample_error_session_log, sample_claude_md_content):
+    def test_full_learning_cycle(
+        self, temp_dir, sample_error_session_log, sample_claude_md_content
+    ):
         """전체 학습 사이클: 세션 → 분석 → 패턴 → 업데이트"""
         # 1. 세션 로그 파일 생성
         session_file = temp_dir / "session.jsonl"
@@ -220,9 +224,7 @@ class TestOptimizerIntegration:
 
         # TextGrad 최적화
         textgrad_result = textgrad_opt.optimize_agent(
-            "test-agent",
-            "Test agent prompt",
-            max_iterations=3
+            "test-agent", "Test agent prompt", max_iterations=3
         )
 
         # 둘 다 결과 생성
@@ -243,7 +245,7 @@ class TestABTestIntegration:
             control_prompt="Original prompt",
             treatment_prompt="Optimized prompt",
             traffic_split=0.5,
-            min_samples=50
+            min_samples=50,
         )
         framework.create_test(config)
 
@@ -263,7 +265,7 @@ class TestABTestIntegration:
                 user_id=user_id,
                 input_data={"query": f"test-{i}"},
                 success=success,
-                latency_ms=100.0
+                latency_ms=100.0,
             )
 
         # 결과 조회
@@ -285,7 +287,8 @@ class TestEndToEnd:
         """완전한 Prompt Learning 워크플로우"""
         # 1. 초기 CLAUDE.md
         claude_md = temp_dir / "CLAUDE.md"
-        claude_md.write_text("""# CLAUDE.md
+        claude_md.write_text(
+            """# CLAUDE.md
 
 ## 1. Critical Instructions
 
@@ -294,7 +297,9 @@ Basic instructions here.
 ## 3. Workflow Pipeline
 
 Phase workflow.
-""", encoding="utf-8")
+""",
+            encoding="utf-8",
+        )
 
         # 2. 여러 세션 시뮬레이션
         sessions_data = [
@@ -370,7 +375,7 @@ Phase workflow.
                 timestamp=f"2024-01-{i+1:02d}T00:00:00Z",
                 event_type=EventType.ERROR,
                 content={},
-                error="FileNotFoundError: ./test.txt"
+                error="FileNotFoundError: ./test.txt",
             )
             analysis = analyzer.analyze_session(f"session-{i}", [event])
             detector.add_analysis(analysis)

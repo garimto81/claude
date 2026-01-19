@@ -12,7 +12,7 @@ import sys
 import json
 
 # 패키지로 임포트 가능하도록 경로 추가
-sys.path.insert(0, os.path.join(os.path.dirname(__file__), '..', '..', 'src', 'agents'))
+sys.path.insert(0, os.path.join(os.path.dirname(__file__), "..", "..", "src", "agents"))
 
 from prompt_learning.metrics import (
     MetricsCollector,
@@ -29,12 +29,7 @@ class TestPhaseMetrics:
 
     def test_create_phase_metrics(self):
         """Phase 메트릭스 생성"""
-        pm = PhaseMetrics(
-            phase=0,
-            attempts=10,
-            successes=8,
-            failures=2
-        )
+        pm = PhaseMetrics(phase=0, attempts=10, successes=8, failures=2)
         assert pm.phase == 0
         assert pm.attempts == 10
 
@@ -66,10 +61,7 @@ class TestSessionMetrics:
 
     def test_create_session_metrics(self):
         """세션 메트릭스 생성"""
-        sm = SessionMetrics(
-            session_id="test-1",
-            start_time="2024-01-01T00:00:00"
-        )
+        sm = SessionMetrics(session_id="test-1", start_time="2024-01-01T00:00:00")
         assert sm.session_id == "test-1"
         assert sm.success is False
 
@@ -81,7 +73,7 @@ class TestSessionMetrics:
             end_time="2024-01-01T00:05:00",
             duration_seconds=300,
             token_usage=1000,
-            success=True
+            success=True,
         )
         d = sm.to_dict()
         assert d["session_id"] == "test-1"
@@ -99,9 +91,7 @@ class TestPromptLearningMetrics:
     def test_overall_success_rate(self):
         """전체 성공률"""
         metrics = PromptLearningMetrics(
-            total_sessions=10,
-            successful_sessions=7,
-            failed_sessions=3
+            total_sessions=10, successful_sessions=7, failed_sessions=3
         )
         assert metrics.overall_success_rate == 0.7
 
@@ -116,7 +106,7 @@ class TestPromptLearningMetrics:
             total_sessions=5,
             successful_sessions=4,
             failed_sessions=1,
-            total_tokens=5000
+            total_tokens=5000,
         )
         d = metrics.to_dict()
         assert d["total_sessions"] == 5
@@ -129,7 +119,7 @@ class TestPromptLearningMetrics:
             successful_sessions=8,
             failed_sessions=2,
             total_tokens=10000,
-            avg_session_duration=120.0
+            avg_session_duration=120.0,
         )
         md = metrics.to_markdown()
         assert "# Prompt Learning 메트릭스 리포트" in md
@@ -262,13 +252,13 @@ class TestExport:
         collector.record_phase_attempt("test-1", 0, True)
         collector.end_session("test-1", success=True)
 
-        with tempfile.NamedTemporaryFile(mode='w', suffix='.json', delete=False) as f:
+        with tempfile.NamedTemporaryFile(mode="w", suffix=".json", delete=False) as f:
             temp_path = f.name
 
         try:
             collector.export_json(temp_path)
 
-            with open(temp_path, 'r', encoding='utf-8') as f:
+            with open(temp_path, "r", encoding="utf-8") as f:
                 data = json.load(f)
 
             assert "sessions" in data

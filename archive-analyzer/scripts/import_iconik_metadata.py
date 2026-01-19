@@ -4,12 +4,12 @@ iconik에서 추출한 클립 메타데이터를 archive.db에 임포트합니�
 파일명 퍼지 매칭을 통해 기존 files 테이블과 연결합니다.
 """
 
-import csv
-import sys
-import logging
 import argparse
+import csv
+import logging
+import sys
 from pathlib import Path
-from typing import Optional, List, Dict, Any
+from typing import Any, Dict, List, Optional
 
 # 프로젝트 src 경로 추가
 project_root = Path(__file__).parent.parent

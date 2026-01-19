@@ -18,6 +18,7 @@ from datetime import datetime, timedelta
 from typing import Dict, List
 from collections import defaultdict
 
+
 class QualityAnalyzer:
     """품질 분석기"""
 
@@ -32,7 +33,7 @@ class QualityAnalyzer:
             print("⚠️  No summary found. Run sync_quality_logs.py first.")
             return {}
 
-        with open(summary_file, 'r') as f:
+        with open(summary_file, "r") as f:
             return json.load(f)
 
     def load_logs(self, repo_name: str = None) -> List[Dict]:
@@ -48,11 +49,11 @@ class QualityAnalyzer:
             if log_file.name.startswith("quality-summary"):
                 continue
 
-            with open(log_file, 'r') as f:
+            with open(log_file, "r") as f:
                 for line in f:
                     try:
                         log = json.loads(line.strip())
-                        log['repo'] = log_file.stem
+                        log["repo"] = log_file.stem
                         logs.append(log)
                     except Exception:
                         pass
@@ -66,9 +67,9 @@ class QualityAnalyzer:
         if not summary:
             return
 
-        print("\n" + "="*80)
+        print("\n" + "=" * 80)
         print("📊 Agent Quality Summary (All Repos)")
-        print("="*80 + "\n")
+        print("=" * 80 + "\n")
 
         for repo, agents in summary.items():
             print(f"🔹 {repo}")
@@ -79,14 +80,12 @@ class QualityAnalyzer:
 
             # 점수별 정렬
             sorted_agents = sorted(
-                agents.items(),
-                key=lambda x: x[1]['current_score'],
-                reverse=True
+                agents.items(), key=lambda x: x[1]["current_score"], reverse=True
             )
 
             for agent, scores in sorted_agents:
-                status = self._get_status_icon(scores['current_score'])
-                grade = self._get_grade(scores['current_score'])
+                status = self._get_status_icon(scores["current_score"])
+                grade = self._get_grade(scores["current_score"])
 
                 print(
                     f"  {status} {agent:<25} "
@@ -98,12 +97,12 @@ class QualityAnalyzer:
 
             print()
 
-        print("="*80 + "\n")
+        print("=" * 80 + "\n")
 
     def analyze_agent(self, agent_name: str):
         """특정 Agent 상세 분석"""
         logs = self.load_logs()
-        agent_logs = [log for log in logs if log['agent'] == agent_name]
+        agent_logs = [log for log in logs if log["agent"] == agent_name]
 
         if not agent_logs:
             print(f"❌ No logs found for agent: {agent_name}")
@@ -111,15 +110,15 @@ class QualityAnalyzer:
 
         # 통계
         total_attempts = len(agent_logs)
-        passes = sum(1 for log in agent_logs if log['status'] == 'pass')
+        passes = sum(1 for log in agent_logs if log["status"] == "pass")
         fails = total_attempts - passes
-        current_score = agent_logs[-1]['score']
+        current_score = agent_logs[-1]["score"]
 
         # 에러 분석
         errors = defaultdict(int)
         for log in agent_logs:
-            if log['status'] == 'fail' and log.get('error'):
-                errors[log['error']] += 1
+            if log["status"] == "fail" and log.get("error"):
+                errors[log["error"]] += 1
 
         # 출력
         print(f"\n{'='*60}")
@@ -139,11 +138,11 @@ class QualityAnalyzer:
         print()
 
         # Task 목록
-        tasks = set(log['task'] for log in agent_logs)
+        tasks = set(log["task"] for log in agent_logs)
         print(f"Tasks ({len(tasks)}):")
         for task in tasks:
-            task_logs = [log for log in agent_logs if log['task'] == task]
-            task_passes = sum(1 for log in task_logs if log['status'] == 'pass')
+            task_logs = [log for log in agent_logs if log["task"] == task]
+            task_passes = sum(1 for log in task_logs if log["status"] == "pass")
             task_fails = len(task_logs) - task_passes
             print(f"  - {task}: {task_passes}✓ {task_fails}✗")
         print()
@@ -151,14 +150,16 @@ class QualityAnalyzer:
         # 에러 분석
         if errors:
             print("Common Errors:")
-            for error, count in sorted(errors.items(), key=lambda x: x[1], reverse=True):
+            for error, count in sorted(
+                errors.items(), key=lambda x: x[1], reverse=True
+            ):
                 print(f"  - {error}: {count}회")
             print()
 
         # 추세
         print("Score Trend:")
         for i, log in enumerate(agent_logs[-10:], 1):  # 최근 10개
-            status_icon = "✅" if log['status'] == 'pass' else "❌"
+            status_icon = "✅" if log["status"] == "pass" else "❌"
             print(f"  {i}. {status_icon} {log['task'][:40]:<40} {log['score']:.1f}")
         print()
 
@@ -178,7 +179,9 @@ class QualityAnalyzer:
 
         if errors:
             print("\n  Focus on fixing:")
-            for error, count in list(sorted(errors.items(), key=lambda x: x[1], reverse=True))[:3]:
+            for error, count in list(
+                sorted(errors.items(), key=lambda x: x[1], reverse=True)
+            )[:3]:
                 print(f"    - {error}")
 
         print(f"\n{'='*60}\n")
@@ -192,15 +195,15 @@ class QualityAnalyzer:
             return
 
         # Agent별 그룹화
-        agent_stats = defaultdict(lambda: {'passes': 0, 'fails': 0, 'score': 0})
+        agent_stats = defaultdict(lambda: {"passes": 0, "fails": 0, "score": 0})
 
         for log in logs:
-            agent = log['agent']
-            if log['status'] == 'pass':
-                agent_stats[agent]['passes'] += 1
+            agent = log["agent"]
+            if log["status"] == "pass":
+                agent_stats[agent]["passes"] += 1
             else:
-                agent_stats[agent]['fails'] += 1
-            agent_stats[agent]['score'] = log['score']
+                agent_stats[agent]["fails"] += 1
+            agent_stats[agent]["score"] = log["score"]
 
         # 출력
         print(f"\n{'='*60}")
@@ -211,11 +214,13 @@ class QualityAnalyzer:
         print(f"Agents: {len(agent_stats)}\n")
 
         print(f"{'Agent':<25} {'Score':<10} {'Pass':<8} {'Fail':<8} {'Total':<8}")
-        print("-"*60)
+        print("-" * 60)
 
-        for agent, stats in sorted(agent_stats.items(), key=lambda x: x[1]['score'], reverse=True):
-            total = stats['passes'] + stats['fails']
-            status = self._get_status_icon(stats['score'])
+        for agent, stats in sorted(
+            agent_stats.items(), key=lambda x: x[1]["score"], reverse=True
+        ):
+            total = stats["passes"] + stats["fails"]
+            status = self._get_status_icon(stats["score"])
 
             print(
                 f"{agent:<25} "
@@ -241,7 +246,9 @@ class QualityAnalyzer:
 
         for log in logs:
             try:
-                log_time = datetime.fromisoformat(log['timestamp'].replace('Z', '+00:00'))
+                log_time = datetime.fromisoformat(
+                    log["timestamp"].replace("Z", "+00:00")
+                )
                 if log_time >= cutoff:
                     recent_logs.append(log)
             except Exception:
@@ -253,11 +260,10 @@ class QualityAnalyzer:
 
         # Agent별 추세
         agent_trends = defaultdict(list)
-        for log in sorted(recent_logs, key=lambda x: x['timestamp']):
-            agent_trends[log['agent']].append({
-                'timestamp': log['timestamp'],
-                'score': log['score']
-            })
+        for log in sorted(recent_logs, key=lambda x: x["timestamp"]):
+            agent_trends[log["agent"]].append(
+                {"timestamp": log["timestamp"], "score": log["score"]}
+            )
 
         # 출력
         print(f"\n{'='*60}")
@@ -268,8 +274,8 @@ class QualityAnalyzer:
             if len(trend) < 2:
                 continue
 
-            start_score = trend[0]['score']
-            end_score = trend[-1]['score']
+            start_score = trend[0]["score"]
+            end_score = trend[-1]["score"]
             change = end_score - start_score
 
             if change > 0:
@@ -282,7 +288,9 @@ class QualityAnalyzer:
                 trend_icon = "➡️"
                 trend_text = "0.0"
 
-            print(f"{trend_icon} {agent:<25} {start_score:.1f} → {end_score:.1f} ({trend_text})")
+            print(
+                f"{trend_icon} {agent:<25} {start_score:.1f} → {end_score:.1f} ({trend_text})"
+            )
 
         print(f"\n{'='*60}\n")
 
@@ -297,32 +305,38 @@ class QualityAnalyzer:
 
         for repo, agents in summary.items():
             for agent, scores in agents.items():
-                score = scores['current_score']
+                score = scores["current_score"]
 
                 if score == 0:
-                    alerts.append({
-                        'level': 'CRITICAL',
-                        'repo': repo,
-                        'agent': agent,
-                        'score': score,
-                        'message': 'Agent completely broken (score 0)'
-                    })
+                    alerts.append(
+                        {
+                            "level": "CRITICAL",
+                            "repo": repo,
+                            "agent": agent,
+                            "score": score,
+                            "message": "Agent completely broken (score 0)",
+                        }
+                    )
                 elif score < 2.0:
-                    alerts.append({
-                        'level': 'URGENT',
-                        'repo': repo,
-                        'agent': agent,
-                        'score': score,
-                        'message': 'Quality critically low'
-                    })
+                    alerts.append(
+                        {
+                            "level": "URGENT",
+                            "repo": repo,
+                            "agent": agent,
+                            "score": score,
+                            "message": "Quality critically low",
+                        }
+                    )
                 elif score < 3.0:
-                    alerts.append({
-                        'level': 'WARNING',
-                        'repo': repo,
-                        'agent': agent,
-                        'score': score,
-                        'message': 'Quality below acceptable level'
-                    })
+                    alerts.append(
+                        {
+                            "level": "WARNING",
+                            "repo": repo,
+                            "agent": agent,
+                            "score": score,
+                            "message": "Quality below acceptable level",
+                        }
+                    )
 
         if not alerts:
             print("\n✅ No quality alerts. All agents performing well!\n")
@@ -333,14 +347,10 @@ class QualityAnalyzer:
         print(f"🚨 Quality Alerts ({len(alerts)})")
         print(f"{'='*60}\n")
 
-        for alert in sorted(alerts, key=lambda x: x['score']):
-            level_icons = {
-                'CRITICAL': '💀',
-                'URGENT': '🚨',
-                'WARNING': '⚠️'
-            }
+        for alert in sorted(alerts, key=lambda x: x["score"]):
+            level_icons = {"CRITICAL": "💀", "URGENT": "🚨", "WARNING": "⚠️"}
 
-            icon = level_icons.get(alert['level'], '⚠️')
+            icon = level_icons.get(alert["level"], "⚠️")
             print(f"{icon} [{alert['level']}] {alert['repo']}/{alert['agent']}")
             print(f"   Score: {alert['score']:.1f}/5.0 - {alert['message']}\n")
 
@@ -389,15 +399,15 @@ def main():
 
     parser = argparse.ArgumentParser(
         description="Agent 품질 분석 도구",
-        epilog="Example: python analyze_quality.py --summary"
+        epilog="Example: python analyze_quality.py --summary",
     )
 
-    parser.add_argument('--summary', action='store_true', help='전체 요약')
-    parser.add_argument('--agent', help='특정 Agent 분석')
-    parser.add_argument('--repo', help='특정 레포 분석')
-    parser.add_argument('--trend', action='store_true', help='추세 분석')
-    parser.add_argument('--days', type=int, default=30, help='추세 기간 (일)')
-    parser.add_argument('--alerts', action='store_true', help='품질 알림 확인')
+    parser.add_argument("--summary", action="store_true", help="전체 요약")
+    parser.add_argument("--agent", help="특정 Agent 분석")
+    parser.add_argument("--repo", help="특정 레포 분석")
+    parser.add_argument("--trend", action="store_true", help="추세 분석")
+    parser.add_argument("--days", type=int, default=30, help="추세 기간 (일)")
+    parser.add_argument("--alerts", action="store_true", help="품질 알림 확인")
 
     args = parser.parse_args()
 

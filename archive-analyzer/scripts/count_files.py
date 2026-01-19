@@ -1,9 +1,10 @@
 #!/usr/bin/env python
 """아카이브 파일 수 및 용량 카운트 스크립트"""
 
-from smbclient import listdir, stat
 import os
 from collections import defaultdict
+
+from smbclient import listdir, stat
 
 BASE_PATH = r"\\10.10.100.122\docker\GGPNAs\ARCHIVE"
 
@@ -52,9 +53,9 @@ def scan_recursive(path, stats, depth=0):
                     # 진행 상황 출력
                     if stats['files'] % 100 == 0:
                         print(f"  Scanned {stats['files']} files...")
-            except Exception as e:
+            except Exception:
                 stats['errors'] += 1
-    except Exception as e:
+    except Exception:
         stats['errors'] += 1
 
 def format_size(bytes_size):

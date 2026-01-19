@@ -12,7 +12,7 @@ import sys
 import os
 
 # scripts 디렉토리를 Python path에 추가
-sys.path.insert(0, os.path.join(os.path.dirname(__file__), '..', 'scripts'))
+sys.path.insert(0, os.path.join(os.path.dirname(__file__), "..", "scripts"))
 
 # Import the module (파일명에서 .py 제거하고 import)
 from check_phase_completion import parse_commit_message, check_todo_completion
@@ -154,18 +154,23 @@ class TestCheckTodoCompletion:
 
 
 # Parametrized tests
-@pytest.mark.parametrize("message,expected_phase,expected_prd,expected_completed", [
-    ("feat: Phase 1 (v1.0.0) [PRD-0001]", "1", "0001", True),
-    ("fix: Phase 2 bug (v1.0.1) [PRD-0001]", "2", "0001", True),
-    ("docs: Phase 3 (v1.1.0) [PRD-0002]", "3", "0002", True),
-    ("refactor: Phase 4 (v2.0.0) [PRD-0003]", "4", "0003", True),
-    ("perf: Phase 5 (v1.2.0) [PRD-0001]", "5", "0001", True),
-    ("test: Phase 6 (v1.0.0) [PRD-0004]", "6", "0004", True),
-    ("feat: No phase (v1.0.0) [PRD-0001]", None, "0001", True),
-    ("feat: Missing version [PRD-0001]", None, "0001", False),
-    ("feat: Missing PRD (v1.0.0)", None, None, False),
-])
-def test_various_commit_patterns(message, expected_phase, expected_prd, expected_completed):
+@pytest.mark.parametrize(
+    "message,expected_phase,expected_prd,expected_completed",
+    [
+        ("feat: Phase 1 (v1.0.0) [PRD-0001]", "1", "0001", True),
+        ("fix: Phase 2 bug (v1.0.1) [PRD-0001]", "2", "0001", True),
+        ("docs: Phase 3 (v1.1.0) [PRD-0002]", "3", "0002", True),
+        ("refactor: Phase 4 (v2.0.0) [PRD-0003]", "4", "0003", True),
+        ("perf: Phase 5 (v1.2.0) [PRD-0001]", "5", "0001", True),
+        ("test: Phase 6 (v1.0.0) [PRD-0004]", "6", "0004", True),
+        ("feat: No phase (v1.0.0) [PRD-0001]", None, "0001", True),
+        ("feat: Missing version [PRD-0001]", None, "0001", False),
+        ("feat: Missing PRD (v1.0.0)", None, None, False),
+    ],
+)
+def test_various_commit_patterns(
+    message, expected_phase, expected_prd, expected_completed
+):
     """다양한 커밋 패턴 테스트"""
     result = parse_commit_message(message)
 

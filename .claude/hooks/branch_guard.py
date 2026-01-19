@@ -28,7 +28,7 @@ def get_current_branch() -> str:
             ["git", "rev-parse", "--abbrev-ref", "HEAD"],
             capture_output=True,
             text=True,
-            cwd=os.environ.get("CLAUDE_PROJECT_DIR", "D:/AI/claude01")
+            cwd=os.environ.get("CLAUDE_PROJECT_DIR", "D:/AI/claude01"),
         )
         return result.stdout.strip()
     except Exception:
@@ -61,15 +61,19 @@ def main():
         # main/master 브랜치에서 코드 수정 시 차단
         if branch in ["main", "master"]:
             if file_path and not is_allowed_file(file_path):
-                print(json.dumps({
-                    "decision": "block",
-                    "reason": f"🚫 main 브랜치에서 코드 수정 금지\n\n"
-                              f"📁 파일: {file_path}\n"
-                              f"📌 현재 브랜치: {branch}\n\n"
-                              f"✅ 해결방법:\n"
-                              f"   git checkout -b feat/issue-N-description\n"
-                              f"   또는 /issue create로 이슈 먼저 생성"
-                }))
+                print(
+                    json.dumps(
+                        {
+                            "decision": "block",
+                            "reason": f"🚫 main 브랜치에서 코드 수정 금지\n\n"
+                            f"📁 파일: {file_path}\n"
+                            f"📌 현재 브랜치: {branch}\n\n"
+                            f"✅ 해결방법:\n"
+                            f"   git checkout -b feat/issue-N-description\n"
+                            f"   또는 /issue create로 이슈 먼저 생성",
+                        }
+                    )
+                )
                 return
 
         print(json.dumps({"decision": "approve"}))

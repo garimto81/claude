@@ -10,7 +10,9 @@ import sys
 import os
 
 # Hook 모듈 임포트를 위한 경로 추가
-sys.path.insert(0, os.path.join(os.path.dirname(__file__), '..', '..', '.claude', 'hooks'))
+sys.path.insert(
+    0, os.path.join(os.path.dirname(__file__), "..", "..", ".claude", "hooks")
+)
 
 from claude_md_validator import (
     validate_prompt,
@@ -18,7 +20,7 @@ from claude_md_validator import (
     get_action,
     Violation,
     Severity,
-    RULES
+    RULES,
 )
 
 
@@ -42,23 +44,29 @@ class TestValidatePrompt:
         prompts = [
             "cd ./src && run tests",
             "./scripts/run.sh 실행해줘",
-            "cd src/agents 폴더로 이동"
+            "cd src/agents 폴더로 이동",
         ]
         for prompt in prompts:
             violations = validate_prompt(prompt)
-            assert any(v.rule_id == "relative_path" for v in violations), f"Failed for: {prompt}"
+            assert any(
+                v.rule_id == "relative_path" for v in violations
+            ), f"Failed for: {prompt}"
 
     def test_skip_validation_blocked(self):
         """Phase 검증 건너뛰기 차단"""
         prompts = [
             "skip phase validation",
             "validation을 건너뛰고 진행해줘",
-            "skip validation and proceed"
+            "skip validation and proceed",
         ]
         for prompt in prompts:
             violations = validate_prompt(prompt)
-            assert any(v.rule_id == "skip_validation" for v in violations), f"Failed for: {prompt}"
-            assert any(v.severity == Severity.CRITICAL for v in violations), f"Should be CRITICAL: {prompt}"
+            assert any(
+                v.rule_id == "skip_validation" for v in violations
+            ), f"Failed for: {prompt}"
+            assert any(
+                v.severity == Severity.CRITICAL for v in violations
+            ), f"Should be CRITICAL: {prompt}"
 
     def test_phase_jump_violation(self):
         """Phase 건너뛰기 감지"""
@@ -66,32 +74,35 @@ class TestValidatePrompt:
             "Phase 3부터 시작해줘",
             "skip to phase 2",
             "phase 4로 바로 가자",
-            "phase 5으로 직접 이동"
+            "phase 5으로 직접 이동",
         ]
         for prompt in prompts:
             violations = validate_prompt(prompt)
-            assert any(v.rule_id == "phase_jump" for v in violations), f"Failed for: {prompt}"
+            assert any(
+                v.rule_id == "phase_jump" for v in violations
+            ), f"Failed for: {prompt}"
 
     def test_implement_before_test_violation(self):
         """TDD 순서 위반 감지"""
         prompts = [
             "구현 먼저 하고 테스트는 나중에",
             "implement first without test",
-            "테스트 없이 코드 작성해줘"
+            "테스트 없이 코드 작성해줘",
         ]
         for prompt in prompts:
             violations = validate_prompt(prompt)
-            assert any(v.rule_id == "implement_before_test" for v in violations), f"Failed for: {prompt}"
+            assert any(
+                v.rule_id == "implement_before_test" for v in violations
+            ), f"Failed for: {prompt}"
 
     def test_english_output_warning(self):
         """영어 출력 요청 감지"""
-        prompts = [
-            "respond in english please",
-            "영어로 대답해줘"
-        ]
+        prompts = ["respond in english please", "영어로 대답해줘"]
         for prompt in prompts:
             violations = validate_prompt(prompt)
-            assert any(v.rule_id == "english_output" for v in violations), f"Failed for: {prompt}"
+            assert any(
+                v.rule_id == "english_output" for v in violations
+            ), f"Failed for: {prompt}"
 
 
 class TestGetAction:
@@ -105,9 +116,7 @@ class TestGetAction:
         """CRITICAL 위반은 block"""
         violations = [
             Violation(
-                rule_id="skip_validation",
-                message="test",
-                severity=Severity.CRITICAL
+                rule_id="skip_validation", message="test", severity=Severity.CRITICAL
             )
         ]
         assert get_action(violations) == "block"
@@ -115,11 +124,7 @@ class TestGetAction:
     def test_high_warns(self):
         """HIGH 위반은 warn"""
         violations = [
-            Violation(
-                rule_id="relative_path",
-                message="test",
-                severity=Severity.HIGH
-            )
+            Violation(rule_id="relative_path", message="test", severity=Severity.HIGH)
         ]
         assert get_action(violations) == "warn"
 
@@ -127,9 +132,7 @@ class TestGetAction:
         """MEDIUM 위반은 proceed (로그만)"""
         violations = [
             Violation(
-                rule_id="english_output",
-                message="test",
-                severity=Severity.MEDIUM
+                rule_id="english_output", message="test", severity=Severity.MEDIUM
             )
         ]
         assert get_action(violations) == "proceed"
@@ -158,7 +161,7 @@ class TestFormatFeedback:
                 rule_id="test_rule",
                 message="테스트 메시지",
                 severity=Severity.HIGH,
-                suggestion="제안 사항"
+                suggestion="제안 사항",
             )
         ]
         result = format_feedback(violations)
@@ -194,6 +197,7 @@ class TestRulesCompleteness:
     def test_all_patterns_compile(self):
         """모든 패턴이 유효한 정규식"""
         import re
+
         for rule_id, rule in RULES.items():
             try:
                 re.compile(rule["pattern"])
@@ -232,19 +236,18 @@ class TestEdgeCases:
 
     def test_case_insensitive_matching(self):
         """대소문자 무관 매칭"""
-        prompts = [
-            "SKIP VALIDATION",
-            "Skip Validation",
-            "sKiP vAlIdAtIoN"
-        ]
+        prompts = ["SKIP VALIDATION", "Skip Validation", "sKiP vAlIdAtIoN"]
         for prompt in prompts:
             violations = validate_prompt(prompt)
-            assert any(v.rule_id == "skip_validation" for v in violations), f"Failed for: {prompt}"
+            assert any(
+                v.rule_id == "skip_validation" for v in violations
+            ), f"Failed for: {prompt}"
 
 
 # ============================================================================
 # 실제 사용 시나리오 테스트
 # ============================================================================
+
 
 class TestRealWorldScenarios:
     """실제 사용 시나리오 테스트"""
@@ -273,7 +276,9 @@ class TestRealWorldScenarios:
         violations = validate_prompt(prompt)
         # skip_validation이 감지되어야 함
         rule_ids = [v.rule_id for v in violations]
-        assert "skip_validation" in rule_ids, f"Expected skip_validation, got: {rule_ids}"
+        assert (
+            "skip_validation" in rule_ids
+        ), f"Expected skip_validation, got: {rule_ids}"
 
 
 if __name__ == "__main__":

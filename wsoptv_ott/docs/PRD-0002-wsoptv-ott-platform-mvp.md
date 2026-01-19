@@ -295,7 +295,12 @@ GG POKER 방송은 여러 개의 테이블을 전환하여 방송하는 방식.
 - 필터 탭 (Main Event, Bracelet, High Roller, Classics)
 - 시청 진행률 표시
 - 큐레이티드 플레이리스트
-- 검색 기능
+- 검색 기능 (Elasticsearch 기반 - [PRD-0007](PRD-0007-content-strategy.md) 참조)
+
+**검색 기능 상세**:
+- 대회명, 년도, 플레이어명, 게임 타입 등 메타데이터 기반 전문 검색
+- 필터링: 년도, 시리즈, 게임 타입별 필터 지원
+- 50년+ 아카이브 콘텐츠(1973년~현재) 검색 가능
 
 ---
 
@@ -372,6 +377,7 @@ GG POKER 방송은 여러 개의 테이블을 전환하여 방송하는 방식.
 - [Michael Vision Note](../docs/order/michael_note.md)
 - [Michael Vision Analysis](../docs/order/michael_vision_analysis.md)
 - [PRD-0006 Advanced Mode](PRD-0006-advanced-mode.md)
+- [0003 Cross-Promotion Strategy](0003-cross-promotion-strategy.md)
 
 ---
 

@@ -4,10 +4,10 @@ iconik CSV와 매칭 결과를 결합하여 clip_metadata 테이블에 저장합
 """
 
 import csv
-import sys
 import logging
+import sys
 from pathlib import Path
-from typing import Dict, List, Any
+from typing import Dict
 
 # 프로젝트 src 경로 추가
 project_root = Path(__file__).parent.parent

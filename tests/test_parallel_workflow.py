@@ -42,7 +42,7 @@ class TestAgentConfig:
             role="커스텀 역할",
             model="claude-opus-4",
             tools=["bash", "read_file"],
-            max_retries=5
+            max_retries=5,
         )
         assert config.name == "custom"
         assert config.tools == ["bash", "read_file"]
@@ -59,7 +59,15 @@ class TestModelTiers:
 
     def test_all_tiers_defined(self):
         """모든 티어가 정의되었는지 확인"""
-        required_tiers = ["supervisor", "lead", "researcher", "coder", "reviewer", "validator", "default"]
+        required_tiers = [
+            "supervisor",
+            "lead",
+            "researcher",
+            "coder",
+            "reviewer",
+            "validator",
+            "default",
+        ]
         for tier in required_tiers:
             assert tier in AGENT_MODEL_TIERS
 
@@ -151,7 +159,13 @@ class TestFormatResultReport:
         """성공/실패 혼합 결과 포맷팅"""
         results = [
             {"agent_id": "0", "subtask": "태스크1", "output": "결과1", "success": True},
-            {"agent_id": "1", "subtask": "태스크2", "output": "", "success": False, "error": "타임아웃"},
+            {
+                "agent_id": "1",
+                "subtask": "태스크2",
+                "output": "",
+                "success": False,
+                "error": "타임아웃",
+            },
         ]
         report = format_result_report(results)
         assert "성공: 1" in report
@@ -171,9 +185,7 @@ class TestExecutionResult:
     def test_successful_result(self):
         """성공 결과 생성"""
         result = ExecutionResult(
-            success=True,
-            output="테스트 출력",
-            duration_seconds=1.5
+            success=True, output="테스트 출력", duration_seconds=1.5
         )
         assert result.success is True
         assert result.output == "테스트 출력"
@@ -182,10 +194,7 @@ class TestExecutionResult:
     def test_failed_result(self):
         """실패 결과 생성"""
         result = ExecutionResult(
-            success=False,
-            output=None,
-            duration_seconds=5.0,
-            error="Connection timeout"
+            success=False, output=None, duration_seconds=5.0, error="Connection timeout"
         )
         assert result.success is False
         assert result.error == "Connection timeout"
@@ -194,6 +203,7 @@ class TestExecutionResult:
 # ============================================================================
 # Integration Tests (실제 API 호출 필요)
 # ============================================================================
+
 
 @pytest.mark.integration
 @pytest.mark.skip(reason="실제 API 키 필요")

@@ -15,15 +15,18 @@ from typing import Optional, List
 import pytest
 
 # Mock langfuse before importing the module
-sys.modules['langfuse'] = MagicMock()
+sys.modules["langfuse"] = MagicMock()
 
 # Add evolution scripts to path
-sys.path.insert(0, str(Path(__file__).parent.parent / ".claude" / "evolution" / "scripts"))
+sys.path.insert(
+    0, str(Path(__file__).parent.parent / ".claude" / "evolution" / "scripts")
+)
 
 
 @dataclass
 class MockTrace:
     """Mock Langfuse trace object"""
+
     id: str
     name: str
     output: Optional[dict] = None
@@ -33,6 +36,7 @@ class MockTrace:
 @dataclass
 class MockScore:
     """Mock Langfuse score object"""
+
     name: str
     value: float
 
@@ -40,6 +44,7 @@ class MockScore:
 @dataclass
 class MockResponse:
     """Mock Langfuse API response"""
+
     data: List
 
 
@@ -58,7 +63,7 @@ class TestPerformanceMetrics:
             error_rate=0.05,
             avg_user_rating=0.9,
             avg_effectiveness=0.85,
-            improvement_suggestions_count=2
+            improvement_suggestions_count=2,
         )
 
         # 점수가 0-100 범위인지 확인
@@ -80,7 +85,7 @@ class TestPerformanceMetrics:
             error_rate=0.02,
             avg_user_rating=0.95,
             avg_effectiveness=0.95,
-            improvement_suggestions_count=0
+            improvement_suggestions_count=0,
         )
         assert high_metrics.grade in ["S", "A"]
 
@@ -93,7 +98,7 @@ class TestPerformanceMetrics:
             error_rate=0.7,
             avg_user_rating=0.3,
             avg_effectiveness=0.3,
-            improvement_suggestions_count=10
+            improvement_suggestions_count=10,
         )
         assert low_metrics.grade in ["D", "F"]
 
@@ -109,7 +114,7 @@ class TestPerformanceMetrics:
             error_rate=0.05,
             avg_user_rating=0.9,
             avg_effectiveness=0.9,
-            improvement_suggestions_count=0
+            improvement_suggestions_count=0,
         )
         assert "Excellent" in excellent.status or "Good" in excellent.status
 
@@ -132,35 +137,37 @@ class TestAgentEvaluator:
                 id="trace-1",
                 name="agent-test-agent",
                 output={"status": "success", "duration_seconds": 1.5},
-                metadata={"phase": "Phase 0", "agent": "test-agent"}
+                metadata={"phase": "Phase 0", "agent": "test-agent"},
             ),
             MockTrace(
                 id="trace-2",
                 name="agent-test-agent",
                 output={"status": "success", "duration_seconds": 2.0},
-                metadata={"phase": "Phase 0", "agent": "test-agent"}
+                metadata={"phase": "Phase 0", "agent": "test-agent"},
             ),
             MockTrace(
                 id="trace-3",
                 name="agent-test-agent",
                 output={"status": "error", "duration_seconds": 3.0},
-                metadata={"phase": "Phase 0", "agent": "test-agent"}
+                metadata={"phase": "Phase 0", "agent": "test-agent"},
             ),
         ]
 
         mock_client.fetch_traces.return_value = MockResponse(data=mock_traces)
-        mock_client.fetch_scores.return_value = MockResponse(data=[
-            MockScore(name="user_rating", value=0.8),
-            MockScore(name="effectiveness", value=0.85)
-        ])
+        mock_client.fetch_scores.return_value = MockResponse(
+            data=[
+                MockScore(name="user_rating", value=0.8),
+                MockScore(name="effectiveness", value=0.85),
+            ]
+        )
 
         evaluator = AgentEvaluator()
         metrics = evaluator.get_agent_metrics("test-agent", days=7)
 
         # 검증
         assert metrics.total_runs == 3
-        assert metrics.success_rate == pytest.approx(2/3, rel=0.01)
-        assert metrics.error_rate == pytest.approx(1/3, rel=0.01)
+        assert metrics.success_rate == pytest.approx(2 / 3, rel=0.01)
+        assert metrics.error_rate == pytest.approx(1 / 3, rel=0.01)
         assert metrics.avg_duration == pytest.approx((1.5 + 2.0 + 3.0) / 3, rel=0.01)
 
     @patch("evaluate_agent_performance.Langfuse")
@@ -207,19 +214,19 @@ class TestAgentEvaluator:
                 id="trace-1",
                 name="agent-test",
                 output={"status": "success", "duration_seconds": 1.0},
-                metadata={"phase": "Phase 0"}
+                metadata={"phase": "Phase 0"},
             ),
             MockTrace(
                 id="trace-2",
                 name="agent-test",
                 output={"status": "success", "duration_seconds": 2.0},
-                metadata={"phase": "Phase 1"}
+                metadata={"phase": "Phase 1"},
             ),
             MockTrace(
                 id="trace-3",
                 name="agent-test",
                 output={"status": "success", "duration_seconds": 1.5},
-                metadata={"phase": "Phase 0"}
+                metadata={"phase": "Phase 0"},
             ),
         ]
 
@@ -242,7 +249,7 @@ class TestAgentEvaluator:
 
         mock_scores = [
             MockScore(name="user_rating", value=0.8),
-            MockScore(name="effectiveness", value=0.9)
+            MockScore(name="effectiveness", value=0.9),
         ]
         mock_client.fetch_scores.return_value = MockResponse(data=mock_scores)
 
@@ -289,7 +296,7 @@ class TestP95Duration:
                 id=f"trace-{i}",
                 name="agent-test",
                 output={"status": "success", "duration_seconds": float(i)},
-                metadata={}
+                metadata={},
             )
             for i in range(1, 101)
         ]

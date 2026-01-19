@@ -61,7 +61,9 @@ def update_checklist(checklist_path: Path, task_result: dict) -> bool:
                     "agent": current.get("agent", "unknown"),
                     "task_id": current["id"],
                     "action": "작업 완료",
-                    "status": "success" if task_result.get("success", True) else "failed",
+                    "status": (
+                        "success" if task_result.get("success", True) else "failed"
+                    ),
                 }
             )
 
@@ -71,10 +73,14 @@ def update_checklist(checklist_path: Path, task_result: dict) -> bool:
             # stats 업데이트
             if "stats" in data:
                 data["stats"]["completed"] = data["stats"].get("completed", 0) + 1
-                data["stats"]["in_progress"] = max(0, data["stats"].get("in_progress", 1) - 1)
+                data["stats"]["in_progress"] = max(
+                    0, data["stats"].get("in_progress", 1) - 1
+                )
 
         with open(checklist_path, "w", encoding="utf-8") as f:
-            yaml.dump(data, f, allow_unicode=True, default_flow_style=False, sort_keys=False)
+            yaml.dump(
+                data, f, allow_unicode=True, default_flow_style=False, sort_keys=False
+            )
 
         return True
     except Exception as e:
