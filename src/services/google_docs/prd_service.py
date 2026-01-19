@@ -26,7 +26,6 @@ try:
     from google_docs import (
         MarkdownToDocsConverter,
         ImageInserter,
-        NotionStyle,
         get_default_style,
     )
 

@@ -10,7 +10,7 @@ from datetime import datetime
 from pathlib import Path
 from typing import Any, Dict, List, Optional
 
-from .client import GoogleDocsClient
+from .client import GoogleDocsClient, _get_project_root
 from .metadata_manager import MetadataManager
 
 logger = logging.getLogger(__name__)

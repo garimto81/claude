@@ -11,6 +11,8 @@ from datetime import datetime
 from pathlib import Path
 from typing import Dict, List, Optional, Any
 
+from .client import _get_project_root
+
 logger = logging.getLogger(__name__)
 
 
