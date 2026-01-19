@@ -91,9 +91,7 @@ class WebSocketLogHandler(logging.Handler):
     def __init__(self, state: ServiceState):
         super().__init__()
         self.state = state
-        self.setFormatter(
-            logging.Formatter("%(asctime)s [%(levelname)s] %(message)s")
-        )
+        self.setFormatter(logging.Formatter("%(asctime)s [%(levelname)s] %(message)s"))
 
     def emit(self, record: logging.LogRecord):
         try:
@@ -140,10 +138,8 @@ def get_db_stats(db_path: str) -> Dict[str, Any]:
         # 상태별 파일 수 (스키마에 따라 다른 컬럼 사용)
         if "scan_status" in columns:
             # archive.db
-            cursor = conn.execute(
-                """SELECT COALESCE(scan_status, 'unknown'), COUNT(*)
-                   FROM files GROUP BY scan_status"""
-            )
+            cursor = conn.execute("""SELECT COALESCE(scan_status, 'unknown'), COUNT(*)
+                   FROM files GROUP BY scan_status""")
             stats["by_status"] = dict(cursor.fetchall())
         elif "analysis_status" in columns:
             # pokervod.db
@@ -157,19 +153,15 @@ def get_db_stats(db_path: str) -> Dict[str, Any]:
 
         # 파일 타입별 (archive.db only)
         if "file_type" in columns:
-            cursor = conn.execute(
-                """SELECT file_type, COUNT(*)
+            cursor = conn.execute("""SELECT file_type, COUNT(*)
                    FROM files GROUP BY file_type
-                   ORDER BY COUNT(*) DESC LIMIT 10"""
-            )
+                   ORDER BY COUNT(*) DESC LIMIT 10""")
             stats["by_type"] = dict(cursor.fetchall())
         elif "codec" in columns:
             # pokervod.db - codec별 통계
-            cursor = conn.execute(
-                """SELECT COALESCE(codec, 'unknown'), COUNT(*)
+            cursor = conn.execute("""SELECT COALESCE(codec, 'unknown'), COUNT(*)
                    FROM files GROUP BY codec
-                   ORDER BY COUNT(*) DESC LIMIT 10"""
-            )
+                   ORDER BY COUNT(*) DESC LIMIT 10""")
             stats["by_type"] = dict(cursor.fetchall())
         else:
             stats["by_type"] = {}
@@ -178,22 +170,18 @@ def get_db_stats(db_path: str) -> Dict[str, Any]:
         if "path" in columns:
             # archive.db
             time_col = "created_at" if "created_at" in columns else "modified_at"
-            cursor = conn.execute(
-                f"""SELECT path, filename, {time_col}
+            cursor = conn.execute(f"""SELECT path, filename, {time_col}
                    FROM files
-                   ORDER BY {time_col} DESC LIMIT 5"""
-            )
+                   ORDER BY {time_col} DESC LIMIT 5""")
             stats["recent_files"] = [
                 {"path": r[0], "filename": r[1], "updated_at": r[2]}
                 for r in cursor.fetchall()
             ]
         elif "nas_path" in columns:
             # pokervod.db
-            cursor = conn.execute(
-                """SELECT nas_path, filename, updated_at
+            cursor = conn.execute("""SELECT nas_path, filename, updated_at
                    FROM files
-                   ORDER BY updated_at DESC LIMIT 5"""
-            )
+                   ORDER BY updated_at DESC LIMIT 5""")
             stats["recent_files"] = [
                 {"path": r[0], "filename": r[1], "updated_at": r[2]}
                 for r in cursor.fetchall()
@@ -216,9 +204,7 @@ def get_db_stats(db_path: str) -> Dict[str, Any]:
 HLS_COMPATIBLE_EXTENSIONS = ("mp4", "mov", "ts", "m4v", "m2ts", "mts")
 
 
-def get_matching_summary(
-    archive_db: str, pokervod_db: str
-) -> Dict[str, Any]:
+def get_matching_summary(archive_db: str, pokervod_db: str) -> Dict[str, Any]:
     """매칭 요약 통계 계산"""
     summary = {
         "synced": 0,
@@ -258,27 +244,22 @@ def get_matching_summary(
         not_synced = cursor.fetchone()[0]
 
         # 중복 파일 수 (동일 파일명이 여러 경로에 존재 - 향후 summary에 추가 가능)
-        cursor = conn_archive.execute(
-            """SELECT COUNT(*) FROM (
+        cursor = conn_archive.execute("""SELECT COUNT(*) FROM (
                    SELECT filename, COUNT(*) as cnt FROM files
                    GROUP BY filename HAVING cnt > 1
-               )"""
-        )
+               )""")
         _ = cursor.fetchone()[0]
 
         # 중복으로 인해 제외된 파일 수 (그룹당 n-1개)
-        cursor = conn_archive.execute(
-            """SELECT SUM(cnt - 1) FROM (
+        cursor = conn_archive.execute("""SELECT SUM(cnt - 1) FROM (
                    SELECT filename, COUNT(*) as cnt FROM files
                    GROUP BY filename HAVING cnt > 1
-               )"""
-        )
+               )""")
         result = cursor.fetchone()[0]
         duplicates_excluded = result if result else 0
 
         # 카탈로그별 통계
-        cursor = conn_archive.execute(
-            """SELECT
+        cursor = conn_archive.execute("""SELECT
                    CASE
                        WHEN path LIKE '%/WSOP/%' OR path LIKE 'WSOP/%' THEN 'WSOP'
                        WHEN path LIKE '%/HCL/%' OR path LIKE 'HCL/%' THEN 'HCL'
@@ -291,8 +272,7 @@ def get_matching_summary(
                    COUNT(*) as count
                FROM files
                GROUP BY catalog
-               ORDER BY count DESC"""
-        )
+               ORDER BY count DESC""")
         catalogs = [{"name": row[0], "count": row[1]} for row in cursor.fetchall()]
 
         summary = {
@@ -347,10 +327,8 @@ def get_matching_items(
 
     try:
         # 중복 파일 목록 (동일 filename이 여러 path에 존재)
-        cursor = conn_archive.execute(
-            """SELECT filename FROM files
-               GROUP BY filename HAVING COUNT(*) > 1"""
-        )
+        cursor = conn_archive.execute("""SELECT filename FROM files
+               GROUP BY filename HAVING COUNT(*) > 1""")
         duplicate_filenames = {row[0] for row in cursor.fetchall()}
 
         # 전체 파일 수
@@ -622,7 +600,9 @@ async def lifespan(app: FastAPI):
     ws_handler = WebSocketLogHandler(state)
     logging.getLogger("archive_analyzer").addHandler(ws_handler)
 
-    logger.info(f"Web 모니터링 서버 시작: http://{state.config.host}:{state.config.port}")
+    logger.info(
+        f"Web 모니터링 서버 시작: http://{state.config.host}:{state.config.port}"
+    )
 
     yield
 
@@ -680,7 +660,9 @@ def create_app() -> FastAPI:
         return {
             "status": "healthy" if state.is_running else "unhealthy",
             "sync_in_progress": state.sync_in_progress,
-            "last_sync_time": state.last_sync_time.isoformat() if state.last_sync_time else None,
+            "last_sync_time": (
+                state.last_sync_time.isoformat() if state.last_sync_time else None
+            ),
             "error": state.error_message,
         }
 
@@ -690,7 +672,9 @@ def create_app() -> FastAPI:
         return {
             "is_running": state.is_running,
             "sync_in_progress": state.sync_in_progress,
-            "last_sync_time": state.last_sync_time.isoformat() if state.last_sync_time else None,
+            "last_sync_time": (
+                state.last_sync_time.isoformat() if state.last_sync_time else None
+            ),
             "last_sync_result": state.last_sync_result,
             "error_message": state.error_message,
             "config": {
@@ -729,7 +713,9 @@ def create_app() -> FastAPI:
         return {"message": "동기화 시작됨", "status": "started"}
 
     @app.post("/api/reconcile")
-    async def trigger_reconcile(background_tasks: BackgroundTasks, dry_run: bool = True):
+    async def trigger_reconcile(
+        background_tasks: BackgroundTasks, dry_run: bool = True
+    ):
         """정합성 검증 트리거"""
         if state.sync_in_progress:
             return JSONResponse(
@@ -785,7 +771,9 @@ def create_app() -> FastAPI:
             },
             "sync_status": {
                 "is_running": state.sync_in_progress,
-                "last_sync_time": state.last_sync_time.isoformat() if state.last_sync_time else None,
+                "last_sync_time": (
+                    state.last_sync_time.isoformat() if state.last_sync_time else None
+                ),
                 "last_result": state.last_sync_result,
             },
             "catalogs": matching_summary.get("catalogs", []),
@@ -817,9 +805,7 @@ def create_app() -> FastAPI:
     @app.get("/api/matching/tree")
     async def get_matching_tree():
         """트리 구조 매칭 데이터 (PRD 7.4)"""
-        catalogs = get_catalog_tree(
-            state.config.archive_db, state.config.pokervod_db
-        )
+        catalogs = get_catalog_tree(state.config.archive_db, state.config.pokervod_db)
         return {"catalogs": catalogs}
 
     @app.websocket("/ws/logs")

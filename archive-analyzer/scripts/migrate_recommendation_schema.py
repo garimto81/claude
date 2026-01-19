@@ -182,23 +182,120 @@ INDEXES = {
 
 # 기본 home_rows 데이터
 DEFAULT_HOME_ROWS = [
-    ("continue_watching", "continue", "계속 시청하기", None, "watch_progress", None, 1, True, True, 1),
-    ("trending_all", "trending", "지금 인기 있는 영상", None, "trending_24h", None, 2, True, False, 5),
-    ("trending_wsop", "trending", "WSOP 인기 영상", None, "trending_24h", '{"catalog_id": "WSOP"}', 3, True, False, 5),
-    ("trending_hcl", "trending", "HCL 인기 영상", None, "trending_24h", '{"catalog_id": "HCL"}', 4, True, False, 5),
-    ("new_releases", "category", "새로 추가된 영상", None, "recent", None, 5, True, False, 5),
-    ("personalized_for_you", "personalized", "당신을 위한 추천", None, "gorse_hybrid", None, 6, True, True, 5),
-    ("because_watched", "personalized", "{title} 시청 후 추천", "{title} 시청 후 추천", "similar_items", None, 7, True, True, 3),
-    ("top_hands", "curated", "베스트 핸드 모음", None, "highlight_score", '{"min_score": 3}', 8, True, False, 5),
-    ("favorite_players", "personalized", "즐겨찾는 플레이어", None, "player_based", None, 9, True, True, 3),
+    (
+        "continue_watching",
+        "continue",
+        "계속 시청하기",
+        None,
+        "watch_progress",
+        None,
+        1,
+        True,
+        True,
+        1,
+    ),
+    (
+        "trending_all",
+        "trending",
+        "지금 인기 있는 영상",
+        None,
+        "trending_24h",
+        None,
+        2,
+        True,
+        False,
+        5,
+    ),
+    (
+        "trending_wsop",
+        "trending",
+        "WSOP 인기 영상",
+        None,
+        "trending_24h",
+        '{"catalog_id": "WSOP"}',
+        3,
+        True,
+        False,
+        5,
+    ),
+    (
+        "trending_hcl",
+        "trending",
+        "HCL 인기 영상",
+        None,
+        "trending_24h",
+        '{"catalog_id": "HCL"}',
+        4,
+        True,
+        False,
+        5,
+    ),
+    (
+        "new_releases",
+        "category",
+        "새로 추가된 영상",
+        None,
+        "recent",
+        None,
+        5,
+        True,
+        False,
+        5,
+    ),
+    (
+        "personalized_for_you",
+        "personalized",
+        "당신을 위한 추천",
+        None,
+        "gorse_hybrid",
+        None,
+        6,
+        True,
+        True,
+        5,
+    ),
+    (
+        "because_watched",
+        "personalized",
+        "{title} 시청 후 추천",
+        "{title} 시청 후 추천",
+        "similar_items",
+        None,
+        7,
+        True,
+        True,
+        3,
+    ),
+    (
+        "top_hands",
+        "curated",
+        "베스트 핸드 모음",
+        None,
+        "highlight_score",
+        '{"min_score": 3}',
+        8,
+        True,
+        False,
+        5,
+    ),
+    (
+        "favorite_players",
+        "personalized",
+        "즐겨찾는 플레이어",
+        None,
+        "player_based",
+        None,
+        9,
+        True,
+        True,
+        3,
+    ),
 ]
 
 
 def get_existing_tables(conn: sqlite3.Connection) -> set:
     """기존 테이블 목록 조회"""
-    cursor = conn.execute(
-        "SELECT name FROM sqlite_master WHERE type='table'"
-    )
+    cursor = conn.execute("SELECT name FROM sqlite_master WHERE type='table'")
     return {row[0] for row in cursor.fetchall()}
 
 
@@ -249,7 +346,7 @@ def migrate(conn: sqlite3.Connection, dry_run: bool = False) -> dict:
                  default_position, is_active, requires_history, min_items)
                 VALUES (?, ?, ?, ?, ?, ?, ?, ?, ?, ?)
                 """,
-                DEFAULT_HOME_ROWS
+                DEFAULT_HOME_ROWS,
             )
             print(f"✅ home_rows: {len(DEFAULT_HOME_ROWS)}개 기본 데이터 삽입 완료")
         results["data_inserted"].append(f"home_rows: {len(DEFAULT_HOME_ROWS)} rows")
@@ -311,29 +408,19 @@ def verify(conn: sqlite3.Connection) -> dict:
 
 
 def main():
-    parser = argparse.ArgumentParser(
-        description="추천 시스템 스키마 마이그레이션"
+    parser = argparse.ArgumentParser(description="추천 시스템 스키마 마이그레이션")
+    parser.add_argument(
+        "--dry-run", action="store_true", help="시뮬레이션 모드 (실제 변경 없음)"
     )
     parser.add_argument(
-        "--dry-run",
-        action="store_true",
-        help="시뮬레이션 모드 (실제 변경 없음)"
+        "--rollback", action="store_true", help="롤백 모드 (테이블 삭제)"
     )
-    parser.add_argument(
-        "--rollback",
-        action="store_true",
-        help="롤백 모드 (테이블 삭제)"
-    )
-    parser.add_argument(
-        "--verify",
-        action="store_true",
-        help="검증 모드 (상태 확인)"
-    )
+    parser.add_argument("--verify", action="store_true", help="검증 모드 (상태 확인)")
     parser.add_argument(
         "--db-path",
         type=str,
         default=str(POKERVOD_DB),
-        help=f"DB 경로 (기본값: {POKERVOD_DB})"
+        help=f"DB 경로 (기본값: {POKERVOD_DB})",
     )
 
     args = parser.parse_args()
@@ -374,7 +461,9 @@ def main():
             print(f"   없는 테이블: {len(results['tables_not_found'])}")
 
         else:
-            print(f"{'🔍 마이그레이션 시뮬레이션' if args.dry_run else '🚀 마이그레이션 실행'}\n")
+            print(
+                f"{'🔍 마이그레이션 시뮬레이션' if args.dry_run else '🚀 마이그레이션 실행'}\n"
+            )
             results = migrate(conn, dry_run=args.dry_run)
 
             print("\n📊 결과:")

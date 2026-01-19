@@ -314,13 +314,11 @@ class ReportGenerator:
         report.total_videos = cursor.fetchone()[0]
 
         # 총 재생시간
-        cursor.execute(
-            """
+        cursor.execute("""
             SELECT COALESCE(SUM(duration_seconds), 0) / 3600.0
             FROM media_info
             WHERE extraction_status = 'success'
-        """
-        )
+        """)
         report.total_duration_hours = cursor.fetchone()[0] or 0
 
     def _gather_file_type_stats(self, report: ArchiveReport) -> None:
@@ -328,8 +326,7 @@ class ReportGenerator:
         cursor = self._conn.cursor()
 
         # 파일 타입별 기본 통계
-        cursor.execute(
-            """
+        cursor.execute("""
             SELECT
                 file_type,
                 COUNT(*) as count,
@@ -337,20 +334,17 @@ class ReportGenerator:
             FROM files
             GROUP BY file_type
             ORDER BY total_size DESC
-        """
-        )
+        """)
 
         type_rows = cursor.fetchall()
 
         # #44 - 단일 쿼리로 모든 확장자 통계 가져오기
-        cursor.execute(
-            """
+        cursor.execute("""
             SELECT file_type, extension, COUNT(*) as count
             FROM files
             GROUP BY file_type, extension
             ORDER BY file_type, count DESC
-        """
-        )
+        """)
 
         # 확장자별 통계를 file_type으로 그룹화
         ext_by_type = {}
@@ -366,7 +360,9 @@ class ReportGenerator:
             count = row[1]
             size = row[2]
 
-            percentage = (count / report.total_files * 100) if report.total_files > 0 else 0
+            percentage = (
+                (count / report.total_files * 100) if report.total_files > 0 else 0
+            )
 
             stats = FileTypeStats(
                 file_type=file_type,
@@ -386,8 +382,7 @@ class ReportGenerator:
         """확장자별 상세 분석"""
         cursor = self._conn.cursor()
 
-        cursor.execute(
-            """
+        cursor.execute("""
             SELECT
                 extension,
                 file_type,
@@ -397,8 +392,7 @@ class ReportGenerator:
             FROM files
             GROUP BY extension
             ORDER BY total_size DESC
-        """
-        )
+        """)
 
         breakdown = {}
         for row in cursor.fetchall():
@@ -417,8 +411,7 @@ class ReportGenerator:
         """해상도별 통계 수집"""
         cursor = self._conn.cursor()
 
-        cursor.execute(
-            """
+        cursor.execute("""
             SELECT
                 CASE
                     WHEN height >= 2160 THEN '4K (2160p+)'
@@ -445,8 +438,7 @@ class ReportGenerator:
                     WHEN '480p (SD)' THEN 5
                     ELSE 6
                 END
-        """
-        )
+        """)
 
         total_with_resolution = 0
         stats_list = []
@@ -465,7 +457,12 @@ class ReportGenerator:
         # 비율 계산
         for stats in stats_list:
             stats.percentage = round(
-                (stats.count / total_with_resolution * 100) if total_with_resolution > 0 else 0, 1
+                (
+                    (stats.count / total_with_resolution * 100)
+                    if total_with_resolution > 0
+                    else 0
+                ),
+                1,
             )
 
         report.resolution_stats = stats_list
@@ -475,8 +472,7 @@ class ReportGenerator:
         cursor = self._conn.cursor()
 
         # 비디오 코덱
-        cursor.execute(
-            """
+        cursor.execute("""
             SELECT
                 COALESCE(video_codec, 'Unknown') as codec,
                 COUNT(*) as count
@@ -484,8 +480,7 @@ class ReportGenerator:
             WHERE extraction_status = 'success'
             GROUP BY video_codec
             ORDER BY count DESC
-        """
-        )
+        """)
 
         total = 0
         stats_list = []
@@ -508,8 +503,7 @@ class ReportGenerator:
         """컨테이너 포맷별 통계 수집"""
         cursor = self._conn.cursor()
 
-        cursor.execute(
-            """
+        cursor.execute("""
             SELECT
                 COALESCE(container_format, 'Unknown') as container,
                 COUNT(*) as count,
@@ -518,8 +512,7 @@ class ReportGenerator:
             WHERE extraction_status = 'success'
             GROUP BY container_format
             ORDER BY count DESC
-        """
-        )
+        """)
 
         total = 0
         stats_list = []
@@ -544,8 +537,7 @@ class ReportGenerator:
         cursor = self._conn.cursor()
 
         # 모든 폴더 통계 조회
-        cursor.execute(
-            """
+        cursor.execute("""
             SELECT
                 parent_folder,
                 COUNT(*) as file_count,
@@ -554,8 +546,7 @@ class ReportGenerator:
             FROM files
             GROUP BY parent_folder
             ORDER BY total_size DESC
-        """
-        )
+        """)
 
         all_folders = []
 
@@ -650,8 +641,7 @@ class ReportGenerator:
         """재생시간별 통계 수집"""
         cursor = self._conn.cursor()
 
-        cursor.execute(
-            """
+        cursor.execute("""
             SELECT
                 CASE
                     WHEN duration_seconds < 1800 THEN 'short'
@@ -663,8 +653,7 @@ class ReportGenerator:
             FROM media_info
             WHERE extraction_status = 'success' AND duration_seconds IS NOT NULL
             GROUP BY category
-        """
-        )
+        """)
 
         total = 0
         category_map = {}
@@ -697,8 +686,7 @@ class ReportGenerator:
         """비트레이트별 통계 수집"""
         cursor = self._conn.cursor()
 
-        cursor.execute(
-            """
+        cursor.execute("""
             SELECT
                 CASE
                     WHEN bitrate < 5000000 THEN '< 5 Mbps'
@@ -719,8 +707,7 @@ class ReportGenerator:
                     WHEN '20-50 Mbps' THEN 4
                     ELSE 5
                 END
-        """
-        )
+        """)
 
         total = 0
         stats_list = []
@@ -746,36 +733,30 @@ class ReportGenerator:
         compatibility = StreamingCompatibility()
 
         # 호환 비디오 수
-        cursor.execute(
-            """
+        cursor.execute("""
             SELECT COUNT(*) FROM media_info
             WHERE extraction_status = 'success'
             AND LOWER(video_codec) IN ('h264', 'hevc', 'h265', 'vp9', 'av1')
             AND LOWER(container_format) IN ('mp4', 'webm', 'mov', 'matroska')
-        """
-        )
+        """)
         compatibility.compatible_count = cursor.fetchone()[0]
 
         # 비호환 비디오 (트랜스코딩 필요)
-        cursor.execute(
-            """
+        cursor.execute("""
             SELECT COUNT(*) FROM media_info
             WHERE extraction_status = 'success'
             AND (
                 LOWER(video_codec) NOT IN ('h264', 'hevc', 'h265', 'vp9', 'av1')
                 OR LOWER(container_format) NOT IN ('mp4', 'webm', 'mov', 'matroska')
             )
-        """
-        )
+        """)
         compatibility.needs_transcode = cursor.fetchone()[0]
 
         # 추출 실패
-        cursor.execute(
-            """
+        cursor.execute("""
             SELECT COUNT(*) FROM media_info
             WHERE extraction_status = 'failed'
-        """
-        )
+        """)
         compatibility.incompatible_count = cursor.fetchone()[0]
 
         # 적합률
@@ -786,8 +767,7 @@ class ReportGenerator:
             )
 
         # 이슈 상세
-        cursor.execute(
-            """
+        cursor.execute("""
             SELECT f.path, m.video_codec, m.container_format
             FROM media_info m
             JOIN files f ON m.file_id = f.id
@@ -797,8 +777,7 @@ class ReportGenerator:
                 OR LOWER(m.container_format) NOT IN ('mp4', 'webm', 'mov', 'matroska')
             )
             LIMIT 10
-        """
-        )
+        """)
 
         for row in cursor.fetchall():
             compatibility.issues.append(
@@ -830,15 +809,13 @@ class ReportGenerator:
         issues = QualityIssues()
 
         # 추출 실패 파일
-        cursor.execute(
-            """
+        cursor.execute("""
             SELECT f.path, f.filename, m.extraction_error
             FROM media_info m
             JOIN files f ON m.file_id = f.id
             WHERE m.extraction_status = 'failed'
             LIMIT 20
-        """
-        )
+        """)
 
         for row in cursor.fetchall():
             issues.failed_extraction.append(
@@ -850,15 +827,13 @@ class ReportGenerator:
             )
 
         # 비디오 스트림 없는 파일
-        cursor.execute(
-            """
+        cursor.execute("""
             SELECT f.path, f.filename
             FROM media_info m
             JOIN files f ON m.file_id = f.id
             WHERE m.extraction_status = 'success' AND m.has_video = 0
             LIMIT 10
-        """
-        )
+        """)
 
         for row in cursor.fetchall():
             issues.missing_video.append(
@@ -869,15 +844,13 @@ class ReportGenerator:
             )
 
         # 오디오 없는 비디오 파일
-        cursor.execute(
-            """
+        cursor.execute("""
             SELECT f.path, f.filename
             FROM media_info m
             JOIN files f ON m.file_id = f.id
             WHERE m.extraction_status = 'success' AND m.has_video = 1 AND m.has_audio = 0
             LIMIT 10
-        """
-        )
+        """)
 
         for row in cursor.fetchall():
             issues.missing_audio.append(
@@ -954,7 +927,9 @@ class ReportFormatter:
             lines.append("| 확장자 | 유형 | 파일 수 | 용량 |")
             lines.append("|--------|------|---------|------|")
             for ext, data in sorted(
-                report.extension_breakdown.items(), key=lambda x: x[1]["total_size"], reverse=True
+                report.extension_breakdown.items(),
+                key=lambda x: x[1]["total_size"],
+                reverse=True,
             )[:15]:
                 lines.append(
                     f"| {ext} | {data['file_type']} | {data['count']:,}개 | {data['size_formatted']} |"
@@ -972,7 +947,9 @@ class ReportFormatter:
             lines.append("| 해상도 | 파일 수 | 비율 |")
             lines.append("|--------|---------|------|")
             for stats in report.resolution_stats:
-                lines.append(f"| {stats.resolution} | {stats.count:,}개 | {stats.percentage}% |")
+                lines.append(
+                    f"| {stats.resolution} | {stats.count:,}개 | {stats.percentage}% |"
+                )
             lines.append("")
 
             # 코덱별
@@ -982,7 +959,9 @@ class ReportFormatter:
                 lines.append("| 코덱 | 파일 수 | 비율 |")
                 lines.append("|------|---------|------|")
                 for stats in report.codec_stats[:10]:
-                    lines.append(f"| {stats.codec} | {stats.count:,}개 | {stats.percentage}% |")
+                    lines.append(
+                        f"| {stats.codec} | {stats.count:,}개 | {stats.percentage}% |"
+                    )
                 lines.append("")
 
             # 컨테이너별
@@ -992,7 +971,9 @@ class ReportFormatter:
                 lines.append("| 포맷 | 파일 수 | 비율 |")
                 lines.append("|------|---------|------|")
                 for stats in report.container_stats[:10]:
-                    lines.append(f"| {stats.container} | {stats.count:,}개 | {stats.percentage}% |")
+                    lines.append(
+                        f"| {stats.container} | {stats.count:,}개 | {stats.percentage}% |"
+                    )
                 lines.append("")
 
             # 재생시간별
@@ -1071,7 +1052,9 @@ class ReportFormatter:
                 lines.append("")
 
                 if issues.failed_extraction:
-                    lines.append(f"### 분석 실패 파일 ({len(issues.failed_extraction)}개)")
+                    lines.append(
+                        f"### 분석 실패 파일 ({len(issues.failed_extraction)}개)"
+                    )
                     lines.append("")
                     for item in issues.failed_extraction[:5]:
                         lines.append(
@@ -1082,7 +1065,9 @@ class ReportFormatter:
                     lines.append("")
 
                 if issues.missing_audio:
-                    lines.append(f"### 오디오 없는 비디오 ({len(issues.missing_audio)}개)")
+                    lines.append(
+                        f"### 오디오 없는 비디오 ({len(issues.missing_audio)}개)"
+                    )
                     lines.append("")
                     for item in issues.missing_audio[:5]:
                         lines.append(f"- `{item['filename']}`")
@@ -1116,17 +1101,23 @@ class ReportFormatter:
         # 현재 노드 표시
         if node.depth == 0:
             # 루트 노드
-            lines.append(f"ARCHIVE/ ({node.file_count:,}개 파일, {node.size_formatted})")
+            lines.append(
+                f"ARCHIVE/ ({node.file_count:,}개 파일, {node.size_formatted})"
+            )
         else:
             connector = "└── " if is_last else "├── "
             size_info = (
-                f" ({node.file_count:,}개, {node.size_formatted})" if node.file_count > 0 else ""
+                f" ({node.file_count:,}개, {node.size_formatted})"
+                if node.file_count > 0
+                else ""
             )
             lines.append(f"{prefix}{connector}{node.name}/{size_info}")
 
         # 자식 노드들 (용량순 정렬)
         if node.depth < max_depth:
-            children = sorted(node.children.values(), key=lambda x: x.total_size, reverse=True)
+            children = sorted(
+                node.children.values(), key=lambda x: x.total_size, reverse=True
+            )
 
             # 자식이 많으면 상위 10개만 표시
             display_children = children[:10]
@@ -1142,7 +1133,10 @@ class ReportFormatter:
 
                 lines.extend(
                     ReportFormatter._render_folder_tree(
-                        child, prefix=child_prefix, is_last=is_child_last, max_depth=max_depth
+                        child,
+                        prefix=child_prefix,
+                        is_last=is_child_last,
+                        max_depth=max_depth,
                     )
                 )
 
@@ -1196,7 +1190,9 @@ class ReportFormatter:
             lines.append("  [해상도별 분포]")
             lines.append("-" * 60)
             for stats in report.resolution_stats:
-                bar = "█" * int(stats.percentage / 5) + "░" * (20 - int(stats.percentage / 5))
+                bar = "█" * int(stats.percentage / 5) + "░" * (
+                    20 - int(stats.percentage / 5)
+                )
                 lines.append(
                     f"  {stats.resolution:15} |{bar}| {stats.count:>5,}개 ({stats.percentage}%)"
                 )
@@ -1208,7 +1204,9 @@ class ReportFormatter:
             lines.append("  [비디오 코덱별 분포]")
             lines.append("-" * 60)
             for stats in report.codec_stats[:8]:
-                bar = "█" * int(stats.percentage / 5) + "░" * (20 - int(stats.percentage / 5))
+                bar = "█" * int(stats.percentage / 5) + "░" * (
+                    20 - int(stats.percentage / 5)
+                )
                 lines.append(
                     f"  {stats.codec:15} |{bar}| {stats.count:>5,}개 ({stats.percentage}%)"
                 )

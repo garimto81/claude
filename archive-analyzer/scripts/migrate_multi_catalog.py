@@ -86,16 +86,126 @@ INDEXES = {
 
 # 기본 컬렉션 데이터
 DEFAULT_COLLECTIONS = [
-    ("highlights", "베스트 핸드", "하이라이트 점수 3점 핸드 모음", "curated", None, False, None, 1, True, "system"),
-    ("epic-hands", "역대급 핸드", "전설적인 핸드 컬렉션", "curated", None, False, None, 2, True, "system"),
-    ("player-phil-ivey", "Phil Ivey", "Phil Ivey 등장 영상", "player", None, True, '{"player": "Phil Ivey"}', 10, True, "system"),
-    ("player-tom-dwan", "Tom Dwan", "Tom Dwan 등장 영상", "player", None, True, '{"player": "Tom Dwan"}', 11, True, "system"),
-    ("player-daniel-negreanu", "Daniel Negreanu", "Daniel Negreanu 등장 영상", "player", None, True, '{"player": "Daniel Negreanu"}', 12, True, "system"),
-    ("tag-bluff", "블러프 명장면", "블러프 태그 핸드", "tag", None, True, '{"tag": "bluff"}', 20, True, "system"),
-    ("tag-cooler", "쿨러 핸드", "쿨러/배드빗 상황", "tag", None, True, '{"tag": "cooler"}', 21, True, "system"),
-    ("tag-allin", "올인 명승부", "프리플랍/멀티웨이 올인", "tag", None, True, '{"tags": ["preflop_allin", "multiway_allin"]}', 22, True, "system"),
-    ("recent-week", "이번 주 업로드", "최근 7일 업로드 콘텐츠", "dynamic", None, True, '{"days": 7}', 30, True, "system"),
-    ("most-viewed", "가장 많이 본 영상", "조회수 Top 100", "dynamic", None, True, '{"sort": "view_count", "limit": 100}', 31, True, "system"),
+    (
+        "highlights",
+        "베스트 핸드",
+        "하이라이트 점수 3점 핸드 모음",
+        "curated",
+        None,
+        False,
+        None,
+        1,
+        True,
+        "system",
+    ),
+    (
+        "epic-hands",
+        "역대급 핸드",
+        "전설적인 핸드 컬렉션",
+        "curated",
+        None,
+        False,
+        None,
+        2,
+        True,
+        "system",
+    ),
+    (
+        "player-phil-ivey",
+        "Phil Ivey",
+        "Phil Ivey 등장 영상",
+        "player",
+        None,
+        True,
+        '{"player": "Phil Ivey"}',
+        10,
+        True,
+        "system",
+    ),
+    (
+        "player-tom-dwan",
+        "Tom Dwan",
+        "Tom Dwan 등장 영상",
+        "player",
+        None,
+        True,
+        '{"player": "Tom Dwan"}',
+        11,
+        True,
+        "system",
+    ),
+    (
+        "player-daniel-negreanu",
+        "Daniel Negreanu",
+        "Daniel Negreanu 등장 영상",
+        "player",
+        None,
+        True,
+        '{"player": "Daniel Negreanu"}',
+        12,
+        True,
+        "system",
+    ),
+    (
+        "tag-bluff",
+        "블러프 명장면",
+        "블러프 태그 핸드",
+        "tag",
+        None,
+        True,
+        '{"tag": "bluff"}',
+        20,
+        True,
+        "system",
+    ),
+    (
+        "tag-cooler",
+        "쿨러 핸드",
+        "쿨러/배드빗 상황",
+        "tag",
+        None,
+        True,
+        '{"tag": "cooler"}',
+        21,
+        True,
+        "system",
+    ),
+    (
+        "tag-allin",
+        "올인 명승부",
+        "프리플랍/멀티웨이 올인",
+        "tag",
+        None,
+        True,
+        '{"tags": ["preflop_allin", "multiway_allin"]}',
+        22,
+        True,
+        "system",
+    ),
+    (
+        "recent-week",
+        "이번 주 업로드",
+        "최근 7일 업로드 콘텐츠",
+        "dynamic",
+        None,
+        True,
+        '{"days": 7}',
+        30,
+        True,
+        "system",
+    ),
+    (
+        "most-viewed",
+        "가장 많이 본 영상",
+        "조회수 Top 100",
+        "dynamic",
+        None,
+        True,
+        '{"sort": "view_count", "limit": 100}',
+        31,
+        True,
+        "system",
+    ),
 ]
 
 
@@ -135,7 +245,7 @@ def migrate_existing_data(conn: sqlite3.Connection, dry_run: bool = False) -> in
         (file_id, catalog_id, subcatalog_id, is_primary, added_by, added_reason)
         VALUES (?, ?, ?, TRUE, 'migration', 'Original catalog from hierarchy')
         """,
-        rows
+        rows,
     )
 
     return len(rows)
@@ -189,7 +299,9 @@ def migrate(conn: sqlite3.Connection, dry_run: bool = False) -> dict:
     # 4. 기본 컬렉션 데이터 삽입
     if "catalog_collections" in results["tables_created"]:
         if dry_run:
-            print(f"🔍 catalog_collections: {len(DEFAULT_COLLECTIONS)}개 기본 컬렉션 생성 예정")
+            print(
+                f"🔍 catalog_collections: {len(DEFAULT_COLLECTIONS)}개 기본 컬렉션 생성 예정"
+            )
         else:
             conn.executemany(
                 """
@@ -198,9 +310,11 @@ def migrate(conn: sqlite3.Connection, dry_run: bool = False) -> dict:
                  is_dynamic, filter_query, display_order, is_active, created_by)
                 VALUES (?, ?, ?, ?, ?, ?, ?, ?, ?, ?)
                 """,
-                DEFAULT_COLLECTIONS
+                DEFAULT_COLLECTIONS,
             )
-            print(f"✅ catalog_collections: {len(DEFAULT_COLLECTIONS)}개 기본 컬렉션 생성 완료")
+            print(
+                f"✅ catalog_collections: {len(DEFAULT_COLLECTIONS)}개 기본 컬렉션 생성 완료"
+            )
         results["collections_created"] = len(DEFAULT_COLLECTIONS)
 
     if not dry_run:
@@ -351,7 +465,9 @@ def main():
             print(f"   삭제된 테이블: {len(results['tables_dropped'])}")
 
         else:
-            print(f"{'🔍 마이그레이션 시뮬레이션' if args.dry_run else '🚀 마이그레이션 실행'}\n")
+            print(
+                f"{'🔍 마이그레이션 시뮬레이션' if args.dry_run else '🚀 마이그레이션 실행'}\n"
+            )
             results = migrate(conn, dry_run=args.dry_run)
 
             print("\n📊 결과:")

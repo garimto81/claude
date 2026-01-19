@@ -70,7 +70,9 @@ class AutoSyncConfig:
         self.smb_server = os.environ.get("SMB_SERVER", self.smb_server)
         self.smb_share = os.environ.get("SMB_SHARE", self.smb_share)
         self.smb_username = os.environ.get("SMB_USERNAME", self.smb_username)
-        self.smb_password = os.environ.get("SMB_PASSWORD", self.smb_password or "!@QW12qw")
+        self.smb_password = os.environ.get(
+            "SMB_PASSWORD", self.smb_password or "!@QW12qw"
+        )
         self.archive_path = os.environ.get("ARCHIVE_PATH", self.archive_path)
         self.archive_db = os.environ.get("ARCHIVE_DB", self.archive_db)
         self.pokervod_db = os.environ.get("POKERVOD_DB", self.pokervod_db)
@@ -173,13 +175,17 @@ class NASAutoSync:
 
             # 기존 경로 로드
             self._existing_paths = self._load_existing_paths()
-            existing_normalized = {self._normalize_path(p) for p in self._existing_paths}
+            existing_normalized = {
+                self._normalize_path(p) for p in self._existing_paths
+            }
 
             logger.info(f"증분 스캔 시작: {self.config.archive_path}")
 
             batch = []
 
-            for info in self.connector.scan_directory(self.config.archive_path, recursive=True):
+            for info in self.connector.scan_directory(
+                self.config.archive_path, recursive=True
+            ):
                 if info.is_dir:
                     continue
 
@@ -200,9 +206,11 @@ class NASAutoSync:
                         "filename": info.name,
                         "extension": info.extension,
                         "size_bytes": info.size,
-                        "modified_at": datetime.fromtimestamp(info.modified_time)
-                        if info.modified_time
-                        else None,
+                        "modified_at": (
+                            datetime.fromtimestamp(info.modified_time)
+                            if info.modified_time
+                            else None
+                        ),
                         "file_type": file_type.value,
                         "parent_folder": parent,
                         "scan_status": "scanned",
@@ -259,7 +267,11 @@ class NASAutoSync:
                         record["filename"],
                         record["extension"],
                         record["size_bytes"],
-                        record["modified_at"].isoformat() if record["modified_at"] else None,
+                        (
+                            record["modified_at"].isoformat()
+                            if record["modified_at"]
+                            else None
+                        ),
                         record["file_type"],
                         record["parent_folder"],
                         record["scan_status"],
@@ -360,7 +372,9 @@ class NASAutoSync:
         지정된 간격으로 증분 스캔 및 동기화를 반복합니다.
         """
         interval = self.config.sync_interval_seconds
-        logger.info(f"NAS 자동 동기화 데몬 시작 (간격: {interval}초 = {interval//60}분)")
+        logger.info(
+            f"NAS 자동 동기화 데몬 시작 (간격: {interval}초 = {interval//60}분)"
+        )
         logger.info("중지: Ctrl+C")
         logger.info("")
 
