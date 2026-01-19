@@ -3,319 +3,383 @@ name: ai-login
 description: AI 서비스 인증 설정 (GPT, Gemini)
 ---
 
-# /ai-login - AI 서비스 인증 설정
-
-GPT 및 Gemini 사용을 위한 인증 설정을 안내합니다.
+# /ai-login - AI 서비스 Browser OAuth 인증
 
 ## 사용법
 
 ```bash
-/ai-login openai    # OpenAI Browser OAuth 로그인 (ChatGPT Plus/Pro)
-/ai-login google    # Google OAuth 브라우저 로그인
-/ai-login status    # 인증 상태 확인
-/ai-login logout    # 모든 세션 로그아웃
+/ai-login openai                    # Step 1: 브라우저 열기
+/ai-login callback <URL>            # Step 2: 콜백 URL로 토큰 교환
+/ai-login google                    # Google OAuth (Client ID 필요)
+/ai-login status                    # 인증 상태 확인
+/ai-login logout                    # 모든 세션 로그아웃
 ```
 
 ---
 
-## 실행 지시
+## 실행 지시 (CRITICAL)
 
-$ARGUMENTS를 파싱하여 해당 Provider의 인증 설정을 실행하세요.
-
-### 파라미터 매핑
-
-| 입력 | 동작 |
-|------|------|
-| `openai` 또는 `gpt` | OpenAI Browser OAuth 로그인 (ChatGPT Plus/Pro) |
-| `google` 또는 `gemini` | Google Browser OAuth 로그인 |
-| `status` | 인증 상태 확인 |
-| `logout` | 모든 토큰 삭제 |
+$ARGUMENTS를 파싱하여 **Bash tool로 해당 스크립트를 직접 실행**하세요.
+스크립트를 사용자에게 보여주지 말고 바로 실행하세요.
 
 ---
 
-## [OpenAI 설정] /ai-login openai
+## openai | gpt (Step 1)
 
-### 인증 방식: Browser OAuth (ChatGPT Plus/Pro)
+브라우저를 열고 인증 URL을 생성합니다. 사용자가 로그인 후 리다이렉트된 URL을 복사해야 합니다.
 
-OpenAI OAuth를 통해 ChatGPT Plus/Pro 구독 계정으로 인증합니다.
-Claude Code `/login`과 동일한 브라우저 기반 인증 방식입니다.
+```bash
+python -c "
+import sys
+import json
+import secrets
+import hashlib
+import base64
+import webbrowser
+from pathlib import Path
+from urllib.parse import urlencode
 
-### 로그인 프로세스 (자동)
+# PKCE 생성
+code_verifier = secrets.token_urlsafe(64)
+digest = hashlib.sha256(code_verifier.encode()).digest()
+code_challenge = base64.urlsafe_b64encode(digest).rstrip(b'=').decode()
+state = secrets.token_urlsafe(32)
 
-다음 Python 스크립트를 실행하세요:
+# OpenAI OAuth 설정 (Codex CLI 호환)
+CLIENT_ID = 'DRivsnm2Mu42T3KOpqdtwB3NYviHYzwD'
+AUTH_ENDPOINT = 'https://auth.openai.com/authorize'
+REDIRECT_URI = 'http://localhost:1455/auth/callback'
+SCOPE = 'openid profile email offline_access'
 
-```python
+# 인증 URL 생성
+params = {
+    'client_id': CLIENT_ID,
+    'redirect_uri': REDIRECT_URI,
+    'response_type': 'code',
+    'scope': SCOPE,
+    'state': state,
+    'code_challenge': code_challenge,
+    'code_challenge_method': 'S256',
+}
+auth_url = f'{AUTH_ENDPOINT}?{urlencode(params)}'
+
+# 상태 저장 (Step 2에서 사용)
+state_file = Path.home() / '.claude-ai-oauth-state.json'
+state_file.write_text(json.dumps({
+    'provider': 'openai',
+    'code_verifier': code_verifier,
+    'state': state,
+    'client_id': CLIENT_ID,
+}))
+
+print()
+print('=' * 60)
+print('  OpenAI Browser OAuth - Step 1')
+print('=' * 60)
+print()
+print('[1] 브라우저에서 OpenAI 로그인 페이지가 열립니다.')
+print('[2] ChatGPT Plus/Pro 계정으로 로그인하세요.')
+print('[3] 로그인 완료 후 브라우저 주소창의 URL을 복사하세요.')
+print('    (localhost:1455... 또는 에러 페이지 URL)')
+print()
+print('[4] 복사한 URL로 다음 명령을 실행하세요:')
+print()
+print('    /ai-login callback <복사한 URL>')
+print()
+print('=' * 60)
+
+webbrowser.open(auth_url)
+print()
+print('[OK] 브라우저가 열렸습니다. 로그인 후 URL을 복사하세요.')
+"
+```
+
+---
+
+## callback <URL> (Step 2 - OpenAI/Google 공용)
+
+복사한 URL에서 인증 코드를 추출하고 토큰을 교환합니다.
+저장된 상태에서 provider(openai/google)를 자동 감지합니다.
+
+**인자**: `callback` 뒤의 모든 텍스트가 URL입니다.
+
+```bash
+python -c "
+import sys
+import json
 import asyncio
-import sys
-sys.path.insert(0, "C:/claude/ultimate-debate/src")
+from pathlib import Path
+from urllib.parse import urlparse, parse_qs
+from datetime import datetime, timedelta
 
-from ultimate_debate.auth.providers import OpenAIProvider
-from ultimate_debate.auth.storage import TokenStore
+# URL 인자 가져오기
+callback_url = ' '.join(sys.argv[1:]) if len(sys.argv) > 1 else ''
 
-async def login_openai():
-    provider = OpenAIProvider()
-    storage = TokenStore()
+if not callback_url:
+    print('[ERROR] URL이 필요합니다.')
+    print('사용법: /ai-login callback <URL>')
+    sys.exit(1)
 
-    print('[INFO] OpenAI Browser OAuth login starting...')
-    print('       Using Codex CLI compatible settings')
-    print('       Browser will open automatically.')
+# 저장된 상태 로드
+state_file = Path.home() / '.claude-ai-oauth-state.json'
+if not state_file.exists():
+    print('[ERROR] 먼저 /ai-login openai 또는 /ai-login google을 실행하세요.')
+    sys.exit(1)
+
+state_data = json.loads(state_file.read_text())
+provider = state_data.get('provider', 'openai')
+
+# URL에서 code 추출
+parsed = urlparse(callback_url)
+params = parse_qs(parsed.query)
+
+if 'error' in params:
+    print(f'[ERROR] OAuth 에러: {params[\"error\"][0]}')
+    desc = params.get('error_description', [''])[0]
+    if desc:
+        print(f'        {desc}')
+    sys.exit(1)
+
+if 'code' not in params:
+    print('[ERROR] URL에서 인증 코드를 찾을 수 없습니다.')
+    print('        로그인 후 리다이렉트된 URL 전체를 복사했는지 확인하세요.')
+    sys.exit(1)
+
+code = params['code'][0]
+print(f'[OK] 인증 코드 추출 완료 (Provider: {provider})')
+
+# 토큰 교환
+import httpx
+
+async def exchange_token():
+    sys.path.insert(0, 'C:/claude/ultimate-debate/src')
+    from ultimate_debate.auth.providers.base import AuthToken
+    from ultimate_debate.auth.storage import TokenStore
+
+    # Provider별 토큰 엔드포인트
+    if provider == 'google':
+        token_endpoint = 'https://oauth2.googleapis.com/token'
+        redirect_uri = state_data.get('redirect_uri', 'http://localhost:8080/callback')
+        data = {
+            'grant_type': 'authorization_code',
+            'client_id': state_data['client_id'],
+            'client_secret': state_data.get('client_secret', ''),
+            'code': code,
+            'redirect_uri': redirect_uri,
+            'code_verifier': state_data['code_verifier'],
+        }
+    else:  # openai
+        token_endpoint = 'https://auth.openai.com/oauth/token'
+        redirect_uri = 'http://localhost:1455/auth/callback'
+        data = {
+            'grant_type': 'authorization_code',
+            'client_id': state_data['client_id'],
+            'code': code,
+            'redirect_uri': redirect_uri,
+            'code_verifier': state_data['code_verifier'],
+        }
+
+    async with httpx.AsyncClient() as client:
+        response = await client.post(
+            token_endpoint,
+            data=data,
+            headers={'Content-Type': 'application/x-www-form-urlencoded'},
+        )
+
+        if response.status_code != 200:
+            print(f'[ERROR] 토큰 교환 실패: {response.text}')
+            return False
+
+        result = response.json()
+
+    expires_at = datetime.now() + timedelta(seconds=result.get('expires_in', 3600))
+
+    token = AuthToken(
+        provider=provider,
+        access_token=result['access_token'],
+        refresh_token=result.get('refresh_token'),
+        expires_at=expires_at,
+        token_type=result.get('token_type', 'Bearer'),
+        scopes=result.get('scope', '').split() if result.get('scope') else [],
+    )
+
+    store = TokenStore()
+    await store.save(token)
+
+    provider_name = 'OpenAI' if provider == 'openai' else 'Google'
     print()
-
-    try:
-        # 자동 콜백 시도 → 실패 시 수동 모드로 전환
-        token = await provider.login()
-        await storage.save(token)
-
-        info = await provider.get_account_info(token)
-        email = info.get('email', 'Unknown') if info else 'Unknown'
-
-        print()
-        print('[SUCCESS] OpenAI login successful!')
-        print(f'   Account: {email}')
-        print(f'   Expires: {token.expires_at.strftime("%Y-%m-%d %H:%M")}')
-        return True
-    except Exception as e:
-        print()
-        print(f'[ERROR] Login failed: {e}')
-        return False
-
-asyncio.run(login_openai())
-```
-
-### 인증 흐름
-
-1. **자동 모드 시도** (60초 대기)
-   - 브라우저에서 OpenAI 로그인
-   - localhost:1455로 자동 콜백 수신
-
-2. **수동 모드 전환** (자동 실패 시)
-   - 브라우저에서 리디렉션된 URL 복사
-   - 터미널에 URL 붙여넣기
-   - code/state 추출하여 토큰 교환
-
-### 출력 형식
-
-```markdown
-## OpenAI 브라우저 로그인
-
-[INFO] OpenAI Browser OAuth login starting...
-       Browser will open automatically.
-
-[자동 모드 성공 시]
-[OK] 인증 코드 수신 완료!
-[OK] 인증 성공!
-
-[수동 모드 전환 시]
-[WARN] 자동 콜백 수신 실패. 수동 모드로 전환합니다.
-[수동 OAuth 인증 모드]
-1. 브라우저에서 로그인
-2. 리디렉션된 URL 복사
-3. 터미널에 붙여넣기
-
-[SUCCESS] OpenAI login successful!
-   Account: user@example.com
-   Expires: 2026-01-19 10:00
-
----
-
-**이제 `/verify --provider openai`로 GPT 검증을 사용할 수 있습니다!**
-```
-
----
-
-## [Google 로그인] /ai-login google
-
-### 사전 설정 (최초 1회)
-
-Google Gemini OAuth에는 Client ID 설정이 필요합니다:
-
-1. [Google Cloud Console](https://console.cloud.google.com/apis/credentials) 접속
-2. 프로젝트 선택 또는 생성
-3. "OAuth 클라이언트 ID 만들기" 클릭
-4. 애플리케이션 유형: **데스크톱 앱**
-5. 생성된 Client ID와 Secret을 환경변수로 설정:
-
-```powershell
-# PowerShell (영구 설정)
-[System.Environment]::SetEnvironmentVariable("GOOGLE_CLIENT_ID", "<YOUR_CLIENT_ID>.apps.googleusercontent.com", "User")
-[System.Environment]::SetEnvironmentVariable("GOOGLE_CLIENT_SECRET", "<YOUR_CLIENT_SECRET>", "User")
-```
-
-> ⚠️ **보안 주의사항**
-> - Client Secret은 민감한 정보입니다
-> - 절대 Git에 커밋하지 마세요
-> - 권장: `.env` 파일 사용 후 `.gitignore`에 등록
-
-6. Gemini API 활성화: [Generative Language API](https://console.cloud.google.com/apis/library/generativelanguage.googleapis.com)
-
-### 로그인 프로세스 (자동)
-
-다음 Python 스크립트를 실행하세요:
-
-```python
-import asyncio
-import sys
-sys.path.insert(0, "C:/claude/ultimate-debate/src")
-
-from ultimate_debate.auth.providers import GoogleProvider
-from ultimate_debate.auth.storage import TokenStore
-
-async def login_google():
-    provider = GoogleProvider()
-    storage = TokenStore()
-
-    print('[INFO] Google Browser OAuth login starting...')
-    print('       Browser will open automatically.')
-    print('       Please login with Google account.')
+    print(f'[SUCCESS] {provider_name} 로그인 완료!')
+    print(f'   토큰 만료: {expires_at.strftime(\"%Y-%m-%d %H:%M\")}')
     print()
+    if provider == 'openai':
+        print('이제 /verify --provider openai로 GPT 검증을 사용할 수 있습니다.')
+    else:
+        print('이제 /verify --provider gemini로 Gemini 검증을 사용할 수 있습니다.')
 
-    try:
-        token = await provider.login()
-        await storage.save(token)
+    # 상태 파일 삭제
+    state_file.unlink(missing_ok=True)
+    return True
 
-        info = await provider.get_account_info(token)
-        email = info.get('email', 'Unknown') if info else 'Unknown'
-
-        print()
-        print('[SUCCESS] Google login successful!')
-        print(f'   Account: {email}')
-        print(f'   Expires: {token.expires_at.strftime("%Y-%m-%d %H:%M")}')
-        return True
-    except Exception as e:
-        print()
-        print(f'[ERROR] Login failed: {e}')
-        return False
-
-asyncio.run(login_google())
+asyncio.run(exchange_token())
+" "CALLBACK_URL_HERE"
 ```
 
-### 출력 형식
-
-```markdown
-## Google 브라우저 로그인
-
-[INFO] Google Browser OAuth login starting...
-       Browser will open automatically.
-
-[SUCCESS] Google login successful!
-   Account: user@gmail.com
-   Expires: 2026-01-19 10:00
+**중요**: `CALLBACK_URL_HERE`를 $ARGUMENTS에서 `callback ` 뒤의 실제 URL로 교체하세요.
 
 ---
 
-**이제 `/verify --provider gemini`로 Gemini 검증을 사용할 수 있습니다!**
-```
+## status
 
----
-
-## [상태 확인] /ai-login status
-
-인증 상태를 확인하세요:
-
-```python
+```bash
+python -c "
 import sys
-import os
-sys.path.insert(0, "C:/claude/ultimate-debate/src")
-
+sys.path.insert(0, 'C:/claude/ultimate-debate/src')
 from ultimate_debate.auth.storage import TokenStore
 
 storage = TokenStore()
 
-print("## AI Authentication Status")
 print()
-print("| Provider | Method | Status |")
-print("|----------|--------|--------|")
+print('## AI Authentication Status')
+print()
+print('| Provider | Status |')
+print('|----------|--------|')
 
-# OpenAI - OAuth 토큰 확인
-openai_token = storage.get_valid_token("openai")
+openai_token = storage.get_valid_token('openai')
 if openai_token:
-    expires = openai_token.expires_at.strftime("%Y-%m-%d %H:%M")
-    print(f"| OpenAI | OAuth | [OK] Expires {expires} |")
+    expires = openai_token.expires_at.strftime('%Y-%m-%d %H:%M')
+    print(f'| OpenAI | VALID (expires {expires}) |')
 else:
-    print("| OpenAI | OAuth | [X] Not logged in |")
+    print('| OpenAI | Not logged in |')
 
-# Google - OAuth 토큰 확인
-google_token = storage.get_valid_token("google")
+google_token = storage.get_valid_token('google')
 if google_token:
-    expires = google_token.expires_at.strftime("%Y-%m-%d %H:%M")
-    print(f"| Google | OAuth | [OK] Expires {expires} |")
+    expires = google_token.expires_at.strftime('%Y-%m-%d %H:%M')
+    print(f'| Google | VALID (expires {expires}) |')
 else:
-    print("| Google | OAuth | [X] Not logged in |")
-```
+    print('| Google | Not logged in |')
 
-### 출력 형식
-
-```markdown
-## AI Authentication Status
-
-| Provider | Method | Status |
-|----------|--------|--------|
-| OpenAI | OAuth | [X] Not logged in |
-| Google | OAuth | [X] Not logged in |
-
----
-
-**설정 필요:**
-- `/ai-login openai` - OpenAI OAuth 로그인
-- `/ai-login google` - Google OAuth 로그인
+print()
+"
 ```
 
 ---
 
-## [로그아웃] /ai-login logout
+## logout
 
-모든 저장된 토큰을 삭제합니다:
-
-```python
+```bash
+python -c "
 import asyncio
 import sys
-sys.path.insert(0, "C:/claude/ultimate-debate/src")
-
+sys.path.insert(0, 'C:/claude/ultimate-debate/src')
 from ultimate_debate.auth.storage import TokenStore
 
-async def logout_all():
+async def logout():
     storage = TokenStore()
     await storage.clear_all()
-    print("[OK] All AI sessions logged out.")
+    print('[OK] All AI sessions logged out.')
 
-asyncio.run(logout_all())
+asyncio.run(logout())
+"
 ```
 
 ---
 
-## 인증 방식 비교
+## google | gemini (Step 1)
 
-| Provider | 방식 | 설정 난이도 | 비용 |
-|----------|------|------------|------|
-| **OpenAI** | Browser OAuth (PKCE) | 중간 (수동 모드 필요) | ChatGPT Plus/Pro 구독 |
-| **Google** | Browser OAuth (PKCE) | 중간 (Client ID 필요) | 무료 (할당량 내) |
+Google Cloud SDK의 공개 Client ID를 사용하여 별도 설정 없이 브라우저 로그인이 가능합니다.
+
+```bash
+python -c "
+import sys
+import json
+import secrets
+import hashlib
+import base64
+import webbrowser
+from pathlib import Path
+from urllib.parse import urlencode
+
+# PKCE 생성
+code_verifier = secrets.token_urlsafe(64)
+digest = hashlib.sha256(code_verifier.encode()).digest()
+code_challenge = base64.urlsafe_b64encode(digest).rstrip(b'=').decode()
+state = secrets.token_urlsafe(32)
+
+# Google OAuth 설정 (Google Cloud SDK 공개 Client ID)
+CLIENT_ID = '32555940559.apps.googleusercontent.com'
+CLIENT_SECRET = 'ZmssLNjJy2998hD4CTg2ejr2'
+AUTH_ENDPOINT = 'https://accounts.google.com/o/oauth2/v2/auth'
+REDIRECT_URI = 'http://localhost:8080/callback'
+# cloud-platform 스코프로 Gemini API 접근
+SCOPE = 'https://www.googleapis.com/auth/cloud-platform openid email'
+
+# 인증 URL 생성
+params = {
+    'client_id': CLIENT_ID,
+    'redirect_uri': REDIRECT_URI,
+    'response_type': 'code',
+    'scope': SCOPE,
+    'state': state,
+    'code_challenge': code_challenge,
+    'code_challenge_method': 'S256',
+    'access_type': 'offline',
+    'prompt': 'consent',
+}
+auth_url = f'{AUTH_ENDPOINT}?{urlencode(params)}'
+
+# 상태 저장 (Step 2에서 사용)
+state_file = Path.home() / '.claude-ai-oauth-state.json'
+state_file.write_text(json.dumps({
+    'provider': 'google',
+    'code_verifier': code_verifier,
+    'state': state,
+    'client_id': CLIENT_ID,
+    'client_secret': CLIENT_SECRET,
+    'redirect_uri': REDIRECT_URI,
+}))
+
+print()
+print('=' * 60)
+print('  Google Browser OAuth - Step 1')
+print('=' * 60)
+print()
+print('[1] 브라우저에서 Google 로그인 페이지가 열립니다.')
+print('[2] Google 계정으로 로그인하세요.')
+print('[3] 로그인 완료 후 브라우저 주소창의 URL을 복사하세요.')
+print('    (localhost:8080... 또는 에러 페이지 URL)')
+print()
+print('[4] 복사한 URL로 다음 명령을 실행하세요:')
+print()
+print('    /ai-login callback <복사한 URL>')
+print()
+print('=' * 60)
+
+webbrowser.open(auth_url)
+print()
+print('[OK] 브라우저가 열렸습니다. 로그인 후 URL을 복사하세요.')
+"
+```
 
 ---
 
-## 관련 커맨드
+## callback-google <URL> (Google Step 2)
 
-| 커맨드 | 용도 |
-|--------|------|
-| `/verify` | Cross-AI 코드 검증 실행 |
-| `/auto` | 자동 워크플로우 (자동 검증 포함) |
+Google 콜백 URL 처리. `callback`과 동일하지만 Google용 토큰 교환을 수행합니다.
+
+**참고**: `callback` 명령은 저장된 상태에서 provider를 자동 감지하므로 OpenAI/Google 모두 `callback`으로 처리됩니다.
 
 ---
 
-## 문제 해결
+## 인증 흐름
 
-### OpenAI
-
-| 증상 | 해결 |
-|------|------|
-| "자동 콜백 수신 실패" | 수동 모드에서 URL 복사/붙여넣기 |
-| "인증 시간 초과" | 브라우저에서 빠르게 로그인 후 URL 복사 |
-| "토큰 교환 실패" | ChatGPT Plus/Pro 구독 확인 |
-| "권한 없음" | ChatGPT Plus/Pro 구독 필요 |
-
-### Google
-
-| 증상 | 해결 |
-|------|------|
-| "Client ID 필요" | 환경변수 GOOGLE_CLIENT_ID 설정 |
-| "권한 오류" | OAuth 동의 화면에서 테스트 사용자 추가 |
-| API 오류 | Generative Language API 활성화 확인 |
+```
+/ai-login openai (또는 google)
+    ↓
+브라우저 열림 → 로그인
+    ↓
+로그인 후 리다이렉트된 URL 복사
+    ↓
+/ai-login callback <복사한 URL>
+    ↓
+토큰 저장 완료
+```
