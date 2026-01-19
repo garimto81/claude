@@ -1,11 +1,23 @@
 """DB 파일의 실제 존재 여부 확인"""
 
+import os
 import sqlite3
 import sys
 from concurrent.futures import ThreadPoolExecutor, as_completed
 from pathlib import Path
 
 sys.stdout.reconfigure(encoding="utf-8")
+
+
+def _get_project_root() -> Path:
+    """프로젝트 루트 동적 감지"""
+    if env_root := os.environ.get("CLAUDE_PROJECT_DIR"):
+        return Path(env_root)
+    return Path(__file__).resolve().parent.parent.parent
+
+
+PROJECT_ROOT = _get_project_root()
+POKERVOD_DB = PROJECT_ROOT / "shared-data" / "pokervod.db"
 
 
 def check_file_exists(nas_path):
@@ -17,7 +29,7 @@ def check_file_exists(nas_path):
 
 
 def main():
-    conn = sqlite3.connect("D:/AI/claude01/shared-data/pokervod.db")
+    conn = sqlite3.connect(str(POKERVOD_DB))
     cursor = conn.cursor()
     cursor.execute("SELECT id, nas_path FROM files")
     files = cursor.fetchall()

@@ -1,6 +1,17 @@
 """Google Sheets 연동 상태 확인 스크립트"""
 
 import os
+from pathlib import Path
+
+
+def _get_project_root() -> Path:
+    """프로젝트 루트 동적 감지"""
+    if env_root := os.environ.get("CLAUDE_PROJECT_DIR"):
+        return Path(env_root)
+    return Path(__file__).resolve().parent.parent.parent
+
+
+PROJECT_ROOT = _get_project_root()
 
 
 def check_google_sheets():
@@ -92,8 +103,8 @@ def check_local_db():
     print("=" * 60)
 
     dbs = [
-        ("archive.db", "C:/claude/archive-analyzer/data/output/archive.db"),
-        ("pokervod.db", "D:/AI/claude01/shared-data/pokervod.db"),
+        ("archive.db", str(PROJECT_ROOT / "archive-analyzer" / "data" / "output" / "archive.db")),
+        ("pokervod.db", str(PROJECT_ROOT / "shared-data" / "pokervod.db")),
     ]
 
     for name, path in dbs:
