@@ -205,8 +205,6 @@ GG POKER 방송은 여러 개의 테이블을 전환하여 방송하는 방식.
 
 ![Platform Architecture](../images/PRD-0002/architecture.png)
 
-[HTML 원본](../mockups/PRD-0002/architecture.html)
-
 ### 시스템 연동
 
 > **시스템 아키텍처**는 위 다이어그램 참조
@@ -228,8 +226,6 @@ GG POKER 방송은 여러 개의 테이블을 전환하여 방송하는 방식.
 
 ![Watch Screen](../images/PRD-0002/watch-screen.png)
 
-[HTML 원본](../mockups/PRD-0002/watch-screen.html)
-
 **주요 기능**:
 - 대형 플레이어 (히어로 영역)
 - 라이브 뱃지 표시
@@ -243,23 +239,17 @@ GG POKER 방송은 여러 개의 테이블을 전환하여 방송하는 방식.
 
 ![Layer 1: Main PGM](../images/PRD-0002/multiview-layer1-pgm.png)
 
-[HTML 원본](../mockups/PRD-0002/multiview-layer1-pgm.html)
-
 **레이아웃**: 메인에 PGM, 우측에 피처 테이블 목록만
 
 #### Layer 2: Feature Table
 
 ![Layer 2: Feature Table](../images/PRD-0002/multiview-layer2-table.png)
 
-[HTML 원본](../mockups/PRD-0002/multiview-layer2-table.html)
-
 **레이아웃**: 좌측에 PGM+다른 테이블, 메인에 선택한 테이블, 우측에 PlayerCAM 목록
 
 #### Layer 3: PlayerCAM
 
 ![Layer 3: PlayerCAM](../images/PRD-0002/multiview-layer3-playercam.png)
-
-[HTML 원본](../mockups/PRD-0002/multiview-layer3-playercam.html)
 
 **레이아웃**: 좌측에 PGM+피처 테이블, 메인에 선택한 PlayerCAM, 우측에 다른 PlayerCAM
 
@@ -274,13 +264,9 @@ GG POKER 방송은 여러 개의 테이블을 전환하여 방송하는 방식.
 
 ![Multi-View UX Flow](../images/PRD-0002/multiview-ux-flow.png)
 
-[HTML 원본](../mockups/PRD-0002/multiview-ux-flow.html)
-
 ### StatsView Video Player Layout
 
 ![StatsView Layout](../images/PRD-0002/player-with-statsview.png)
-
-[HTML 원본](../mockups/PRD-0002/player-with-statsview.html)
 
 **레이아웃 구조**:
 - 좌측: 플레이어 통계 HUD (VPIP/PFR/3Bet/AF/Stack)
@@ -291,8 +277,6 @@ GG POKER 방송은 여러 개의 테이블을 전환하여 방송하는 방식.
 ### Collections Screen
 
 ![Collections Screen](../images/PRD-0002/collections-screen.png)
-
-[HTML 원본](../mockups/PRD-0002/collections-screen.html)
 
 **주요 기능**:
 - 히어로 배너 (Featured Collection)

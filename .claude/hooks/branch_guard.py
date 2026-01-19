@@ -9,6 +9,22 @@ import json
 import subprocess
 import sys
 import os
+from pathlib import Path
+
+
+def _get_project_dir() -> str:
+    """프로젝트 디렉토리를 동적으로 감지"""
+    if env_dir := os.environ.get("CLAUDE_PROJECT_DIR"):
+        return env_dir
+    # 스크립트 위치 기반 감지
+    script_dir = Path(__file__).resolve().parent
+    project_root = script_dir.parent.parent
+    if (project_root / ".claude").exists():
+        return str(project_root)
+    return os.getcwd()
+
+
+PROJECT_DIR = _get_project_dir()
 
 # 수정 허용 파일 패턴 (main에서도 가능)
 ALLOWED_PATTERNS = [
@@ -28,7 +44,7 @@ def get_current_branch() -> str:
             ["git", "rev-parse", "--abbrev-ref", "HEAD"],
             capture_output=True,
             text=True,
-            cwd=os.environ.get("CLAUDE_PROJECT_DIR", "D:/AI/claude01"),
+            cwd=PROJECT_DIR,
         )
         return result.stdout.strip()
     except Exception:
