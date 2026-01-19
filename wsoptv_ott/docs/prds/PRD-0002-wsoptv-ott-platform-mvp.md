@@ -362,10 +362,25 @@ GG POKER 방송은 여러 개의 테이블을 전환하여 방송하는 방식.
 
 ## References
 
+### 기능 문서
 - [PRD-0006 Advanced Mode](PRD-0006-advanced-mode.md) - Advanced Mode 상세 스펙 (NBA TV 1:1 매핑)
-- [REPORT-2026-01-19 NBA TV 분석](../reports/REPORT-2026-01-19-nbatv-reference-analysis.md) - **NBA TV/League Pass UX 참조 소스**
-- [STRAT-0003 Cross-Promotion Strategy](../strategies/STRAT-0003-cross-promotion.md)
-- [STRAT-0007 Content Sourcing](../strategies/STRAT-0007-content-sourcing.md)
+- [PRD-0008 TV App UX Alternative](PRD-0008-tv-app-ux-alternative.md) - TV 앱 Advanced Mode 미지원 대안
+
+### 아키텍처 문서
+- [ADR-0002 Database Schema](../adrs/ADR-0002-database-schema-design.md) - DB 스키마 설계
+- [ADR-0003 Technical Architecture](../adrs/ADR-0003-technical-architecture.md) - 기술 스택 및 인프라
+
+### 전략 문서
+- [STRAT-0003 Cross-Promotion Strategy](../strategies/STRAT-0003-cross-promotion.md) - 양방향 프로모션
+- [STRAT-0007 Content Sourcing](../strategies/STRAT-0007-content-sourcing.md) - 콘텐츠 소싱
+- [STRAT-0008 Timeline Roadmap](../strategies/STRAT-0008-timeline-roadmap.md) - 타임라인 및 마일스톤
+- [STRAT-0009 Business KPI](../strategies/STRAT-0009-business-kpi.md) - 비즈니스 목표
+- [STRAT-0010 Legal Compliance](../strategies/STRAT-0010-legal-compliance.md) - 법규 준수
+- [STRAT-0011 GGPass Integration](../strategies/STRAT-0011-ggpass-integration-spec.md) - GGPass API 스펙
+
+### 리포트
+- [REPORT-2026-01-19 NBA TV 분석](../reports/REPORT-2026-01-19-nbatv-reference-analysis.md) - NBA TV/League Pass UX 참조
+- [REPORT-2026-01-19 전략 리뷰](../reports/REPORT-2026-01-19-strategy-review.md) - 전체 전략 재점검 결과
 
 ---
 

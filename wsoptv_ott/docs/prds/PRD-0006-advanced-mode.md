@@ -915,6 +915,7 @@ NBA TV의 4분할 레이아웃 + WSOPTV 3계층 구조를 결합한 하이브리
 2. **TV 앱 예외 처리**
    - Plus+ 구독자가 TV에서 Advanced Mode 미지원 시 사용자 경험 어떻게 할 것인가?
    - 제안 배경: 리모컨 UX 제약으로 인한 구현 불가능성
+   - **참조**: [PRD-0008 TV App UX Alternative](PRD-0008-tv-app-ux-alternative.md) - 4가지 대안 제시됨
 
 ### GG POKER (데이터 제공) 제안 필요
 

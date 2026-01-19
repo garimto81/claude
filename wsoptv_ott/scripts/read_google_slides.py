@@ -17,8 +17,6 @@ from google.oauth2.credentials import Credentials
 from google_auth_oauthlib.flow import InstalledAppFlow
 from google.auth.transport.requests import Request
 from googleapiclient.discovery import build
-from googleapiclient.http import MediaIoBaseDownload
-import io
 
 # 절대 경로 사용 (서브 레포에서도 동작)
 CREDENTIALS_FILE = r'C:\claude\json\desktop_credentials.json'
@@ -229,7 +227,7 @@ def main():
         # 요약 생성
         summary_path = OUTPUT_DIR / "README.md"
         with open(summary_path, 'w', encoding='utf-8') as f:
-            f.write(f"# NBA TV 레퍼런스 스크린샷\n\n")
+            f.write("# NBA TV 레퍼런스 스크린샷\n\n")
             f.write(f"**소스**: [Google Slides]({PRESENTATION_ID})\n\n")
             f.write(f"**총 슬라이드**: {len(slides)}개\n\n")
             f.write("---\n\n")

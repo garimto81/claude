@@ -120,6 +120,8 @@ WSOPTV와 GG POKER의 상호 보완 프로모션 전략은:
 ## References
 
 - [PRD-0002 WSOPTV OTT Platform MVP](../prds/PRD-0002-wsoptv-ott-platform-mvp.md)
+- [STRAT-0010 Legal Compliance](STRAT-0010-legal-compliance.md) - **칩 자동 생성 국가별 규제 검토**
+- [STRAT-0011 GGPass Integration](STRAT-0011-ggpass-integration-spec.md) - **GGPass/GGPoker API 스펙**
 - Coupang Play Business Model (Reference Case Study)
 
 ---
