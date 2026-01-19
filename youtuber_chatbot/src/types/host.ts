@@ -46,6 +46,8 @@ export interface HostSocialLinks {
   website?: string;
   /** Discord 서버 초대 링크 */
   discord?: string;
+  /** YouTube 채널 URL */
+  youtube?: string;
 }
 
 export interface HostPersona {
