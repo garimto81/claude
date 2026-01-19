@@ -506,9 +506,8 @@ Elasticsearch (전문 검색)
 
 ## References
 
-- `docs/order/michael_note.md` - 크리에이티브 디렉터 비전
-- `tasks/prds/PRD-0002-wsoptv-ott-platform-mvp.md` - 플랫폼 MVP
-- `tasks/prds/PRD-0006-advanced-mode.md` - Advanced Mode 스펙
+- [PRD-0002 WSOPTV OTT Platform MVP](../prds/PRD-0002-wsoptv-ott-platform-mvp.md) - 플랫폼 MVP
+- [PRD-0006 Advanced Mode](../prds/PRD-0006-advanced-mode.md) - Advanced Mode 스펙
 
 ---
 

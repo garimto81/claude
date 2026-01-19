@@ -8,7 +8,7 @@
 | **Created** | 2026-01-16 |
 | **Last Modified** | 2026-01-16 |
 | **Author** | Claude Code |
-| **Related** | [PRD-0002 MVP](PRD-0002-wsoptv-ott-platform-mvp.md) |
+| **Related** | [PRD-0002 MVP](../prds/PRD-0002-wsoptv-ott-platform-mvp.md) |
 
 ---
 
@@ -20,9 +20,9 @@ WSOPTV와 GG POKER는 포커 생태계의 상보적(complementary) 서비스입�
 
 ### 전략 개요도
 
-![Cross-Promotion Flow](../images/PRD-0003/cross-promotion-flow.png)
+![Cross-Promotion Flow](../images/STRAT-0003/cross-promotion-flow.png)
 
-[HTML 원본](../mockups/PRD-0003/cross-promotion-flow.html)
+[HTML 원본](../mockups/STRAT-0003/cross-promotion-flow.html)
 
 ---
 
@@ -119,8 +119,7 @@ WSOPTV와 GG POKER의 상호 보완 프로모션 전략은:
 
 ## References
 
-- [PRD-0002 WSOPTV OTT Platform MVP](PRD-0002-wsoptv-ott-platform-mvp.md)
-- [GGPass SSO Integration](../lld/0001-lld-wsoptv-platform.md#6-ggpass-sso)
+- [PRD-0002 WSOPTV OTT Platform MVP](../prds/PRD-0002-wsoptv-ott-platform-mvp.md)
 - Coupang Play Business Model (Reference Case Study)
 
 ---

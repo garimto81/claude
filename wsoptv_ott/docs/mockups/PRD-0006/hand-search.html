@@ -1,0 +1,720 @@
+<!DOCTYPE html>
+<html lang="ko">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>WSOPTV - Hand Search (핸드 검색)</title>
+    <style>
+        * {
+            margin: 0;
+            padding: 0;
+            box-sizing: border-box;
+        }
+
+        body {
+            font-family: -apple-system, BlinkMacSystemFont, 'Segoe UI', Roboto, sans-serif;
+            background: #0a0a0a;
+            color: #fff;
+            min-height: 100vh;
+        }
+
+        /* Header */
+        .header {
+            background: #1a1a1a;
+            padding: 12px 24px;
+            display: flex;
+            justify-content: space-between;
+            align-items: center;
+            border-bottom: 1px solid #333;
+        }
+
+        .logo {
+            font-size: 20px;
+            font-weight: bold;
+            color: #f0c14b;
+        }
+
+        .nav-tabs {
+            display: flex;
+            gap: 24px;
+        }
+
+        .nav-tab {
+            color: #888;
+            font-size: 14px;
+            cursor: pointer;
+            padding: 8px 0;
+            border-bottom: 2px solid transparent;
+        }
+
+        .nav-tab.active {
+            color: #fff;
+            border-bottom-color: #f0c14b;
+        }
+
+        .user-info {
+            display: flex;
+            align-items: center;
+            gap: 12px;
+        }
+
+        .badge {
+            background: linear-gradient(135deg, #f0c14b, #d4a437);
+            color: #000;
+            padding: 4px 10px;
+            border-radius: 4px;
+            font-size: 11px;
+            font-weight: bold;
+        }
+
+        /* Main Content */
+        .main-content {
+            display: grid;
+            grid-template-columns: 320px 1fr;
+            height: calc(100vh - 60px);
+        }
+
+        /* Search Sidebar */
+        .search-sidebar {
+            background: #1a1a1a;
+            padding: 20px;
+            border-right: 1px solid #333;
+            overflow-y: auto;
+        }
+
+        .search-title {
+            font-size: 18px;
+            font-weight: bold;
+            margin-bottom: 20px;
+            display: flex;
+            align-items: center;
+            gap: 8px;
+        }
+
+        .search-title .icon {
+            font-size: 20px;
+        }
+
+        /* Search Filters */
+        .filter-group {
+            margin-bottom: 20px;
+        }
+
+        .filter-label {
+            font-size: 12px;
+            color: #888;
+            text-transform: uppercase;
+            margin-bottom: 8px;
+            display: flex;
+            align-items: center;
+            justify-content: space-between;
+        }
+
+        .clear-btn {
+            font-size: 11px;
+            color: #f0c14b;
+            cursor: pointer;
+        }
+
+        .search-input {
+            width: 100%;
+            background: #2a2a2a;
+            border: 1px solid #444;
+            border-radius: 6px;
+            padding: 10px 12px;
+            color: #fff;
+            font-size: 14px;
+        }
+
+        .search-input:focus {
+            outline: none;
+            border-color: #f0c14b;
+        }
+
+        .search-input::placeholder {
+            color: #666;
+        }
+
+        /* Player Select */
+        .player-chips {
+            display: flex;
+            flex-wrap: wrap;
+            gap: 6px;
+        }
+
+        .player-chip {
+            background: #333;
+            border: 1px solid #555;
+            border-radius: 20px;
+            padding: 6px 12px;
+            font-size: 12px;
+            cursor: pointer;
+            transition: all 0.2s;
+        }
+
+        .player-chip:hover {
+            border-color: #f0c14b;
+        }
+
+        .player-chip.selected {
+            background: #f0c14b;
+            border-color: #f0c14b;
+            color: #000;
+        }
+
+        .player-chip .remove {
+            margin-left: 6px;
+            opacity: 0.7;
+        }
+
+        /* Card Selector */
+        .card-selector {
+            display: grid;
+            grid-template-columns: repeat(4, 1fr);
+            gap: 4px;
+        }
+
+        .card-btn {
+            background: #2a2a2a;
+            border: 1px solid #444;
+            border-radius: 4px;
+            padding: 8px 4px;
+            font-size: 11px;
+            cursor: pointer;
+            text-align: center;
+        }
+
+        .card-btn:hover {
+            border-color: #f0c14b;
+        }
+
+        .card-btn.selected {
+            background: #f0c14b;
+            border-color: #f0c14b;
+            color: #000;
+        }
+
+        .card-btn.red {
+            color: #e74c3c;
+        }
+
+        /* Dropdown */
+        .dropdown {
+            width: 100%;
+            background: #2a2a2a;
+            border: 1px solid #444;
+            border-radius: 6px;
+            padding: 10px 12px;
+            color: #fff;
+            font-size: 14px;
+            cursor: pointer;
+        }
+
+        /* Checkbox */
+        .checkbox-group {
+            display: flex;
+            flex-direction: column;
+            gap: 10px;
+        }
+
+        .checkbox-item {
+            display: flex;
+            align-items: center;
+            gap: 10px;
+            cursor: pointer;
+        }
+
+        .checkbox {
+            width: 18px;
+            height: 18px;
+            background: #2a2a2a;
+            border: 1px solid #555;
+            border-radius: 4px;
+            display: flex;
+            align-items: center;
+            justify-content: center;
+        }
+
+        .checkbox.checked {
+            background: #f0c14b;
+            border-color: #f0c14b;
+        }
+
+        .checkbox.checked::after {
+            content: '✓';
+            color: #000;
+            font-size: 12px;
+        }
+
+        /* Search Button */
+        .search-btn {
+            width: 100%;
+            background: #f0c14b;
+            color: #000;
+            border: none;
+            border-radius: 6px;
+            padding: 14px;
+            font-size: 14px;
+            font-weight: bold;
+            cursor: pointer;
+            margin-top: 20px;
+        }
+
+        .search-btn:hover {
+            background: #d4a437;
+        }
+
+        /* Results Area */
+        .results-area {
+            padding: 20px;
+            overflow-y: auto;
+        }
+
+        .results-header {
+            display: flex;
+            justify-content: space-between;
+            align-items: center;
+            margin-bottom: 20px;
+        }
+
+        .results-title {
+            font-size: 16px;
+        }
+
+        .results-count {
+            color: #888;
+            font-size: 14px;
+        }
+
+        .sort-dropdown {
+            background: #2a2a2a;
+            border: 1px solid #444;
+            border-radius: 4px;
+            padding: 8px 12px;
+            color: #fff;
+            font-size: 13px;
+        }
+
+        /* Hand Cards */
+        .hand-grid {
+            display: grid;
+            grid-template-columns: repeat(auto-fill, minmax(350px, 1fr));
+            gap: 16px;
+        }
+
+        .hand-card {
+            background: #1a1a1a;
+            border-radius: 10px;
+            overflow: hidden;
+            cursor: pointer;
+            transition: all 0.2s;
+            border: 1px solid #333;
+        }
+
+        .hand-card:hover {
+            border-color: #f0c14b;
+            transform: translateY(-2px);
+        }
+
+        .hand-thumbnail {
+            height: 160px;
+            background: linear-gradient(135deg, #1a4d1a 0%, #0d3d0d 100%);
+            position: relative;
+            display: flex;
+            align-items: center;
+            justify-content: center;
+        }
+
+        .hand-number {
+            position: absolute;
+            top: 10px;
+            left: 10px;
+            background: rgba(0,0,0,0.7);
+            padding: 4px 10px;
+            border-radius: 4px;
+            font-size: 12px;
+        }
+
+        .hand-duration {
+            position: absolute;
+            bottom: 10px;
+            right: 10px;
+            background: rgba(0,0,0,0.7);
+            padding: 4px 8px;
+            border-radius: 4px;
+            font-size: 11px;
+        }
+
+        .mini-cards {
+            display: flex;
+            gap: 6px;
+        }
+
+        .mini-card {
+            width: 36px;
+            height: 50px;
+            background: #fff;
+            border-radius: 4px;
+            display: flex;
+            flex-direction: column;
+            align-items: center;
+            justify-content: center;
+            font-size: 14px;
+            font-weight: bold;
+            box-shadow: 0 2px 8px rgba(0,0,0,0.3);
+        }
+
+        .mini-card.red {
+            color: #e74c3c;
+        }
+
+        .mini-card.black {
+            color: #2c3e50;
+        }
+
+        .hand-info {
+            padding: 14px;
+        }
+
+        .hand-title {
+            font-size: 14px;
+            font-weight: 600;
+            margin-bottom: 8px;
+        }
+
+        .hand-meta {
+            display: flex;
+            flex-wrap: wrap;
+            gap: 8px;
+            margin-bottom: 10px;
+        }
+
+        .meta-tag {
+            background: #2a2a2a;
+            padding: 4px 8px;
+            border-radius: 4px;
+            font-size: 11px;
+            color: #999;
+        }
+
+        .meta-tag.player {
+            background: #333;
+            color: #f0c14b;
+        }
+
+        .meta-tag.winner {
+            background: rgba(46, 204, 113, 0.2);
+            color: #2ecc71;
+        }
+
+        .hand-result {
+            display: flex;
+            justify-content: space-between;
+            align-items: center;
+            padding-top: 10px;
+            border-top: 1px solid #333;
+        }
+
+        .winning-hand {
+            font-size: 12px;
+            color: #2ecc71;
+        }
+
+        .pot-size {
+            font-size: 13px;
+            color: #f0c14b;
+            font-weight: bold;
+        }
+
+        /* Special Tags */
+        .special-tag {
+            position: absolute;
+            top: 10px;
+            right: 10px;
+            background: #e74c3c;
+            color: #fff;
+            padding: 3px 8px;
+            border-radius: 4px;
+            font-size: 10px;
+            font-weight: bold;
+        }
+    </style>
+</head>
+<body>
+    <header class="header">
+        <div class="logo">WSOP TV</div>
+        <div class="nav-tabs">
+            <div class="nav-tab">Live</div>
+            <div class="nav-tab">VOD</div>
+            <div class="nav-tab active">Hand Search</div>
+            <div class="nav-tab">Collections</div>
+            <div class="nav-tab">Players</div>
+        </div>
+        <div class="user-info">
+            <span class="badge">PLUS+</span>
+            <span>John D.</span>
+        </div>
+    </header>
+
+    <main class="main-content">
+        <!-- Search Sidebar -->
+        <aside class="search-sidebar">
+            <div class="search-title">
+                <span class="icon">🔍</span>
+                Hand Search
+            </div>
+
+            <!-- Player Filter -->
+            <div class="filter-group">
+                <div class="filter-label">
+                    선수 선택
+                    <span class="clear-btn">초기화</span>
+                </div>
+                <input type="text" class="search-input" placeholder="선수 이름 검색...">
+                <div class="player-chips" style="margin-top: 10px;">
+                    <div class="player-chip selected">Phil Ivey <span class="remove">×</span></div>
+                    <div class="player-chip">Daniel Negreanu</div>
+                    <div class="player-chip">Phil Hellmuth</div>
+                    <div class="player-chip">Fedor Holz</div>
+                    <div class="player-chip">Justin Bonomo</div>
+                </div>
+            </div>
+
+            <!-- Hole Cards Filter -->
+            <div class="filter-group">
+                <div class="filter-label">홀카드 필터</div>
+                <div class="card-selector">
+                    <div class="card-btn selected">A♠</div>
+                    <div class="card-btn red selected">A♥</div>
+                    <div class="card-btn">A♦</div>
+                    <div class="card-btn">A♣</div>
+                    <div class="card-btn">K♠</div>
+                    <div class="card-btn red">K♥</div>
+                    <div class="card-btn">K♦</div>
+                    <div class="card-btn">K♣</div>
+                    <div class="card-btn">Q♠</div>
+                    <div class="card-btn red">Q♥</div>
+                    <div class="card-btn">Q♦</div>
+                    <div class="card-btn">Q♣</div>
+                </div>
+            </div>
+
+            <!-- Result Filter -->
+            <div class="filter-group">
+                <div class="filter-label">결과 필터</div>
+                <select class="dropdown">
+                    <option>모든 결과</option>
+                    <option>승리한 핸드만</option>
+                    <option>패배한 핸드만</option>
+                    <option>올인 상황</option>
+                </select>
+            </div>
+
+            <!-- Winning Hand Filter -->
+            <div class="filter-group">
+                <div class="filter-label">승리 핸드 종류</div>
+                <div class="checkbox-group">
+                    <label class="checkbox-item">
+                        <div class="checkbox checked"></div>
+                        <span>로열 스트레이트 플러시</span>
+                    </label>
+                    <label class="checkbox-item">
+                        <div class="checkbox"></div>
+                        <span>스트레이트 플러시</span>
+                    </label>
+                    <label class="checkbox-item">
+                        <div class="checkbox"></div>
+                        <span>포카드</span>
+                    </label>
+                    <label class="checkbox-item">
+                        <div class="checkbox checked"></div>
+                        <span>풀하우스</span>
+                    </label>
+                    <label class="checkbox-item">
+                        <div class="checkbox"></div>
+                        <span>플러시</span>
+                    </label>
+                </div>
+            </div>
+
+            <!-- Tournament Filter -->
+            <div class="filter-group">
+                <div class="filter-label">대회</div>
+                <select class="dropdown">
+                    <option>모든 대회</option>
+                    <option>WSOP 2026 Main Event</option>
+                    <option>WSOP 2026 High Roller</option>
+                    <option>WSOP 2025 Main Event</option>
+                </select>
+            </div>
+
+            <button class="search-btn">🔍 핸드 검색</button>
+        </aside>
+
+        <!-- Results Area -->
+        <section class="results-area">
+            <div class="results-header">
+                <div>
+                    <span class="results-title">검색 결과</span>
+                    <span class="results-count">142개 핸드</span>
+                </div>
+                <select class="sort-dropdown">
+                    <option>최신순</option>
+                    <option>팟 사이즈순</option>
+                    <option>인기순</option>
+                </select>
+            </div>
+
+            <div class="hand-grid">
+                <!-- Hand Card 1 -->
+                <div class="hand-card">
+                    <div class="hand-thumbnail">
+                        <div class="hand-number">Hand #1247</div>
+                        <span class="special-tag">EPIC</span>
+                        <div class="mini-cards">
+                            <div class="mini-card red">A<br>♥</div>
+                            <div class="mini-card black">A<br>♠</div>
+                        </div>
+                        <div class="hand-duration">3:24</div>
+                    </div>
+                    <div class="hand-info">
+                        <div class="hand-title">Phil Ivey vs Daniel Negreanu - AA vs KK</div>
+                        <div class="hand-meta">
+                            <span class="meta-tag player">Phil Ivey</span>
+                            <span class="meta-tag player">Daniel Negreanu</span>
+                            <span class="meta-tag">Main Event</span>
+                            <span class="meta-tag winner">Winner: Ivey</span>
+                        </div>
+                        <div class="hand-result">
+                            <span class="winning-hand">Set of Aces</span>
+                            <span class="pot-size">POT $1.2M</span>
+                        </div>
+                    </div>
+                </div>
+
+                <!-- Hand Card 2 -->
+                <div class="hand-card">
+                    <div class="hand-thumbnail">
+                        <div class="hand-number">Hand #892</div>
+                        <div class="mini-cards">
+                            <div class="mini-card black">A<br>♠</div>
+                            <div class="mini-card black">K<br>♠</div>
+                        </div>
+                        <div class="hand-duration">2:45</div>
+                    </div>
+                    <div class="hand-info">
+                        <div class="hand-title">Phil Ivey - AKs Bluff Catch</div>
+                        <div class="hand-meta">
+                            <span class="meta-tag player">Phil Ivey</span>
+                            <span class="meta-tag">High Roller</span>
+                            <span class="meta-tag winner">Winner: Ivey</span>
+                        </div>
+                        <div class="hand-result">
+                            <span class="winning-hand">Ace High</span>
+                            <span class="pot-size">POT $850K</span>
+                        </div>
+                    </div>
+                </div>
+
+                <!-- Hand Card 3 -->
+                <div class="hand-card">
+                    <div class="hand-thumbnail">
+                        <div class="hand-number">Hand #1583</div>
+                        <span class="special-tag">BAD BEAT</span>
+                        <div class="mini-cards">
+                            <div class="mini-card red">A<br>♥</div>
+                            <div class="mini-card red">A<br>♦</div>
+                        </div>
+                        <div class="hand-duration">4:12</div>
+                    </div>
+                    <div class="hand-info">
+                        <div class="hand-title">Phil Ivey - AA loses to Royal Flush</div>
+                        <div class="hand-meta">
+                            <span class="meta-tag player">Phil Ivey</span>
+                            <span class="meta-tag player">Fedor Holz</span>
+                            <span class="meta-tag">Main Event</span>
+                        </div>
+                        <div class="hand-result">
+                            <span class="winning-hand" style="color: #e74c3c;">Lost - Royal Flush</span>
+                            <span class="pot-size">POT $2.1M</span>
+                        </div>
+                    </div>
+                </div>
+
+                <!-- Hand Card 4 -->
+                <div class="hand-card">
+                    <div class="hand-thumbnail">
+                        <div class="hand-number">Hand #456</div>
+                        <div class="mini-cards">
+                            <div class="mini-card black">A<br>♣</div>
+                            <div class="mini-card red">Q<br>♥</div>
+                        </div>
+                        <div class="hand-duration">2:18</div>
+                    </div>
+                    <div class="hand-info">
+                        <div class="hand-title">Phil Ivey - AQ Off Squeeze Play</div>
+                        <div class="hand-meta">
+                            <span class="meta-tag player">Phil Ivey</span>
+                            <span class="meta-tag">Day 3</span>
+                            <span class="meta-tag winner">Winner: Ivey</span>
+                        </div>
+                        <div class="hand-result">
+                            <span class="winning-hand">Two Pair</span>
+                            <span class="pot-size">POT $420K</span>
+                        </div>
+                    </div>
+                </div>
+
+                <!-- Hand Card 5 -->
+                <div class="hand-card">
+                    <div class="hand-thumbnail">
+                        <div class="hand-number">Hand #2104</div>
+                        <div class="mini-cards">
+                            <div class="mini-card red">A<br>♦</div>
+                            <div class="mini-card red">J<br>♦</div>
+                        </div>
+                        <div class="hand-duration">5:32</div>
+                    </div>
+                    <div class="hand-info">
+                        <div class="hand-title">Phil Ivey - AJd Flush Draw Aggression</div>
+                        <div class="hand-meta">
+                            <span class="meta-tag player">Phil Ivey</span>
+                            <span class="meta-tag player">Phil Hellmuth</span>
+                            <span class="meta-tag">Final Table</span>
+                        </div>
+                        <div class="hand-result">
+                            <span class="winning-hand">Nut Flush</span>
+                            <span class="pot-size">POT $1.8M</span>
+                        </div>
+                    </div>
+                </div>
+
+                <!-- Hand Card 6 -->
+                <div class="hand-card">
+                    <div class="hand-thumbnail">
+                        <div class="hand-number">Hand #778</div>
+                        <span class="special-tag">BLUFF</span>
+                        <div class="mini-cards">
+                            <div class="mini-card black">7<br>♠</div>
+                            <div class="mini-card black">2<br>♣</div>
+                        </div>
+                        <div class="hand-duration">3:55</div>
+                    </div>
+                    <div class="hand-info">
+                        <div class="hand-title">Phil Ivey - 72o Epic Bluff</div>
+                        <div class="hand-meta">
+                            <span class="meta-tag player">Phil Ivey</span>
+                            <span class="meta-tag">High Roller</span>
+                            <span class="meta-tag winner">Winner: Ivey</span>
+                        </div>
+                        <div class="hand-result">
+                            <span class="winning-hand">Bluff Win</span>
+                            <span class="pot-size">POT $650K</span>
+                        </div>
+                    </div>
+                </div>
+            </div>
+        </section>
+    </main>
+</body>
+</html>
