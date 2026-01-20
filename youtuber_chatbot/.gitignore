@@ -46,3 +46,6 @@ temp/
 # Build
 build/
 out/
+
+# Claude commands (Junction to root)
+.claude/commands/

@@ -16,6 +16,10 @@ PROJECT_DIR = os.environ.get("CLAUDE_PROJECT_DIR", os.getcwd())
 SESSION_FILE = Path(PROJECT_DIR) / ".claude" / "session_state.json"
 AUTO_STATE_FILE = Path(PROJECT_DIR) / ".claude" / "workflow" / "auto_state.json"
 
+# 루트 프로젝트 경로 (커맨드 Junction 소스)
+ROOT_PROJECT_DIR = Path("C:/claude")
+ROOT_COMMANDS_DIR = ROOT_PROJECT_DIR / ".claude" / "commands"
+
 # Claude Code Task 도구가 생성하는 임시 파일 패턴
 TMPCLAUDE_PATTERN = "tmpclaude-*-cwd"
 
@@ -137,6 +141,69 @@ def cleanup_malformed_folders() -> int:
     return cleaned
 
 
+def setup_commands_junction() -> tuple[bool, str]:
+    """서브 프로젝트에 커맨드 Junction 자동 설정
+
+    Returns:
+        tuple[bool, str]: (설정 여부, 메시지)
+    """
+    project_path = Path(PROJECT_DIR)
+
+    # 루트 프로젝트면 스킵
+    if project_path == ROOT_PROJECT_DIR:
+        return False, ""
+
+    # C:\claude 하위 프로젝트가 아니면 스킵
+    try:
+        project_path.relative_to(ROOT_PROJECT_DIR)
+    except ValueError:
+        return False, ""
+
+    # 루트 커맨드가 없으면 스킵
+    if not ROOT_COMMANDS_DIR.exists():
+        return False, ""
+
+    # .claude 폴더 생성 (없으면)
+    claude_dir = project_path / ".claude"
+    claude_dir.mkdir(parents=True, exist_ok=True)
+
+    commands_dir = claude_dir / "commands"
+
+    # 이미 커맨드 폴더가 있으면 스킵 (Junction 또는 실제 폴더)
+    if commands_dir.exists():
+        return False, ""
+
+    # Junction 생성 (Windows)
+    try:
+        # subprocess로 mklink /J 실행 (관리자 권한 불필요)
+        result = subprocess.run(
+            ["cmd.exe", "/c", "mklink", "/J", str(commands_dir), str(ROOT_COMMANDS_DIR)],
+            capture_output=True,
+            text=True,
+        )
+        if result.returncode == 0 or commands_dir.exists():
+            # .gitignore에 추가
+            gitignore_path = project_path / ".gitignore"
+            gitignore_entry = ".claude/commands/"
+
+            if gitignore_path.exists():
+                content = gitignore_path.read_text(encoding="utf-8")
+                if gitignore_entry not in content:
+                    with open(gitignore_path, "a", encoding="utf-8") as f:
+                        f.write(f"\n# Claude commands (Junction to root)\n{gitignore_entry}\n")
+            else:
+                gitignore_path.write_text(
+                    f"# Claude commands (Junction to root)\n{gitignore_entry}\n",
+                    encoding="utf-8"
+                )
+
+            return True, f"✨ 커맨드 Junction 자동 설정됨 → {ROOT_COMMANDS_DIR}"
+        else:
+            return False, f"⚠️ Junction 생성 실패: {result.stderr}"
+    except Exception as e:
+        return False, f"⚠️ Junction 설정 오류: {e}"
+
+
 def load_previous_session() -> dict:
     """이전 세션 상태 로드"""
     if SESSION_FILE.exists():
@@ -175,6 +242,9 @@ def main():
         # 비정상 폴더 정리 (경로 버그로 생성된 폴더)
         cleaned_folders = cleanup_malformed_folders()
 
+        # 서브 프로젝트 커맨드 Junction 자동 설정
+        junction_created, junction_message = setup_commands_junction()
+
         # 이전 세션 로드
         prev_session = load_previous_session()
 
@@ -184,6 +254,10 @@ def main():
 
         # 세션 정보 생성
         session_info = []
+
+        # Junction 자동 설정 결과
+        if junction_created:
+            session_info.append(junction_message)
 
         # 임시 파일/폴더 정리 결과
         if cleaned_files > 0 or cleaned_folders > 0:

@@ -46,3 +46,6 @@ archive/
 
 # VSeeFace binary
 VSeeFace/
+
+# Claude commands (Junction to root)
+.claude/commands/
