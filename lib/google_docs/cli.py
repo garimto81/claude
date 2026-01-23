@@ -5,9 +5,15 @@ Google Docs PRD Converter CLI
 """
 
 import argparse
+import io
 import re
 import sys
 from pathlib import Path
+
+# Windows 콘솔 UTF-8 인코딩 설정 (이모지 출력 지원)
+if sys.platform == "win32":
+    sys.stdout = io.TextIOWrapper(sys.stdout.buffer, encoding="utf-8", errors="replace")
+    sys.stderr = io.TextIOWrapper(sys.stderr.buffer, encoding="utf-8", errors="replace")
 from typing import Optional
 
 from .auth import DEFAULT_FOLDER_ID
@@ -83,8 +89,8 @@ Examples:
   # 목차 포함
   python -m lib.google_docs convert file.md --toc
 
-  # 네이티브 테이블 사용 (실험적)
-  python -m lib.google_docs convert file.md --native-tables
+  # 네이티브 테이블 비활성화 (기본값: 네이티브 테이블 사용)
+  python -m lib.google_docs convert file.md --no-native-tables
 
   # 배치 변환
   python -m lib.google_docs batch tasks/prds/*.md
@@ -110,10 +116,12 @@ Examples:
     )
     convert_parser.add_argument("--toc", action="store_true", help="목차 포함")
     convert_parser.add_argument(
-        "--native-tables",
-        action="store_true",
-        help="네이티브 Google Docs 테이블 사용 (실험적)",
+        "--no-native-tables",
+        dest="native_tables",
+        action="store_false",
+        help="네이티브 테이블 비활성화 (기본: 네이티브 테이블 사용)",
     )
+    convert_parser.set_defaults(native_tables=True)
     convert_parser.add_argument(
         "--no-folder", action="store_true", help="폴더 이동 없이 내 드라이브에 생성"
     )
@@ -128,10 +136,12 @@ Examples:
     )
     batch_parser.add_argument("--toc", action="store_true", help="목차 포함")
     batch_parser.add_argument(
-        "--native-tables",
-        action="store_true",
-        help="네이티브 Google Docs 테이블 사용 (실험적)",
+        "--no-native-tables",
+        dest="native_tables",
+        action="store_false",
+        help="네이티브 테이블 비활성화 (기본: 네이티브 테이블 사용)",
     )
+    batch_parser.set_defaults(native_tables=True)
 
     # list 명령
     list_parser = subparsers.add_parser("list", help="폴더의 문서 목록 조회")
