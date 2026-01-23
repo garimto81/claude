@@ -1153,27 +1153,9 @@ class MarkdownToDocsConverter:
                 }
             )
         else:
-            # URL이 유효하지 않으면 경고 텍스트만 삽입
-            warning = f"[⚠️ 이미지 로드 실패: {url}]"
-            start = self._add_text(warning)
-            self.requests.append(
-                {
-                    "updateTextStyle": {
-                        "range": {
-                            "startIndex": start,
-                            "endIndex": self.current_index - 1,
-                        },
-                        "textStyle": {
-                            "foregroundColor": {
-                                "color": {
-                                    "rgbColor": {"red": 0.8, "green": 0.4, "blue": 0.0}
-                                }
-                            }
-                        },
-                        "fields": "foregroundColor",
-                    }
-                }
-            )
+            # URL이 유효하지 않으면 아무것도 삽입하지 않음 (문서 독립성 보장)
+            # 경고 메시지 삭제: Google Docs에 깨진 참조 표시 방지
+            pass
 
     def _normalize_image_url(self, url: str) -> tuple[str | None, bool]:
         """
