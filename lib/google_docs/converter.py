@@ -1174,10 +1174,15 @@ class MarkdownToDocsConverter:
             - 파일 없음: (None, False)
         """
         from pathlib import Path
+        from urllib.parse import unquote
 
         url = url.strip()
 
-        # HTTP/HTTPS URL
+        # URL 디코딩 (로컬 경로에서 %20 → 공백 등 변환)
+        # 예: "스크린샷%202026-01-21%20113700.png" → "스크린샷 2026-01-21 113700.png"
+        decoded_url = unquote(url)
+
+        # HTTP/HTTPS URL (디코딩 없이 원본 사용)
         if url.startswith(("http://", "https://")):
             return url, False
 
@@ -1185,22 +1190,22 @@ class MarkdownToDocsConverter:
         if url.startswith("data:image/"):
             return url, False
 
-        # 로컬 경로 처리
+        # 로컬 경로 처리 (디코딩된 URL 사용)
         local_path = None
 
         # 절대 경로
-        if url.startswith(("/", "C:", "D:", "E:")):
-            local_path = Path(url)
+        if decoded_url.startswith(("/", "C:", "D:", "E:")):
+            local_path = Path(decoded_url)
         # 상대 경로 (base_path 기준)
-        elif url.startswith(("./", "../")) or not url.startswith("http"):
+        elif decoded_url.startswith(("./", "../")) or not decoded_url.startswith("http"):
             if self.base_path:
                 base = Path(self.base_path)
                 if base.is_file():
                     base = base.parent
-                local_path = (base / url).resolve()
+                local_path = (base / decoded_url).resolve()
             else:
                 # base_path 없으면 현재 디렉토리 기준
-                local_path = Path(url).resolve()
+                local_path = Path(decoded_url).resolve()
 
         # 파일 존재 확인
         if local_path and local_path.exists() and local_path.is_file():
