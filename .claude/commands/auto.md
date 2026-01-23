@@ -1,7 +1,7 @@
 ---
 name: auto
 alias_of: "work --loop"
-version: 6.0.0
+version: 7.0.0
 description: /work --loop의 단축 명령 (자율 반복 모드)
 deprecated: false
 ---
@@ -21,22 +21,35 @@ deprecated: false
 | `/auto redirect "방향"` | `/work --loop redirect "방향"` |
 | `/auto --max N` | `/work --loop --max N` |
 | `/auto --debate "주제"` | 3AI 토론 즉시 실행 |
+| `/auto --gdocs` | 현재 프로젝트 PRD → Google Docs 변환 |
+| `/auto --gdocs "파일"` | 특정 파일 → Google Docs 변환 |
 
 ## 특수 기능
 
 | 명령 | 동작 |
 |------|------|
 | `/auto --mockup "이름"` | `/mockup` 스킬 직접 호출 |
+| `/auto --mockup --bnw "이름"` | B&W T&M 와이어프레임 (흑백 + 플레이스홀더) |
 | `/auto --debate "주제"` | Ultimate Debate 3AI 토론 |
+| `/auto --gdocs` | 현재 프로젝트 PRD 자동 탐색 → Google Docs 변환 |
+| `/auto --gdocs "파일"` | 지정 파일 → Google Docs 변환 |
 
-### --mockup 기본 설정
+### --mockup 옵션
 
-| 항목 | 기본값 | 설명 |
-|------|--------|------|
-| Style | `wireframe` | Black & White 와이어프레임 |
-| Text & Media | 플레이스홀더 | `[Logo]`, `[Image]`, `Lorem ipsum` 등 |
+| 옵션 | 설명 |
+|------|------|
+| `--bnw` | **B**lack & White **T**ext/**M**edia wireframe 모드 |
 
-> **참고**: 흑백 박스 레이아웃으로 빠르게 구조 중심 목업 생성
+### --mockup --bnw 설정 (Black & White T&M)
+
+| 항목 | 값 | 설명 |
+|------|-----|------|
+| Style | `wireframe` | 흑백 박스 레이아웃 |
+| Colors | `#000`, `#fff`, `#ccc` | 순수 흑백 + 회색 |
+| Text | 플레이스홀더 | `Lorem ipsum`, `[Title]` 등 |
+| Media | 플레이스홀더 | `[Logo]`, `[Image]`, `[Icon]` 등 |
+
+> **참고**: `--bnw`는 구조 중심 빠른 목업에 최적화. 컬러/실제 콘텐츠 필요 시 기본 모드 사용
 
 ### --debate 사용법
 
@@ -49,6 +62,54 @@ deprecated: false
 ```
 
 > **참고**: `<!-- DECISION_REQUIRED -->` 마커 대신 `--debate` 플래그로 간단하게 토론 트리거
+
+### --gdocs 옵션 (Google Docs 자동 변환)
+
+| 옵션 | 설명 |
+|------|------|
+| `--gdocs` | 현재 프로젝트 PRD 자동 탐색 → Google Docs 변환 |
+| `--gdocs "파일"` | 지정된 파일 → Google Docs 변환 |
+
+### --gdocs 자동 처리 워크플로우 (MANDATORY)
+
+```
+/auto --gdocs
+    │
+    ▼
+┌─────────────────────────────────────────────────────────────┐
+│ 1. PRD/문서 파일 자동 탐색                                   │
+│    - docs/prds/*.md                                         │
+│    - tasks/prds/*.md                                        │
+│    - docs/PRD-*.md                                          │
+│    - docs/guides/*.md                                       │
+│    - *.prd.md                                               │
+│    탐색 실패 시: 사용자에게 파일 경로 질문                   │
+└─────────────────────────────────────────────────────────────┘
+    │
+    ▼
+┌─────────────────────────────────────────────────────────────┐
+│ 2. 절대 경로 변환                                            │
+│    상대 경로 → C:\claude\{현재프로젝트}\...                  │
+└─────────────────────────────────────────────────────────────┘
+    │
+    ▼
+┌─────────────────────────────────────────────────────────────┐
+│ 3. 루트에서 변환 명령 실행 (필수!)                           │
+│    cd C:\claude && python -m lib.google_docs convert "..."  │
+└─────────────────────────────────────────────────────────────┘
+    │
+    ▼
+┌─────────────────────────────────────────────────────────────┐
+│ 4. Google Docs URL 반환                                      │
+│    성공: URL 출력                                            │
+│    실패: 에러 메시지 + 해결 방법 안내                        │
+└─────────────────────────────────────────────────────────────┘
+```
+
+**⚠️ 서브 프로젝트에서 실행 시 주의:**
+- 반드시 `cd C:\claude &&` 접두사로 루트에서 실행
+- 파일 경로는 항상 절대 경로로 지정
+- Gemini CLI 토큰이 아닌 `C:\claude\json\token.json` 사용
 
 ## 실행 지시
 
@@ -70,8 +131,24 @@ Skill(skill="work", args="--loop stop")
 # /auto --mockup "이름" → /mockup "이름"
 Skill(skill="mockup", args="$NAME")
 
+# /auto --mockup --bnw "이름" → /mockup "이름" --style=wireframe --bnw
+Skill(skill="mockup", args="$NAME --style=wireframe --bnw")
+
 # /auto --debate "주제" → ultimate-debate 실행
 Skill(skill="ultimate-debate", args="\"$TOPIC\"")
+
+# /auto --gdocs → Google Docs 자동 변환 (직접 실행, 스킬 호출 아님!)
+# 1. 현재 프로젝트에서 PRD 파일 탐색
+#    - Glob("docs/prds/*.md"), Glob("tasks/prds/*.md"), Glob("docs/PRD-*.md")
+# 2. 발견된 파일을 절대 경로로 변환
+# 3. 루트에서 변환 명령 실행:
+#    Bash("cd C:\claude && python -m lib.google_docs convert \"{절대경로}\"")
+# 4. 결과 URL 출력
+
+# /auto --gdocs "파일" → 지정 파일 변환
+# 1. 파일 경로를 절대 경로로 변환
+# 2. Bash("cd C:\claude && python -m lib.google_docs convert \"{절대경로}\"")
+# 3. 결과 URL 출력
 ```
 
 ## 상세 문서

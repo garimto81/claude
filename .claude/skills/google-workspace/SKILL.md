@@ -4,7 +4,7 @@ description: >
   Google Workspace 통합 스킬. Docs, Sheets, Drive, Gmail, Calendar API 연동.
   OAuth 2.0 인증, 서비스 계정 설정, 데이터 읽기/쓰기 자동화 지원.
   파랑 계열 전문 문서 스타일, 2단계 네이티브 테이블 렌더링 포함.
-version: 2.5.0
+version: 2.6.0
 
 triggers:
   keywords:
@@ -96,6 +96,112 @@ pip install google-api-python-client google-auth-httplib2 google-auth-oauthlib
 # 또는 uv 사용
 uv add google-api-python-client google-auth-httplib2 google-auth-oauthlib
 ```
+
+## ⚠️ 서브 프로젝트에서 사용 시 (중요!)
+
+**서브 프로젝트(`wsoptv_nbatv_clone`, `youtuber_chatbot` 등)에서 `--gdocs` 옵션 사용 시 반드시 절대 경로로 루트 모듈을 호출해야 합니다.**
+
+### 문제 상황
+
+```
+┌─────────────────────────────────────────────────────────────┐
+│  서브 프로젝트에서 실행 시 문제                               │
+├─────────────────────────────────────────────────────────────┤
+│                                                              │
+│  ❌ 실패하는 경우:                                           │
+│     cd C:\claude\wsoptv_nbatv_clone                         │
+│     python -m lib.google_docs convert docs/PRD.md           │
+│     → ModuleNotFoundError: No module named 'lib'            │
+│                                                              │
+│  ✅ 올바른 방법:                                             │
+│     cd C:\claude                                             │
+│     python -m lib.google_docs convert C:\claude\wsoptv_nbatv_clone\docs\PRD.md
+│                                                              │
+└─────────────────────────────────────────────────────────────┘
+```
+
+### 서브 프로젝트 변환 명령
+
+```powershell
+# 방법 1: 루트로 이동 후 절대 경로로 파일 지정 (권장)
+cd C:\claude && python -m lib.google_docs convert "C:\claude\{서브프로젝트}\docs\파일.md"
+
+# 방법 2: 한 줄 명령
+powershell -Command "cd C:\claude; python -m lib.google_docs convert 'C:\claude\wsoptv_nbatv_clone\docs\guides\WSOP-TV-PRD.md'"
+
+# 방법 3: 배치 변환
+cd C:\claude && python -m lib.google_docs batch "C:\claude\wsoptv_nbatv_clone\docs\*.md"
+```
+
+### 🚨 Claude 강제 실행 규칙 (MANDATORY)
+
+**`--gdocs` 키워드 감지 시 Claude는 다음을 자동으로 수행해야 합니다:**
+
+```
+┌─────────────────────────────────────────────────────────────┐
+│  --gdocs 자동 처리 워크플로우 (강제)                          │
+├─────────────────────────────────────────────────────────────┤
+│                                                              │
+│  1. 대상 파일 탐색                                           │
+│     - PRD, 문서 등 변환할 .md 파일 찾기                      │
+│     - 사용자가 지정한 파일 또는 컨텍스트에서 추론            │
+│                                                              │
+│  2. 절대 경로 변환                                           │
+│     - 상대 경로 → 절대 경로 (C:\claude\...)                  │
+│                                                              │
+│  3. 루트에서 실행 (필수!)                                    │
+│     cd C:\claude && python -m lib.google_docs convert "..."  │
+│                                                              │
+│  4. 결과 URL 반환                                            │
+│     - Google Docs URL 출력                                   │
+│     - 실패 시 에러 메시지 출력                               │
+│                                                              │
+└─────────────────────────────────────────────────────────────┘
+```
+
+**실행 템플릿 (복사-붙여넣기 가능):**
+
+```powershell
+# 서브 프로젝트 파일을 Google Docs로 변환
+cd C:\claude && python -m lib.google_docs convert "{절대_파일_경로}"
+
+# 예시: wsoptv_ott 프로젝트
+cd C:\claude && python -m lib.google_docs convert "C:\claude\wsoptv_ott\docs\prds\PRD-0002-wsoptv-ott-platform-mvp.md"
+
+# 예시: wsoptv_nbatv_clone 프로젝트
+cd C:\claude && python -m lib.google_docs convert "C:\claude\wsoptv_nbatv_clone\docs\guides\WSOP-TV-PRD.md"
+```
+
+**⚠️ 절대 하지 말아야 할 것:**
+
+| 금지 행동 | 이유 |
+|-----------|------|
+| ❌ `prd_manager.py` 존재 여부 확인 | 루트 모듈 직접 사용 |
+| ❌ `.prd-registry.json` 존재 여부 확인 | 불필요 |
+| ❌ 사용자에게 "인프라가 없습니다" 메시지 | 직접 실행하면 됨 |
+| ❌ 서브 프로젝트에서 `python -m lib.google_docs` 직접 실행 | 모듈 없음 에러 |
+
+**✅ 항상 해야 할 것:**
+
+| 필수 행동 | 설명 |
+|-----------|------|
+| ✅ `cd C:\claude &&` 접두사 사용 | 루트에서 모듈 실행 |
+| ✅ 절대 경로로 파일 지정 | 상대 경로 해석 오류 방지 |
+| ✅ 변환 결과 URL 반환 | 사용자가 바로 접속 가능 |
+
+### 인증 파일 경로 (고정)
+
+서브 프로젝트에서도 **항상 루트의 인증 파일 사용**:
+
+| 파일 | 경로 |
+|------|------|
+| OAuth 클라이언트 | `C:\claude\json\desktop_credentials.json` |
+| OAuth 토큰 | `C:\claude\json\token.json` |
+| 서비스 계정 | `C:\claude\json\service_account_key.json` |
+
+⚠️ **주의**: 서브 프로젝트에 `json/` 폴더를 복사하지 마세요! 중복 인증 파일은 혼란을 야기합니다.
+
+---
 
 ## API 설정 흐름
 
@@ -1238,6 +1344,20 @@ python scripts/migrate_prds_to_gdocs.py PRD-0001  # 단일 마이그레이션
 ---
 
 ## 변경 로그
+
+### v2.6.0 (2026-01-23)
+
+**Features:**
+- 서브 프로젝트 지원 지침 추가
+  - 서브 프로젝트에서 `--gdocs` 옵션 사용 시 절대 경로 호출 방법 문서화
+  - **Claude 강제 실행 규칙 추가** (MANDATORY 섹션)
+  - 인증 파일 경로 고정 정책 추가
+
+**Documentation:**
+- "서브 프로젝트에서 사용 시" 섹션 신규 추가
+- 문제 상황 및 해결 방법 다이어그램 추가
+- **금지 행동 / 필수 행동 테이블 추가** (Claude가 자동 실행하도록 명시)
+- 실행 템플릿 예시 추가 (복사-붙여넣기 가능)
 
 ### v2.5.0 (2026-01-19)
 

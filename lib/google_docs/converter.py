@@ -1083,6 +1083,56 @@ class MarkdownToDocsConverter:
         # 파일 없음
         return None, False
 
+    def _is_broken_link(self, url: str) -> bool:
+        """
+        Google Docs에서 작동하지 않는 깨진 링크 여부 확인
+
+        제외 대상:
+        - 로컬 HTML 파일 (.html)
+        - 상대 경로 링크 (./*, ../*)
+        - 앵커만 있는 링크 (#*)
+        - 파일 프로토콜 (file://*)
+        - 로컬 마크다운 파일 (.md)
+
+        Args:
+            url: 검사할 URL
+
+        Returns:
+            bool: 깨진 링크면 True, 정상 링크면 False
+        """
+        url = url.strip()
+
+        # 빈 URL
+        if not url:
+            return True
+
+        # 앵커만 있는 링크 (#section)
+        if url.startswith("#"):
+            return True
+
+        # 파일 프로토콜
+        if url.startswith("file://"):
+            return True
+
+        # 상대 경로 (./*, ../*)
+        if url.startswith("./") or url.startswith("../"):
+            return True
+
+        # 로컬 HTML 파일 (.html, .htm)
+        url_lower = url.lower()
+        if url_lower.endswith((".html", ".htm")) and not url.startswith(("http://", "https://")):
+            return True
+
+        # 로컬 마크다운 파일 (.md)
+        if url_lower.endswith(".md") and not url.startswith(("http://", "https://")):
+            return True
+
+        # 확장자가 있는 로컬 파일 경로 패턴 (드라이브 문자 또는 슬래시로 시작)
+        if re.match(r'^[a-zA-Z]:', url) or (url.startswith("/") and not url.startswith("//")):
+            return True
+
+        return False
+
     def _add_horizontal_rule(self):
         """수평선 추가 (SKILL.md 2.3 표준: ─ 반복 금지, 하단 구분선 사용)"""
         # 빈 단락 삽입 후 하단에 얇은 구분선 추가
@@ -1145,12 +1195,17 @@ class MarkdownToDocsConverter:
             style_fields.extend(["weightedFontFamily", "backgroundColor"])
 
         if segment.link:
-            text_style["link"] = {"url": segment.link}
-            text_style["foregroundColor"] = {
-                "color": {"rgbColor": {"red": 0.06, "green": 0.46, "blue": 0.88}}
-            }
-            text_style["underline"] = True
-            style_fields.extend(["link", "foregroundColor", "underline"])
+            # 깨진 링크 필터링 (Google Docs에서 작동하지 않는 링크 제외)
+            link_url = segment.link
+            is_broken_link = self._is_broken_link(link_url)
+
+            if not is_broken_link:
+                text_style["link"] = {"url": link_url}
+                text_style["foregroundColor"] = {
+                    "color": {"rgbColor": {"red": 0.06, "green": 0.46, "blue": 0.88}}
+                }
+                text_style["underline"] = True
+                style_fields.extend(["link", "foregroundColor", "underline"])
 
         if style_fields:
             self.requests.append(

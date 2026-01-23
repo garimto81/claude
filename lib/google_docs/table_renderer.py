@@ -47,7 +47,12 @@ class NativeTableRenderer:
 
     # 18cm 기준 테이블 너비 (1cm ≈ 28.35pt)
     TABLE_WIDTH_PT = 510  # 18cm = 510pt
-    # 컬럼 수에 따른 컬럼 너비 (pt)
+
+    # 컬럼 최소/최대 너비 (pt)
+    MIN_COLUMN_WIDTH_PT = 50   # 최소 약 1.8cm
+    MAX_COLUMN_WIDTH_PT = 340  # 최대 약 12cm
+
+    # 레거시: 컬럼 수에 따른 고정 컬럼 너비 (pt) - 동적 계산 실패 시 폴백
     COLUMN_WIDTHS = {
         1: [510],           # 1열: 18cm
         2: [255, 255],      # 2열: 9cm × 2
@@ -163,8 +168,10 @@ class NativeTableRenderer:
                 continue
 
             # 일반 행 처리
-            cells = [c.strip() for c in line.strip("|").split("|")]
-            cells = [c for c in cells if c or cells.index(c) not in [0, len(cells) - 1]]
+            # strip("|")로 양쪽 | 제거 후 split
+            # 빈 셀도 보존해야 함 (index 버그 수정)
+            stripped_line = line.strip("|")
+            cells = [c.strip() for c in stripped_line.split("|")]
 
             if not headers:
                 headers = cells
@@ -198,6 +205,113 @@ class NativeTableRenderer:
             row_count=len(normalized_rows) + 1,  # 헤더 포함
             column_alignments=alignments[:column_count],
         )
+
+    def calculate_dynamic_column_widths(self, table_data: TableData) -> list[float]:
+        """
+        테이블 콘텐츠 기반 동적 컬럼 너비 계산
+
+        각 열의 최대 텍스트 길이를 분석하여 비율 기반으로 너비를 분배합니다.
+        전체 너비는 18cm(510pt)로 고정됩니다.
+
+        Args:
+            table_data: 파싱된 테이블 데이터
+
+        Returns:
+            list[float]: 각 컬럼의 너비 (pt)
+        """
+        if table_data.column_count == 0:
+            return []
+
+        # 각 열의 최대 텍스트 길이 계산
+        all_rows = [table_data.headers] + table_data.rows
+        max_lengths = [0] * table_data.column_count
+
+        for row in all_rows:
+            for col_idx, cell in enumerate(row):
+                if col_idx < table_data.column_count:
+                    # 마크다운 기호 제거 후 길이 계산
+                    parsed = self._parse_cell_inline_formatting(cell)
+                    text_len = len(parsed.plain_text)
+
+                    # 한글/CJK 문자는 2배 너비로 계산
+                    cjk_count = sum(1 for c in parsed.plain_text if '\u4e00' <= c <= '\u9fff' or '\uac00' <= c <= '\ud7af')
+                    adjusted_len = text_len + cjk_count  # CJK는 1.5배 정도 넓음
+
+                    max_lengths[col_idx] = max(max_lengths[col_idx], adjusted_len)
+
+        # 모든 열이 비어있으면 균등 분배
+        total_length = sum(max_lengths)
+        if total_length == 0:
+            equal_width = self.TABLE_WIDTH_PT / table_data.column_count
+            return [equal_width] * table_data.column_count
+
+        # 비율 기반 너비 계산
+        widths = []
+        for length in max_lengths:
+            ratio = length / total_length
+            width = self.TABLE_WIDTH_PT * ratio
+            widths.append(width)
+
+        # 최소/최대 너비 제한 적용
+        widths = self._apply_width_constraints(widths, table_data.column_count)
+
+        return widths
+
+    def _apply_width_constraints(self, widths: list[float], col_count: int) -> list[float]:
+        """
+        컬럼 너비에 최소/최대 제한 적용
+
+        총합이 TABLE_WIDTH_PT를 유지하도록 조정합니다.
+
+        Args:
+            widths: 초기 계산된 너비 리스트
+            col_count: 컬럼 수
+
+        Returns:
+            list[float]: 제한이 적용된 너비 리스트
+        """
+        if col_count == 0:
+            return []
+
+        # 1단계: 최소/최대 제한 적용
+        constrained = []
+        for w in widths:
+            if w < self.MIN_COLUMN_WIDTH_PT:
+                constrained.append(self.MIN_COLUMN_WIDTH_PT)
+            elif w > self.MAX_COLUMN_WIDTH_PT:
+                constrained.append(self.MAX_COLUMN_WIDTH_PT)
+            else:
+                constrained.append(w)
+
+        # 2단계: 총합이 TABLE_WIDTH_PT가 되도록 조정
+        current_total = sum(constrained)
+        if abs(current_total - self.TABLE_WIDTH_PT) < 0.1:
+            return constrained
+
+        # 차이를 조정 가능한 열들에 분배
+        diff = self.TABLE_WIDTH_PT - current_total
+        adjustable_indices = []
+
+        for i, w in enumerate(constrained):
+            # 최소/최대에 걸리지 않은 열만 조정 대상
+            if w > self.MIN_COLUMN_WIDTH_PT and w < self.MAX_COLUMN_WIDTH_PT:
+                adjustable_indices.append(i)
+
+        if adjustable_indices:
+            adjustment_per_col = diff / len(adjustable_indices)
+            for i in adjustable_indices:
+                new_width = constrained[i] + adjustment_per_col
+                # 조정 후에도 제한 확인
+                new_width = max(self.MIN_COLUMN_WIDTH_PT, min(self.MAX_COLUMN_WIDTH_PT, new_width))
+                constrained[i] = new_width
+        else:
+            # 모든 열이 제한에 걸린 경우, 비율 기반 재분배
+            total_constrained = sum(constrained)
+            if total_constrained > 0:
+                scale = self.TABLE_WIDTH_PT / total_constrained
+                constrained = [w * scale for w in constrained]
+
+        return constrained
 
     def render_table_structure(
         self,
@@ -539,14 +653,8 @@ class NativeTableRenderer:
         table = table_element.get("table", {})
         table_rows = table.get("tableRows", [])
 
-        # 컬럼 너비 설정 (18cm 기준 분배)
-        col_count = table_data.column_count
-        if col_count in self.COLUMN_WIDTHS:
-            col_widths = self.COLUMN_WIDTHS[col_count]
-        else:
-            # 5열 이상은 균등 분배
-            col_width = self.TABLE_WIDTH_PT / col_count
-            col_widths = [col_width] * col_count
+        # 컬럼 너비 설정 (동적 계산 - 텍스트 길이 기반)
+        col_widths = self.calculate_dynamic_column_widths(table_data)
 
         for col_idx, width in enumerate(col_widths):
             requests.append(
