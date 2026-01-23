@@ -1,0 +1,847 @@
+<!DOCTYPE html>
+<html lang="ko">
+<head>
+  <meta charset="UTF-8">
+  <title>PRD-0002: WSOPTV OTT Platform MVP</title>
+  <style>
+    body { font-family: Arial, sans-serif; max-width: 900px; margin: 0 auto; padding: 20px; line-height: 1.6; }
+    h1 { color: #1a73e8; border-bottom: 2px solid #1a73e8; padding-bottom: 10px; }
+    h2 { color: #202124; border-bottom: 1px solid #dadce0; padding-bottom: 8px; margin-top: 40px; }
+    h3 { color: #3c4043; margin-top: 24px; }
+    h4 { color: #5f6368; }
+    table { border-collapse: collapse; width: 100%; margin: 16px 0; }
+    th, td { border: 1px solid #dadce0; padding: 8px 12px; text-align: left; }
+    th { background-color: #f1f3f4; font-weight: bold; }
+    tr:nth-child(even) { background-color: #fafafa; }
+    blockquote { border-left: 4px solid #1a73e8; margin: 16px 0; padding: 8px 16px; background-color: #e8f0fe; }
+    code { background-color: #f1f3f4; padding: 2px 6px; border-radius: 4px; font-family: monospace; }
+    pre { background-color: #f8f9fa; border: 1px solid #dadce0; padding: 16px; border-radius: 8px; overflow-x: auto; font-family: monospace; white-space: pre; }
+    .meta-table { max-width: 300px; }
+    .meta-table td:first-child { font-weight: bold; width: 120px; }
+    hr { border: none; border-top: 1px solid #dadce0; margin: 32px 0; }
+    ul, ol { margin: 8px 0; padding-left: 24px; }
+    li { margin: 4px 0; }
+    strong { color: #202124; }
+    .image-placeholder { background: #f1f3f4; border: 2px dashed #dadce0; padding: 40px; text-align: center; margin: 16px 0; border-radius: 8px; color: #5f6368; }
+    .image-link { font-size: 12px; color: #1a73e8; }
+    .toc { background: #f8f9fa; padding: 20px; border-radius: 8px; margin: 20px 0; }
+    .toc ul { list-style: none; padding-left: 0; }
+    .toc li { margin: 8px 0; }
+    .toc a { color: #1a73e8; text-decoration: none; }
+    .toc a:hover { text-decoration: underline; }
+  </style>
+</head>
+<body>
+
+<h1>PRD-0002: WSOPTV OTT Platform MVP</h1>
+
+<table class="meta-table">
+  <tr><td>Version</td><td><strong>6.2</strong></td></tr>
+  <tr><td>Status</td><td>Draft</td></tr>
+  <tr><td>Priority</td><td>P0</td></tr>
+  <tr><td>Created</td><td>2026-01-07</td></tr>
+  <tr><td>Updated</td><td>2026-01-23</td></tr>
+  <tr><td>Author</td><td>Claude Code</td></tr>
+  <tr><td>Launch Target</td><td>Q3 2026</td></tr>
+</table>
+
+<hr>
+
+<div class="toc">
+  <strong>Table of Contents</strong>
+  <ul>
+    <li><a href="#section-0">0. 3대 원천 기반 설계 원칙</a></li>
+    <li><a href="#section-1">1. Executive Summary</a></li>
+    <li><a href="#section-2">2. 콘텐츠 소싱 전략</a></li>
+    <li><a href="#section-3">3. 구독 모델</a></li>
+    <li><a href="#section-4">4. Advanced Mode</a></li>
+    <li><a href="#section-5">5. Featured Hands (핸드 검색)</a></li>
+    <li><a href="#section-6">6. 전체 페이지 레이아웃</a></li>
+    <li><a href="#section-7">7. 메인 스트리밍 UI (상단)</a></li>
+    <li><a href="#section-8">8. Info Tabs (하단)</a></li>
+    <li><a href="#section-9">9. UX 워크플로우</a></li>
+    <li><a href="#appendix-a">부록 A. 용어 매핑</a></li>
+  </ul>
+</div>
+
+<hr>
+
+<h2 id="section-0">0. 3대 원천 기반 설계 원칙</h2>
+
+<h3>0.1 3대 원천 (Three Pillars)</h3>
+
+<div class="image-placeholder">
+  [Image: 3대 원천 다이어그램]<br>
+  <span class="image-link">📎 ../images/PRD-0002/01-three-pillars.png</span>
+</div>
+
+<table>
+  <tr>
+    <th>원천</th>
+    <th>명칭</th>
+    <th>출처</th>
+    <th>역할</th>
+    <th>우선순위</th>
+  </tr>
+  <tr>
+    <td>📜</td>
+    <td><strong>VIBLE</strong></td>
+    <td>michael_note.md</td>
+    <td>운영 계획의 근간, 비즈니스 요구사항</td>
+    <td>1 (최고)</td>
+  </tr>
+  <tr>
+    <td>📋</td>
+    <td><strong>MOSES</strong></td>
+    <td>tony_note.md</td>
+    <td>첨언 및 확장, 태깅/검색 기능</td>
+    <td>2</td>
+  </tr>
+  <tr>
+    <td>📖</td>
+    <td><strong>KORAN</strong></td>
+    <td>NBA TV League Pass</td>
+    <td>UI/UX 참조, 1:1 복제 대상</td>
+    <td>3</td>
+  </tr>
+</table>
+
+<h3>0.2 충돌 해결 원칙</h3>
+
+<blockquote>
+  <strong>VIBLE이 말씀하시면, MOSES가 해석하고, KORAN이 구현한다.</strong>
+</blockquote>
+
+<table>
+  <tr><th>상황</th><th>해결 방법</th></tr>
+  <tr><td>VIBLE ↔ MOSES 충돌</td><td>VIBLE 우선</td></tr>
+  <tr><td>VIBLE ↔ KORAN 충돌</td><td>VIBLE 우선</td></tr>
+  <tr><td>MOSES ↔ KORAN 충돌</td><td>MOSES 우선</td></tr>
+  <tr><td>모두 언급 없음</td><td>KORAN 기본 패턴 적용</td></tr>
+</table>
+
+<h3>0.3 기능 분류</h3>
+
+<table>
+  <tr><th>분류</th><th>원천</th><th>정의</th><th>예시</th></tr>
+  <tr><td><strong>Core-Vible</strong></td><td>📜</td><td>VIBLE에서 명시한 필수 기능</td><td>Advanced Mode, GGPass, 구독 모델</td></tr>
+  <tr><td><strong>Core-Moses</strong></td><td>📋</td><td>MOSES에서 제안한 확장 기능</td><td>핸드 태깅, 검색, 멀티 재생</td></tr>
+  <tr><td><strong>Core-Koran</strong></td><td>📖</td><td>KORAN 1:1 대응 기능</td><td>Ticker, MultiView, Info Tabs</td></tr>
+</table>
+
+<blockquote>
+  <strong>중요</strong>: 3대 원천에 명시되지 않은 기능은 구현 범위에서 <strong>제외</strong>됩니다.
+</blockquote>
+
+<hr>
+
+<h2 id="section-1">1. Executive Summary</h2>
+
+<h3>1.1 프로젝트 개요</h3>
+
+<p>WSOP 공식 OTT 스트리밍 플랫폼. 프리미엄 포커 방송 서비스.</p>
+
+<table>
+  <tr><th>항목</th><th>내용</th></tr>
+  <tr><td><strong>런칭 목표</strong></td><td>Q3 2026 (2027년 3월 1일 전)</td></tr>
+  <tr><td><strong>플랫폼</strong></td><td>Web, iOS, Android, Samsung TV, LG TV</td></tr>
+  <tr><td><strong>구독 모델</strong></td><td>$10 WSOP Plus / $50 WSOP Plus+</td></tr>
+  <tr><td><strong>화질</strong></td><td>1080p Full HD</td></tr>
+  <tr><td><strong>자막</strong></td><td>20개국 다국어 지원</td></tr>
+</table>
+
+<h3>1.2 YouTube 대비 핵심 차별점</h3>
+
+<table>
+  <tr><th>#</th><th>차별점</th><th>YouTube</th><th>WSOPTV</th></tr>
+  <tr><td>1</td><td><strong>Timeshift</strong></td><td>뒤로 가기 불가</td><td>라이브 중 되감기 지원</td></tr>
+  <tr><td>2</td><td><strong>아카이브</strong></td><td>종료 시 비공개</td><td>영구 보존 + VOD 전환</td></tr>
+  <tr><td>3</td><td><strong>Advanced Mode</strong></td><td>없음</td><td>Multi-view + StatsView</td></tr>
+  <tr><td>4</td><td><strong>검색</strong></td><td>없음</td><td>핸드/선수 기반 정밀 검색</td></tr>
+</table>
+
+<h3>1.3 개발 로드맵 (Phase별 기능)</h3>
+
+<table>
+  <tr><th>Phase</th><th>마감</th><th>핵심 기능</th><th>NBA TV 대응</th></tr>
+  <tr><td><strong>MVP (P1)</strong></td><td>2027.03.01</td><td>라이브 스트리밍, Tournament Ticker, 기본 컨트롤, GGPass SSO, $10/$50 구독</td><td>Video Player, Scoreboard Ticker, Controls</td></tr>
+  <tr><td><strong>P2</strong></td><td>TBD</td><td>MultiView (1x1, 1:2, 2x2), Featured Hands, Streaming Options, 핸드 태깅</td><td>MultiView, Key Plays</td></tr>
+  <tr><td><strong>P3</strong></td><td>TBD</td><td>Info Tabs (Summary, Player Stats, Hand Charts, Hand History)</td><td>Info 탭 전체</td></tr>
+  <tr><td><strong>P4</strong></td><td>TBD</td><td>Advanced Mode (Player Cam, StatsView 오버레이), 3x3 MultiView</td><td>Extension</td></tr>
+</table>
+
+<p><strong>Phase 상세</strong>:</p>
+
+<table>
+  <tr><th>Phase</th><th>기능 목록</th></tr>
+  <tr><td><strong>MVP</strong></td><td>Video Player, Tournament Ticker, Timeline, Stream Tabs, Controls, GGPass SSO, 구독 모델</td></tr>
+  <tr><td><strong>P2</strong></td><td>MultiView 레이아웃, Featured Hands 모달/플레이어, Camera/Commentary 선택, 핸드 단위 태깅, 선수/핸드 검색</td></tr>
+  <tr><td><strong>P3</strong></td><td>Summary (7:3 레이아웃), Player Stats (VPIP/PFR), Hand Charts (Position Map), Hand History (Level 필터)</td></tr>
+  <tr><td><strong>P4</strong></td><td>Player Cam Mode (아이돌 직캠), StatsView 영상 오버레이, 3x3 MultiView (파이널용), 멀티 재생</td></tr>
+</table>
+
+<hr>
+
+<h2 id="section-2">2. 콘텐츠 소싱 전략</h2>
+
+<blockquote>
+  <strong>상세 문서</strong>: STRAT-0008 콘텐츠 소싱 전략
+</blockquote>
+
+<h3>2.1 WSOP 콘텐츠 Tier 구조</h3>
+
+<table>
+  <tr><th>Tier</th><th>대회</th><th>개최지</th><th>설명</th></tr>
+  <tr><td><strong>1</strong></td><td>WSOP Vegas</td><td>Las Vegas, USA</td><td>메인 시리즈 (본거지)</td></tr>
+  <tr><td><strong>2</strong></td><td>WSOPE</td><td>Prague, Czech</td><td>유럽 시리즈</td></tr>
+  <tr><td><strong>2</strong></td><td>WSOP Paradise</td><td>Bahamas</td><td>바하마 시리즈</td></tr>
+  <tr><td><strong>3</strong></td><td>Super Circuit</td><td>전세계 각지</td><td>글로벌 라이브 서킷</td></tr>
+</table>
+
+<p><strong>Super Circuit 개최지 (예시)</strong>:</p>
+
+<table>
+  <tr><th>지역</th><th>대회명</th><th>개최지</th></tr>
+  <tr><td><strong>유럽</strong></td><td>SC Cyprus</td><td>Cyprus</td></tr>
+  <tr><td></td><td>SC London</td><td>London, UK</td></tr>
+  <tr><td><strong>북미</strong></td><td>SC Toronto</td><td>Toronto, Canada</td></tr>
+  <tr><td></td><td>SC Las Vegas</td><td>Las Vegas, USA</td></tr>
+  <tr><td><strong>아시아</strong></td><td>SC Manila</td><td>Manila, Philippines</td></tr>
+  <tr><td></td><td>SC Macau</td><td>Macau</td></tr>
+  <tr><td><strong>남미</strong></td><td>SC São Paulo</td><td>São Paulo, Brazil</td></tr>
+  <tr><td></td><td>SC Buenos Aires</td><td>Buenos Aires, Argentina</td></tr>
+  <tr><td><strong>오세아니아</strong></td><td>SC Melbourne</td><td>Melbourne, Australia</td></tr>
+</table>
+
+<blockquote>
+  <strong>범위</strong>: WSOP 공식 <strong>라이브</strong> 대회만 포함. 온라인 이벤트 및 Poker After Dark, Game of Gold 등 예외 콘텐츠 제외.
+</blockquote>
+
+<h3>2.2 소스별 프로덕션 파트너</h3>
+
+<div class="image-placeholder">
+  [Image: 콘텐츠 소싱 다이어그램]<br>
+  <span class="image-link">📎 ../images/PRD-0002/02-content-sourcing.png</span>
+</div>
+
+<table>
+  <tr><th>프로덕션 파트너</th><th>담당 대회</th><th>이벤트 범위</th></tr>
+  <tr><td><strong>ESPN</strong></td><td>WSOP Vegas</td><td>Main Event만</td></tr>
+  <tr><td><strong>PokerGO</strong></td><td>WSOP Vegas</td><td>Main Event 외 전체</td></tr>
+  <tr><td><strong>Triton Poker</strong></td><td>WSOP Paradise</td><td>전체</td></tr>
+  <tr><td><strong>PokerCaster</strong></td><td>WSOPE</td><td>유럽 지역 전체</td></tr>
+</table>
+
+<h3>2.3 콘텐츠 플로우</h3>
+
+<pre>
+[프로덕션 파트너]          [중앙 처리]           [배포]
+     │                        │                   │
+     ├─ ESPN ────────────────►│                   │
+     ├─ PokerGO ─────────────►│                   │
+     ├─ Triton Poker ────────►├─► GG Production ─►├─► WSOP TV
+     ├─ PokerCaster ─────────►│   (종편 작업)     ├─► YouTube
+     │                        │                   │
+</pre>
+
+<p><strong>GG Production 역할</strong>: 모든 프로덕션 파트너 소스를 받아 종편(Post-Production) 작업 수행</p>
+
+<h3>2.4 YouTube vs WSOPTV 설정 비교</h3>
+
+<table>
+  <tr><th>설정</th><th>YouTube</th><th>WSOPTV</th></tr>
+  <tr><td>DVR (Timeshift)</td><td>❌ 비활성화</td><td>✅ 활성화</td></tr>
+  <tr><td>종료 후</td><td>비공개 전환</td><td>영구 보존</td></tr>
+  <tr><td>역할</td><td>맛보기/유입 채널</td><td>본 서비스</td></tr>
+</table>
+
+<hr>
+
+<h2 id="section-3">3. 구독 모델</h2>
+
+<blockquote>
+  <strong>레퍼런스</strong>: NBA League Pass 구독 모델 1:1 대응
+</blockquote>
+
+<h3>3.1 구독 플랜 와이어프레임</h3>
+
+<div class="image-placeholder">
+  [Image: 구독 플랜 와이어프레임]<br>
+  <span class="image-link">📎 ../images/PRD-0002/03-subscription-plans.png</span>
+</div>
+
+<blockquote>
+  <strong>레퍼런스 이미지</strong>: NBA League Pass 구독 페이지 (../images/leaguepass/)
+</blockquote>
+
+<h3>3.2 NBA League Pass vs WSOP Plus 매핑</h3>
+
+<table>
+  <tr><th>항목</th><th>NBA League Pass</th><th>NBA League Pass Premium</th><th>WSOP Plus</th><th>WSOP Plus+</th></tr>
+  <tr><td><strong>가격 (월간)</strong></td><td>$14.99/월</td><td>$22.99/월</td><td><strong>$10/월</strong></td><td><strong>$50/월</strong></td></tr>
+  <tr><td><strong>설명</strong></td><td>1개 기기에서 경기 생중계 및 VOD</td><td>최대 3개 기기, 오프라인 시청, 다운로드</td><td>1개 기기에서 대회 생중계 및 VOD</td><td>최대 3개 기기, 오프라인 시청, 다운로드</td></tr>
+  <tr><td><strong>광고</strong></td><td>광고 포함</td><td>광고 없음 (휴식 시간 현장 생중계)</td><td>광고 포함</td><td>광고 없음</td></tr>
+  <tr><td><strong>오프라인 시청</strong></td><td>불포함</td><td>포함</td><td>불포함</td><td>포함</td></tr>
+  <tr><td><strong>동시 스트리밍</strong></td><td>1개 기기</td><td>최대 3개 기기</td><td>1개 기기</td><td>최대 3개 기기</td></tr>
+  <tr><td><strong>대체 방송</strong></td><td>포함</td><td>포함</td><td>포함</td><td>포함</td></tr>
+  <tr><td><strong>멀티뷰</strong></td><td>최대 4개 경기</td><td>최대 4개 경기</td><td>최대 4개 테이블</td><td>최대 4개 테이블</td></tr>
+</table>
+
+<h3>3.3 2티어 구독 상세</h3>
+
+<table>
+  <tr><th>티어</th><th>가격</th><th>명칭</th><th>주요 기능</th></tr>
+  <tr><td>Basic</td><td><strong>$10/월</strong></td><td><strong>WSOP Plus</strong></td><td>1개 기기, 라이브, VOD, Timeshift, 광고 포함, 멀티뷰 4개</td></tr>
+  <tr><td>Premium</td><td><strong>$50/월</strong></td><td><strong>WSOP Plus+</strong></td><td>최대 3개 기기, 광고 없음, 오프라인 시청, 다운로드, 멀티뷰 4개</td></tr>
+</table>
+
+<h3>3.4 학생 할인</h3>
+
+<blockquote>
+  <strong>레퍼런스</strong>: NBA League Pass UNiDAYS 학생 40% 할인
+</blockquote>
+
+<table>
+  <tr><th>대상</th><th>할인율</th><th>WSOP Plus</th><th>WSOP Plus+</th></tr>
+  <tr><td>일반</td><td>0%</td><td>$10/월</td><td>$50/월</td></tr>
+  <tr><td>학생 (UNiDAYS)</td><td>40%</td><td>$6/월</td><td>$30/월</td></tr>
+</table>
+
+<h3>3.5 프로모션 전략</h3>
+
+<table>
+  <tr><th>Flow</th><th>설명</th></tr>
+  <tr><td>GG POKER → WSOPTV</td><td>$10 칩 구매 → WSOPTV Plus 구독권 자동 발급</td></tr>
+  <tr><td>WSOPTV → GG POKER</td><td>Plus $10 구독 → GG POKER $10 칩 제공</td></tr>
+</table>
+
+<hr>
+
+<h2 id="section-4">4. Advanced Mode</h2>
+
+<p>Advanced Mode는 세 가지 <strong>완전히 독립적인</strong> 기능으로 구성됩니다.</p>
+
+<h3>4.1 Multi-view (여러 Feature Table 동시 시청)</h3>
+
+<blockquote>
+  <strong>설계 원칙</strong>: NBA TV MultiView 1:1 대응<br>
+  <strong>정의</strong>: 하나의 이벤트 내 여러 Feature Table을 동시에 시청하는 방식. 간혹 다른 이벤트 테이블도 포함 가능.
+</blockquote>
+
+<div class="image-placeholder">
+  [Image: Multi-view 와이어프레임]<br>
+  <span class="image-link">📎 ../images/PRD-0002/04-multiview.png</span>
+</div>
+
+<table>
+  <tr><th>기능</th><th>설명</th><th>NBA TV 대응</th></tr>
+  <tr><td>Feature Table 동시 시청</td><td>같은 이벤트의 여러 Feature Table</td><td>MultiView</td></tr>
+  <tr><td>레이아웃 옵션</td><td>1x1, 1:2, 2x2</td><td>동일</td></tr>
+  <tr><td>테이블 추가</td><td>Tournament Ticker에서 추가</td><td>동일</td></tr>
+  <tr><td>오디오 선택</td><td>한 테이블의 오디오만 활성화</td><td>동일</td></tr>
+  <tr><td>다른 이벤트 추가</td><td>간혹 다른 이벤트 테이블 추가 가능</td><td>동일 (다른 경기 추가)</td></tr>
+</table>
+
+<p><strong>프로덕션 특성</strong>:</p>
+<ul>
+  <li>하나의 이벤트(예: Main Event)에서 여러 Feature Table이 동시 진행</li>
+  <li>시청자가 관심 테이블을 선택하여 동시 모니터링</li>
+  <li>각 테이블은 독립적인 스트림으로 제공</li>
+</ul>
+
+<h3>4.2 Player Cam Mode (아이돌 직캠 방식)</h3>
+
+<blockquote>
+  <strong>설계 원칙</strong>: VIBLE 원문 - "메인화면이 중앙에 있고, 각 유저들의 얼굴을 잡고 있는 화면이 옆에 또 있는 방식 (아이돌 직캠 카메라)"<br>
+  <strong>정의</strong>: 특정 Feature Table의 개별 플레이어 카메라를 제공하는 방식. <strong>모든 테이블에서 제공되지 않음</strong>.
+</blockquote>
+
+<table>
+  <tr><th>기능</th><th>설명</th></tr>
+  <tr><td>메인 화면</td><td>Feature Table 메인 방송 (중앙 대형)</td></tr>
+  <tr><td>Player Cam</td><td>각 플레이어 얼굴을 잡는 개별 카메라 (주변 소형)</td></tr>
+  <tr><td>선택적 전환</td><td>특정 플레이어 캠을 메인으로 전환 가능</td></tr>
+</table>
+
+<p><strong>소스 구성</strong>:</p>
+<pre>
+Player Cam 소스 = 플레이어 카메라 영상 + GFX 오버레이
+                  │                      │
+                  ▼                      ▼
+              얼굴 클로즈업         플레이어명, 칩 카운트,
+                                   홀카드 표시 등
+</pre>
+
+<p><strong>가용성 제한</strong>:</p>
+
+<table>
+  <tr><th>항목</th><th>설명</th></tr>
+  <tr><td><strong>제공 테이블</strong></td><td>Player Cam 가능 테이블만 (별도 지정)</td></tr>
+  <tr><td><strong>미제공 테이블</strong></td><td>일반 Feature Table (메인 방송만)</td></tr>
+  <tr><td><strong>결정 요소</strong></td><td>프로덕션 장비 구성, 테이블 중요도</td></tr>
+</table>
+
+<p><strong>Multi-view vs Player Cam 완전 분리</strong>:</p>
+
+<table>
+  <tr><th>구분</th><th>Multi-view</th><th>Player Cam</th></tr>
+  <tr><td><strong>대상</strong></td><td>여러 Feature Table</td><td>한 테이블의 여러 플레이어</td></tr>
+  <tr><td><strong>소스</strong></td><td>테이블별 메인 방송</td><td>플레이어 캠 + GFX 오버레이</td></tr>
+  <tr><td><strong>가용성</strong></td><td>모든 Feature Table</td><td>Player Cam 지원 테이블만</td></tr>
+  <tr><td><strong>NBA TV 대응</strong></td><td>✅ 1:1 대응</td><td>❌ WSOP TV 고유</td></tr>
+  <tr><td><strong>레이아웃</strong></td><td>2x2 그리드 (동등 크기)</td><td>메인 + 주변 캠 (비대칭)</td></tr>
+  <tr><td><strong>용도</strong></td><td>여러 테이블 동시 모니터링</td><td>특정 플레이어 집중 시청</td></tr>
+</table>
+
+<h3>4.3 StatsView (통계 표시)</h3>
+
+<blockquote>
+  <strong>설계 원칙</strong>: VIBLE 원문 - "허드같이 그 유저의 수치라든가, 플랍에서 베팅할 확률같은거, 이런게 띄어져있는 영상"
+</blockquote>
+
+<p><strong>두 가지 구현 방식 제안</strong>:</p>
+
+<h4>Option A: NBA TV 방식 (Info Tabs)</h4>
+
+<blockquote>
+  시청에 방해되지 않도록 <strong>별도 하단 패널</strong>에 표시
+</blockquote>
+
+<table>
+  <tr><th>특징</th><th>설명</th></tr>
+  <tr><td><strong>위치</strong></td><td>영상 하단 Info Tabs 영역</td></tr>
+  <tr><td><strong>표시 방식</strong></td><td>Player Stats 탭 선택 시 표시</td></tr>
+  <tr><td><strong>장점</strong></td><td>시청 방해 없음, NBA TV 1:1 대응</td></tr>
+  <tr><td><strong>처리 주체</strong></td><td>OTT (WSOP TV)</td></tr>
+</table>
+
+<table>
+  <tr><th>탭</th><th>NBA TV</th><th>WSOP TV</th></tr>
+  <tr><td>-</td><td>Summary</td><td>Summary</td></tr>
+  <tr><td>-</td><td>Box Score</td><td><strong>Player Stats</strong></td></tr>
+  <tr><td>-</td><td>Game Charts</td><td>Hand Charts</td></tr>
+  <tr><td>-</td><td>Play-By-Play</td><td>Hand History</td></tr>
+</table>
+
+<h4>Option B: GGM$ 방식 (영상 오버레이)</h4>
+
+<blockquote>
+  시청에 <strong>직접적인 역할</strong>을 하도록 영상 위에 오버레이
+</blockquote>
+
+<table>
+  <tr><th>특징</th><th>설명</th></tr>
+  <tr><td><strong>위치</strong></td><td>영상 내 플레이어 옆</td></tr>
+  <tr><td><strong>표시 방식</strong></td><td>HUD 스타일 상시 표시</td></tr>
+  <tr><td><strong>장점</strong></td><td>즉각적인 정보 확인</td></tr>
+  <tr><td><strong>처리 주체</strong></td><td><strong>Production</strong> (GG Production)</td></tr>
+</table>
+
+<p><strong>Option B 처리 위치 결정</strong>:</p>
+
+<table>
+  <tr><th>처리 위치</th><th>장점</th><th>단점</th></tr>
+  <tr><td><strong>Production (권장)</strong></td><td>GGM$ 동일 프로세스, 직관적</td><td>영상에 고정됨</td></tr>
+  <tr><td>OTT</td><td>동적 on/off 가능</td><td>Production 클론 TF 구성 필요</td></tr>
+</table>
+
+<blockquote>
+  <strong>권장</strong>: Option B 선택 시 GGM$와 동일하게 <strong>Production 단계에서 처리</strong>
+</blockquote>
+
+<p><strong>StatsView 표시 정보</strong>:</p>
+
+<table>
+  <tr><th>요소</th><th>표시 정보</th><th>VIBLE 원문 대응</th></tr>
+  <tr><td>플레이어 HUD</td><td>VPIP, PFR, 3-Bet%, AF</td><td>"그 유저의 수치"</td></tr>
+  <tr><td>베팅 확률</td><td>플랍 베팅 확률, Pot Odds</td><td>"플랍에서 베팅할 확률"</td></tr>
+  <tr><td>스택 정보</td><td>칩 카운트, BB 기준 스택</td><td>-</td></tr>
+</table>
+
+<hr>
+
+<h2 id="section-5">5. Featured Hands (핸드 검색)</h2>
+
+<blockquote>
+  <strong>설계 원칙</strong>: NBA TV Key Plays 1:1 대응 - <strong>동일 레이아웃으로 처리</strong>
+</blockquote>
+
+<h3>5.1 NBA TV Key Plays 매핑</h3>
+
+<table>
+  <tr><th>NBA TV (Key Plays)</th><th>WSOP TV (Featured Hands)</th></tr>
+  <tr><td>Key Plays 버튼</td><td>Featured Hands 버튼</td></tr>
+  <tr><td>주요 플레이 목록</td><td>주요 핸드 목록</td></tr>
+  <tr><td>플레이어, 시간, 설명</td><td>플레이어, 핸드, 결과</td></tr>
+  <tr><td>클릭 → 해당 시점 이동</td><td>클릭 → 해당 핸드 시점 이동</td></tr>
+</table>
+
+<h3>5.2 Featured Hands UI (Key Plays 동일 레이아웃)</h3>
+
+<div class="image-placeholder">
+  [Image: 검색 UI 와이어프레임]<br>
+  <span class="image-link">📎 ../images/PRD-0002/05-hand-search.png</span>
+</div>
+
+<table>
+  <tr><th>컴포넌트</th><th>NBA TV Key Plays</th><th>WSOP TV Featured Hands</th></tr>
+  <tr><td>목록 항목</td><td>썸네일 + 설명</td><td>썸네일 + 핸드 설명</td></tr>
+  <tr><td>필터</td><td>팀, 플레이어, 유형</td><td><strong>플레이어, 핸드, 결과</strong></td></tr>
+  <tr><td>정렬</td><td>시간순</td><td>핸드 번호순</td></tr>
+</table>
+
+<h3>5.3 핸드 단위 태깅 (메타데이터)</h3>
+
+<table>
+  <tr><th>태그 항목</th><th>설명</th></tr>
+  <tr><td>Hand 기준</td><td>핸드 번호, 타임스탬프</td></tr>
+  <tr><td>참여 플레이어</td><td>해당 핸드에 참여한 선수 목록</td></tr>
+  <tr><td>각 플레이어 Hands</td><td>홀카드 정보</td></tr>
+  <tr><td>Community Card</td><td>보드 카드 (플롭/턴/리버)</td></tr>
+  <tr><td>최종 Winner</td><td>핸드 승자</td></tr>
+</table>
+
+<h3>5.4 검색 기능</h3>
+
+<p><strong>검색 예제</strong>:</p>
+<ul>
+  <li>A 선수와 B 선수가 함께 했던 대회/동영상 검색</li>
+  <li>포카드(Four of a Kind)를 쥔 플레이어가 로열 스트레이트 플러시에게 패한 핸드</li>
+  <li>특정 핸드(AA, KK 등)로 이기거나 진 상황</li>
+</ul>
+
+<hr>
+
+<h2 id="section-6">6. 전체 페이지 레이아웃</h2>
+
+<blockquote>
+  <strong>레퍼런스</strong>: NBA TV League Pass 1:1 대응<br>
+  <strong>구조</strong>: 메인 스트리밍 UI (상단) + Info Tabs (하단)
+</blockquote>
+
+<h3>6.1 전체 페이지 와이어프레임</h3>
+
+<div class="image-placeholder">
+  [Image: 전체 페이지 레이아웃]<br>
+  <span class="image-link">📎 ../images/PRD-0002/09-full-page-layout.png</span>
+</div>
+
+<h3>6.2 페이지 구조</h3>
+
+<pre>
+┌─────────────────────────────────────────────────────────────┐
+│                   상단: 메인 스트리밍 UI                      │
+├─────────────────────────────────────────────────────────────┤
+│  PAGE AREA (①②③)                                           │
+│  ┌─────────────────────────────────────────────────────┐   │
+│  │ ① Tournament Ticker                                 │   │
+│  │ ② Ad Banner                                         │   │
+│  │ ③ Tournament Header                                 │   │
+│  └─────────────────────────────────────────────────────┘   │
+│                                                             │
+│  VIDEO PLAYER AREA (④⑤⑥⑦)                                 │
+│  ┌─────────────────────────────────────────────────────┐   │
+│  │ ④ Video Player + POT/BOARD                          │   │
+│  │ ⑤ Stream Tabs                                       │   │
+│  │ ⑥ Timeline                                          │   │
+│  │ ⑦ Controls                                          │   │
+│  └─────────────────────────────────────────────────────┘   │
+├─────────────────────────────────────────────────────────────┤
+│                   하단: Info Tabs                           │
+├─────────────────────────────────────────────────────────────┤
+│  ┌─────────┬─────────┬─────────┬─────────┐                 │
+│  │ Summary │ Player  │  Hand   │  Hand   │                 │
+│  │         │  Stats  │ Charts  │ History │                 │
+│  └─────────┴─────────┴─────────┴─────────┘                 │
+│  ┌─────────────────────────────────────────────────────┐   │
+│  │                   Tab Content                        │   │
+│  └─────────────────────────────────────────────────────┘   │
+└─────────────────────────────────────────────────────────────┘
+</pre>
+
+<h3>6.3 영역 분류</h3>
+
+<table>
+  <tr><th>영역</th><th>레이어</th><th>설명</th></tr>
+  <tr><td><strong>Page Area</strong></td><td>①②③</td><td>페이지 레벨 컴포넌트 (헤더, 네비게이션)</td></tr>
+  <tr><td><strong>Video Player Area</strong></td><td>④⑤⑥⑦</td><td>비디오 플레이어 컴포넌트 (재생 관련)</td></tr>
+  <tr><td><strong>Info Tabs Area</strong></td><td>-</td><td>하단 정보 탭 (스크롤 시 표시)</td></tr>
+</table>
+
+<hr>
+
+<h2 id="section-7">7. 메인 스트리밍 UI (상단)</h2>
+
+<blockquote>
+  <strong>7단 레이아웃</strong>: Page Area (①②③) + Video Player Area (④⑤⑥⑦)
+</blockquote>
+
+<h3>7.1 레이아웃 와이어프레임</h3>
+
+<div class="image-placeholder">
+  [Image: 7단 레이아웃 와이어프레임]<br>
+  <span class="image-link">📎 ../images/PRD-0002/06-main-layout.png</span>
+</div>
+
+<h3>7.2 Page Area (①②③)</h3>
+
+<table>
+  <tr><th>레이어</th><th>NBA TV 컴포넌트</th><th>WSOP TV 컴포넌트</th></tr>
+  <tr><td>①</td><td>Scoreboard Ticker</td><td>Tournament Ticker</td></tr>
+  <tr><td>②</td><td>Ad Banner</td><td>Ad Banner</td></tr>
+  <tr><td>③</td><td>Game Header</td><td>Tournament Header</td></tr>
+</table>
+
+<h3>7.3 Video Player Area (④⑤⑥⑦)</h3>
+
+<table>
+  <tr><th>레이어</th><th>NBA TV 컴포넌트</th><th>WSOP TV 컴포넌트</th></tr>
+  <tr><td>④</td><td>Video Player</td><td>Video Player + POT/BOARD</td></tr>
+  <tr><td>⑤</td><td>Stream Tabs</td><td>Stream Tabs</td></tr>
+  <tr><td>⑥</td><td>Timeline</td><td>Timeline</td></tr>
+  <tr><td>⑦</td><td>Controls</td><td>Controls</td></tr>
+</table>
+
+<h3>7.4 용어 매핑</h3>
+
+<table>
+  <tr><th>NBA TV</th><th>WSOP TV</th><th>비고</th></tr>
+  <tr><td>Scoreboard Ticker</td><td>Tournament Ticker</td><td>상단 스코어/대회 표시</td></tr>
+  <tr><td>Q3 3:05</td><td>L38 LIVE</td><td>Quarter→Level</td></tr>
+  <tr><td>Clippers 77 / Bulls 90</td><td>Negreanu 1.3M</td><td>점수→칩 리더</td></tr>
+  <tr><td>Key Plays</td><td>Featured Hands</td><td>주요 플레이/핸드</td></tr>
+  <tr><td>Box Score</td><td>Player Stats</td><td>통계 탭</td></tr>
+  <tr><td>Play-By-Play</td><td>Hand History</td><td>액션 로그</td></tr>
+</table>
+
+<hr>
+
+<h2 id="section-8">8. Info Tabs (하단)</h2>
+
+<blockquote>
+  <strong>위치</strong>: 메인 스트리밍 UI 하단, 스크롤 시 표시
+</blockquote>
+
+<h3>8.1 탭 와이어프레임</h3>
+
+<div class="image-placeholder">
+  [Image: Info Tabs 와이어프레임]<br>
+  <span class="image-link">📎 ../images/PRD-0002/07-info-tabs.png</span>
+</div>
+
+<h3>8.2 탭 구조</h3>
+
+<table>
+  <tr><th>탭</th><th>NBA TV</th><th>WSOP TV</th></tr>
+  <tr><td>1</td><td>Summary</td><td>Summary</td></tr>
+  <tr><td>2</td><td>Box Score</td><td>Player Stats</td></tr>
+  <tr><td>3</td><td>Game Charts</td><td>Hand Charts</td></tr>
+  <tr><td>4</td><td>Play-By-Play</td><td>Hand History</td></tr>
+</table>
+
+<h3>8.3 Player Stats 컬럼 매핑 (StatsView Option A)</h3>
+
+<blockquote>
+  StatsView NBA TV 방식: 시청에 방해되지 않도록 Info Tabs에서 제공
+</blockquote>
+
+<table>
+  <tr><th>NBA TV</th><th>WSOP TV</th><th>설명</th></tr>
+  <tr><td>MIN</td><td>HANDS</td><td>플레이 시간/핸드</td></tr>
+  <tr><td>FGM</td><td>WINS</td><td>성공 횟수</td></tr>
+  <tr><td>FG%</td><td>WIN%</td><td>성공률</td></tr>
+  <tr><td>3PM</td><td>VPIP</td><td>팟 참여율</td></tr>
+  <tr><td>REB</td><td>CHIPS</td><td>칩 카운트</td></tr>
+</table>
+
+<hr>
+
+<h2 id="section-9">9. UX 워크플로우</h2>
+
+<blockquote>
+  <strong>설계 원칙</strong>: NBA TV PRD 섹션 14 패턴 적용 - 사용자 여정(User Journey)과 화면 전환 흐름 시각화
+</blockquote>
+
+<h3>9.1 Entry Flow (랜딩 → 시청)</h3>
+
+<pre>
+┌─────────────┐     ┌─────────────┐     ┌─────────────┐     ┌─────────────┐     ┌─────────────┐
+│   Landing   │────▶│  구독 확인   │────▶│   Ticker    │────▶│ 테이블 선택  │────▶│    LIVE     │
+│   (홈 화면)  │     │ (GGPass SSO)│     │ (대회 목록)  │     │ (Feature)   │     │  STREAMING  │
+└─────────────┘     └─────────────┘     └─────────────┘     └─────────────┘     └─────────────┘
+</pre>
+
+<table>
+  <tr><th>단계</th><th>화면</th><th>주요 액션</th></tr>
+  <tr><td>1</td><td>Landing</td><td>앱 진입, 로그인 버튼 클릭</td></tr>
+  <tr><td>2</td><td>구독 확인</td><td>GGPass SSO 인증, WSOP Plus/Plus+ 상태 확인</td></tr>
+  <tr><td>3</td><td>Ticker</td><td>Tournament Ticker에서 진행 중인 대회 확인</td></tr>
+  <tr><td>4</td><td>테이블 선택</td><td>Feature Table 목록에서 시청할 테이블 선택</td></tr>
+  <tr><td>5</td><td>LIVE</td><td>라이브 스트리밍 시작</td></tr>
+</table>
+
+<h3>9.2 Viewing Flow (시청 중 인터랙션)</h3>
+
+<pre>
+                              ┌─────────────────┐
+                              │  Active Tables  │
+                              │  (테이블 추가)   │
+                              └────────▲────────┘
+                                       │
+┌─────────────┐     ┌─────────────┐    │    ┌─────────────┐
+│    LIVE     │────▶│ Stream Tabs │────┼───▶│  MultiView  │
+│  STREAMING  │     │ (⑤ 레이어)  │    │    │ (1:2, 2x2)  │
+└─────────────┘     └─────────────┘    │    └─────────────┘
+                                       │
+                              ┌────────▼────────┐
+                              │ Featured Hands  │
+                              │  (핸드 탐색)     │
+                              └─────────────────┘
+</pre>
+
+<p><strong>Stream Tabs 옵션</strong>:</p>
+
+<table>
+  <tr><th>탭</th><th>기능</th><th>NBA TV 대응</th></tr>
+  <tr><td>Active Tables</td><td>다른 테이블 추가/전환</td><td>Streams</td></tr>
+  <tr><td>MultiView</td><td>멀티뷰 레이아웃 선택</td><td>MultiView</td></tr>
+  <tr><td>Featured Hands</td><td>주요 핸드 목록</td><td>Key Plays</td></tr>
+</table>
+
+<h3>9.3 Featured Hands Flow (핸드 탐색)</h3>
+
+<pre>
+┌─────────────┐     ┌─────────────┐     ┌─────────────┐     ┌─────────────┐
+│  Featured   │────▶│  핸드 목록   │────▶│  필터 선택   │────▶│   PLAYER    │
+│ Hands 탭    │     │   모달      │     │ (ALL-IN 등) │     │  (핸드 재생) │
+└─────────────┘     └─────────────┘     └─────────────┘     └─────────────┘
+                                                                   │
+                                                                   ▼
+                                                          ┌─────────────┐
+                                                          │ Street 타임 │
+                                                          │라인 네비게이션│
+                                                          └─────────────┘
+</pre>
+
+<p><strong>필터 옵션</strong>:</p>
+
+<table>
+  <tr><th>필터</th><th>설명</th></tr>
+  <tr><td>ALL HANDS</td><td>전체 핸드</td></tr>
+  <tr><td>ALL-IN</td><td>올인 핸드</td></tr>
+  <tr><td>BIG POTS</td><td>큰 팟 ($500K+)</td></tr>
+  <tr><td>BLUFFS</td><td>블러프 성공/실패</td></tr>
+  <tr><td>ELIMINATIONS</td><td>탈락 핸드</td></tr>
+  <tr><td>HERO CALLS</td><td>히어로 콜</td></tr>
+</table>
+
+<p><strong>Street 타임라인</strong>:</p>
+
+<pre>
+PREFLOP ─────▶ FLOP ─────▶ TURN ─────▶ RIVER ─────▶ SHOWDOWN
+</pre>
+
+<p><strong>복귀 경로</strong>:</p>
+<ul>
+  <li><code>HAND LIST</code> 버튼 → 핸드 목록 모달</li>
+  <li><code>JUMP TO LIVE</code> 버튼 → LIVE STREAMING</li>
+</ul>
+
+<h3>9.4 Info Tabs Flow (하단 정보 탭)</h3>
+
+<pre>
+                    ┌─────────────┐
+                    │    LIVE     │
+                    │  STREAMING  │
+                    └──────┬──────┘
+                           │ (스크롤)
+                           ▼
+┌─────────┬─────────┬─────────┬─────────┐
+│ Summary │ Player  │  Hand   │  Hand   │
+│         │  Stats  │ Charts  │ History │
+└────┬────┴────┬────┴────┬────┴────┬────┘
+     │         │         │         │
+     ▼         ▼         ▼         ▼
+ 기사(70%)   VPIP/PFR  Position  Level별
+ +Info(30%)  통계테이블  Win Map   액션로그
+</pre>
+
+<p><strong>탭 콘텐츠</strong>:</p>
+
+<table>
+  <tr><th>탭</th><th>레이아웃</th><th>콘텐츠</th></tr>
+  <tr><td>Summary</td><td>7:3 비율</td><td>토너먼트 기사 + Info 사이드바</td></tr>
+  <tr><td>Player Stats</td><td>전체 테이블</td><td>VPIP, PFR, 3BET, AF, CHIPS</td></tr>
+  <tr><td>Hand Charts</td><td>차트 그리드</td><td>Position Map, Stack Tracker</td></tr>
+  <tr><td>Hand History</td><td>타임라인</td><td>Level 필터 + 액션 로그</td></tr>
+</table>
+
+<h3>9.5 상태 전환 다이어그램</h3>
+
+<pre>
+┌─────────────────────────────────────────────────────────────────┐
+│                                                                 │
+│   LIVE STREAMING ⇄ INFO TABS ⇄ FEATURED HANDS ⇄ MULTIVIEW     │
+│                                                                 │
+│   * 각 상태에서 다른 상태로 자유롭게 전환 가능 (비파괴적)           │
+│   * 시청 중 스트림은 백그라운드에서 계속 유지                       │
+│                                                                 │
+└─────────────────────────────────────────────────────────────────┘
+</pre>
+
+<hr>
+
+<h2 id="appendix-a">부록 A. 용어 매핑 (NBA TV → WSOP TV)</h2>
+
+<blockquote>
+  <strong>설계 원칙</strong>: NBA TV 용어를 WSOP TV 도메인에 맞게 1:1 변환
+</blockquote>
+
+<table>
+  <tr><th>NBA TV</th><th>WSOP TV</th><th>비고</th></tr>
+  <tr><td>Scoreboard Ticker</td><td>Tournament Ticker</td><td>상단 스코어/대회 표시</td></tr>
+  <tr><td>Q3 3:05</td><td>L38 LIVE</td><td>Quarter → Level</td></tr>
+  <tr><td>Clippers 77 / Bulls 90</td><td>Negreanu 1.3M</td><td>점수 → 칩 리더</td></tr>
+  <tr><td>League Pass</td><td>WSOP Plus</td><td>구독 서비스명</td></tr>
+  <tr><td>CLIPPERS @ BULLS</td><td>[♠] MAIN EVENT 2024</td><td>팀 → 이벤트</td></tr>
+  <tr><td>Bulls (In-Arena)</td><td>Main Table Cam</td><td>카메라 옵션</td></tr>
+  <tr><td>Streams 9</td><td>Active Tables 45</td><td>스트림 수</td></tr>
+  <tr><td>Key Plays</td><td>Featured Hands</td><td>주요 플레이/핸드</td></tr>
+  <tr><td>Summary</td><td>Summary</td><td>동일</td></tr>
+  <tr><td>Box Score</td><td>Player Stats</td><td>통계 탭</td></tr>
+  <tr><td>Game Charts</td><td>Hand Charts</td><td>차트 탭</td></tr>
+  <tr><td>Play-By-Play</td><td>Hand History</td><td>액션 로그</td></tr>
+</table>
+
+<hr>
+
+<h2>Revision History</h2>
+
+<table>
+  <tr><th>버전</th><th>날짜</th><th>작성자</th><th>내용</th></tr>
+  <tr><td>1.0</td><td>2026-01-07</td><td>Claude Code</td><td>최초 작성</td></tr>
+  <tr><td>2.0</td><td>2026-01-16</td><td>Claude Code</td><td>Problem Statement 수정, 3계층 구조</td></tr>
+  <tr><td>3.0</td><td>2026-01-19</td><td>Claude Code</td><td>STRAT-0001 참조, YouTube 대비 차별점</td></tr>
+  <tr><td>4.0</td><td>2026-01-22</td><td>Claude Code</td><td>NBA TV 1:1 구조로 개편</td></tr>
+  <tr><td>5.0</td><td>2026-01-22</td><td>Claude Code</td><td>3대 원천 기반 전면 개편: VIBLE > MOSES > KORAN 우선순위 체계</td></tr>
+  <tr><td>5.1</td><td>2026-01-23</td><td>Claude Code</td><td>B&W 와이어프레임 전면 추가</td></tr>
+  <tr><td>5.2</td><td>2026-01-23</td><td>Claude Code</td><td>3대 원천 외 기능 제거: Extension 전면 삭제</td></tr>
+  <tr><td>5.3</td><td>2026-01-23</td><td>Claude Code</td><td>구독 모델 NBA League Pass 1:1 대응: 시즌/월간 탭, 광고/오프라인/동시스트리밍/멀티뷰 기능 매핑, 학생 할인(UNiDAYS 40%) 추가</td></tr>
+  <tr><td>5.4</td><td>2026-01-23</td><td>Claude Code</td><td>본문에서 VIBLE/MOSES/KORAN 제거: 섹션 0에서만 정의 유지, 본문 전체에서 원천 표기/라벨/인용 삭제</td></tr>
+  <tr><td>5.5</td><td>2026-01-23</td><td>Claude Code</td><td>ASCII 와이어프레임 → HTML 목업 교체: 8개 ASCII 다이어그램을 HTML 목업 + PNG 스크린샷으로 대체</td></tr>
+  <tr><td>5.6</td><td>2026-01-23</td><td>Claude Code</td><td>Advanced Mode 재정의 및 콘텐츠 소싱 아키텍처: Multi-view(NBA TV) vs Player Cam(아이돌 직캠) 분리, StatsView VIBLE 해석, 3-Tier 대회 구조 및 프로덕션 파트너 정의 (STRAT-0008)</td></tr>
+  <tr><td>5.7</td><td>2026-01-23</td><td>Claude Code</td><td>Advanced Mode 상세 스펙: Multi-view(Feature Table)/Player Cam(플레이어 캠+GFX) 완전 분리, StatsView 두 가지 방식(NBA TV Info Tabs vs GGM$ 오버레이) 제안, Featured Hands=Key Plays 동일 레이아웃</td></tr>
+  <tr><td>5.8</td><td>2026-01-23</td><td>Claude Code</td><td>전체 페이지 레이아웃 재구성: 메인 스트리밍 UI(상단) + Info Tabs(하단) 통합 구조, Page Area(①②③) vs Video Player Area(④⑤⑥⑦) 분리, 전체 페이지 와이어프레임 추가</td></tr>
+  <tr><td>6.0</td><td>2026-01-23</td><td>Claude Code</td><td>NBA TV PRD 기반 전면 재설계: 섹션 9~16 제거 (구현 단계 불필요), 섹션 9 UX 워크플로우 신규 작성 (Entry/Viewing/Featured Hands Flow)</td></tr>
+  <tr><td>6.1</td><td>2026-01-23</td><td>Claude Code</td><td>용어 매핑 위치 변경: 섹션 0.4에서 부록 A로 이동 (본문 집중도 향상)</td></tr>
+  <tr><td><strong>6.2</strong></td><td><strong>2026-01-23</strong></td><td><strong>Claude Code</strong></td><td><strong>Phase별 로드맵 및 대회 지역 정보 추가</strong>: Executive Summary에 MVP/P2/P3/P4 개발 로드맵, 콘텐츠 소싱에 Super Circuit 글로벌 개최지 (유럽/북미/아시아/남미/오세아니아)</td></tr>
+</table>
+
+<hr>
+
+<p style="text-align: center; color: #5f6368; font-size: 12px;">
+  <em>Generated from PRD-0002-wsoptv-ott-platform-mvp.md | Last Synced: 2026-01-23</em>
+</p>
+
+</body>
+</html>

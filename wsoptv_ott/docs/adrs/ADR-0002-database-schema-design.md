@@ -2,9 +2,10 @@
 
 | 항목 | 값 |
 |------|---|
-| **Status** | Proposed |
+| **Status** | Approved |
 | **Impact** | High |
 | **Created** | 2026-01-19 |
+| **Updated** | 2026-01-19 |
 | **Author** | Claude Code |
 | **References** | wsop.com, PRD-0002, PRD-0006 |
 
@@ -23,51 +24,91 @@ WSOPTV OTT 플랫폼 구축을 위해 데이터베이스 스키마 설계가 필
 
 ## Decision
 
+### wsop.com 실제 계층 구조
+
+wsop.com 분석 결과, **WSOP가 최상위 브랜드**이고 하위에 여러 시리즈가 존재합니다:
+
+```
+WSOP (브랜드)
+├── WSOP (본대회 - Las Vegas)
+├── WSOP Paradise
+├── WSOP Europe
+├── WSOP Asia
+├── WSOP Online
+└── WSOP Circuit (지역 순회 대회)
+```
+
 ### 엔티티 관계 다이어그램 (ERD)
 
 ```
-┌─────────────────────────────────────────────────────────────────────────────┐
-│                           WSOPTV OTT Database Schema                         │
-├─────────────────────────────────────────────────────────────────────────────┤
-│                                                                              │
-│  ┌──────────────┐     ┌──────────────┐     ┌──────────────┐                 │
-│  │   circuits   │────<│   events     │────<│ tournaments  │                 │
-│  └──────────────┘     └──────────────┘     └──────────────┘                 │
-│         │                    │                    │                          │
-│         │                    │                    │                          │
-│         ▼                    ▼                    ▼                          │
-│  ┌──────────────┐     ┌──────────────┐     ┌──────────────┐                 │
-│  │circuit_points│     │event_schedule│     │ tables       │                 │
-│  └──────────────┘     └──────────────┘     └──────────────┘                 │
-│                              │                    │                          │
-│                              │                    ▼                          │
-│  ┌──────────────┐     ┌──────────────┐     ┌──────────────┐                 │
-│  │   players    │────<│ placements   │────<│   hands      │                 │
-│  └──────────────┘     └──────────────┘     └──────────────┘                 │
-│         │                    │                    │                          │
-│         │                    │                    │                          │
-│         ▼                    ▼                    ▼                          │
-│  ┌──────────────┐     ┌──────────────┐     ┌──────────────┐                 │
-│  │player_stats  │     │   earnings   │     │ hand_actions │                 │
-│  └──────────────┘     └──────────────┘     └──────────────┘                 │
-│                                                   │                          │
-│                                                   ▼                          │
-│  ┌──────────────┐     ┌──────────────┐     ┌──────────────┐                 │
-│  │   content    │────<│  key_hands   │────<│ hand_players │                 │
-│  └──────────────┘     └──────────────┘     └──────────────┘                 │
-│         │                                                                    │
-│         ▼                                                                    │
-│  ┌──────────────┐     ┌──────────────┐     ┌──────────────┐                 │
-│  │content_streams│    │subscriptions │────<│   users      │                 │
-│  └──────────────┘     └──────────────┘     └──────────────┘                 │
-│                                                   │                          │
-│                                                   ▼                          │
-│                                            ┌──────────────┐                 │
-│                                            │watch_history │                 │
-│                                            └──────────────┘                 │
-│                                                                              │
-└─────────────────────────────────────────────────────────────────────────────┘
+┌─────────────────────────────────────────────────────────────────────────────────┐
+│                     WSOPTV OTT Database Schema (v2.0)                            │
+│                     WSOP 브랜드 기반 계층 구조                                     │
+├─────────────────────────────────────────────────────────────────────────────────┤
+│                                                                                  │
+│  ┌────────────────────────────────────────────────────────────────────────────┐ │
+│  │                            WSOP (브랜드 - 암묵적 최상위)                      │ │
+│  └────────────────────────────────────────────────────────────────────────────┘ │
+│                                       │                                          │
+│                                       ▼                                          │
+│  ┌──────────────┐     ┌──────────────┐     ┌──────────────┐                     │
+│  │   series     │────<│   events     │────<│  sessions    │                     │
+│  │ (시리즈)     │     │ (이벤트)     │     │ (세션/데이)  │                     │
+│  │              │     │              │     │              │                     │
+│  │ WSOP 2026    │     │ Main Event   │     │ Day 1A       │                     │
+│  │ WSOP Paradise│     │ High Roller  │     │ Day 2        │                     │
+│  │ WSOP Europe  │     │ $1K Daily    │     │ Final Table  │                     │
+│  │ WSOP Circuit │     │              │     │              │                     │
+│  └──────────────┘     └──────────────┘     └──────────────┘                     │
+│         │                    │                    │                              │
+│         │                    │                    │                              │
+│         ▼                    ▼                    ▼                              │
+│  ┌──────────────┐     ┌──────────────┐     ┌──────────────┐                     │
+│  │ series_points│     │event_schedule│     │   tables     │                     │
+│  │ (POY 포인트) │     │ (스케줄)     │     │ (테이블)     │                     │
+│  └──────────────┘     └──────────────┘     └──────────────┘                     │
+│                                                   │                              │
+│                                                   ▼                              │
+│  ┌──────────────┐     ┌──────────────┐     ┌──────────────┐                     │
+│  │   players    │────<│ placements   │────<│   hands      │                     │
+│  │ (플레이어)   │     │ (순위/결과)  │     │ (핸드)       │                     │
+│  └──────────────┘     └──────────────┘     └──────────────┘                     │
+│         │                    │                    │                              │
+│         ▼                    ▼                    ▼                              │
+│  ┌──────────────┐     ┌──────────────┐     ┌──────────────┐                     │
+│  │ player_stats │     │   earnings   │     │ hand_actions │                     │
+│  │ (통계)       │     │ (수입)       │     │ (액션 로그)  │                     │
+│  └──────────────┘     └──────────────┘     └──────────────┘                     │
+│                                                   │                              │
+│                                                   ▼                              │
+│  ┌──────────────┐     ┌──────────────┐     ┌──────────────┐                     │
+│  │   content    │────<│  key_hands   │────<│ hand_players │                     │
+│  │ (콘텐츠)     │     │ (주요 핸드)  │     │ (핸드 참여자)│                     │
+│  └──────────────┘     └──────────────┘     └──────────────┘                     │
+│         │                                                                        │
+│         ▼                                                                        │
+│  ┌──────────────┐     ┌──────────────┐     ┌──────────────┐                     │
+│  │content_streams│    │subscriptions │────<│   users      │                     │
+│  │ (스트림 URL) │     │ (구독)       │     │ (사용자)     │                     │
+│  └──────────────┘     └──────────────┘     └──────────────┘                     │
+│                                                   │                              │
+│                                                   ▼                              │
+│                        ┌──────────────┐     ┌──────────────┐                     │
+│                        │ leaderboards │     │watch_history │                     │
+│                        │ (리더보드)   │     │ (시청 기록)  │                     │
+│                        └──────────────┘     └──────────────┘                     │
+│                                                                                  │
+└─────────────────────────────────────────────────────────────────────────────────┘
 ```
+
+### 핵심 변경 사항 (v1.0 → v2.0)
+
+| 항목 | v1.0 (기존) | v2.0 (수정) | 변경 이유 |
+|------|------------|------------|-----------|
+| **최상위 테이블** | `circuits` | `series` | wsop.com 구조 반영 - WSOP가 브랜드, 하위에 시리즈 |
+| **시리즈 유형** | `circuit_type` | `series_type` | 명확한 명명 |
+| **세션 테이블** | `tournaments` | `sessions` | Day/Flight 단위 세션 명확화 |
+| **포인트 테이블** | `circuit_points` | `series_points` | 시리즈 기반 POY 포인트 |
 
 ---
 
@@ -75,18 +116,18 @@ WSOPTV OTT 플랫폼 구축을 위해 데이터베이스 스키마 설계가 필
 
 ### 1. Core Tournament Entities
 
-#### 1.1 circuits (대회 시리즈)
+#### 1.1 series (시리즈)
 
-WSOP 시리즈 정보 (WSOP Main, Paradise, Europe, Asia, Online, Circuit 등)
+WSOP 브랜드 하위의 시리즈 (WSOP 본대회, Paradise, Europe, Asia, Online, Circuit 등)
 
 ```sql
-CREATE TABLE circuits (
+CREATE TABLE series (
     id UUID PRIMARY KEY DEFAULT gen_random_uuid(),
 
     -- Basic Info
     name VARCHAR(255) NOT NULL,                    -- "WSOP 2026", "WSOP Paradise 2026"
     slug VARCHAR(100) UNIQUE NOT NULL,             -- "wsop-2026", "wsop-paradise-2026"
-    circuit_type VARCHAR(50) NOT NULL,             -- 'wsop', 'wsop_paradise', 'wsop_europe', 'wsop_asia', 'wsop_online', 'wsop_circuit', 'super_circuit'
+    series_type VARCHAR(50) NOT NULL,              -- 'wsop', 'wsop_paradise', 'wsop_europe', 'wsop_asia', 'wsop_online', 'wsop_circuit'
 
     -- Dates
     start_date DATE NOT NULL,
@@ -118,10 +159,10 @@ CREATE TABLE circuits (
 );
 
 -- Indexes
-CREATE INDEX idx_circuits_year ON circuits(year);
-CREATE INDEX idx_circuits_type ON circuits(circuit_type);
-CREATE INDEX idx_circuits_status ON circuits(status);
-CREATE INDEX idx_circuits_dates ON circuits(start_date, end_date);
+CREATE INDEX idx_series_year ON series(year);
+CREATE INDEX idx_series_type ON series(series_type);
+CREATE INDEX idx_series_status ON series(status);
+CREATE INDEX idx_series_dates ON series(start_date, end_date);
 ```
 
 #### 1.2 events (이벤트/브래킷)
@@ -131,7 +172,7 @@ CREATE INDEX idx_circuits_dates ON circuits(start_date, end_date);
 ```sql
 CREATE TABLE events (
     id UUID PRIMARY KEY DEFAULT gen_random_uuid(),
-    circuit_id UUID NOT NULL REFERENCES circuits(id) ON DELETE CASCADE,
+    series_id UUID NOT NULL REFERENCES series(id) ON DELETE CASCADE,
 
     -- Event Info (wsop.com 참조)
     event_number INTEGER NOT NULL,                 -- Event #81 (Main Event)
@@ -187,11 +228,11 @@ CREATE TABLE events (
     created_at TIMESTAMPTZ DEFAULT NOW(),
     updated_at TIMESTAMPTZ DEFAULT NOW(),
 
-    UNIQUE(circuit_id, event_number)
+    UNIQUE(series_id, event_number)
 );
 
 -- Indexes
-CREATE INDEX idx_events_circuit ON events(circuit_id);
+CREATE INDEX idx_events_series ON events(series_id);
 CREATE INDEX idx_events_status ON events(status);
 CREATE INDEX idx_events_game_type ON events(game_type);
 CREATE INDEX idx_events_dates ON events(start_date, end_date);
@@ -199,12 +240,12 @@ CREATE INDEX idx_events_buy_in ON events(buy_in);
 CREATE INDEX idx_events_featured ON events(is_featured) WHERE is_featured = TRUE;
 ```
 
-#### 1.3 tournaments (토너먼트 세션/데이)
+#### 1.3 sessions (세션/데이)
 
 이벤트의 각 Day 또는 Flight 세션
 
 ```sql
-CREATE TABLE tournaments (
+CREATE TABLE sessions (
     id UUID PRIMARY KEY DEFAULT gen_random_uuid(),
     event_id UUID NOT NULL REFERENCES events(id) ON DELETE CASCADE,
 
@@ -244,10 +285,10 @@ CREATE TABLE tournaments (
 );
 
 -- Indexes
-CREATE INDEX idx_tournaments_event ON tournaments(event_id);
-CREATE INDEX idx_tournaments_status ON tournaments(status);
-CREATE INDEX idx_tournaments_streaming ON tournaments(is_streaming) WHERE is_streaming = TRUE;
-CREATE INDEX idx_tournaments_schedule ON tournaments(scheduled_start);
+CREATE INDEX idx_sessions_event ON sessions(event_id);
+CREATE INDEX idx_sessions_status ON sessions(status);
+CREATE INDEX idx_sessions_streaming ON sessions(is_streaming) WHERE is_streaming = TRUE;
+CREATE INDEX idx_sessions_schedule ON sessions(scheduled_start);
 ```
 
 ---
@@ -349,7 +390,7 @@ CREATE TABLE placements (
     -- Relations
     event_id UUID NOT NULL REFERENCES events(id) ON DELETE CASCADE,
     player_id UUID NOT NULL REFERENCES players(id) ON DELETE CASCADE,
-    tournament_id UUID REFERENCES tournaments(id),  -- Final table session
+    session_id UUID REFERENCES sessions(id),        -- Final table session
 
     -- Finish
     finish_position INTEGER NOT NULL,              -- 1 = winner
@@ -357,7 +398,7 @@ CREATE TABLE placements (
 
     -- Points (wsop.com 포인트 시스템)
     poy_points INTEGER DEFAULT 0,                  -- Player of the Year points
-    circuit_points INTEGER DEFAULT 0,              -- Circuit points
+    series_points INTEGER DEFAULT 0,               -- Series points (POY)
 
     -- Bracelet/Ring
     won_bracelet BOOLEAN DEFAULT FALSE,
@@ -394,7 +435,7 @@ CREATE TABLE player_stats (
     -- Relations
     player_id UUID NOT NULL REFERENCES players(id) ON DELETE CASCADE,
     event_id UUID REFERENCES events(id) ON DELETE CASCADE,
-    tournament_id UUID REFERENCES tournaments(id) ON DELETE CASCADE,
+    session_id UUID REFERENCES sessions(id) ON DELETE CASCADE,
 
     -- Scope
     stat_type VARCHAR(20) NOT NULL,                -- 'event', 'tournament', 'session', 'all_time'
@@ -461,7 +502,7 @@ CREATE INDEX idx_player_stats_type ON player_stats(stat_type);
 ```sql
 CREATE TABLE tables (
     id UUID PRIMARY KEY DEFAULT gen_random_uuid(),
-    tournament_id UUID NOT NULL REFERENCES tournaments(id) ON DELETE CASCADE,
+    session_id UUID NOT NULL REFERENCES sessions(id) ON DELETE CASCADE,
 
     -- Table Info
     table_number INTEGER NOT NULL,
@@ -492,11 +533,11 @@ CREATE TABLE tables (
     created_at TIMESTAMPTZ DEFAULT NOW(),
     updated_at TIMESTAMPTZ DEFAULT NOW(),
 
-    UNIQUE(tournament_id, table_number)
+    UNIQUE(session_id, table_number)
 );
 
 -- Indexes
-CREATE INDEX idx_tables_tournament ON tables(tournament_id);
+CREATE INDEX idx_tables_session ON tables(session_id);
 CREATE INDEX idx_tables_feature ON tables(is_feature_table) WHERE is_feature_table = TRUE;
 CREATE INDEX idx_tables_status ON tables(status);
 ```
@@ -509,7 +550,7 @@ CREATE INDEX idx_tables_status ON tables(status);
 CREATE TABLE hands (
     id UUID PRIMARY KEY DEFAULT gen_random_uuid(),
     table_id UUID NOT NULL REFERENCES tables(id) ON DELETE CASCADE,
-    tournament_id UUID NOT NULL REFERENCES tournaments(id) ON DELETE CASCADE,
+    session_id UUID NOT NULL REFERENCES sessions(id) ON DELETE CASCADE,
 
     -- Hand Info
     hand_number INTEGER NOT NULL,                  -- Sequential hand number
@@ -565,7 +606,7 @@ CREATE TABLE hands (
 
 -- Indexes
 CREATE INDEX idx_hands_table ON hands(table_id);
-CREATE INDEX idx_hands_tournament ON hands(tournament_id);
+CREATE INDEX idx_hands_session ON hands(session_id);
 CREATE INDEX idx_hands_winner ON hands(winner_player_id);
 CREATE INDEX idx_hands_key ON hands(is_key_hand) WHERE is_key_hand = TRUE;
 CREATE INDEX idx_hands_timestamp ON hands(started_at);
@@ -680,7 +721,7 @@ CREATE TABLE content (
 
     -- Relations
     event_id UUID REFERENCES events(id) ON DELETE SET NULL,
-    tournament_id UUID REFERENCES tournaments(id) ON DELETE SET NULL,
+    session_id UUID REFERENCES sessions(id) ON DELETE SET NULL,
 
     -- Content Info
     title VARCHAR(500) NOT NULL,
@@ -1025,23 +1066,23 @@ CREATE INDEX idx_watch_history_user_content ON watch_history(user_id, content_id
 
 ---
 
-### 6. Circuit Points & Leaderboard (wsop.com 참조)
+### 6. Series Points & Leaderboard (wsop.com 참조)
 
-#### 6.1 circuit_points (서킷 포인트)
+#### 6.1 series_points (시리즈 포인트)
 
 ```sql
-CREATE TABLE circuit_points (
+CREATE TABLE series_points (
     id UUID PRIMARY KEY DEFAULT gen_random_uuid(),
 
     -- Relations
     player_id UUID NOT NULL REFERENCES players(id) ON DELETE CASCADE,
-    circuit_id UUID NOT NULL REFERENCES circuits(id) ON DELETE CASCADE,
+    series_id UUID NOT NULL REFERENCES series(id) ON DELETE CASCADE,
     event_id UUID REFERENCES events(id) ON DELETE SET NULL,
     placement_id UUID REFERENCES placements(id) ON DELETE SET NULL,
 
     -- Points (wsop.com 포인트 시스템)
     points INTEGER NOT NULL,
-    points_type VARCHAR(50) NOT NULL,              -- 'poy', 'circuit', 'super_circuit', 'online'
+    points_type VARCHAR(50) NOT NULL,              -- 'poy', 'circuit', 'online', 'paradise', 'europe', 'asia'
 
     -- Rank at time of earning
     rank_at_time INTEGER,
@@ -1055,10 +1096,10 @@ CREATE TABLE circuit_points (
 );
 
 -- Indexes
-CREATE INDEX idx_circuit_points_player ON circuit_points(player_id);
-CREATE INDEX idx_circuit_points_circuit ON circuit_points(circuit_id);
-CREATE INDEX idx_circuit_points_type ON circuit_points(points_type);
-CREATE INDEX idx_circuit_points_earned ON circuit_points(earned_at DESC);
+CREATE INDEX idx_series_points_player ON series_points(player_id);
+CREATE INDEX idx_series_points_series ON series_points(series_id);
+CREATE INDEX idx_series_points_type ON series_points(points_type);
+CREATE INDEX idx_series_points_earned ON series_points(earned_at DESC);
 ```
 
 #### 6.2 leaderboards (리더보드)
@@ -1070,9 +1111,9 @@ CREATE TABLE leaderboards (
     id UUID PRIMARY KEY DEFAULT gen_random_uuid(),
 
     -- Leaderboard Type
-    leaderboard_type VARCHAR(50) NOT NULL,         -- 'all_time_earnings', 'yearly_earnings', 'bracelets', 'poy_current', 'circuit_current'
+    leaderboard_type VARCHAR(50) NOT NULL,         -- 'all_time_earnings', 'yearly_earnings', 'bracelets', 'poy_current', 'series_current'
     year INTEGER,
-    circuit_id UUID REFERENCES circuits(id),
+    series_id UUID REFERENCES series(id),
 
     -- Snapshot
     snapshot_date DATE NOT NULL DEFAULT CURRENT_DATE,
@@ -1119,7 +1160,7 @@ CREATE INDEX idx_leaderboards_date ON leaderboards(snapshot_date DESC);
 ## Migration Strategy
 
 ### Phase 1: Core Tables
-- circuits, events, tournaments
+- series, events, sessions
 - players, placements
 - content, content_streams
 
@@ -1129,7 +1170,7 @@ CREATE INDEX idx_leaderboards_date ON leaderboards(snapshot_date DESC);
 
 ### Phase 3: User & Stats
 - users, subscriptions, watch_history
-- player_stats, circuit_points, leaderboards
+- player_stats, series_points, leaderboards
 
 ### Phase 4: Search & Optimization
 - Full-text search 인덱스

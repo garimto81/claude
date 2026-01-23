@@ -1,19 +1,30 @@
-# PRD-0007: WSOPTV Content Strategy
+# STRAT-0007: WSOPTV Content Sourcing & Distribution
 
 | 항목 | 값 |
 |------|---|
-| **Version** | 1.0 |
+| **Version** | 2.0 |
 | **Status** | Draft |
 | **Priority** | P0 |
 | **Created** | 2026-01-15 |
+| **Updated** | 2026-01-19 |
 | **Author** | Claude Code |
-| **Category** | Content Sourcing & Distribution |
+| **Source** | [STRAT-0001](STRAT-0001-viewer-experience-vision.md), michael_note.md |
 
 ---
 
 ## Executive Summary
 
-WSOP TV의 핵심 가치 제안인 **콘텐츠 소싱 및 배포 전략**을 정의합니다. 연간 200개 이상의 Bracelet 대회 중 약 50개 방송을 우선 제공하되, 파트너 독점권과 자체 직접 방송을 통해 다층적 콘텐츠 전략을 구축합니다. 추가로 WSOP 역사 전체(1973년~현재)의 아카이브 영상을 메타데이터 정리 하여 제공함으로써 포커 팬의 학습과 오락을 동시에 충족합니다.
+WSOP TV의 핵심 가치 제안인 **콘텐츠 소싱 및 배포 전략**을 정의합니다.
+
+> **전략 기준**: [STRAT-0001 시청자 경험 비전](STRAT-0001-viewer-experience-vision.md) - 콘텐츠 3단계 구조
+
+### Michael 기획 (STRAT-0001 Vible)
+
+| 소스 | 수량 | 특징 |
+|------|------|------|
+| ESPN | 10개/년 | 1년 후 WSOPTV 유입 |
+| PokerGO | 10개/년 | 계약에 따라 유입 |
+| WSOP 직접 | 30개/년 | YouTube + WSOPTV 동시 중계 |
 
 ### 핵심 목표
 - WSOP 모든 대회의 체계적인 콘텐츠 수급 체계 확립
@@ -339,6 +350,33 @@ VINTAGE (1973-1999)
 MODERN (2000-2015)
 CURRENT (2016~)
 ```
+
+#### 5.6 핸드 레벨 태그 (Phase 2) - Tony 기획
+
+> **출처**: [STRAT-0001 시청자 경험 비전](STRAT-0001-viewer-experience-vision.md) - Moses Commentary
+
+대회 영상을 핸드 단위로 태깅하여 정밀 검색 지원.
+
+| 태그 유형 | 예시 | 용도 |
+|----------|------|------|
+| `HAND_#N` | HAND_#47 | 특정 핸드 식별 |
+| `PLAYER_IN_HAND` | ivey, negreanu | 참여 선수 필터 |
+| `HOLE_CARDS` | AA, KQs | 홀카드 기반 검색 |
+| `BOARD_TEXTURE` | flush_possible | 보드 상황 |
+| `SHOWDOWN_WINNER` | player_name | 쇼다운 승자 |
+| `RESULT_TYPE` | bad_beat, cooler | 결과 유형 |
+
+**데이터 소스**:
+- 해설 Script 자동 파싱
+- RFID 테이블 데이터
+- 수동 QA 검증
+
+**검색 예시** (Tony 기획):
+- A 선수와 B 선수가 함께 했던 대회/동영상 검색
+- 포카드가 로열 스트레이트 플러시에게 패한 핸드
+- 특정 핸드로 이기거나 진 상황 검색
+
+> **상세 스펙**: [PRD-0009 Hand Tagging & Search](../prds/PRD-0009-hand-tagging-search.md) (Phase 2)
 
 ---
 

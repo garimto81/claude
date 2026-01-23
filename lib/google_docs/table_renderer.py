@@ -16,6 +16,16 @@ from typing import Any
 from .models import TableData
 
 
+def utf16_len(text: str) -> int:
+    """
+    Google Docs API용 UTF-16 코드 유닛 길이 계산
+
+    Google Docs API는 인덱스를 UTF-16 코드 유닛으로 계산합니다.
+    이모지 등 서로게이트 페어 문자는 2개의 코드 유닛을 사용합니다.
+    """
+    return len(text.encode("utf-16-le")) // 2
+
+
 @dataclass
 class CellInlineStyle:
     """셀 내 인라인 스타일 정보"""
@@ -111,12 +121,12 @@ class NativeTableRenderer:
             # 이전 일반 텍스트
             if start > current_pos:
                 plain_parts.append(text[current_pos:start])
-                plain_offset += start - current_pos
+                plain_offset += utf16_len(text[current_pos:start])
 
             # 스타일 정보 저장 (plain text 기준 위치)
             style_info = CellInlineStyle(
                 start=plain_offset,
-                end=plain_offset + len(content),
+                end=plain_offset + utf16_len(content),
                 bold=(style == "bold" or style == "bold_italic"),
                 italic=(style == "italic" or style == "bold_italic"),
                 code=(style == "code"),
@@ -124,7 +134,7 @@ class NativeTableRenderer:
             styles.append(style_info)
 
             plain_parts.append(content)
-            plain_offset += len(content)
+            plain_offset += utf16_len(content)
             current_pos = end
 
         # 남은 텍스트
@@ -518,7 +528,7 @@ class NativeTableRenderer:
                             "updateTextStyle": {
                                 "range": {
                                     "startIndex": cell_start,
-                                    "endIndex": cell_start + len(plain_text),
+                                    "endIndex": cell_start + utf16_len(plain_text),
                                 },
                                 "textStyle": {
                                     "foregroundColor": {
@@ -754,7 +764,7 @@ class NativeTableRenderer:
                     "updateTextStyle": {
                         "range": {
                             "startIndex": shifted_start,
-                            "endIndex": shifted_start + len(plain_text),
+                            "endIndex": shifted_start + utf16_len(plain_text),
                         },
                         "textStyle": text_style,
                         "fields": ",".join(fields),
@@ -829,7 +839,7 @@ class NativeTableRenderer:
             for j in range(i + 1, len(insertions)):
                 other = insertions[j]
                 if other["index"] < current_index:
-                    shift += len(other["content"]) if other["content"] else 0
+                    shift += utf16_len(other["content"]) if other["content"] else 0
 
             shifts[current_index] = shift
 
@@ -987,7 +997,7 @@ class NativeTableRenderer:
                         "updateTextStyle": {
                             "range": {
                                 "startIndex": header_index,
-                                "endIndex": header_index + len(header_content),
+                                "endIndex": header_index + utf16_len(header_content),
                             },
                             "textStyle": {
                                 "bold": True,

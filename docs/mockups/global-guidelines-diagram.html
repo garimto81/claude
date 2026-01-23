@@ -1,0 +1,575 @@
+<!DOCTYPE html>
+<html lang="ko">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>Global Guidelines Diagram - B&W Wireframe</title>
+    <style>
+        * {
+            margin: 0;
+            padding: 0;
+            box-sizing: border-box;
+        }
+        body {
+            font-family: 'Consolas', 'Courier New', monospace;
+            background: #fff;
+            color: #000;
+            padding: 40px;
+            line-height: 1.4;
+        }
+        .container {
+            max-width: 1200px;
+            margin: 0 auto;
+        }
+
+        /* Header */
+        .header {
+            border: 3px solid #000;
+            padding: 20px;
+            text-align: center;
+            margin-bottom: 30px;
+        }
+        .header h1 {
+            font-size: 24px;
+            font-weight: bold;
+            margin-bottom: 8px;
+        }
+        .header .version {
+            font-size: 14px;
+            color: #666;
+        }
+
+        /* Main Grid */
+        .main-grid {
+            display: grid;
+            grid-template-columns: 1fr 1fr;
+            gap: 30px;
+            margin-bottom: 30px;
+        }
+
+        /* Section Box */
+        .section {
+            border: 2px solid #000;
+        }
+        .section-header {
+            background: #000;
+            color: #fff;
+            padding: 10px 15px;
+            font-weight: bold;
+            font-size: 14px;
+        }
+        .section-content {
+            padding: 15px;
+        }
+
+        /* Core Principles */
+        .principle-item {
+            display: flex;
+            border-bottom: 1px solid #ccc;
+            padding: 8px 0;
+        }
+        .principle-item:last-child {
+            border-bottom: none;
+        }
+        .principle-label {
+            width: 100px;
+            font-weight: bold;
+            flex-shrink: 0;
+        }
+        .principle-value {
+            flex: 1;
+        }
+
+        /* Rules Hierarchy */
+        .rule-item {
+            display: flex;
+            justify-content: space-between;
+            align-items: center;
+            padding: 6px 10px;
+            border: 1px solid #ccc;
+            margin-bottom: 5px;
+        }
+        .rule-name {
+            font-weight: bold;
+        }
+        .impact-critical {
+            background: #000;
+            color: #fff;
+            padding: 2px 8px;
+            font-size: 11px;
+        }
+        .impact-high {
+            border: 2px solid #000;
+            padding: 2px 8px;
+            font-size: 11px;
+        }
+        .impact-medium {
+            border: 1px solid #666;
+            color: #666;
+            padding: 2px 8px;
+            font-size: 11px;
+        }
+
+        /* Workflow Section */
+        .workflow-full {
+            grid-column: 1 / -1;
+        }
+        .workflow-diagram {
+            display: flex;
+            align-items: center;
+            justify-content: center;
+            gap: 15px;
+            padding: 20px;
+            flex-wrap: wrap;
+        }
+        .workflow-box {
+            border: 2px solid #000;
+            padding: 15px 20px;
+            text-align: center;
+            min-width: 120px;
+        }
+        .workflow-box.start {
+            border-radius: 20px;
+        }
+        .workflow-box.process {
+            background: #fff;
+        }
+        .workflow-box.auto {
+            background: #ccc;
+        }
+        .workflow-arrow {
+            font-size: 24px;
+            font-weight: bold;
+        }
+
+        /* Hooks Section */
+        .hook-item {
+            display: grid;
+            grid-template-columns: 1fr 1fr 80px;
+            gap: 10px;
+            padding: 8px;
+            border-bottom: 1px solid #ccc;
+            font-size: 12px;
+        }
+        .hook-item:last-child {
+            border-bottom: none;
+        }
+        .hook-header {
+            font-weight: bold;
+            background: #f0f0f0;
+        }
+        .violation-block {
+            background: #000;
+            color: #fff;
+            text-align: center;
+            padding: 2px;
+        }
+        .violation-warn {
+            border: 1px solid #000;
+            text-align: center;
+            padding: 2px;
+        }
+
+        /* Commands Grid */
+        .commands-grid {
+            display: grid;
+            grid-template-columns: repeat(3, 1fr);
+            gap: 8px;
+        }
+        .command-item {
+            border: 1px solid #000;
+            padding: 8px;
+            text-align: center;
+            font-size: 12px;
+        }
+        .command-name {
+            font-weight: bold;
+            font-family: monospace;
+        }
+        .command-desc {
+            color: #666;
+            font-size: 10px;
+            margin-top: 4px;
+        }
+
+        /* Reference Docs */
+        .ref-list {
+            list-style: none;
+        }
+        .ref-list li {
+            padding: 6px 10px;
+            border-left: 3px solid #000;
+            margin-bottom: 5px;
+            background: #f9f9f9;
+            font-size: 12px;
+        }
+        .ref-list .path {
+            font-family: monospace;
+            color: #666;
+        }
+
+        /* Forbidden Section */
+        .forbidden {
+            border: 3px solid #000;
+            margin-top: 30px;
+        }
+        .forbidden .section-header {
+            background: #000;
+        }
+        .forbidden-grid {
+            display: grid;
+            grid-template-columns: 1fr 1fr;
+            gap: 15px;
+            padding: 15px;
+        }
+        .forbidden-item {
+            border: 2px dashed #000;
+            padding: 10px;
+        }
+        .forbidden-item h4 {
+            font-size: 12px;
+            margin-bottom: 5px;
+        }
+        .forbidden-item code {
+            display: block;
+            background: #f0f0f0;
+            padding: 5px;
+            font-size: 11px;
+            margin-top: 5px;
+        }
+
+        /* Architecture Diagram */
+        .arch-section {
+            margin-top: 30px;
+            border: 2px solid #000;
+        }
+        .arch-diagram {
+            padding: 20px;
+        }
+        .arch-layer {
+            border: 2px solid #000;
+            margin-bottom: 15px;
+            position: relative;
+        }
+        .arch-layer:last-child {
+            margin-bottom: 0;
+        }
+        .arch-layer-title {
+            position: absolute;
+            top: -10px;
+            left: 20px;
+            background: #fff;
+            padding: 0 10px;
+            font-weight: bold;
+            font-size: 12px;
+        }
+        .arch-layer-content {
+            display: flex;
+            gap: 10px;
+            padding: 20px 15px 15px;
+            flex-wrap: wrap;
+        }
+        .arch-box {
+            border: 1px solid #000;
+            padding: 8px 12px;
+            font-size: 11px;
+            text-align: center;
+        }
+        .arch-box.main {
+            background: #ccc;
+            font-weight: bold;
+        }
+        .arch-connector {
+            text-align: center;
+            padding: 5px;
+            font-size: 20px;
+        }
+
+        /* Footer */
+        .footer {
+            margin-top: 30px;
+            padding: 15px;
+            border-top: 2px solid #000;
+            text-align: center;
+            font-size: 12px;
+            color: #666;
+        }
+    </style>
+</head>
+<body>
+    <div class="container">
+        <!-- Header -->
+        <div class="header">
+            <h1>[CLAUDE.md] Global Guidelines Diagram</h1>
+            <div class="version">Version 12.0.0 | Windows | PowerShell | Root: C:\claude</div>
+        </div>
+
+        <!-- Main Grid: Core Principles & Rules -->
+        <div class="main-grid">
+            <!-- Core Principles -->
+            <div class="section">
+                <div class="section-header">[Core Principles]</div>
+                <div class="section-content">
+                    <div class="principle-item">
+                        <div class="principle-label">[Language]</div>
+                        <div class="principle-value">Korean output, technical terms in English</div>
+                    </div>
+                    <div class="principle-item">
+                        <div class="principle-label">[Path]</div>
+                        <div class="principle-value">Absolute paths only (C:\claude\...)</div>
+                    </div>
+                    <div class="principle-item">
+                        <div class="principle-label">[Conflict]</div>
+                        <div class="principle-value">Ask user (no arbitrary decisions)</div>
+                    </div>
+                    <div class="principle-item">
+                        <div class="principle-label">[API Key]</div>
+                        <div class="principle-value">FORBIDDEN - Browser OAuth only</div>
+                    </div>
+                </div>
+            </div>
+
+            <!-- Rules Hierarchy -->
+            <div class="section">
+                <div class="section-header">[Rules Hierarchy] .claude/rules/</div>
+                <div class="section-content">
+                    <div class="rule-item">
+                        <span class="rule-name">04-tdd.md</span>
+                        <span class="impact-critical">CRITICAL</span>
+                    </div>
+                    <div class="rule-item">
+                        <span class="rule-name">03-git.md</span>
+                        <span class="impact-high">HIGH</span>
+                    </div>
+                    <div class="rule-item">
+                        <span class="rule-name">05-supabase.md</span>
+                        <span class="impact-high">HIGH</span>
+                    </div>
+                    <div class="rule-item">
+                        <span class="rule-name">02-paths.md</span>
+                        <span class="impact-high">HIGH</span>
+                    </div>
+                    <div class="rule-item">
+                        <span class="rule-name">07-build-test.md</span>
+                        <span class="impact-high">HIGH</span>
+                    </div>
+                    <div class="rule-item">
+                        <span class="rule-name">06-documentation.md</span>
+                        <span class="impact-medium">MEDIUM</span>
+                    </div>
+                    <div class="rule-item">
+                        <span class="rule-name">01-language.md</span>
+                        <span class="impact-medium">MEDIUM</span>
+                    </div>
+                </div>
+            </div>
+        </div>
+
+        <!-- Workflow Section -->
+        <div class="section workflow-full">
+            <div class="section-header">[Workflow] User Request Processing</div>
+            <div class="workflow-diagram">
+                <div class="workflow-box start">[User Request]</div>
+                <div class="workflow-arrow">--></div>
+                <div class="workflow-box process">/work</div>
+                <div class="workflow-arrow">--></div>
+                <div class="workflow-box auto">[Issue]</div>
+                <div class="workflow-arrow">--></div>
+                <div class="workflow-box auto">[Branch]</div>
+                <div class="workflow-arrow">--></div>
+                <div class="workflow-box auto">[TDD]</div>
+                <div class="workflow-arrow">--></div>
+                <div class="workflow-box auto">[PR]</div>
+                <div class="workflow-arrow">--></div>
+                <div class="workflow-box start">[Complete]</div>
+            </div>
+        </div>
+
+        <!-- Hooks & Commands Grid -->
+        <div class="main-grid" style="margin-top: 30px;">
+            <!-- Hook Enforcement -->
+            <div class="section">
+                <div class="section-header">[Hook Enforcement]</div>
+                <div class="section-content">
+                    <div class="hook-item hook-header">
+                        <span>Rule</span>
+                        <span>Hook</span>
+                        <span>Action</span>
+                    </div>
+                    <div class="hook-item">
+                        <span>Process kill forbidden</span>
+                        <span>tool_validator.py</span>
+                        <span class="violation-block">BLOCK</span>
+                    </div>
+                    <div class="hook-item">
+                        <span>API key forbidden</span>
+                        <span>-</span>
+                        <span class="violation-block">BLOCK</span>
+                    </div>
+                    <div class="hook-item">
+                        <span>TDD violation</span>
+                        <span>session_init.py</span>
+                        <span class="violation-warn">WARN</span>
+                    </div>
+                    <div class="hook-item">
+                        <span>100+ lines modified</span>
+                        <span>branch_guard.py</span>
+                        <span class="violation-warn">AUTO</span>
+                    </div>
+                    <div class="hook-item">
+                        <span>Relative path used</span>
+                        <span>session_init.py</span>
+                        <span class="violation-warn">WARN</span>
+                    </div>
+                </div>
+            </div>
+
+            <!-- Key Commands -->
+            <div class="section">
+                <div class="section-header">[Key Commands] 17 total</div>
+                <div class="section-content">
+                    <div class="commands-grid">
+                        <div class="command-item">
+                            <div class="command-name">/work</div>
+                            <div class="command-desc">Full workflow</div>
+                        </div>
+                        <div class="command-item">
+                            <div class="command-name">/auto</div>
+                            <div class="command-desc">Loop mode</div>
+                        </div>
+                        <div class="command-item">
+                            <div class="command-name">/check</div>
+                            <div class="command-desc">Lint/Test</div>
+                        </div>
+                        <div class="command-item">
+                            <div class="command-name">/commit</div>
+                            <div class="command-desc">Conventional</div>
+                        </div>
+                        <div class="command-item">
+                            <div class="command-name">/debug</div>
+                            <div class="command-desc">Hypothesis</div>
+                        </div>
+                        <div class="command-item">
+                            <div class="command-name">/issue</div>
+                            <div class="command-desc">GitHub issues</div>
+                        </div>
+                        <div class="command-item">
+                            <div class="command-name">/tdd</div>
+                            <div class="command-desc">TDD workflow</div>
+                        </div>
+                        <div class="command-item">
+                            <div class="command-name">/pr</div>
+                            <div class="command-desc">PR review</div>
+                        </div>
+                        <div class="command-item">
+                            <div class="command-name">/mockup</div>
+                            <div class="command-desc">Wireframes</div>
+                        </div>
+                    </div>
+                </div>
+            </div>
+        </div>
+
+        <!-- Architecture Layer Diagram -->
+        <div class="arch-section">
+            <div class="section-header">[Architecture] Configuration Layers</div>
+            <div class="arch-diagram">
+                <div class="arch-layer">
+                    <div class="arch-layer-title">Layer 1: Entry Point</div>
+                    <div class="arch-layer-content">
+                        <div class="arch-box main">CLAUDE.md</div>
+                        <div class="arch-box">README.md</div>
+                    </div>
+                </div>
+                <div class="arch-connector">|</div>
+                <div class="arch-layer">
+                    <div class="arch-layer-title">Layer 2: Rules (Modular)</div>
+                    <div class="arch-layer-content">
+                        <div class="arch-box">01-language</div>
+                        <div class="arch-box">02-paths</div>
+                        <div class="arch-box">03-git</div>
+                        <div class="arch-box main">04-tdd</div>
+                        <div class="arch-box">05-supabase</div>
+                        <div class="arch-box">06-documentation</div>
+                        <div class="arch-box">07-build-test</div>
+                    </div>
+                </div>
+                <div class="arch-connector">|</div>
+                <div class="arch-layer">
+                    <div class="arch-layer-title">Layer 3: Hooks (Enforcement)</div>
+                    <div class="arch-layer-content">
+                        <div class="arch-box main">tool_validator.py</div>
+                        <div class="arch-box">session_init.py</div>
+                        <div class="arch-box">branch_guard.py</div>
+                    </div>
+                </div>
+                <div class="arch-connector">|</div>
+                <div class="arch-layer">
+                    <div class="arch-layer-title">Layer 4: Commands & Skills</div>
+                    <div class="arch-layer-content">
+                        <div class="arch-box">.claude/commands/</div>
+                        <div class="arch-box">.claude/skills/</div>
+                        <div class="arch-box">.claude/agents/</div>
+                    </div>
+                </div>
+            </div>
+        </div>
+
+        <!-- Forbidden Section -->
+        <div class="forbidden">
+            <div class="section-header">[!] FORBIDDEN Actions</div>
+            <div class="forbidden-grid">
+                <div class="forbidden-item">
+                    <h4>[X] Process Kill (All)</h4>
+                    <code>taskkill /F /IM node.exe</code>
+                    <code>Stop-Process -Name node</code>
+                </div>
+                <div class="forbidden-item">
+                    <h4>[X] API Keys</h4>
+                    <code>OPENAI_API_KEY=...</code>
+                    <code>GOOGLE_API_KEY=...</code>
+                </div>
+                <div class="forbidden-item">
+                    <h4>[X] Force Push Main</h4>
+                    <code>git push --force origin main</code>
+                </div>
+                <div class="forbidden-item">
+                    <h4>[X] Relative Paths</h4>
+                    <code>cd ./src</code>
+                    <code>cat ../config.json</code>
+                </div>
+            </div>
+        </div>
+
+        <!-- Reference Documents -->
+        <div class="section" style="margin-top: 30px;">
+            <div class="section-header">[Reference Documents]</div>
+            <div class="section-content">
+                <ul class="ref-list">
+                    <li><strong>Rules Index</strong> <span class="path">.claude/rules/_index.md</span></li>
+                    <li><strong>Command Reference</strong> <span class="path">docs/COMMAND_REFERENCE.md</span></li>
+                    <li><strong>Agents Reference</strong> <span class="path">docs/AGENTS_REFERENCE.md</span></li>
+                    <li><strong>Build & Test</strong> <span class="path">docs/BUILD_TEST.md</span></li>
+                    <li><strong>Response Style</strong> <span class="path">docs/RESPONSE_STYLE.md</span></li>
+                </ul>
+            </div>
+        </div>
+
+        <!-- Main Branch Allowed -->
+        <div class="section" style="margin-top: 30px;">
+            <div class="section-header">[Main Branch] Allowed Files</div>
+            <div class="section-content" style="display: flex; gap: 15px; flex-wrap: wrap;">
+                <div class="arch-box">CLAUDE.md</div>
+                <div class="arch-box">README.md</div>
+                <div class="arch-box">.claude/*</div>
+                <div class="arch-box">docs/*</div>
+            </div>
+        </div>
+
+        <!-- Footer -->
+        <div class="footer">
+            [B&W Wireframe] Generated by /mockup --bnw | garimto81/claude
+        </div>
+    </div>
+</body>
+</html>

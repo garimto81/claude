@@ -2,7 +2,7 @@
 
 **소스**: [Google Slides](12czNJ9OmJjzu-Nii1ZefIjNgov94I8gNIyXNVdBv9I4)
 
-**총 슬라이드**: 16개
+**총 슬라이드**: 19개
 
 ---
 
@@ -71,4 +71,18 @@
 ## 슬라이드 16
 
 ![Slide 16](slide_16.png)
+
+## 슬라이드 17
+
+**텍스트**: TRITON POKER PLUS
+
+![Slide 17](slide_17.png)
+
+## 슬라이드 18
+
+![Slide 18](slide_18.png)
+
+## 슬라이드 19
+
+![Slide 19](slide_19.png)
 

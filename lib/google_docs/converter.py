@@ -16,6 +16,16 @@ from .table_renderer import NativeTableRenderer
 from .notion_style import NotionStyle
 
 
+def utf16_len(text: str) -> int:
+    """
+    Google Docs API용 UTF-16 코드 유닛 길이 계산
+
+    Google Docs API는 인덱스를 UTF-16 코드 유닛으로 계산합니다.
+    이모지 등 서로게이트 페어 문자는 2개의 코드 유닛을 사용합니다.
+    """
+    return len(text.encode("utf-16-le")) // 2
+
+
 class MarkdownToDocsConverter:
     """마크다운을 Google Docs API 요청으로 변환"""
 
@@ -405,7 +415,7 @@ class MarkdownToDocsConverter:
         )
 
         start_index = self.current_index
-        self.current_index += len(text)
+        self.current_index += utf16_len(text)
         return start_index
 
     def _add_paragraph_with_inline_styles(self, text: str):
@@ -483,7 +493,7 @@ class MarkdownToDocsConverter:
         # 각 세그먼트에 스타일 적용
         current_pos = start
         for segment in result.segments:
-            end_pos = current_pos + len(segment.text)
+            end_pos = current_pos + utf16_len(segment.text)
             self._apply_segment_style(segment, current_pos, end_pos)
             current_pos = end_pos
 
@@ -631,63 +641,173 @@ class MarkdownToDocsConverter:
 
     def _add_native_table_two_phase(self, table_data):
         """
-        최적화된 2단계 네이티브 테이블 처리 (v2.3.3 - 인덱스 동기화 버그 수정)
+        최적화된 2단계 네이티브 테이블 처리 (v2.4.1 - Rate Limit 처리 추가)
 
-        핵심 변경: 각 단계 후 문서를 재조회하여 current_index를 실제 문서 끝과 동기화
+        API 호출 최적화:
+        - 쓰기: 3회 (기존 요청 + 테이블 구조 + 콘텐츠/스타일)
+        - 읽기: 2회 (인덱스 확인 + 테이블 구조 조회)
 
-        API 호출 횟수: 4회
-        1. batchUpdate: 기존 요청 실행
-        2. documents.get + batchUpdate: 테이블 구조 삽입
-        3. documents.get: 테이블 구조 조회
-        4. batchUpdate: 텍스트 + 셀 스타일 + 텍스트 스타일 통합
+        Rate Limit (429) 처리를 위한 지수 백오프 재시도 로직 포함.
         """
-        # 1단계: 기존 요청 먼저 실행 (테이블 전까지의 콘텐츠)
-        if self.requests:
-            self.docs_service.documents().batchUpdate(
-                documentId=self.doc_id, body={"requests": self.requests}
-            ).execute()
-            self.requests = []
+        import time
+        from googleapiclient.errors import HttpError
 
-        # 문서 재조회하여 실제 끝 인덱스로 동기화
-        doc = self.docs_service.documents().get(documentId=self.doc_id).execute()
+        def _retry(request_fn, max_retries=3, initial_delay=2):
+            """Rate Limit 처리를 위한 재시도 래퍼"""
+            for attempt in range(max_retries):
+                try:
+                    return request_fn()
+                except HttpError as e:
+                    if e.resp.status == 429 and attempt < max_retries - 1:
+                        wait_time = initial_delay * (2 ** attempt)
+                        time.sleep(wait_time)
+                    else:
+                        raise
+
+        # 1단계: 문서 현재 상태 조회하여 인덱스 동기화
+        doc = _retry(
+            lambda: self.docs_service.documents().get(documentId=self.doc_id).execute()
+        )
         body = doc.get("body", {})
         content = body.get("content", [])
         doc_end_index = content[-1].get("endIndex", 1) if content else 1
 
-        # 테이블 삽입 위치 (문서 끝 - 1)
+        # 2단계: 기존 요청 먼저 실행 (테이블 전까지의 콘텐츠)
+        # 요청들의 인덱스를 실제 문서 상태에 맞게 재계산
+        if self.requests:
+            # 실제 문서 끝 위치로 인덱스 오프셋 계산
+            actual_insert_index = doc_end_index - 1
+
+            # 요청들의 인덱스 재계산
+            adjusted_requests = self._adjust_request_indices(
+                self.requests, actual_insert_index
+            )
+
+            _retry(
+                lambda: self.docs_service.documents().batchUpdate(
+                    documentId=self.doc_id, body={"requests": adjusted_requests}
+                ).execute()
+            )
+            self.requests = []
+
+        # 3단계: 문서 재조회 + 테이블 구조 삽입
+        doc = _retry(
+            lambda: self.docs_service.documents().get(documentId=self.doc_id).execute()
+        )
+        body = doc.get("body", {})
+        content = body.get("content", [])
+        doc_end_index = content[-1].get("endIndex", 1) if content else 1
         table_start_index = doc_end_index - 1
 
-        # 2단계: 테이블 구조 삽입
         structure_request = self._table_renderer.render_table_structure(
             table_data, table_start_index
         )
 
         if structure_request:
-            self.docs_service.documents().batchUpdate(
-                documentId=self.doc_id, body={"requests": [structure_request]}
-            ).execute()
+            _retry(
+                lambda: self.docs_service.documents().batchUpdate(
+                    documentId=self.doc_id, body={"requests": [structure_request]}
+                ).execute()
+            )
 
-        # 3단계: 문서 재조회하여 실제 테이블 구조 확인
-        doc = self.docs_service.documents().get(documentId=self.doc_id).execute()
-
-        # 마지막 테이블 요소 찾기
+        # 3단계: 테이블 구조 조회 + 콘텐츠/스타일 적용 (읽기 1회 + 쓰기 1회)
+        # 최적화: 마지막 documents.get을 여기서 수행하고 current_index도 동시에 업데이트
+        doc = _retry(
+            lambda: self.docs_service.documents().get(documentId=self.doc_id).execute()
+        )
         table_element = self._find_last_table(doc)
 
         if table_element:
-            # 4단계: 통합 렌더링 (텍스트 + 셀 스타일 + 텍스트 스타일)
             unified_requests = self._table_renderer.render_table_content_and_styles(
                 table_data, table_element
             )
             if unified_requests:
-                self.docs_service.documents().batchUpdate(
-                    documentId=self.doc_id, body={"requests": unified_requests}
-                ).execute()
+                _retry(
+                    lambda: self.docs_service.documents().batchUpdate(
+                        documentId=self.doc_id, body={"requests": unified_requests}
+                    ).execute()
+                )
 
-        # 문서 재조회하여 current_index를 실제 문서 끝과 동기화 (핵심 수정)
-        doc = self.docs_service.documents().get(documentId=self.doc_id).execute()
+        # current_index 업데이트
+        # 문서 끝 인덱스 - 1로 설정 (다음 콘텐츠 삽입 위치)
         body = doc.get("body", {})
         content = body.get("content", [])
-        self.current_index = content[-1].get("endIndex", 1) - 1 if content else 1
+        if content:
+            # 문서 끝 인덱스는 마지막 요소의 endIndex - 1
+            self.current_index = content[-1].get("endIndex", 1) - 1
+        else:
+            self.current_index = 1
+
+    def _adjust_request_indices(
+        self, requests: list[dict], target_start_index: int
+    ) -> list[dict]:
+        """
+        요청들의 인덱스를 실제 문서 상태에 맞게 재계산
+
+        Args:
+            requests: 원본 요청 리스트
+            target_start_index: 실제 문서에서 삽입할 시작 위치
+
+        Returns:
+            인덱스가 조정된 요청 리스트
+        """
+        if not requests:
+            return requests
+
+        # 원본 요청의 최소 인덱스 찾기
+        min_index = float("inf")
+        for req in requests:
+            if "insertText" in req:
+                idx = req["insertText"]["location"]["index"]
+                min_index = min(min_index, idx)
+            elif "insertInlineImage" in req:
+                idx = req["insertInlineImage"]["location"]["index"]
+                min_index = min(min_index, idx)
+
+        if min_index == float("inf"):
+            return requests
+
+        # 오프셋 계산
+        offset = target_start_index - min_index
+
+        # 새 요청 리스트 생성 (원본 수정 방지)
+        adjusted = []
+        for req in requests:
+            new_req = {}
+            for key, value in req.items():
+                if key == "insertText":
+                    new_value = dict(value)
+                    new_value["location"] = dict(value["location"])
+                    new_value["location"]["index"] += offset
+                    new_req[key] = new_value
+                elif key == "insertInlineImage":
+                    new_value = dict(value)
+                    new_value["location"] = dict(value["location"])
+                    new_value["location"]["index"] += offset
+                    new_req[key] = new_value
+                elif key == "updateTextStyle":
+                    new_value = dict(value)
+                    new_value["range"] = dict(value["range"])
+                    new_value["range"]["startIndex"] += offset
+                    new_value["range"]["endIndex"] += offset
+                    new_req[key] = new_value
+                elif key == "updateParagraphStyle":
+                    new_value = dict(value)
+                    new_value["range"] = dict(value["range"])
+                    new_value["range"]["startIndex"] += offset
+                    new_value["range"]["endIndex"] += offset
+                    new_req[key] = new_value
+                elif key == "createParagraphBullets":
+                    new_value = dict(value)
+                    new_value["range"] = dict(value["range"])
+                    new_value["range"]["startIndex"] += offset
+                    new_value["range"]["endIndex"] += offset
+                    new_req[key] = new_value
+                else:
+                    new_req[key] = value
+            adjusted.append(new_req)
+
+        return adjusted
 
     def _find_last_table(self, doc: dict) -> dict | None:
         """문서에서 마지막 테이블 요소 찾기"""
@@ -914,7 +1034,7 @@ class MarkdownToDocsConverter:
         # 인라인 스타일 적용 (bullet 문자 다음부터)
         current_pos = start + 2  # "• " 건너뛰기
         for segment in result.segments:
-            end_pos = current_pos + len(segment.text)
+            end_pos = current_pos + utf16_len(segment.text)
             self._apply_segment_style(segment, current_pos, end_pos)
             current_pos = end_pos
 
@@ -954,7 +1074,7 @@ class MarkdownToDocsConverter:
         # 인라인 스타일 적용 ("│ " 다음부터)
         current_pos = start + 2  # "│ " 건너뛰기
         for segment in result.segments:
-            end_pos = current_pos + len(segment.text)
+            end_pos = current_pos + utf16_len(segment.text)
             self._apply_segment_style(segment, current_pos, end_pos)
             current_pos = end_pos
 
@@ -1219,6 +1339,35 @@ class MarkdownToDocsConverter:
             )
 
 
+def _execute_with_retry(request_fn, max_retries=3, initial_delay=2):
+    """
+    Rate Limit (429) 처리를 위한 지수 백오프 재시도 래퍼
+
+    Args:
+        request_fn: 실행할 API 요청 함수 (람다 또는 callable)
+        max_retries: 최대 재시도 횟수
+        initial_delay: 초기 대기 시간 (초)
+
+    Returns:
+        API 응답
+
+    Raises:
+        HttpError: 재시도 후에도 실패한 경우
+    """
+    import time
+    from googleapiclient.errors import HttpError
+
+    for attempt in range(max_retries):
+        try:
+            return request_fn()
+        except HttpError as e:
+            if e.resp.status == 429 and attempt < max_retries - 1:
+                wait_time = initial_delay * (2 ** attempt)
+                time.sleep(wait_time)
+            else:
+                raise
+
+
 def create_google_doc(
     title: str,
     content: str,
@@ -1229,7 +1378,7 @@ def create_google_doc(
     base_path: Optional[str] = None,
 ) -> str:
     """
-    Google Docs 문서 생성
+    Google Docs 문서 생성 (v2.4.1 - Rate Limit 처리 추가)
 
     Args:
         title: 문서 제목
@@ -1276,9 +1425,11 @@ def create_google_doc(
         try:
             style = NotionStyle.default()
             page_style_request = style.get_page_style_request()
-            docs_service.documents().batchUpdate(
-                documentId=doc_id, body={"requests": [page_style_request]}
-            ).execute()
+            _execute_with_retry(
+                lambda: docs_service.documents().batchUpdate(
+                    documentId=doc_id, body={"requests": [page_style_request]}
+                ).execute()
+            )
             print("     페이지 스타일 적용됨 (A4, 72pt 여백)")
         except Exception as e:
             print(f"     페이지 스타일 적용 실패: {e}")
@@ -1297,9 +1448,11 @@ def create_google_doc(
     # 남은 요청들 실행 (테이블 처리 중 일부 요청이 이미 실행되었을 수 있음)
     if requests:
         try:
-            docs_service.documents().batchUpdate(
-                documentId=doc_id, body={"requests": requests}
-            ).execute()
+            _execute_with_retry(
+                lambda: docs_service.documents().batchUpdate(
+                    documentId=doc_id, body={"requests": requests}
+                ).execute()
+            )
             print(f"     콘텐츠 추가됨: {len(requests)} 요청")
         except Exception as e:
             print(f"     콘텐츠 추가 실패: {e}")
@@ -1307,7 +1460,7 @@ def create_google_doc(
     else:
         print("     콘텐츠 추가됨 (테이블 포함)")
 
-    # 5. 2단계 이미지 삽입 (placeholder → 실제 이미지)
+    # 5. 2단계 이미지 삽입 (placeholder → 실제 이미지) - API 최적화 버전
     if converter._pending_images:
         from pathlib import Path
         from .image_inserter import ImageInserter
@@ -1316,24 +1469,19 @@ def create_google_doc(
             # ImageInserter 생성 (로컬 이미지 업로드용)
             image_inserter = ImageInserter(creds, docs_service, drive_service)
 
-            # 문서 현재 상태 조회
-            doc = docs_service.documents().get(documentId=doc_id).execute()
-            body_content = doc.get("body", {}).get("content", [])
-
-            # 로컬 이미지 업로드 및 URL 변환
+            # 로컬 이미지 업로드 및 URL 변환 (Drive API 호출)
             uploaded_count = 0
             for img_info in converter._pending_images:
                 if img_info.get("is_local", False):
                     try:
                         local_path = Path(img_info["url"])
                         if local_path.exists():
-                            # Drive에 업로드 (문서가 있는 폴더에 저장)
                             file_id, public_url = image_inserter.upload_to_drive(
                                 local_path,
                                 folder_id=target_folder,
                                 make_public=True,
                             )
-                            img_info["url"] = public_url  # URL로 교체
+                            img_info["url"] = public_url
                             img_info["is_local"] = False
                             uploaded_count += 1
                     except Exception as upload_err:
@@ -1342,104 +1490,141 @@ def create_google_doc(
             if uploaded_count > 0:
                 print(f"     로컬 이미지 {uploaded_count}개 업로드됨")
 
-            # placeholder 텍스트 검색 및 이미지 삽입
-            inserted_count = 0
-            for img_info in reversed(
-                converter._pending_images
-            ):  # 뒤에서부터 처리 (인덱스 유지)
-                # 로컬 이미지가 업로드 실패한 경우 건너뛰기
+            # 최적화: 단 1회의 documents.get으로 모든 placeholder 위치 수집
+            doc = _execute_with_retry(
+                lambda: docs_service.documents().get(documentId=doc_id).execute()
+            )
+            body_content = doc.get("body", {}).get("content", [])
+
+            # 유효한 이미지만 필터링 및 위치 정보 수집
+            image_operations = []
+            for img_info in converter._pending_images:
                 if img_info.get("is_local", False):
                     continue
 
-                # placeholder 검색 패턴 (닫는 ] 없이 검색 - textRun 분리 대응)
                 placeholder_pattern = f"[🖼 {img_info['alt']}"
-
-                # 문서 재조회 (인덱스 변경 반영)
-                doc = docs_service.documents().get(documentId=doc_id).execute()
-                body_content = doc.get("body", {}).get("content", [])
-
-                # placeholder 위치 찾기 (패턴으로 검색)
                 placeholder_index = _find_text_index(body_content, placeholder_pattern)
 
                 if placeholder_index is not None:
-                    try:
-                        # placeholder 전체 길이 계산 (패턴 + "]" + "\n")
-                        # 원본 placeholder: [🖼 {alt}]\n
-                        placeholder_full = f"[🖼 {img_info['alt']}]"
-                        delete_length = len(placeholder_full) + 1  # +1 for newline
+                    placeholder_full = f"[🖼 {img_info['alt']}]"
+                    delete_length = len(placeholder_full) + 1
+                    image_operations.append({
+                        "index": placeholder_index,
+                        "delete_length": delete_length,
+                        "url": img_info["url"],
+                        "alt": img_info.get("alt", ""),
+                    })
 
-                        # 1) placeholder 삭제
+            # 역순 정렬 (뒤에서부터 처리하여 인덱스 시프트 방지)
+            image_operations.sort(key=lambda x: x["index"], reverse=True)
+
+            # 최적화: 이미지별로 삭제+삽입을 단일 batchUpdate로 처리
+            # (삭제와 삽입은 인덱스 의존성이 있어 완전 일괄 처리는 불가)
+            # Rate Limit (429) 처리를 위한 지수 백오프 재시도 로직 추가
+            import time
+            from googleapiclient.errors import HttpError
+
+            inserted_count = 0
+            failed_count = 0
+
+            for i, op in enumerate(image_operations):
+                max_retries = 3
+                retry_delay = 2  # 초기 딜레이 2초
+
+                for attempt in range(max_retries):
+                    try:
+                        # 삭제 + 삽입을 단일 batchUpdate로 결합
                         docs_service.documents().batchUpdate(
                             documentId=doc_id,
                             body={
                                 "requests": [
+                                    # 먼저 삭제
                                     {
                                         "deleteContentRange": {
                                             "range": {
-                                                "startIndex": placeholder_index,
-                                                "endIndex": placeholder_index + delete_length,
+                                                "startIndex": op["index"],
+                                                "endIndex": op["index"] + op["delete_length"],
                                             }
                                         }
-                                    }
-                                ]
-                            },
-                        ).execute()
-
-                        # 2) 이미지 삽입 (18cm = 510pt)
-                        docs_service.documents().batchUpdate(
-                            documentId=doc_id,
-                            body={
-                                "requests": [
+                                    },
+                                    # 같은 위치에 이미지 삽입
                                     {
                                         "insertInlineImage": {
-                                            "location": {"index": placeholder_index},
-                                            "uri": img_info["url"],
+                                            "location": {"index": op["index"]},
+                                            "uri": op["url"],
                                             "objectSize": {
-                                                "width": {
-                                                    "magnitude": 510,
-                                                    "unit": "PT",
-                                                },  # 18cm = 510pt
+                                                "width": {"magnitude": 510, "unit": "PT"},
                                             },
                                         }
-                                    }
+                                    },
                                 ]
                             },
                         ).execute()
                         inserted_count += 1
+                        break  # 성공 시 루프 탈출
+                    except HttpError as e:
+                        if e.resp.status == 429:
+                            # Rate Limit - 재시도
+                            if attempt < max_retries - 1:
+                                wait_time = retry_delay * (2 ** attempt)  # 지수 백오프
+                                print(f"     [429] Rate limit, {wait_time}초 대기 후 재시도... ({op.get('alt', '')})")
+                                time.sleep(wait_time)
+                            else:
+                                print(f"     이미지 삽입 실패 (max retries) ({op.get('alt', '')})")
+                                failed_count += 1
+                        else:
+                            print(f"     이미지 삽입 경고 ({op.get('alt', '')}): {e}")
+                            failed_count += 1
+                            break
                     except Exception as img_err:
-                        print(f"     이미지 삽입 경고 ({img_info.get('alt', '')}): {img_err}")
+                        print(f"     이미지 삽입 경고 ({op.get('alt', '')}): {img_err}")
+                        failed_count += 1
+                        break
+
+                # Rate Limit 방지: 매 10개 이미지마다 1초 대기
+                if (i + 1) % 10 == 0 and i + 1 < len(image_operations):
+                    time.sleep(1)
 
             if inserted_count > 0:
-                print(f"     이미지 {inserted_count}개 삽입됨")
+                msg = f"     이미지 {inserted_count}개 삽입됨"
+                if failed_count > 0:
+                    msg += f" ({failed_count}개 실패)"
+                print(msg)
         except Exception as e:
             print(f"     이미지 삽입 실패: {e}")
 
     # 6. 전체 문서 줄간격 적용 (115%) - SKILL.md 전역 표준
+    # 최적화: 이미지 삽입 없는 경우에만 documents.get 호출 필요
     if apply_page_style:
         try:
-            doc = docs_service.documents().get(documentId=doc_id).execute()
+            # 최종 문서 상태 조회 (이미지 삽입으로 인덱스 변경됐을 수 있음)
+            doc = _execute_with_retry(
+                lambda: docs_service.documents().get(documentId=doc_id).execute()
+            )
             end_index = max(el.get("endIndex", 1) for el in doc["body"]["content"])
 
             if end_index > 2:
-                docs_service.documents().batchUpdate(
-                    documentId=doc_id,
-                    body={
-                        "requests": [
-                            {
-                                "updateParagraphStyle": {
-                                    "range": {
-                                        "startIndex": 1,
-                                        "endIndex": end_index - 1,
-                                    },
-                                    "paragraphStyle": {
-                                        "lineSpacing": 115,
-                                    },
-                                    "fields": "lineSpacing",
+                _execute_with_retry(
+                    lambda: docs_service.documents().batchUpdate(
+                        documentId=doc_id,
+                        body={
+                            "requests": [
+                                {
+                                    "updateParagraphStyle": {
+                                        "range": {
+                                            "startIndex": 1,
+                                            "endIndex": end_index - 1,
+                                        },
+                                        "paragraphStyle": {
+                                            "lineSpacing": 115,
+                                        },
+                                        "fields": "lineSpacing",
+                                    }
                                 }
-                            }
-                        ]
-                    },
-                ).execute()
+                            ]
+                        },
+                    ).execute()
+                )
                 print("     줄간격 적용됨 (115%)")
         except Exception as e:
             print(f"     줄간격 적용 실패: {e}")

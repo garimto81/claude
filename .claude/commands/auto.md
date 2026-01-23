@@ -1,7 +1,7 @@
 ---
 name: auto
 alias_of: "work --loop"
-version: 7.0.0
+version: 8.0.0
 description: /work --loop의 단축 명령 (자율 반복 모드)
 deprecated: false
 ---
@@ -23,6 +23,8 @@ deprecated: false
 | `/auto --debate "주제"` | 3AI 토론 즉시 실행 |
 | `/auto --gdocs` | 현재 프로젝트 PRD → Google Docs 변환 |
 | `/auto --gdocs "파일"` | 특정 파일 → Google Docs 변환 |
+| `/auto --research "키워드"` | `/research` 스킬 호출 |
+| `/auto --research web "키워드"` | 오픈소스/솔루션 웹 검색 |
 
 ## 특수 기능
 
@@ -33,6 +35,10 @@ deprecated: false
 | `/auto --debate "주제"` | Ultimate Debate 3AI 토론 |
 | `/auto --gdocs` | 현재 프로젝트 PRD 자동 탐색 → Google Docs 변환 |
 | `/auto --gdocs "파일"` | 지정 파일 → Google Docs 변환 |
+| `/auto --research "키워드"` | 코드베이스 분석 (기본값) |
+| `/auto --research web "키워드"` | 오픈소스/솔루션 웹 검색 |
+| `/auto --research plan "대상"` | 구현 계획 수립 |
+| `/auto --research review` | AI 기반 코드 리뷰 |
 
 ### --mockup 옵션
 
@@ -111,6 +117,50 @@ deprecated: false
 - 파일 경로는 항상 절대 경로로 지정
 - Gemini CLI 토큰이 아닌 `C:\claude\json\token.json` 사용
 
+### --research 옵션 (통합 리서치)
+
+| 옵션 | 설명 |
+|------|------|
+| `--research "키워드"` | 코드베이스 분석 (기본값) |
+| `--research web "키워드"` | 오픈소스/솔루션 웹 검색 |
+| `--research plan "대상"` | 구현 계획 수립 |
+| `--research review` | AI 기반 코드 리뷰 |
+
+### --research 사용법
+
+```bash
+# 코드베이스 분석
+/auto --research "authentication"
+/auto --research code src/api/
+
+# 웹 검색 (오픈소스/솔루션)
+/auto --research web "React state management"
+/auto --research web "Python async HTTP client"
+
+# 구현 계획
+/auto --research plan 123            # 이슈 #123 구현 계획
+/auto --research plan "user auth"    # 기능 구현 계획
+
+# 코드 리뷰
+/auto --research review              # staged 변경사항 리뷰
+/auto --research review --branch     # 현재 브랜치 전체
+```
+
+### --research web 출력 예시
+
+```markdown
+## 웹 리서치: React state management
+
+### 추천 라이브러리
+| 라이브러리 | 별점 | 장점 | 단점 |
+|-----------|------|------|------|
+| Zustand | ⭐⭐⭐⭐⭐ | 간단, 가벼움 | 대규모 앱 한계 |
+| Jotai | ⭐⭐⭐⭐ | 원자적 상태 | 러닝커브 |
+
+### Make vs Buy 분석
+- **Buy 권장**: 인증된 라이브러리 사용
+```
+
 ## 실행 지시
 
 **$ARGUMENTS를 분석하여 `/work --loop`로 변환 후 Skill tool 호출:**
@@ -149,6 +199,21 @@ Skill(skill="ultimate-debate", args="\"$TOPIC\"")
 # 1. 파일 경로를 절대 경로로 변환
 # 2. Bash("cd C:\claude && python -m lib.google_docs convert \"{절대경로}\"")
 # 3. 결과 URL 출력
+
+# /auto --research "키워드" → /research "키워드"
+Skill(skill="research", args="$KEYWORD")
+
+# /auto --research web "키워드" → /research web "키워드"
+Skill(skill="research", args="web \"$KEYWORD\"")
+
+# /auto --research plan "대상" → /research plan "대상"
+Skill(skill="research", args="plan \"$TARGET\"")
+
+# /auto --research review → /research review
+Skill(skill="research", args="review")
+
+# /auto --research review --branch → /research review --branch
+Skill(skill="research", args="review --branch")
 ```
 
 ## 상세 문서

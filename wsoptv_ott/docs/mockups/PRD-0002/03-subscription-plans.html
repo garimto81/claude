@@ -1,0 +1,200 @@
+<!DOCTYPE html>
+<html lang="ko">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>WSOP TV - Subscription Plans</title>
+    <style>
+        * { margin: 0; padding: 0; box-sizing: border-box; }
+        body {
+            font-family: -apple-system, BlinkMacSystemFont, 'Segoe UI', Roboto, sans-serif;
+            background: #fff;
+            color: #000;
+            padding: 40px;
+        }
+        .container {
+            max-width: 900px;
+            margin: 0 auto;
+            border: 2px solid #000;
+            padding: 30px;
+        }
+        .title {
+            text-align: center;
+            font-size: 24px;
+            font-weight: bold;
+            margin-bottom: 20px;
+        }
+        .tabs {
+            display: flex;
+            justify-content: center;
+            gap: 10px;
+            margin-bottom: 30px;
+        }
+        .tab {
+            padding: 10px 30px;
+            border: 2px solid #000;
+            font-weight: bold;
+        }
+        .tab.active {
+            background: #000;
+            color: #fff;
+        }
+        .plans {
+            display: flex;
+            gap: 20px;
+        }
+        .plan {
+            flex: 1;
+            border: 2px solid #000;
+        }
+        .plan-header {
+            padding: 20px;
+            border-bottom: 2px solid #000;
+        }
+        .plan-header h3 {
+            font-size: 20px;
+            margin-bottom: 10px;
+        }
+        .plan-header p {
+            font-size: 13px;
+            color: #666;
+            line-height: 1.4;
+        }
+        .plan-price {
+            padding: 20px;
+            border-bottom: 1px solid #ccc;
+            text-align: center;
+        }
+        .plan-price .cancel {
+            font-size: 12px;
+            color: #666;
+            margin-bottom: 5px;
+        }
+        .plan-price .amount {
+            font-size: 28px;
+            font-weight: bold;
+        }
+        .plan-price .period {
+            font-size: 14px;
+        }
+        .plan-price .button {
+            display: block;
+            margin-top: 15px;
+            padding: 12px;
+            background: #000;
+            color: #fff;
+            text-align: center;
+            font-weight: bold;
+        }
+        .plan-features {
+            padding: 0;
+        }
+        .feature {
+            padding: 15px 20px;
+            border-bottom: 1px solid #ccc;
+            display: flex;
+            justify-content: space-between;
+            align-items: center;
+        }
+        .feature:last-child {
+            border-bottom: none;
+        }
+        .feature-label {
+            font-size: 14px;
+            font-weight: bold;
+        }
+        .feature-value {
+            font-size: 13px;
+            color: #666;
+        }
+        .feature-badge {
+            display: inline-block;
+            padding: 2px 8px;
+            background: #000;
+            color: #fff;
+            font-size: 10px;
+            margin-left: 10px;
+        }
+    </style>
+</head>
+<body>
+    <div class="container">
+        <div class="title">SUBSCRIPTION PLANS</div>
+
+        <div class="tabs">
+            <div class="tab active">Season</div>
+            <div class="tab">Monthly</div>
+        </div>
+
+        <div class="plans">
+            <div class="plan">
+                <div class="plan-header">
+                    <h3>WSOP PLUS</h3>
+                    <p>1개 기기에서 대회 생중계 및 VOD 콘텐츠 시청</p>
+                </div>
+                <div class="plan-price">
+                    <div class="cancel">[Cancel Anytime]</div>
+                    <div class="amount">$10<span class="period">/MO</span></div>
+                    <div class="button">[Button: 구독하기]</div>
+                </div>
+                <div class="plan-features">
+                    <div class="feature">
+                        <span class="feature-label">Commercials</span>
+                        <span class="feature-value">광고 포함</span>
+                    </div>
+                    <div class="feature">
+                        <span class="feature-label">오프라인 시청</span>
+                        <span class="feature-value">불포함</span>
+                    </div>
+                    <div class="feature">
+                        <span class="feature-label">Concurrent Streams</span>
+                        <span class="feature-value">1개 기기</span>
+                    </div>
+                    <div class="feature">
+                        <span class="feature-label">대체 방송</span>
+                        <span class="feature-value">포함</span>
+                    </div>
+                    <div class="feature">
+                        <span class="feature-label">멀티뷰</span>
+                        <span class="feature-value">최대 4개 테이블 동시 시청</span>
+                    </div>
+                </div>
+            </div>
+
+            <div class="plan">
+                <div class="plan-header">
+                    <h3>WSOP PLUS PREMIUM</h3>
+                    <p>최대 3개 기기에서 대회 생중계 및 VOD 콘텐츠 시청! 오프라인 시청을 위한 다운로드 기능까지!</p>
+                </div>
+                <div class="plan-price">
+                    <div class="cancel">[Cancel Anytime]</div>
+                    <div class="amount">$50<span class="period">/MO</span></div>
+                    <div class="button">[Button: 구독하기]</div>
+                </div>
+                <div class="plan-features">
+                    <div class="feature">
+                        <span class="feature-label">광고<span class="feature-badge">Premium</span></span>
+                        <span class="feature-value">광고 없음, 휴식 시간 동안 현장 생중계</span>
+                    </div>
+                    <div class="feature">
+                        <span class="feature-label">오프라인 시청<span class="feature-badge">Premium</span></span>
+                        <span class="feature-value">포함</span>
+                    </div>
+                    <div class="feature">
+                        <span class="feature-label">동시 스트리밍<span class="feature-badge">Premium</span></span>
+                        <span class="feature-value">최대 3개 기기</span>
+                    </div>
+                    <div class="feature">
+                        <span class="feature-label">대체 방송</span>
+                        <span class="feature-value">포함</span>
+                    </div>
+                    <div class="feature">
+                        <span class="feature-label">멀티뷰</span>
+                        <span class="feature-value">최대 4개 테이블 동시 시청</span>
+                    </div>
+                </div>
+            </div>
+        </div>
+    </div>
+</body>
+</html>

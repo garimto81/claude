@@ -1,0 +1,477 @@
+<!DOCTYPE html>
+<html lang="ko">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>WSOP TV - Player Cam Mode (Wireframe)</title>
+    <style>
+        * { margin: 0; padding: 0; box-sizing: border-box; }
+        body {
+            font-family: -apple-system, BlinkMacSystemFont, 'Segoe UI', Roboto, sans-serif;
+            background: #fff;
+            color: #000;
+            padding: 20px;
+        }
+        .title {
+            text-align: center;
+            margin-bottom: 30px;
+        }
+        .title h1 {
+            font-size: 20px;
+            margin-bottom: 5px;
+        }
+        .title p {
+            font-size: 13px;
+            color: #666;
+        }
+        .container {
+            max-width: 1000px;
+            margin: 0 auto;
+        }
+        /* Flow section */
+        .flow-section {
+            margin-bottom: 40px;
+        }
+        .flow-title {
+            font-size: 14px;
+            font-weight: bold;
+            margin-bottom: 15px;
+            padding-bottom: 8px;
+            border-bottom: 2px solid #000;
+        }
+        .flow-row {
+            display: flex;
+            align-items: center;
+            justify-content: center;
+            gap: 15px;
+            margin: 20px 0;
+            flex-wrap: wrap;
+        }
+        .flow-box {
+            border: 2px solid #000;
+            padding: 12px 18px;
+            text-align: center;
+            min-width: 100px;
+        }
+        .flow-box.active {
+            background: #000;
+            color: #fff;
+        }
+        .flow-box .label {
+            font-size: 11px;
+            font-weight: bold;
+        }
+        .flow-box .desc {
+            font-size: 9px;
+            color: #666;
+            margin-top: 3px;
+        }
+        .flow-box.active .desc {
+            color: #ccc;
+        }
+        .flow-arrow {
+            font-size: 18px;
+            color: #000;
+        }
+        /* Tournament Ticker */
+        .ticker-section {
+            border: 2px solid #000;
+            padding: 15px;
+            margin: 20px 0;
+        }
+        .ticker-label {
+            font-size: 11px;
+            color: #666;
+            margin-bottom: 10px;
+        }
+        .ticker {
+            display: flex;
+            gap: 10px;
+            align-items: center;
+            overflow-x: auto;
+        }
+        .ticker-item {
+            border: 1px solid #ccc;
+            padding: 8px 12px;
+            text-align: center;
+            min-width: 80px;
+            flex-shrink: 0;
+        }
+        .ticker-item.selected {
+            border: 2px solid #000;
+            background: #f5f5f5;
+        }
+        .ticker-item .level {
+            font-size: 10px;
+            font-weight: bold;
+        }
+        .ticker-item .name {
+            font-size: 9px;
+            color: #666;
+        }
+        /* MultiView Selection */
+        .multiview-section {
+            border: 2px solid #000;
+            padding: 15px;
+            margin: 20px 0;
+        }
+        .multiview-label {
+            font-size: 11px;
+            color: #666;
+            margin-bottom: 10px;
+        }
+        .layout-options {
+            display: flex;
+            gap: 15px;
+        }
+        .layout-option {
+            border: 1px solid #ccc;
+            padding: 10px;
+            text-align: center;
+            cursor: pointer;
+        }
+        .layout-option.selected {
+            border: 2px solid #000;
+            background: #f5f5f5;
+        }
+        .layout-grid {
+            display: grid;
+            width: 60px;
+            height: 40px;
+            gap: 2px;
+            margin-bottom: 5px;
+        }
+        .layout-grid.grid-1x1 {
+            grid-template-columns: 1fr;
+        }
+        .layout-grid.grid-1x2 {
+            grid-template-columns: 2fr 1fr;
+        }
+        .layout-grid.grid-2x2 {
+            grid-template-columns: 1fr 1fr;
+            grid-template-rows: 1fr 1fr;
+        }
+        .layout-cell {
+            background: #ccc;
+        }
+        .layout-cell.main {
+            background: #666;
+        }
+        .layout-name {
+            font-size: 9px;
+        }
+        /* Player Cam Layout */
+        .playercam-section {
+            border: 2px solid #000;
+            margin: 20px 0;
+        }
+        .playercam-header {
+            background: #f5f5f5;
+            padding: 10px 15px;
+            border-bottom: 1px solid #ccc;
+            font-size: 12px;
+            font-weight: bold;
+        }
+        .playercam-content {
+            display: flex;
+            padding: 15px;
+            gap: 15px;
+        }
+        /* Main video area */
+        .main-video {
+            flex: 3;
+            border: 2px solid #000;
+            background: #f5f5f5;
+            aspect-ratio: 16/9;
+            display: flex;
+            flex-direction: column;
+            align-items: center;
+            justify-content: center;
+            position: relative;
+        }
+        .main-video-label {
+            font-size: 14px;
+            color: #666;
+        }
+        .main-video-overlay {
+            position: absolute;
+            bottom: 10px;
+            left: 10px;
+            right: 10px;
+            background: rgba(0,0,0,0.7);
+            color: #fff;
+            padding: 8px 12px;
+            font-size: 10px;
+            display: flex;
+            justify-content: space-between;
+        }
+        /* Player Cam sidebar */
+        .cam-sidebar {
+            flex: 1;
+            display: flex;
+            flex-direction: column;
+            gap: 10px;
+        }
+        .cam-sidebar-title {
+            font-size: 11px;
+            font-weight: bold;
+            padding-bottom: 8px;
+            border-bottom: 1px solid #ccc;
+        }
+        .cam-list {
+            display: flex;
+            flex-direction: column;
+            gap: 8px;
+        }
+        .cam-item {
+            border: 1px solid #ccc;
+            padding: 8px;
+            display: flex;
+            gap: 8px;
+            cursor: pointer;
+        }
+        .cam-item.selected {
+            border: 2px solid #000;
+            background: #f5f5f5;
+        }
+        .cam-thumb {
+            width: 50px;
+            height: 35px;
+            background: #ccc;
+            display: flex;
+            align-items: center;
+            justify-content: center;
+            font-size: 8px;
+            color: #666;
+        }
+        .cam-info {
+            flex: 1;
+        }
+        .cam-name {
+            font-size: 10px;
+            font-weight: bold;
+        }
+        .cam-chips {
+            font-size: 9px;
+            color: #666;
+        }
+        .cam-stats {
+            font-size: 8px;
+            color: #999;
+            margin-top: 2px;
+        }
+        /* Switch button */
+        .switch-btn {
+            border: 1px solid #000;
+            padding: 8px;
+            text-align: center;
+            font-size: 10px;
+            margin-top: 10px;
+            cursor: pointer;
+        }
+        .switch-btn:hover {
+            background: #f5f5f5;
+        }
+        /* Legend */
+        .legend {
+            border: 1px solid #ccc;
+            padding: 15px;
+            margin-top: 30px;
+            background: #f9f9f9;
+        }
+        .legend-title {
+            font-size: 12px;
+            font-weight: bold;
+            margin-bottom: 10px;
+        }
+        .legend-item {
+            font-size: 10px;
+            margin-bottom: 5px;
+        }
+        /* Note box */
+        .note-box {
+            border: 2px dashed #ccc;
+            padding: 15px;
+            margin: 20px 0;
+            background: #fafafa;
+        }
+        .note-title {
+            font-size: 11px;
+            font-weight: bold;
+            margin-bottom: 8px;
+        }
+        .note-content {
+            font-size: 10px;
+            color: #666;
+            line-height: 1.5;
+        }
+    </style>
+</head>
+<body>
+    <div class="title">
+        <h1>Player Cam Mode (Wireframe)</h1>
+        <p>WSOP TV - Idol Fancam Style</p>
+    </div>
+
+    <div class="container">
+        <!-- Navigation Flow -->
+        <div class="flow-section">
+            <div class="flow-title">Selection Flow</div>
+            <div class="flow-row">
+                <div class="flow-box">
+                    <div class="label">Tournament</div>
+                    <div class="label">Ticker</div>
+                    <div class="desc">[Step 1]</div>
+                </div>
+                <span class="flow-arrow">--></span>
+                <div class="flow-box">
+                    <div class="label">Select</div>
+                    <div class="label">Table</div>
+                    <div class="desc">[Step 2]</div>
+                </div>
+                <span class="flow-arrow">--></span>
+                <div class="flow-box">
+                    <div class="label">MultiView</div>
+                    <div class="label">Layout</div>
+                    <div class="desc">[Step 3]</div>
+                </div>
+                <span class="flow-arrow">--></span>
+                <div class="flow-box active">
+                    <div class="label">Player Cam</div>
+                    <div class="label">Selection</div>
+                    <div class="desc">[Step 4]</div>
+                </div>
+            </div>
+        </div>
+
+        <!-- Step 1: Tournament Ticker -->
+        <div class="ticker-section">
+            <div class="ticker-label">[Step 1] Tournament Ticker - Select Table</div>
+            <div class="ticker">
+                <div class="ticker-item selected">
+                    <div class="level">L38</div>
+                    <div class="name">Main Event</div>
+                </div>
+                <div class="ticker-item">
+                    <div class="level">L25</div>
+                    <div class="name">$100K High</div>
+                </div>
+                <div class="ticker-item">
+                    <div class="level">FINAL</div>
+                    <div class="name">Super Circuit</div>
+                </div>
+                <div class="ticker-item">
+                    <div class="level">L12</div>
+                    <div class="name">Ladies</div>
+                </div>
+            </div>
+        </div>
+
+        <!-- Step 2: MultiView Layout Selection -->
+        <div class="multiview-section">
+            <div class="multiview-label">[Step 2-3] MultiView Layout Selection</div>
+            <div class="layout-options">
+                <div class="layout-option">
+                    <div class="layout-grid grid-1x1">
+                        <div class="layout-cell main"></div>
+                    </div>
+                    <div class="layout-name">1x1</div>
+                </div>
+                <div class="layout-option selected">
+                    <div class="layout-grid grid-1x2">
+                        <div class="layout-cell main"></div>
+                        <div class="layout-cell"></div>
+                    </div>
+                    <div class="layout-name">Main + Cams</div>
+                </div>
+                <div class="layout-option">
+                    <div class="layout-grid grid-2x2">
+                        <div class="layout-cell main"></div>
+                        <div class="layout-cell"></div>
+                        <div class="layout-cell"></div>
+                        <div class="layout-cell"></div>
+                    </div>
+                    <div class="layout-name">2x2</div>
+                </div>
+            </div>
+        </div>
+
+        <!-- Step 3: Player Cam Layout -->
+        <div class="playercam-section">
+            <div class="playercam-header">[Step 4] Player Cam Mode - Main Table + Player Cams</div>
+            <div class="playercam-content">
+                <!-- Main Video -->
+                <div class="main-video">
+                    <div class="main-video-label">[Main Table Feed]</div>
+                    <div class="main-video-label" style="font-size: 11px; margin-top: 5px;">Feature Table Broadcast</div>
+                    <div class="main-video-overlay">
+                        <span>[POT] $2,400,000</span>
+                        <span>[BOARD] Ah Kd 7c 2s</span>
+                    </div>
+                </div>
+
+                <!-- Player Cam Sidebar -->
+                <div class="cam-sidebar">
+                    <div class="cam-sidebar-title">Player Cams (Select to Switch)</div>
+                    <div class="cam-list">
+                        <div class="cam-item selected">
+                            <div class="cam-thumb">[Cam]</div>
+                            <div class="cam-info">
+                                <div class="cam-name">[Player A]</div>
+                                <div class="cam-chips">1.3M chips</div>
+                                <div class="cam-stats">VPIP 24% | PFR 18%</div>
+                            </div>
+                        </div>
+                        <div class="cam-item">
+                            <div class="cam-thumb">[Cam]</div>
+                            <div class="cam-info">
+                                <div class="cam-name">[Player B]</div>
+                                <div class="cam-chips">980K chips</div>
+                                <div class="cam-stats">VPIP 31% | PFR 22%</div>
+                            </div>
+                        </div>
+                        <div class="cam-item">
+                            <div class="cam-thumb">[Cam]</div>
+                            <div class="cam-info">
+                                <div class="cam-name">[Player C]</div>
+                                <div class="cam-chips">750K chips</div>
+                                <div class="cam-stats">VPIP 19% | PFR 15%</div>
+                            </div>
+                        </div>
+                        <div class="cam-item">
+                            <div class="cam-thumb">[Cam]</div>
+                            <div class="cam-info">
+                                <div class="cam-name">[Player D]</div>
+                                <div class="cam-chips">620K chips</div>
+                                <div class="cam-stats">VPIP 28% | PFR 20%</div>
+                            </div>
+                        </div>
+                    </div>
+                    <div class="switch-btn">SWITCH TO MAIN</div>
+                </div>
+            </div>
+        </div>
+
+        <!-- Note -->
+        <div class="note-box">
+            <div class="note-title">Player Cam Source Composition</div>
+            <div class="note-content">
+                Player Cam = Player Camera Feed + GFX Overlay<br/>
+                - Face Close-up (Camera)<br/>
+                - Player Name, Chip Count, Hole Cards (GFX)<br/><br/>
+                * Player Cam is NOT available for all tables<br/>
+                * Only designated Feature Tables with camera equipment
+            </div>
+        </div>
+
+        <!-- Legend -->
+        <div class="legend">
+            <div class="legend-title">Legend</div>
+            <div class="legend-item">* Main Video: Feature Table main broadcast (large, center)</div>
+            <div class="legend-item">* Player Cams: Individual player cameras (small, sidebar)</div>
+            <div class="legend-item">* Click cam to switch with main view</div>
+            <div class="legend-item">* Audio follows main video selection</div>
+        </div>
+    </div>
+</body>
+</html>
