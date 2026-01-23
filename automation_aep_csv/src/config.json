@@ -1,0 +1,11 @@
+{
+  "csv_dir": "C:/GGM$/CSV",
+  "gs_url": "",
+  "rows": 10,
+  "cols": 12,
+  "port": 8787,
+  "write_mode": "atomic",
+  "process_duplicates": true,
+  "dedup_window_ms": 0,
+  "whitelist": []
+}

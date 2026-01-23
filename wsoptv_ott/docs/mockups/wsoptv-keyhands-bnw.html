@@ -1,0 +1,608 @@
+<!DOCTYPE html>
+<html lang="ko">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=1920, height=1080">
+    <title>WSOPTV Key Hands - B&W Wireframe</title>
+    <style>
+        * {
+            margin: 0;
+            padding: 0;
+            box-sizing: border-box;
+        }
+
+        body {
+            font-family: 'Segoe UI', Arial, sans-serif;
+            background: #000;
+            color: #fff;
+            width: 1920px;
+            min-height: 1080px;
+        }
+
+        /* Navigation */
+        .nav-bar {
+            background: #111;
+            padding: 12px 40px;
+            display: flex;
+            align-items: center;
+            justify-content: space-between;
+            border-bottom: 1px solid #333;
+        }
+
+        .nav-left {
+            display: flex;
+            align-items: center;
+            gap: 30px;
+        }
+
+        .logo {
+            width: 120px;
+            height: 40px;
+            background: #333;
+            display: flex;
+            align-items: center;
+            justify-content: center;
+            font-weight: bold;
+            font-size: 18px;
+            border: 1px solid #555;
+        }
+
+        .nav-links {
+            display: flex;
+            gap: 24px;
+        }
+
+        .nav-link {
+            color: #ccc;
+            font-size: 14px;
+            text-decoration: none;
+        }
+
+        .nav-right {
+            display: flex;
+            align-items: center;
+            gap: 16px;
+        }
+
+        .nav-button {
+            background: #333;
+            color: #fff;
+            padding: 8px 16px;
+            border: 1px solid #555;
+            font-size: 13px;
+        }
+
+        .nav-button.primary {
+            background: #fff;
+            color: #000;
+            border: none;
+        }
+
+        /* Tournament Strip */
+        .tournament-strip {
+            background: #1a1a1a;
+            padding: 10px 40px;
+            display: flex;
+            gap: 16px;
+            border-bottom: 1px solid #333;
+        }
+
+        .tournament-card {
+            min-width: 160px;
+            padding: 8px 14px;
+            background: #222;
+            border: 1px solid #444;
+            border-radius: 4px;
+        }
+
+        .tournament-card.live {
+            border-color: #fff;
+        }
+
+        .tournament-status {
+            font-size: 9px;
+            color: #888;
+            margin-bottom: 2px;
+        }
+
+        .tournament-status.live {
+            color: #fff;
+            font-weight: bold;
+        }
+
+        .tournament-name {
+            font-size: 11px;
+            font-weight: bold;
+        }
+
+        .tournament-pot {
+            font-size: 12px;
+            font-weight: bold;
+        }
+
+        /* Promo Banner */
+        .promo-banner {
+            background: linear-gradient(90deg, #222 0%, #333 50%, #222 100%);
+            padding: 10px 40px;
+            display: flex;
+            justify-content: center;
+            align-items: center;
+            gap: 20px;
+            border-bottom: 1px solid #333;
+        }
+
+        .promo-badge {
+            background: #444;
+            padding: 4px 12px;
+            font-size: 11px;
+            font-weight: bold;
+        }
+
+        .promo-cta {
+            background: #fff;
+            color: #000;
+            padding: 6px 16px;
+            font-size: 11px;
+            font-weight: bold;
+            border: none;
+        }
+
+        /* Main Content */
+        .main-content {
+            display: flex;
+            height: calc(100vh - 180px);
+            min-height: 700px;
+        }
+
+        /* Video Player Section */
+        .video-section {
+            flex: 1;
+            background: #0a0a0a;
+            position: relative;
+        }
+
+        .video-header {
+            padding: 16px 20px;
+            background: #111;
+            border-bottom: 1px solid #333;
+        }
+
+        .video-title {
+            font-size: 16px;
+            font-weight: bold;
+            margin-bottom: 4px;
+        }
+
+        .video-subtitle {
+            font-size: 12px;
+            color: #888;
+        }
+
+        .video-player {
+            height: 500px;
+            background: #111;
+            display: flex;
+            align-items: center;
+            justify-content: center;
+            position: relative;
+        }
+
+        .video-placeholder {
+            width: 100px;
+            height: 100px;
+            border: 3px solid #444;
+            border-radius: 50%;
+            display: flex;
+            align-items: center;
+            justify-content: center;
+        }
+
+        .play-icon {
+            width: 0;
+            height: 0;
+            border-left: 30px solid #444;
+            border-top: 20px solid transparent;
+            border-bottom: 20px solid transparent;
+            margin-left: 10px;
+        }
+
+        /* Key Hand Overlay */
+        .key-hand-overlay {
+            position: absolute;
+            top: 16px;
+            right: 16px;
+            background: rgba(0,0,0,0.9);
+            border: 1px solid #444;
+            padding: 12px 16px;
+            min-width: 280px;
+        }
+
+        .key-hand-header {
+            display: flex;
+            justify-content: space-between;
+            align-items: center;
+            margin-bottom: 8px;
+        }
+
+        .key-hand-title {
+            font-size: 14px;
+            font-weight: bold;
+        }
+
+        .key-hand-nav {
+            font-size: 12px;
+            color: #888;
+        }
+
+        .key-hand-description {
+            font-size: 13px;
+            color: #ccc;
+            margin-bottom: 8px;
+        }
+
+        .key-hand-info {
+            display: flex;
+            gap: 16px;
+            font-size: 11px;
+            color: #888;
+        }
+
+        /* Video Controls */
+        .video-controls {
+            padding: 16px 20px;
+            background: #111;
+            border-top: 1px solid #333;
+        }
+
+        .progress-bar {
+            height: 4px;
+            background: #333;
+            margin-bottom: 12px;
+            position: relative;
+        }
+
+        .progress-fill {
+            width: 45%;
+            height: 100%;
+            background: #fff;
+        }
+
+        .progress-markers {
+            position: absolute;
+            top: -4px;
+            left: 0;
+            right: 0;
+            height: 12px;
+        }
+
+        .progress-marker {
+            position: absolute;
+            width: 8px;
+            height: 8px;
+            background: #888;
+            border-radius: 50%;
+            top: 2px;
+            cursor: pointer;
+        }
+
+        .progress-marker:hover {
+            background: #fff;
+        }
+
+        .controls-row {
+            display: flex;
+            justify-content: space-between;
+            align-items: center;
+        }
+
+        .control-group {
+            display: flex;
+            gap: 16px;
+            align-items: center;
+        }
+
+        .control-btn {
+            background: #222;
+            border: 1px solid #444;
+            color: #ccc;
+            padding: 8px 16px;
+            font-size: 12px;
+            cursor: pointer;
+        }
+
+        .control-btn:hover {
+            background: #333;
+            color: #fff;
+        }
+
+        .control-btn.active {
+            background: #fff;
+            color: #000;
+            border-color: #fff;
+        }
+
+        .time-display {
+            font-size: 13px;
+            color: #888;
+        }
+
+        .live-badge {
+            background: #fff;
+            color: #000;
+            padding: 4px 12px;
+            font-size: 11px;
+            font-weight: bold;
+        }
+
+        /* Key Hands Modal */
+        .key-hands-modal {
+            position: absolute;
+            top: 50%;
+            left: 50%;
+            transform: translate(-50%, -50%);
+            background: #fff;
+            color: #000;
+            width: 400px;
+            max-height: 500px;
+            border-radius: 8px;
+            overflow: hidden;
+            box-shadow: 0 20px 60px rgba(0,0,0,0.5);
+        }
+
+        .modal-header {
+            padding: 16px 20px;
+            border-bottom: 1px solid #ddd;
+            display: flex;
+            justify-content: space-between;
+            align-items: center;
+        }
+
+        .modal-title {
+            font-size: 18px;
+            font-weight: bold;
+        }
+
+        .modal-close {
+            width: 28px;
+            height: 28px;
+            background: #eee;
+            border: none;
+            font-size: 16px;
+            cursor: pointer;
+            display: flex;
+            align-items: center;
+            justify-content: center;
+        }
+
+        .modal-content {
+            max-height: 400px;
+            overflow-y: auto;
+        }
+
+        .key-hand-item {
+            display: flex;
+            gap: 16px;
+            padding: 16px 20px;
+            border-bottom: 1px solid #eee;
+            cursor: pointer;
+        }
+
+        .key-hand-item:hover {
+            background: #f5f5f5;
+        }
+
+        .key-hand-thumb {
+            width: 120px;
+            height: 68px;
+            background: #ddd;
+            display: flex;
+            align-items: center;
+            justify-content: center;
+            font-size: 11px;
+            color: #888;
+            flex-shrink: 0;
+        }
+
+        .key-hand-details {
+            flex: 1;
+        }
+
+        .key-hand-name {
+            font-size: 14px;
+            font-weight: bold;
+            margin-bottom: 4px;
+            color: #000;
+        }
+
+        .key-hand-meta {
+            font-size: 12px;
+            color: #666;
+        }
+
+        .key-hand-pot {
+            font-size: 13px;
+            font-weight: bold;
+            color: #333;
+            margin-top: 4px;
+        }
+
+        /* Annotation */
+        .annotation {
+            position: fixed;
+            bottom: 20px;
+            right: 20px;
+            background: #333;
+            padding: 12px 16px;
+            border: 1px solid #555;
+            font-size: 11px;
+            color: #888;
+            z-index: 1000;
+        }
+    </style>
+</head>
+<body>
+    <!-- Navigation -->
+    <nav class="nav-bar">
+        <div class="nav-left">
+            <div class="logo">[WSOPTV]</div>
+            <div class="nav-links">
+                <a href="#" class="nav-link">Events</a>
+                <a href="#" class="nav-link">Schedule</a>
+                <a href="#" class="nav-link">Watch</a>
+                <a href="#" class="nav-link">News</a>
+                <a href="#" class="nav-link">Players</a>
+                <a href="#" class="nav-link">Stats</a>
+            </div>
+        </div>
+        <div class="nav-right">
+            <button class="nav-button primary">Plus+ Pass</button>
+            <button class="nav-button">[Profile]</button>
+        </div>
+    </nav>
+
+    <!-- Tournament Strip -->
+    <div class="tournament-strip">
+        <div class="tournament-card live">
+            <div class="tournament-status live">● LIVE</div>
+            <div class="tournament-name">Main Event Final</div>
+            <div class="tournament-pot">POT: $2.4M</div>
+        </div>
+        <div class="tournament-card live">
+            <div class="tournament-status live">● LIVE</div>
+            <div class="tournament-name">$100K High Roller</div>
+            <div class="tournament-pot">POT: $890K</div>
+        </div>
+        <div class="tournament-card">
+            <div class="tournament-status">VOD</div>
+            <div class="tournament-name">Super Circuit</div>
+            <div class="tournament-pot">$1.2M Prize</div>
+        </div>
+    </div>
+
+    <!-- Promo Banner -->
+    <div class="promo-banner">
+        <span class="promo-badge">[SPONSOR]</span>
+        <span>WSOP PARADISE SERIES</span>
+        <button class="promo-cta">SEE SCHEDULE</button>
+    </div>
+
+    <!-- Main Content -->
+    <div class="main-content">
+        <!-- Video Section -->
+        <div class="video-section">
+            <div class="video-header">
+                <div class="video-title">MAIN EVENT @ FINAL TABLE</div>
+                <div class="video-subtitle">Main Table View ⚙</div>
+            </div>
+
+            <div class="video-player">
+                <div class="video-placeholder">
+                    <div class="play-icon"></div>
+                </div>
+
+                <!-- Key Hand Overlay -->
+                <div class="key-hand-overlay">
+                    <div class="key-hand-header">
+                        <span class="key-hand-title">Phil Ivey all-in bluff</span>
+                        <span class="key-hand-nav">← 3 of 8 Key Hands →</span>
+                    </div>
+                    <div class="key-hand-description">Ivey makes a massive river bluff with K-high against Negreanu's top pair</div>
+                    <div class="key-hand-info">
+                        <span>Hand #47</span>
+                        <span>Blinds 100K/200K</span>
+                        <span>POT: $1.8M</span>
+                    </div>
+                </div>
+
+                <!-- Key Hands Modal -->
+                <div class="key-hands-modal">
+                    <div class="modal-header">
+                        <span class="modal-title">KEY HANDS</span>
+                        <button class="modal-close">✕</button>
+                    </div>
+                    <div class="modal-content">
+                        <div class="key-hand-item">
+                            <div class="key-hand-thumb">[Thumbnail]</div>
+                            <div class="key-hand-details">
+                                <div class="key-hand-name">Hellmuth river bluff</div>
+                                <div class="key-hand-meta">Hand #52 • Blinds 100K/200K</div>
+                                <div class="key-hand-pot">POT: $2.1M</div>
+                            </div>
+                        </div>
+                        <div class="key-hand-item">
+                            <div class="key-hand-thumb">[Thumbnail]</div>
+                            <div class="key-hand-details">
+                                <div class="key-hand-name">AA cracked by runner-runner</div>
+                                <div class="key-hand-meta">Hand #47 • Blinds 100K/200K</div>
+                                <div class="key-hand-pot">POT: $1.8M</div>
+                            </div>
+                        </div>
+                        <div class="key-hand-item">
+                            <div class="key-hand-thumb">[Thumbnail]</div>
+                            <div class="key-hand-details">
+                                <div class="key-hand-name">Phil Ivey all-in bluff</div>
+                                <div class="key-hand-meta">Hand #41 • Blinds 80K/160K</div>
+                                <div class="key-hand-pot">POT: $1.2M</div>
+                            </div>
+                        </div>
+                        <div class="key-hand-item">
+                            <div class="key-hand-thumb">[Thumbnail]</div>
+                            <div class="key-hand-details">
+                                <div class="key-hand-name">Negreanu hero call K-high</div>
+                                <div class="key-hand-meta">Hand #38 • Blinds 80K/160K</div>
+                                <div class="key-hand-pot">POT: $950K</div>
+                            </div>
+                        </div>
+                        <div class="key-hand-item">
+                            <div class="key-hand-thumb">[Thumbnail]</div>
+                            <div class="key-hand-details">
+                                <div class="key-hand-name">Massive cooler set over set</div>
+                                <div class="key-hand-meta">Hand #29 • Blinds 60K/120K</div>
+                                <div class="key-hand-pot">POT: $780K</div>
+                            </div>
+                        </div>
+                    </div>
+                </div>
+            </div>
+
+            <!-- Video Controls -->
+            <div class="video-controls">
+                <div class="progress-bar">
+                    <div class="progress-fill"></div>
+                    <div class="progress-markers">
+                        <div class="progress-marker" style="left: 15%;" title="Hand #29"></div>
+                        <div class="progress-marker" style="left: 28%;" title="Hand #38"></div>
+                        <div class="progress-marker" style="left: 45%;" title="Hand #41"></div>
+                        <div class="progress-marker" style="left: 62%;" title="Hand #47"></div>
+                        <div class="progress-marker" style="left: 78%;" title="Hand #52"></div>
+                    </div>
+                </div>
+                <div class="controls-row">
+                    <div class="control-group">
+                        <span class="control-btn">⏮</span>
+                        <span class="control-btn">⏸</span>
+                        <span class="control-btn">⏭</span>
+                        <span class="time-display">01:24:35</span>
+                    </div>
+                    <div class="control-group">
+                        <span class="control-btn">📺 Tables 5</span>
+                        <span class="control-btn">⊞ MultiView</span>
+                        <span class="control-btn active">🎯 Key Hands</span>
+                    </div>
+                    <div class="control-group">
+                        <span class="live-badge">LIVE</span>
+                    </div>
+                </div>
+            </div>
+        </div>
+    </div>
+
+    <!-- Annotation -->
+    <div class="annotation">
+        WSOPTV Key Hands B&W Wireframe<br>
+        Based on: NBA TV Key Plays Pattern<br>
+        Modal + Overlay + Progress Markers<br>
+        Version: 1.0 | 2026-01-22
+    </div>
+</body>
+</html>

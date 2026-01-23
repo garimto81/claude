@@ -1,0 +1,153 @@
+<!DOCTYPE html>
+<html lang="ko">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>WSOP TV - 콘텐츠 소싱</title>
+    <style>
+        * { margin: 0; padding: 0; box-sizing: border-box; }
+        body {
+            font-family: -apple-system, BlinkMacSystemFont, 'Segoe UI', Roboto, sans-serif;
+            background: #fff;
+            color: #000;
+            padding: 40px;
+        }
+        .container {
+            max-width: 900px;
+            margin: 0 auto;
+            border: 2px solid #000;
+            padding: 30px;
+        }
+        .title {
+            text-align: center;
+            font-size: 24px;
+            font-weight: bold;
+            margin-bottom: 30px;
+            padding-bottom: 20px;
+            border-bottom: 2px solid #000;
+        }
+        .sources {
+            display: flex;
+            justify-content: space-between;
+            gap: 20px;
+            margin-bottom: 30px;
+        }
+        .source {
+            flex: 1;
+            border: 2px solid #000;
+        }
+        .source-logo {
+            height: 60px;
+            border-bottom: 1px solid #ccc;
+            display: flex;
+            align-items: center;
+            justify-content: center;
+            background: #f5f5f5;
+            font-size: 14px;
+            color: #666;
+        }
+        .source-count {
+            padding: 15px;
+            text-align: center;
+            font-size: 16px;
+            font-weight: bold;
+            border-bottom: 1px solid #ccc;
+        }
+        .source-content {
+            padding: 15px;
+            font-size: 13px;
+        }
+        .source-content li {
+            margin-bottom: 5px;
+            list-style: none;
+        }
+        .source-flow {
+            padding: 15px;
+            border-top: 1px solid #ccc;
+            text-align: center;
+        }
+        .source-flow .label {
+            display: inline-block;
+            border: 1px solid #000;
+            padding: 5px 10px;
+            font-size: 12px;
+            margin-bottom: 10px;
+        }
+        .source-flow .arrow {
+            display: block;
+            font-size: 18px;
+            margin: 5px 0;
+        }
+        .source-flow .target {
+            font-size: 12px;
+            color: #666;
+        }
+        .total {
+            text-align: center;
+            padding: 20px;
+            border-top: 2px solid #000;
+            font-size: 18px;
+            font-weight: bold;
+        }
+    </style>
+</head>
+<body>
+    <div class="container">
+        <div class="title">연간 50개 방송 콘텐츠 소싱</div>
+
+        <div class="sources">
+            <div class="source">
+                <div class="source-logo">[Logo: ESPN]</div>
+                <div class="source-count">10 broadcasts/yr</div>
+                <div class="source-content">
+                    <ul>
+                        <li>Main Event</li>
+                        <li>Tournament of Champions</li>
+                    </ul>
+                </div>
+                <div class="source-flow">
+                    <span class="label">1-Year</span>
+                    <span class="arrow">↓</span>
+                    <span class="target">ESPN → WSOPTV</span>
+                </div>
+            </div>
+
+            <div class="source">
+                <div class="source-logo">[Logo: PokerGO]</div>
+                <div class="source-count">10 broadcasts/yr</div>
+                <div class="source-content">
+                    <ul>
+                        <li>High Roller</li>
+                        <li>Super High Roller</li>
+                        <li>Poker After Dark</li>
+                    </ul>
+                </div>
+                <div class="source-flow">
+                    <span class="label">Contract</span>
+                    <span class="arrow">↓</span>
+                    <span class="target">PokerGO → WSOPTV</span>
+                </div>
+            </div>
+
+            <div class="source">
+                <div class="source-logo">[Logo: WSOP]</div>
+                <div class="source-count">30 broadcasts/yr</div>
+                <div class="source-content">
+                    <ul>
+                        <li>Super Circuit</li>
+                        <li>Online Series</li>
+                        <li>Paradise Series</li>
+                    </ul>
+                </div>
+                <div class="source-flow">
+                    <span class="label">Immediate</span>
+                    <span class="arrow">↓</span>
+                    <span class="target">YouTube + WSOPTV</span>
+                </div>
+            </div>
+        </div>
+
+        <div class="total">Total: 50 broadcasts/year</div>
+    </div>
+</body>
+</html>

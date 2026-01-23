@@ -1,0 +1,319 @@
+<!DOCTYPE html>
+<html lang="ko">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>WSOP TV - Featured Hands Flow (9.3)</title>
+    <style>
+        * { margin: 0; padding: 0; box-sizing: border-box; }
+        body {
+            font-family: -apple-system, BlinkMacSystemFont, 'Segoe UI', Roboto, sans-serif;
+            background: #fff;
+            color: #000;
+            padding: 20px;
+        }
+        .title {
+            text-align: center;
+            margin-bottom: 30px;
+        }
+        .title h1 {
+            font-size: 20px;
+            margin-bottom: 5px;
+        }
+        .title p {
+            font-size: 13px;
+            color: #666;
+        }
+        .flow-container {
+            max-width: 1000px;
+            margin: 0 auto;
+        }
+        /* Flow diagram */
+        .flow-row {
+            display: flex;
+            align-items: center;
+            justify-content: center;
+            margin-bottom: 30px;
+            flex-wrap: wrap;
+            gap: 10px;
+        }
+        .flow-box {
+            border: 2px solid #000;
+            padding: 15px 20px;
+            text-align: center;
+            min-width: 120px;
+            background: #fff;
+        }
+        .flow-box.highlight {
+            background: #f5f5f5;
+            border-width: 3px;
+        }
+        .flow-box .label {
+            font-size: 12px;
+            font-weight: bold;
+            margin-bottom: 5px;
+        }
+        .flow-box .desc {
+            font-size: 10px;
+            color: #666;
+        }
+        .flow-arrow {
+            font-size: 20px;
+            color: #000;
+        }
+        .flow-arrow-down {
+            text-align: center;
+            margin: 15px 0;
+            font-size: 20px;
+        }
+        /* Filter section */
+        .filter-section {
+            border: 2px solid #000;
+            padding: 20px;
+            margin: 30px auto;
+            max-width: 700px;
+        }
+        .filter-title {
+            font-size: 14px;
+            font-weight: bold;
+            margin-bottom: 15px;
+            text-align: center;
+        }
+        .filter-grid {
+            display: grid;
+            grid-template-columns: repeat(3, 1fr);
+            gap: 10px;
+        }
+        .filter-item {
+            border: 1px solid #000;
+            padding: 10px;
+            text-align: center;
+            font-size: 11px;
+        }
+        .filter-item.active {
+            background: #000;
+            color: #fff;
+        }
+        /* Street Timeline */
+        .street-section {
+            border: 2px solid #000;
+            padding: 20px;
+            margin: 30px auto;
+            max-width: 700px;
+        }
+        .street-title {
+            font-size: 14px;
+            font-weight: bold;
+            margin-bottom: 15px;
+            text-align: center;
+        }
+        .street-flow {
+            display: flex;
+            align-items: center;
+            justify-content: center;
+            gap: 10px;
+        }
+        .street-box {
+            border: 1px solid #000;
+            padding: 10px 15px;
+            text-align: center;
+            font-size: 11px;
+            font-weight: bold;
+        }
+        .street-box.current {
+            background: #000;
+            color: #fff;
+        }
+        .street-arrow {
+            font-size: 16px;
+        }
+        /* Return paths */
+        .return-section {
+            margin: 30px auto;
+            max-width: 500px;
+            display: flex;
+            justify-content: center;
+            gap: 30px;
+        }
+        .return-btn {
+            border: 2px solid #000;
+            padding: 12px 20px;
+            text-align: center;
+            font-size: 12px;
+            font-weight: bold;
+        }
+        .return-btn .target {
+            font-size: 10px;
+            color: #666;
+            font-weight: normal;
+            margin-top: 5px;
+        }
+        /* Modal preview */
+        .modal-preview {
+            border: 2px solid #000;
+            padding: 20px;
+            margin: 30px auto;
+            max-width: 400px;
+            background: #f9f9f9;
+        }
+        .modal-header {
+            display: flex;
+            justify-content: space-between;
+            align-items: center;
+            border-bottom: 1px solid #ccc;
+            padding-bottom: 10px;
+            margin-bottom: 15px;
+        }
+        .modal-title {
+            font-size: 14px;
+            font-weight: bold;
+        }
+        .modal-close {
+            font-size: 16px;
+            cursor: pointer;
+        }
+        .modal-list {
+            display: flex;
+            flex-direction: column;
+            gap: 10px;
+        }
+        .modal-item {
+            display: flex;
+            gap: 10px;
+            padding: 10px;
+            border: 1px solid #ccc;
+            background: #fff;
+        }
+        .modal-thumb {
+            width: 60px;
+            height: 40px;
+            background: #ccc;
+            display: flex;
+            align-items: center;
+            justify-content: center;
+            font-size: 9px;
+            color: #666;
+        }
+        .modal-info {
+            flex: 1;
+        }
+        .modal-info .hand {
+            font-size: 11px;
+            font-weight: bold;
+        }
+        .modal-info .players {
+            font-size: 10px;
+            color: #666;
+        }
+    </style>
+</head>
+<body>
+    <div class="title">
+        <h1>9.3 Featured Hands Flow (Wireframe)</h1>
+        <p>WSOP TV - Hand Navigation</p>
+    </div>
+
+    <div class="flow-container">
+        <!-- Main flow -->
+        <div class="flow-row">
+            <div class="flow-box">
+                <div class="label">Featured</div>
+                <div class="label">Hands Tab</div>
+                <div class="desc">[Click]</div>
+            </div>
+            <span class="flow-arrow">--></span>
+            <div class="flow-box">
+                <div class="label">Hand List</div>
+                <div class="label">Modal</div>
+                <div class="desc">[Popup]</div>
+            </div>
+            <span class="flow-arrow">--></span>
+            <div class="flow-box">
+                <div class="label">Filter</div>
+                <div class="label">Selection</div>
+                <div class="desc">[ALL-IN etc]</div>
+            </div>
+            <span class="flow-arrow">--></span>
+            <div class="flow-box highlight">
+                <div class="label">PLAYER</div>
+                <div class="desc">[Hand Playback]</div>
+            </div>
+        </div>
+
+        <div class="flow-arrow-down">|</div>
+        <div class="flow-arrow-down">V</div>
+
+        <!-- Street Timeline -->
+        <div class="street-section">
+            <div class="street-title">Street Timeline Navigation</div>
+            <div class="street-flow">
+                <div class="street-box">PREFLOP</div>
+                <span class="street-arrow">--></span>
+                <div class="street-box current">FLOP</div>
+                <span class="street-arrow">--></span>
+                <div class="street-box">TURN</div>
+                <span class="street-arrow">--></span>
+                <div class="street-box">RIVER</div>
+                <span class="street-arrow">--></span>
+                <div class="street-box">SHOWDOWN</div>
+            </div>
+        </div>
+
+        <!-- Filter Options -->
+        <div class="filter-section">
+            <div class="filter-title">Filter Options</div>
+            <div class="filter-grid">
+                <div class="filter-item active">ALL HANDS</div>
+                <div class="filter-item">ALL-IN</div>
+                <div class="filter-item">BIG POTS</div>
+                <div class="filter-item">BLUFFS</div>
+                <div class="filter-item">ELIMINATIONS</div>
+                <div class="filter-item">HERO CALLS</div>
+            </div>
+        </div>
+
+        <!-- Modal Preview -->
+        <div class="modal-preview">
+            <div class="modal-header">
+                <div class="modal-title">Featured Hands</div>
+                <div class="modal-close">[X]</div>
+            </div>
+            <div class="modal-list">
+                <div class="modal-item">
+                    <div class="modal-thumb">[Thumb]</div>
+                    <div class="modal-info">
+                        <div class="hand">Hand #247 - AA vs KK</div>
+                        <div class="players">[Player A] vs [Player B]</div>
+                    </div>
+                </div>
+                <div class="modal-item">
+                    <div class="modal-thumb">[Thumb]</div>
+                    <div class="modal-info">
+                        <div class="hand">Hand #189 - River Bluff</div>
+                        <div class="players">[Player C] wins $1.2M</div>
+                    </div>
+                </div>
+                <div class="modal-item">
+                    <div class="modal-thumb">[Thumb]</div>
+                    <div class="modal-info">
+                        <div class="hand">Hand #156 - Elimination</div>
+                        <div class="players">[Player D] eliminated</div>
+                    </div>
+                </div>
+            </div>
+        </div>
+
+        <!-- Return paths -->
+        <div class="return-section">
+            <div class="return-btn">
+                HAND LIST
+                <div class="target">--> Modal</div>
+            </div>
+            <div class="return-btn">
+                JUMP TO LIVE
+                <div class="target">--> Live Streaming</div>
+            </div>
+        </div>
+    </div>
+</body>
+</html>

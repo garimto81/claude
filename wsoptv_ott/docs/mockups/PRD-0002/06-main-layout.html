@@ -1,0 +1,294 @@
+<!DOCTYPE html>
+<html lang="ko">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>WSOP TV - 7단 레이아웃</title>
+    <style>
+        * { margin: 0; padding: 0; box-sizing: border-box; }
+        body {
+            font-family: -apple-system, BlinkMacSystemFont, 'Segoe UI', Roboto, sans-serif;
+            background: #fff;
+            color: #000;
+            padding: 20px;
+        }
+        .container {
+            max-width: 900px;
+            margin: 0 auto;
+            border: 2px solid #000;
+        }
+        .layer {
+            border-bottom: 1px solid #ccc;
+            position: relative;
+        }
+        .layer:last-child {
+            border-bottom: none;
+        }
+        .layer-number {
+            position: absolute;
+            left: 10px;
+            top: 50%;
+            transform: translateY(-50%);
+            width: 24px;
+            height: 24px;
+            border: 1px solid #000;
+            border-radius: 50%;
+            display: flex;
+            align-items: center;
+            justify-content: center;
+            font-size: 12px;
+            font-weight: bold;
+            background: #fff;
+        }
+        .layer-content {
+            margin-left: 50px;
+            padding: 15px;
+        }
+        /* Layer 1: Tournament Ticker */
+        .ticker {
+            display: flex;
+            gap: 10px;
+            align-items: center;
+        }
+        .ticker-item {
+            border: 1px solid #000;
+            padding: 8px 12px;
+            text-align: center;
+            min-width: 80px;
+        }
+        .ticker-item .level {
+            font-size: 11px;
+            font-weight: bold;
+            margin-bottom: 2px;
+        }
+        .ticker-item .name {
+            font-size: 10px;
+            color: #666;
+        }
+        .ticker-more {
+            font-size: 12px;
+            color: #666;
+        }
+        /* Layer 2: Ad Banner */
+        .ad-banner {
+            background: #f5f5f5;
+            padding: 20px;
+            text-align: center;
+            color: #999;
+            font-size: 14px;
+        }
+        /* Layer 3: Tournament Header */
+        .header {
+            padding: 10px 0;
+        }
+        .header-title {
+            font-size: 18px;
+            font-weight: bold;
+            margin-bottom: 5px;
+        }
+        .header-subtitle {
+            font-size: 13px;
+            color: #666;
+        }
+        /* Layer 4: Video Player */
+        .video {
+            background: #f5f5f5;
+            aspect-ratio: 16/9;
+            display: flex;
+            flex-direction: column;
+            align-items: center;
+            justify-content: center;
+            position: relative;
+        }
+        .video-placeholder {
+            color: #999;
+            font-size: 16px;
+            margin-bottom: 20px;
+        }
+        .video-overlay {
+            position: absolute;
+            bottom: 20px;
+            left: 50%;
+            transform: translateX(-50%);
+            display: flex;
+            gap: 20px;
+            background: rgba(0,0,0,0.7);
+            color: #fff;
+            padding: 10px 20px;
+            font-size: 13px;
+        }
+        /* Layer 5: Stream Tabs */
+        .stream-tabs {
+            display: flex;
+            gap: 10px;
+        }
+        .stream-tab {
+            padding: 8px 15px;
+            border: 1px solid #000;
+            font-size: 13px;
+        }
+        .stream-tab.active {
+            background: #000;
+            color: #fff;
+        }
+        /* Layer 6: Timeline */
+        .timeline {
+            display: flex;
+            align-items: center;
+            gap: 15px;
+        }
+        .timeline-bar {
+            flex: 1;
+            height: 4px;
+            background: #ccc;
+            position: relative;
+        }
+        .timeline-bar::after {
+            content: '';
+            position: absolute;
+            left: 30%;
+            top: -4px;
+            width: 12px;
+            height: 12px;
+            background: #000;
+            border-radius: 50%;
+        }
+        .timeline-time {
+            font-size: 12px;
+            color: #666;
+        }
+        .timeline-live {
+            padding: 4px 10px;
+            background: #c00;
+            color: #fff;
+            font-size: 11px;
+            font-weight: bold;
+        }
+        /* Layer 7: Controls */
+        .controls {
+            display: flex;
+            gap: 10px;
+            align-items: center;
+        }
+        .control-btn {
+            width: 36px;
+            height: 36px;
+            border: 1px solid #000;
+            display: flex;
+            align-items: center;
+            justify-content: center;
+            font-size: 11px;
+        }
+    </style>
+</head>
+<body>
+    <div class="container">
+        <!-- Layer 1: Tournament Ticker -->
+        <div class="layer">
+            <div class="layer-number">1</div>
+            <div class="layer-content">
+                <div class="ticker">
+                    <div class="ticker-item">
+                        <div class="level">L38</div>
+                        <div class="name">Main Event</div>
+                    </div>
+                    <div class="ticker-item">
+                        <div class="level">L25</div>
+                        <div class="name">$100K High</div>
+                    </div>
+                    <div class="ticker-item">
+                        <div class="level">FINAL</div>
+                        <div class="name">Super Circuit</div>
+                    </div>
+                    <div class="ticker-item">
+                        <div class="level">L12</div>
+                        <div class="name">Online Series</div>
+                    </div>
+                    <div class="ticker-item">
+                        <div class="level">L5</div>
+                        <div class="name">Ladies Event</div>
+                    </div>
+                    <span class="ticker-more">[More >]</span>
+                </div>
+            </div>
+        </div>
+
+        <!-- Layer 2: Ad Banner -->
+        <div class="layer">
+            <div class="layer-number">2</div>
+            <div class="layer-content">
+                <div class="ad-banner">[Ad Banner Placeholder]</div>
+            </div>
+        </div>
+
+        <!-- Layer 3: Tournament Header -->
+        <div class="layer">
+            <div class="layer-number">3</div>
+            <div class="layer-content">
+                <div class="header">
+                    <div class="header-title">WSOP Main Event - Final Table</div>
+                    <div class="header-subtitle">Level 38 | Blinds 400K/800K | Ante 100K</div>
+                </div>
+            </div>
+        </div>
+
+        <!-- Layer 4: Video Player -->
+        <div class="layer">
+            <div class="layer-number">4</div>
+            <div class="layer-content" style="padding: 0;">
+                <div class="video">
+                    <div class="video-placeholder">[Video Placeholder]</div>
+                    <div class="video-overlay">
+                        <span>[POT] $2,400,000</span>
+                        <span>[BOARD] Ah Kd 7c 2s</span>
+                    </div>
+                </div>
+            </div>
+        </div>
+
+        <!-- Layer 5: Stream Tabs -->
+        <div class="layer">
+            <div class="layer-number">5</div>
+            <div class="layer-content">
+                <div class="stream-tabs">
+                    <div class="stream-tab active">Summary</div>
+                    <div class="stream-tab">Player Stats</div>
+                    <div class="stream-tab">Hand Charts</div>
+                    <div class="stream-tab">History</div>
+                </div>
+            </div>
+        </div>
+
+        <!-- Layer 6: Timeline -->
+        <div class="layer">
+            <div class="layer-number">6</div>
+            <div class="layer-content">
+                <div class="timeline">
+                    <span class="timeline-time">0:00</span>
+                    <div class="timeline-bar"></div>
+                    <span class="timeline-time">2:45:30</span>
+                    <span class="timeline-live">LIVE</span>
+                </div>
+            </div>
+        </div>
+
+        <!-- Layer 7: Controls -->
+        <div class="layer">
+            <div class="layer-number">7</div>
+            <div class="layer-content">
+                <div class="controls">
+                    <div class="control-btn"><<</div>
+                    <div class="control-btn">▶</div>
+                    <div class="control-btn">>></div>
+                    <div class="control-btn">Vol</div>
+                    <div class="control-btn">CC</div>
+                    <div class="control-btn">Multi</div>
+                    <div class="control-btn">PiP</div>
+                    <div class="control-btn">Full</div>
+                    <div class="control-btn" style="background: #c00; color: #fff; border: none;">LIVE</div>
+                </div>
+            </div>
+        </div>
+    </div>
+</body>
+</html>

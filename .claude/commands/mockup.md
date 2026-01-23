@@ -14,6 +14,7 @@ HTML 와이어프레임을 생성하고 Playwright로 스크린샷을 캡처합�
 
 Options:
   --style=TYPE      wireframe (기본) | detailed
+  --bnw             Black & White T&M 모드 (흑백 + 플레이스홀더)
   --screens=N       생성할 화면 수 (1-5, 기본: 1)
   --prd=PRD-NNNN    연결할 PRD 번호 (자동 삽입)
   --flow            전체 흐름 다이어그램 포함
@@ -23,6 +24,7 @@ Options:
 
 ```bash
 /mockup "로그인 화면"                    # 단일 화면
+/mockup "대시보드" --bnw                 # B&W T&M 와이어프레임
 /mockup "대시보드" --screens=3           # 3개 화면
 /mockup "인증 흐름" --flow --prd=PRD-0003  # 흐름 + PRD 연결
 ```
@@ -137,6 +139,28 @@ Options:
 - 흑백 박스 레이아웃
 - 빠른 생성 (5초)
 - 구조 중심
+
+### --bnw (Black & White T&M)
+
+**B**lack & **W**hite + **T**ext/**M**edia 플레이스홀더 전용 모드
+
+| 요소 | 표현 |
+|------|------|
+| 색상 | `#000`, `#fff`, `#ccc` 만 사용 |
+| 텍스트 | `Lorem ipsum`, `[Title]`, `[Label]` |
+| 이미지 | `[Image]`, `[Photo]`, `[Banner]` |
+| 아이콘 | `[Icon]`, `[▶]`, `[✕]` |
+| 로고 | `[Logo]`, `[Brand]` |
+
+```bash
+# 단축 호출
+/auto --mockup --bnw "화면명"
+
+# 직접 호출
+/mockup "화면명" --bnw
+```
+
+> **용도**: 구조 검토, 빠른 프로토타이핑, 레이아웃 논의
 
 ### detailed
 

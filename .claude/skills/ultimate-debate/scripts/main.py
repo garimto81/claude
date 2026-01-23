@@ -3,6 +3,7 @@
 import argparse
 import asyncio
 import json
+import os
 import sys
 from pathlib import Path
 
@@ -218,12 +219,15 @@ def register_ai_clients(debate) -> list[str]:
     # Google (Gemini) 클라이언트 등록
     if token_store.has_valid_token("google"):
         try:
+            # Code Assist 모드 (기본값) - 프로젝트 ID 불필요
             client = GeminiClient(
-                model_name="gemini-2.0-flash", token_store=token_store
+                model_name="gemini-2.0-flash",
+                token_store=token_store,
+                use_code_assist=True,  # cloudcode-pa.googleapis.com 사용
             )
             debate.register_ai_client("gemini", client)
             registered.append("gemini (Google)")
-            print("[OK] Gemini 클라이언트 등록 완료 (gemini-2.0-flash)")
+            print("[OK] Gemini 클라이언트 등록 완료 (gemini-2.0-flash, Code Assist 모드)")
         except Exception as e:
             print(f"[ERROR] Gemini 클라이언트 등록 실패: {e}", file=sys.stderr)
     else:

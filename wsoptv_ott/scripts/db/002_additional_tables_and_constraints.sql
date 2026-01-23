@@ -1,7 +1,7 @@
 -- WSOPTV OTT Database Schema - Additional Tables & Constraints
--- Version: 1.0.1
+-- Version: 2.0.0
 -- Created: 2026-01-19
--- Reference: ADR-0002-database-schema-design.md (검증 결과 반영)
+-- Reference: ADR-0002-database-schema-design.md (WSOP 브랜드 기반 v2.0)
 
 -- ============================================================================
 -- ADDITIONAL TABLES (ERD 정합성)
@@ -84,11 +84,11 @@ COMMENT ON TABLE earnings IS '플레이어 수입 기록 (wsop.com 연동)';
 -- CHECK CONSTRAINTS (데이터 무결성)
 -- ============================================================================
 
--- circuits
-ALTER TABLE circuits ADD CONSTRAINT chk_circuits_year CHECK (year >= 1970 AND year <= 2100);
-ALTER TABLE circuits ADD CONSTRAINT chk_circuits_status CHECK (status IN ('upcoming', 'live', 'completed'));
-ALTER TABLE circuits ADD CONSTRAINT chk_circuits_dates CHECK (end_date >= start_date);
-ALTER TABLE circuits ADD CONSTRAINT chk_circuits_type CHECK (circuit_type IN (
+-- series (v2.0: circuits → series 변경)
+ALTER TABLE series ADD CONSTRAINT chk_series_year CHECK (year >= 1970 AND year <= 2100);
+ALTER TABLE series ADD CONSTRAINT chk_series_status CHECK (status IN ('upcoming', 'live', 'completed'));
+ALTER TABLE series ADD CONSTRAINT chk_series_dates CHECK (end_date >= start_date);
+ALTER TABLE series ADD CONSTRAINT chk_series_type CHECK (series_type IN (
     'wsop', 'wsop_paradise', 'wsop_europe', 'wsop_asia', 'wsop_online', 'wsop_circuit', 'super_circuit', 'bracelets'
 ));
 
@@ -105,12 +105,12 @@ ALTER TABLE events ADD CONSTRAINT chk_events_game_type CHECK (game_type IN (
     'limit_omaha_hilo', 'razz', 'stud', 'stud_hilo', 'mixed', 'horse', 'dealer_choice', 'other'
 ));
 
--- tournaments
-ALTER TABLE tournaments ADD CONSTRAINT chk_tournaments_day CHECK (day_number >= 0);
-ALTER TABLE tournaments ADD CONSTRAINT chk_tournaments_status CHECK (status IN (
+-- sessions (v2.0: tournaments → sessions 변경)
+ALTER TABLE sessions ADD CONSTRAINT chk_sessions_day CHECK (day_number >= 0);
+ALTER TABLE sessions ADD CONSTRAINT chk_sessions_status CHECK (status IN (
     'scheduled', 'running', 'on_break', 'completed'
 ));
-ALTER TABLE tournaments ADD CONSTRAINT chk_tournaments_delay CHECK (stream_delay_minutes >= 0 AND stream_delay_minutes <= 120);
+ALTER TABLE sessions ADD CONSTRAINT chk_sessions_delay CHECK (stream_delay_minutes >= 0 AND stream_delay_minutes <= 120);
 
 -- players
 ALTER TABLE players ADD CONSTRAINT chk_players_bracelets CHECK (wsop_bracelets >= 0);
@@ -183,16 +183,16 @@ ALTER TABLE watch_history ADD CONSTRAINT chk_watch_device CHECK (device_type IN 
 -- ============================================================================
 
 -- Core Tables
-COMMENT ON TABLE circuits IS 'WSOP 대회 시리즈 (WSOP Main, Paradise, Europe, Asia 등)';
-COMMENT ON COLUMN circuits.circuit_type IS 'wsop, wsop_paradise, wsop_europe, wsop_asia, wsop_online, wsop_circuit, super_circuit';
-COMMENT ON COLUMN circuits.total_prize_pool IS '총 상금 (센트 단위, $1M = 100000000)';
+COMMENT ON TABLE series IS 'WSOP 시리즈 (WSOP 본대회, Paradise, Europe, Asia, Online, Circuit 등)';
+COMMENT ON COLUMN series.series_type IS 'wsop, wsop_paradise, wsop_europe, wsop_asia, wsop_online, wsop_circuit';
+COMMENT ON COLUMN series.total_prize_pool IS '총 상금 (센트 단위, $1M = 100000000)';
 
 COMMENT ON TABLE events IS '개별 이벤트/브래킷 (Main Event, High Roller 등)';
 COMMENT ON COLUMN events.buy_in IS '바이인 금액 (센트 단위, $10,000 = 1000000)';
 COMMENT ON COLUMN events.game_type IS 'no_limit_holdem, pot_limit_omaha, mixed 등';
 
-COMMENT ON TABLE tournaments IS '토너먼트 세션/데이 (Day 1A, Final Table 등)';
-COMMENT ON COLUMN tournaments.stream_delay_minutes IS '라이브 스트리밍 지연 시간 (기본 30분)';
+COMMENT ON TABLE sessions IS '세션/데이 (Day 1A, Final Table 등)';
+COMMENT ON COLUMN sessions.stream_delay_minutes IS '라이브 스트리밍 지연 시간 (기본 30분)';
 
 -- Player Tables
 COMMENT ON TABLE players IS '플레이어 정보 (wsop.com + GGPoker 연동)';
@@ -203,7 +203,7 @@ COMMENT ON COLUMN players.hud_af IS 'Aggression Factor';
 COMMENT ON TABLE placements IS '토너먼트 순위/결과';
 COMMENT ON COLUMN placements.prize_amount IS '상금 (센트 단위)';
 
-COMMENT ON TABLE player_stats IS '플레이어 통계 스냅샷 (이벤트/토너먼트/세션별)';
+COMMENT ON TABLE player_stats IS '플레이어 통계 스냅샷 (이벤트/세션별)';
 COMMENT ON COLUMN player_stats.position_stats IS 'JSONB: {"UTG": {"hands": 10, "won": 2}, ...}';
 
 -- Hand History Tables
@@ -244,8 +244,8 @@ COMMENT ON COLUMN subscriptions.ggpoker_chips_granted IS '프로모션 연동 �
 COMMENT ON TABLE watch_history IS '시청 기록 (이어보기, 추천용)';
 COMMENT ON COLUMN watch_history.view_mode_used IS 'standard, multiview, statsview, combined';
 
--- Leaderboard Tables
-COMMENT ON TABLE circuit_points IS '서킷 포인트 (POY, Circuit 등)';
+-- Leaderboard Tables (v2.0: circuit_points → series_points 변경)
+COMMENT ON TABLE series_points IS '시리즈 포인트 (POY, Circuit 등)';
 COMMENT ON TABLE leaderboards IS '리더보드 스냅샷 (all_time_earnings, bracelets 등)';
 COMMENT ON COLUMN leaderboards.rankings IS 'JSONB: [{"rank": 1, "player_id": "uuid", "value": 1000000}, ...]';
 
