@@ -13,6 +13,15 @@ from datetime import datetime
 logger = logging.getLogger(__name__)
 
 
+# Playwright Python SDK 사용 가능 여부
+_PLAYWRIGHT_AVAILABLE = False
+try:
+    from playwright.sync_api import sync_playwright
+    _PLAYWRIGHT_AVAILABLE = True
+except ImportError:
+    pass
+
+
 def save_html(
     content: str,
     output_path: Path,
@@ -53,6 +62,7 @@ def capture_screenshot(
     full_page: bool = False,
     width: int = 800,
     height: int = 600,
+    auto_size: bool = True,
 ) -> Optional[Path]:
     """
     Playwright로 HTML 스크린샷 캡처
@@ -62,8 +72,9 @@ def capture_screenshot(
         image_path: 출력 이미지 경로
         selector: 캡처할 요소 선택자 (없으면 전체)
         full_page: 전체 페이지 캡처 여부
-        width: 뷰포트 너비
-        height: 뷰포트 높이
+        width: 뷰포트 너비 (auto_size=False일 때 사용)
+        height: 뷰포트 높이 (auto_size=False일 때 사용)
+        auto_size: 콘텐츠 크기에 맞춰 자동 캡처 (기본값: True)
 
     Returns:
         캡처된 이미지 경로 (실패 시 None)
@@ -71,6 +82,146 @@ def capture_screenshot(
     # 디렉토리 생성
     image_path.parent.mkdir(parents=True, exist_ok=True)
 
+    # auto_size=True이고 Playwright SDK가 사용 가능하면 SDK 사용
+    if auto_size and _PLAYWRIGHT_AVAILABLE:
+        return _capture_with_auto_size(html_path, image_path, selector)
+
+    # 폴백: CLI 사용
+    return _capture_with_cli(
+        html_path, image_path, selector, full_page, width, height
+    )
+
+
+def _capture_with_auto_size(
+    html_path: Path,
+    image_path: Path,
+    selector: Optional[str] = None,
+) -> Optional[Path]:
+    """
+    Playwright Python SDK로 콘텐츠 크기에 맞춰 자동 캡처
+
+    동작 방식:
+    1. 넓은 viewport로 페이지 로드 (콘텐츠가 잘리지 않도록)
+    2. body의 실제 렌더링된 크기 감지 (getBoundingClientRect)
+    3. viewport를 콘텐츠 크기에 맞게 조정
+    4. 캡처 실행
+    """
+    try:
+        from playwright.sync_api import sync_playwright
+
+        with sync_playwright() as p:
+            browser = p.chromium.launch()
+            # 적절한 초기 viewport (목업에 적합한 너비, 높이는 충분히)
+            page = browser.new_page(viewport={"width": 900, "height": 2000})
+
+            # file:// URL로 변환
+            file_url = html_path.resolve().as_uri()
+            page.goto(file_url)
+            page.wait_for_load_state("networkidle")
+
+            # 실제 콘텐츠 크기 감지 (getBoundingClientRect 사용)
+            # body의 실제 렌더링된 높이와 너비를 정확하게 측정
+            dimensions = page.evaluate("""
+                () => {
+                    const allElements = document.body.querySelectorAll('*');
+
+                    let minLeft = Infinity;
+                    let maxRight = 0;
+                    let maxBottom = 0;
+
+                    allElements.forEach(el => {
+                        const rect = el.getBoundingClientRect();
+                        const style = window.getComputedStyle(el);
+
+                        // 보이는 요소만 측정 (display:none, visibility:hidden 제외)
+                        if (rect.width > 0 && rect.height > 0 &&
+                            style.display !== 'none' && style.visibility !== 'hidden') {
+                            if (rect.left < minLeft) minLeft = rect.left;
+                            if (rect.right > maxRight) maxRight = rect.right;
+                            if (rect.bottom > maxBottom) maxBottom = rect.bottom;
+                        }
+                    });
+
+                    // scrollHeight와 offsetHeight 비교
+                    const scrollH = Math.max(
+                        document.documentElement.scrollHeight,
+                        document.body.scrollHeight
+                    );
+                    const offsetH = Math.max(
+                        document.documentElement.offsetHeight,
+                        document.body.offsetHeight
+                    );
+
+                    // 콘텐츠 실제 너비 (최소 800px, 최대 1400px)
+                    let contentWidth = maxRight - Math.max(0, minLeft);
+                    contentWidth = Math.min(Math.max(contentWidth, 800), 1400);
+
+                    // 높이: 가장 아래 요소의 bottom 사용 (더 정확)
+                    const height = Math.max(maxBottom, offsetH);
+
+                    return {
+                        width: contentWidth,
+                        height,
+                        scrollH,
+                        offsetH,
+                        maxBottom,
+                        minLeft,
+                        maxRight
+                    };
+                }
+            """)
+
+            content_width = dimensions['width']
+            content_height = dimensions['height']
+
+            logger.info(
+                f"콘텐츠 크기 감지: {content_width}x{content_height} "
+                f"(scrollH={dimensions['scrollH']}, offsetH={dimensions['offsetH']}, "
+                f"maxBottom={dimensions['maxBottom']})"
+            )
+
+            # 최소 크기 보장 (너무 작으면 잘못 감지된 것)
+            final_width = max(int(content_width), 400)
+            final_height = max(int(content_height), 300)
+
+            # viewport 조정 후 다시 로드
+            page.set_viewport_size({"width": final_width, "height": final_height})
+            page.goto(file_url)
+            page.wait_for_load_state("networkidle")
+
+            # 스크린샷 캡처
+            if selector:
+                element = page.query_selector(selector)
+                if element:
+                    element.screenshot(path=str(image_path))
+                else:
+                    logger.warning(f"선택자 '{selector}'를 찾을 수 없음, 전체 페이지 캡처")
+                    page.screenshot(path=str(image_path), full_page=False)
+            else:
+                page.screenshot(path=str(image_path), full_page=False)
+
+            browser.close()
+
+            logger.info(f"스크린샷 캡처 (auto_size): {image_path} [{final_width}x{final_height}]")
+            return image_path
+
+    except ImportError:
+        logger.warning("Playwright SDK 없음, CLI로 폴백")
+        return None
+    except Exception as e:
+        logger.error(f"auto_size 캡처 실패: {e}")
+        return None
+
+
+def _capture_with_cli(
+    html_path: Path,
+    image_path: Path,
+    selector: Optional[str] = None,
+    full_page: bool = False,
+    width: int = 800,
+    height: int = 600,
+) -> Optional[Path]:
+    """Playwright CLI로 스크린샷 캡처 (폴백용)"""
     # file:// URL로 변환
     file_url = html_path.resolve().as_uri()
 
@@ -98,10 +249,10 @@ def capture_screenshot(
         )
 
         if result.returncode == 0:
-            logger.info(f"스크린샷 캡처: {image_path}")
+            logger.info(f"스크린샷 캡처 (CLI): {image_path}")
             return image_path
         else:
-            logger.error(f"Playwright 오류: {result.stderr}")
+            logger.error(f"Playwright CLI 오류: {result.stderr}")
             return None
 
     except subprocess.TimeoutExpired:

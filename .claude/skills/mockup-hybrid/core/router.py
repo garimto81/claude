@@ -179,10 +179,11 @@ class MockupRouter:
             description=prompt,
         )
 
-        # 5. 스크린샷 캡처
+        # 5. 스크린샷 캡처 (auto_size: 콘텐츠 크기에 맞춰 자동 캡처)
         captured_path = capture_screenshot(
             html_path=saved_path,
             image_path=image_path,
+            auto_size=True,
         )
 
         # 6. 결과 생성
