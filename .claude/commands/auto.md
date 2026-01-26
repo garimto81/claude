@@ -1,7 +1,7 @@
 ---
 name: auto
 alias_of: "work --loop"
-version: 8.0.0
+version: 9.0.0
 description: /work --loop의 단축 명령 (자율 반복 모드)
 deprecated: false
 ---
@@ -23,6 +23,9 @@ deprecated: false
 | `/auto --debate "주제"` | 3AI 토론 즉시 실행 |
 | `/auto --gdocs` | 현재 프로젝트 PRD → Google Docs 변환 |
 | `/auto --gdocs "파일"` | 특정 파일 → Google Docs 변환 |
+| `/auto --gdocs --sync` | Google Docs ↔ 로컬 동기화 (check) |
+| `/auto --gdocs --sync pull` | Google Docs → 로컬 동기화 |
+| `/auto --gdocs --sync push` | 로컬 → Google Docs 동기화 |
 | `/auto --research "키워드"` | `/research` 스킬 호출 |
 | `/auto --research web "키워드"` | 오픈소스/솔루션 웹 검색 |
 
@@ -35,6 +38,9 @@ deprecated: false
 | `/auto --debate "주제"` | Ultimate Debate 3AI 토론 |
 | `/auto --gdocs` | 현재 프로젝트 PRD 자동 탐색 → Google Docs 변환 |
 | `/auto --gdocs "파일"` | 지정 파일 → Google Docs 변환 |
+| `/auto --gdocs --sync` | Google Docs ↔ 로컬 동기화 상태 확인 |
+| `/auto --gdocs --sync pull` | Google Docs → 로컬 Markdown 동기화 |
+| `/auto --gdocs --sync push` | 로컬 Markdown → Google Docs 동기화 |
 | `/auto --research "키워드"` | 코드베이스 분석 (기본값) |
 | `/auto --research web "키워드"` | 오픈소스/솔루션 웹 검색 |
 | `/auto --research plan "대상"` | 구현 계획 수립 |
@@ -69,12 +75,15 @@ deprecated: false
 
 > **참고**: `<!-- DECISION_REQUIRED -->` 마커 대신 `--debate` 플래그로 간단하게 토론 트리거
 
-### --gdocs 옵션 (Google Docs 자동 변환)
+### --gdocs 옵션 (Google Docs 자동 변환/동기화)
 
 | 옵션 | 설명 |
 |------|------|
 | `--gdocs` | 현재 프로젝트 PRD 자동 탐색 → Google Docs 변환 |
 | `--gdocs "파일"` | 지정된 파일 → Google Docs 변환 |
+| `--gdocs --sync` | 동기화 상태 확인 (CLAUDE.md 기준) |
+| `--gdocs --sync pull` | Google Docs → 로컬 동기화 |
+| `--gdocs --sync push` | 로컬 → Google Docs 동기화 |
 
 ### --gdocs 자동 처리 워크플로우 (MANDATORY)
 
@@ -116,6 +125,54 @@ deprecated: false
 - 반드시 `cd C:\claude &&` 접두사로 루트에서 실행
 - 파일 경로는 항상 절대 경로로 지정
 - Gemini CLI 토큰이 아닌 `C:\claude\json\token.json` 사용
+
+### --gdocs --sync 동기화 워크플로우
+
+```
+/auto --gdocs --sync [action]
+    │
+    ▼
+┌─────────────────────────────────────────────────────────────┐
+│ 1. CLAUDE.md에서 Google Docs 매핑 정보 읽기                  │
+│    - Google Docs ID                                         │
+│    - 로컬 파일 경로                                         │
+│    - 버전 정보                                              │
+│    - 마지막 동기화 날짜                                     │
+└─────────────────────────────────────────────────────────────┘
+    │
+    ▼
+┌─────────────────────────────────────────────────────────────┐
+│ 2. 동기화 작업 실행                                          │
+│    check : 차이점만 확인 (기본값)                           │
+│    pull  : Google Docs → 로컬 Markdown                      │
+│    push  : 로컬 Markdown → Google Docs                      │
+└─────────────────────────────────────────────────────────────┘
+    │
+    ▼
+┌─────────────────────────────────────────────────────────────┐
+│ 3. CLAUDE.md 동기화 날짜 업데이트                            │
+│    - 동기화 성공 시 자동 업데이트                           │
+└─────────────────────────────────────────────────────────────┘
+```
+
+**CLAUDE.md 필수 형식:**
+
+```markdown
+## Google Docs Reference
+
+| 문서 | Google Docs ID | 버전 | 동기화 날짜 |
+|------|----------------|------|-------------|
+| **문서명** | `DOC_ID_HERE` | v1.0.0 | 2026-01-26 |
+```
+
+**실행 명령:**
+
+```powershell
+# 프로젝트 디렉토리에서 실행
+python scripts/sync_prd_document.py check   # 상태 확인
+python scripts/sync_prd_document.py pull    # GDocs → 로컬
+python scripts/sync_prd_document.py push    # 로컬 → GDocs
+```
 
 ### --research 옵션 (통합 리서치)
 
@@ -199,6 +256,21 @@ Skill(skill="ultimate-debate", args="\"$TOPIC\"")
 # 1. 파일 경로를 절대 경로로 변환
 # 2. Bash("cd C:\claude && python -m lib.google_docs convert \"{절대경로}\"")
 # 3. 결과 URL 출력
+
+# /auto --gdocs --sync → 동기화 상태 확인 (직접 실행, 스킬 호출 아님!)
+# 1. 현재 프로젝트의 scripts/sync_prd_document.py 실행
+# 2. Bash("python scripts/sync_prd_document.py check")
+# 3. 결과 출력
+
+# /auto --gdocs --sync pull → Google Docs → 로컬 동기화
+# 1. Bash("python scripts/sync_prd_document.py pull")
+# 2. 확인 프롬프트 표시 후 실행
+# 3. 결과 출력
+
+# /auto --gdocs --sync push → 로컬 → Google Docs 동기화
+# 1. Bash("python scripts/sync_prd_document.py push")
+# 2. 확인 프롬프트 표시 후 실행
+# 3. 결과 출력
 
 # /auto --research "키워드" → /research "키워드"
 Skill(skill="research", args="$KEYWORD")
