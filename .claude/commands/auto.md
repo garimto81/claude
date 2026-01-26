@@ -165,13 +165,15 @@ deprecated: false
 | **문서명** | `DOC_ID_HERE` | v1.0.0 | 2026-01-26 |
 ```
 
-**실행 명령:**
+**실행 명령 (전역 스크립트):**
 
 ```powershell
-# 프로젝트 디렉토리에서 실행
-python scripts/sync_prd_document.py check   # 상태 확인
-python scripts/sync_prd_document.py pull    # GDocs → 로컬
-python scripts/sync_prd_document.py push    # 로컬 → GDocs
+# 어디서든 실행 가능
+python C:\claude\scripts\prd_sync.py check                          # 자동 감지
+python C:\claude\scripts\prd_sync.py check --project wsoptv_nbatv_clone  # 프로젝트 지정
+python C:\claude\scripts\prd_sync.py pull --project wsoptv_ott           # GDocs → 로컬
+python C:\claude\scripts\prd_sync.py push --force                        # 확인 없이 실행
+python C:\claude\scripts\prd_sync.py list                                # 프로젝트 목록
 ```
 
 ### --research 옵션 (통합 리서치)
@@ -257,20 +259,21 @@ Skill(skill="ultimate-debate", args="\"$TOPIC\"")
 # 2. Bash("cd C:\claude && python -m lib.google_docs convert \"{절대경로}\"")
 # 3. 결과 URL 출력
 
-# /auto --gdocs --sync → 동기화 상태 확인 (직접 실행, 스킬 호출 아님!)
-# 1. 현재 프로젝트의 scripts/sync_prd_document.py 실행
-# 2. Bash("python scripts/sync_prd_document.py check")
+# /auto --gdocs --sync → 동기화 상태 확인 (전역 스크립트 사용)
+# 1. Bash("python C:\\claude\\scripts\\prd_sync.py check")
+# 2. 현재 프로젝트 자동 감지 또는 --project 옵션 사용
 # 3. 결과 출력
 
 # /auto --gdocs --sync pull → Google Docs → 로컬 동기화
-# 1. Bash("python scripts/sync_prd_document.py pull")
+# 1. Bash("python C:\\claude\\scripts\\prd_sync.py pull")
 # 2. 확인 프롬프트 표시 후 실행
-# 3. 결과 출력
 
 # /auto --gdocs --sync push → 로컬 → Google Docs 동기화
-# 1. Bash("python scripts/sync_prd_document.py push")
+# 1. Bash("python C:\\claude\\scripts\\prd_sync.py push")
 # 2. 확인 프롬프트 표시 후 실행
-# 3. 결과 출력
+
+# /auto --gdocs --sync list → 동기화 가능한 프로젝트 목록
+# 1. Bash("python C:\\claude\\scripts\\prd_sync.py list")
 
 # /auto --research "키워드" → /research "키워드"
 Skill(skill="research", args="$KEYWORD")
