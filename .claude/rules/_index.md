@@ -1,7 +1,7 @@
 # Rules Index
 
-**Version**: 1.0.0
-**Last Updated**: 2026-01-19
+**Version**: 1.1.0
+**Last Updated**: 2026-01-28
 
 모듈화된 규칙 시스템의 마스터 색인입니다.
 
@@ -9,7 +9,7 @@
 
 | 파일 | 영역 | 영향도 | Hook 강제 |
 |------|------|--------|-----------|
-| [01-language.md](./01-language.md) | 언어/응답 | MEDIUM | ❌ |
+| [01-language.md](./01-language.md) | 언어/응답 + AI 티 제거 | HIGH | ❌ |
 | [02-paths.md](./02-paths.md) | 경로 | HIGH | ✅ 경고 |
 | [03-git.md](./03-git.md) | Git/커밋 | HIGH | ✅ 자동 커밋 |
 | [04-tdd.md](./04-tdd.md) | TDD | CRITICAL | ✅ 경고 |
