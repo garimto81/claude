@@ -1,7 +1,7 @@
 ---
 name: auto
-version: 13.0.3
-description: 통합 자율 완성 모드 (Ralph + Ultrawork + Ralplan + Codex + Context Manager + Circuit Breaker + Notepad Wisdom)
+version: 14.0.0
+description: 통합 자율 완성 모드 (Ralplan + Critic + Ralph 항상 실행, 작업 유형 기반 분기)
 aliases: [autopilot, ulw, ultrawork, ralph]
 deprecated: false
 ---
@@ -58,25 +58,35 @@ deprecated: false
 > **Ralph + Ultrawork + Ralplan + Codex 최적화 + Context Manager가 자동으로 적용되는 슈퍼모드입니다.**
 > 별도 키워드 없이 `/auto "작업"` 하나로 모든 고급 기능이 활성화됩니다.
 
-## 핵심 철학
+## 핵심 철학 (v14.0 변경)
 
 ```
-/auto = Ultrawork (병렬 실행) + Ralph (완료까지) + Ralplan (계획 필요 시) + Codex (최적화) + Context Manager (인과관계 추적)
+/auto = Ralplan (항상) + Critic (항상) + Ralph (개발 작업 시) + Ultrawork (항상)
 ```
 
-| 통합된 기능 | 자동 적용 조건 |
-|-------------|----------------|
-| **Ultrawork** | 항상 (병렬 에이전트 오케스트레이션) |
-| **Ralph** | 항상 (완료까지 루프 + Architect 검증) |
-| **Ralplan** | 복잡한 작업 시 (Planner→Architect→Critic 합의) |
-| **Ecomode** | 단순 작업 시 (토큰 절약) |
-| **Token Optimizer** | 항상 (캐싱/중복제거로 20-30% 절약) |
-| **Auto Model Router** | 항상 (복잡도 기반 자동 모델 선택) |
-| **Phase Gate** | 항상 (파일 기반 세션 복원력) |
-| **Context Manager** | 항상 (인과관계 그래프 + Compaction 보호) |
-| **Circuit Breaker** | 항상 (3-Failure 에스컬레이션) |
-| **Notepad Wisdom** | 완료 시 (HIGH importance 노드 내보내기) |
-| **Unified State** | 항상 (통합 상태 관리) |
+> ⚠️ **v14.0 핵심 변경**: 복잡도 계산 생략, Ralplan + Critic **항상 실행**
+
+### 작업 유형 분류 (복잡도 대신)
+
+| 작업 유형 | 키워드 | 워크플로우 |
+|-----------|--------|------------|
+| **문서 작업** | docs, README, 문서, PRD, 설계, 기획, md | Ralplan → Critic → 완료 |
+| **개발 작업** | 그 외 모든 작업 | Ralplan → Critic → Ralph → Architect → 완료 |
+
+### 통합된 기능
+
+| 기능 | 적용 조건 | 설명 |
+|------|----------|------|
+| **Ralplan** | ✅ **항상** | Planner → Architect → Critic 합의 |
+| **Critic** | ✅ **항상** | 계획 검토 및 품질 검증 |
+| **Ralph** | 개발 작업만 | 완료까지 루프 + Architect 검증 |
+| **Ultrawork** | 항상 | 병렬 에이전트 오케스트레이션 |
+| **Token Optimizer** | 항상 | 캐싱/중복제거로 20-30% 절약 |
+| **Auto Model Router** | 항상 | 모델 자동 선택 (복잡도 판단 X) |
+| **Phase Gate** | 항상 | 파일 기반 세션 복원력 |
+| **Context Manager** | 항상 | 인과관계 그래프 + Compaction 보호 |
+| **Circuit Breaker** | 항상 | 3-Failure 에스컬레이션 |
+| **Notepad Wisdom** | 완료 시 | HIGH importance 노드 내보내기 |
 
 ## 사용법
 
@@ -202,59 +212,91 @@ if prompt:
     pass
 ```
 
-## 자동 모드 선택 로직
+## 작업 유형 분류 로직 (v14.0 신규)
+
+> **복잡도 계산 생략** - 단순히 문서 작업인지 개발 작업인지만 판단
+
+### 문서 작업 키워드
+
+```python
+DOCS_KEYWORDS = [
+    "docs", "documentation", "readme", "README",
+    "문서", "PRD", "설계", "기획", "명세",
+    ".md", "markdown", "설명", "가이드",
+    "checklist", "체크리스트", "회의록", "정리"
+]
+```
+
+### 워크플로우 분기
 
 ```
 /auto "작업"
     │
     ▼
 ┌─────────────────────────────────────────────────────────────┐
-│ Phase 0: 작업 분석                                           │
-│   - 작업 복잡도 평가                                         │
-│   - 영향 범위 추정 (파일 수, 모듈 수)                        │
-│   - 계획 필요 여부 판단                                      │
-└─────────────────────────────────────────────────────────────┘
-    │
-    ├─ 계획 필요 (복잡한 작업, 5+ 파일, 아키텍처 변경)
-    │      │
-    │      ▼
-    │   ┌──────────────────────────────────────────────────────┐
-    │   │ RALPLAN 자동 활성화                                   │
-    │   │   Planner → Architect → Critic 합의 루프             │
-    │   │   합의 도달 시 → 실행 단계로                          │
-    │   └──────────────────────────────────────────────────────┘
-    │
-    └─ 계획 불필요 (단순 작업, 버그 수정, 리팩토링)
-           │
-           ▼
-┌─────────────────────────────────────────────────────────────┐
-│ Phase 1: ULTRAWORK 활성화                                    │
-│   - 병렬 에이전트 스폰                                       │
-│   - 백그라운드 작업 실행                                     │
-│   - 스마트 모델 라우팅 (Haiku/Sonnet/Opus)                  │
+│ Phase 0: 작업 유형 분류 (단순 키워드 매칭)                    │
+│   - 문서 키워드 포함? → 문서 작업                            │
+│   - 그 외 → 개발 작업                                        │
 └─────────────────────────────────────────────────────────────┘
     │
     ▼
 ┌─────────────────────────────────────────────────────────────┐
-│ Phase 2: RALPH 루프                                          │
-│   - 작업 완료까지 반복                                       │
-│   - 매 반복마다 진행 상황 체크                               │
-│   - TODO 목록 0개 될 때까지                                  │
+│ Phase 1: RALPLAN (항상 실행)                                 │
+│   - Planner: 계획 수립                                       │
+│   - Architect: 계획 검토                                     │
+│   - 합의 루프 (최대 5회)                                     │
 └─────────────────────────────────────────────────────────────┘
     │
     ▼
 ┌─────────────────────────────────────────────────────────────┐
-│ Phase 3: ARCHITECT 검증 (필수)                               │
-│   - Architect 에이전트로 완료 검증                           │
-│   - 승인 시 → 완료                                          │
-│   - 거부 시 → Phase 2로 복귀                                 │
+│ Phase 2: CRITIC 검증 (항상 실행)                             │
+│   - 계획 품질 검토 (명확성, 검증 가능성, 완전성, 전체 맥락)  │
+│   - OKAY 판정까지 반복                                       │
+│   - 거부 시 → Phase 1로 복귀하여 계획 수정                   │
 └─────────────────────────────────────────────────────────────┘
     │
-    ▼
-┌─────────────────────────────────────────────────────────────┐
-│ 완료: <promise>TASK_COMPLETE</promise>                       │
-└─────────────────────────────────────────────────────────────┘
+    ├─ 문서 작업 ──────────────────────────────────────────────┐
+    │                                                          │
+    │  ┌────────────────────────────────────────────────────┐  │
+    │  │ Phase 3a: WRITER 실행                               │  │
+    │  │   - 문서 작성/수정 에이전트 호출                    │  │
+    │  │   - 완료 후 바로 종료                               │  │
+    │  └────────────────────────────────────────────────────┘  │
+    │      │                                                   │
+    │      ▼                                                   │
+    │  완료: <promise>DOCS_COMPLETE</promise>                  │
+    │                                                          │
+    └─ 개발 작업 ──────────────────────────────────────────────┐
+                                                               │
+       ┌────────────────────────────────────────────────────┐  │
+       │ Phase 3b: ULTRAWORK + RALPH 루프                    │  │
+       │   - 병렬 에이전트 스폰                              │  │
+       │   - 작업 완료까지 반복                              │  │
+       │   - TODO 목록 0개 될 때까지                         │  │
+       └────────────────────────────────────────────────────┘  │
+           │                                                   │
+           ▼                                                   │
+       ┌────────────────────────────────────────────────────┐  │
+       │ Phase 4: ARCHITECT 검증 (필수)                      │  │
+       │   - Architect 에이전트로 완료 검증                  │  │
+       │   - 승인 시 → 완료                                  │  │
+       │   - 거부 시 → Phase 3b로 복귀                       │  │
+       └────────────────────────────────────────────────────┘  │
+           │                                                   │
+           ▼                                                   │
+       완료: <promise>TASK_COMPLETE</promise>                  │
 ```
+
+### 워크플로우 요약 표
+
+| 단계 | 문서 작업 | 개발 작업 |
+|:----:|:---------:|:---------:|
+| Phase 0 | 유형 분류 | 유형 분류 |
+| Phase 1 | ✅ Ralplan | ✅ Ralplan |
+| Phase 2 | ✅ Critic | ✅ Critic |
+| Phase 3 | Writer | Ultrawork + Ralph |
+| Phase 4 | - | ✅ Architect |
+| 완료 태그 | `DOCS_COMPLETE` | `TASK_COMPLETE` |
 
 ## 위임 규칙 (CRITICAL)
 
@@ -385,7 +427,7 @@ stats = optimizer.get_stats()
 |------|------|
 | `--max N` | 최대 N회 반복 |
 | `--eco` | 토큰 절약 모드 (Haiku 우선) |
-| `--no-plan` | Ralplan 스킵 (단순 작업 강제) |
+| `--no-critic` | Critic 검증 스킵 (긴급 작업용, 권장하지 않음) |
 | `--dry-run` | 계획만 출력, 실행 안함 |
 | `--mockup` | 목업 생성 모드 (하위 옵션 지원) |
 | `--debate` | 3AI 토론 모드 |
@@ -496,7 +538,7 @@ manager = restore_session("phase_20260128_143022")
 print(manager.get_summary())  # 복원 정보 출력
 ```
 
-## 실행 흐름 요약
+## 실행 흐름 요약 (v14.0 업데이트)
 
 ```
 /auto "작업"
@@ -504,37 +546,54 @@ print(manager.get_summary())  # 복원 정보 출력
     ├─[0] 이전 세션 복원 확인 (v12.1)
     │      └─ check_restorable_session()
     │
-    ├─[1] 통합 상태 초기화 (v13.0 신규)
+    ├─[1] 통합 상태 초기화
     │      └─ UnifiedStateManager 생성
     │      └─ start_workflow("auto")
     │
     ├─[2] Phase Gate 초기화
     │      └─ state.set_phase("INIT")
     │
-    ├─[3] 작업 분석 + Auto Model Router
-    │      └─ 복잡도 분석 → 모델 자동 선택
+    ├─[3] 작업 유형 분류 (v14.0 변경)
+    │      └─ classify_task_type(description)
+    │      └─ 문서 작업 vs 개발 작업 판단
+    │      └─ 모델 자동 선택 (복잡도 판단 X)
     │
-    ├─[4] 계획 필요 시: Ralplan
+    ├─[4] Ralplan (항상 실행) ← v14.0 변경
+    │      └─ Planner → Architect 합의 루프
     │      └─ state.set_phase("PLAN")
     │
-    ├─[5] Ultrawork 활성화 (병렬 에이전트)
-    │      └─ state.set_phase("EXECUTE")
+    ├─[5] Critic 검증 (항상 실행) ← v14.0 신규
+    │      └─ 계획 품질 검토
+    │      └─ OKAY 판정까지 반복
+    │      └─ 거부 시 → [4]로 복귀
     │
-    ├─[6] Ralph 루프 (완료까지 반복)
-    │      ├─ 에러 발생 시: Circuit Breaker 체크 (v13.0)
-    │      │       ├─ RETRY: 재시도
-    │      │       ├─ ALTERNATE: 대안 시도
-    │      │       └─ ESCALATE: Architect 호출
-    │      └─ state.increment_iteration()
+    ├─[분기] 작업 유형에 따른 분기
     │
-    ├─[7] Architect 검증 (필수)
-    │      └─ state.set_phase("VERIFY")
-    │      └─ 검증 실패 시 → [6]으로 복귀
-    │
-    ├─[8] Notepad Wisdom 내보내기 (v13.0 신규)
-    │      └─ ctx.export_to_wisdom(task_name)
-    │
-    └─[9] 완료
+    ├─[문서 작업] ──────────────────────────────────────────────┐
+    │                                                          │
+    │  ├─[6a] Writer 에이전트 호출                             │
+    │  │       └─ 문서 작성/수정                               │
+    │  │                                                       │
+    │  └─[7a] 완료                                             │
+    │         └─ <promise>DOCS_COMPLETE</promise>              │
+    │                                                          │
+    └─[개발 작업] ──────────────────────────────────────────────┐
+                                                               │
+       ├─[6b] Ultrawork + Ralph 루프                           │
+       │       └─ 병렬 에이전트 스폰                           │
+       │       └─ 작업 완료까지 반복                           │
+       │       └─ Circuit Breaker 체크                         │
+       │       └─ state.set_phase("EXECUTE")                   │
+       │                                                       │
+       ├─[7b] Architect 검증 (필수)                            │
+       │       └─ state.set_phase("VERIFY")                    │
+       │       └─ 거부 시 → [6b]로 복귀                        │
+       │                                                       │
+       ├─[8] Notepad Wisdom 내보내기                           │
+       │       └─ ctx.export_to_wisdom(task_name)              │
+       │                                                       │
+       └─[9] 완료                                              │
+              └─ <promise>TASK_COMPLETE</promise>              │
            └─ state.complete_workflow(success=True)
            └─ <promise>TASK_COMPLETE</promise>
 ```
@@ -955,6 +1014,7 @@ status = state.get_status()
 
 ---
 
+**Version 14.0.0**: 복잡도 계산 생략, Ralplan + Critic 항상 실행, 작업 유형 분류 (문서 vs 개발)
 **Version 13.0.0**: OMC 통합 (Circuit Breaker + Notepad Wisdom + 통합 상태 관리 + Architect 필수 검증)
 **Version 12.1.0**: 세션 복원 기능 추가 (/clear 후 맥락 유지)
 **Version 12.0.0**: Context Manager 통합 (인과관계 그래프 + Compaction 보호 + 자동 정리)
