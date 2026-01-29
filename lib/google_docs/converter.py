@@ -135,6 +135,29 @@ class MarkdownToDocsConverter:
 
         self.content = "\n".join(processed_lines)
 
+        # 3. 괄호 안 영문 표기 삭제 (한글 뒤의 영문 설명 제거)
+        # 예: "3대 원천 (Three Pillars)" → "3대 원천"
+        # 패턴: 한글/숫자 + 공백 + (영문만으로 구성된 괄호)
+        self.content = re.sub(
+            r'(?<=[가-힣0-9])\s*\([A-Za-z][A-Za-z\s\-\/&\'".,]+\)',
+            '',
+            self.content
+        )
+
+        # 4. HTML 원본 링크 및 텍스트 삭제
+        # 예: "[HTML 원본](./mockups/xxx.html)" → 삭제
+        # 예: "HTML 원본" 단독 텍스트 → 삭제
+        self.content = re.sub(
+            r'\[HTML\s*원본\]\([^)]+\)',  # [HTML 원본](링크) 패턴
+            '',
+            self.content
+        )
+        self.content = re.sub(
+            r'HTML\s*원본',  # "HTML 원본" 단독 텍스트
+            '',
+            self.content
+        )
+
     def parse(self) -> list[dict[str, Any]]:
         """
         마크다운 파싱 및 Google Docs API 요청 생성
@@ -652,14 +675,15 @@ class MarkdownToDocsConverter:
         import time
         from googleapiclient.errors import HttpError
 
-        def _retry(request_fn, max_retries=3, initial_delay=2):
+        def _retry(request_fn, max_retries=5, initial_delay=30):
             """Rate Limit 처리를 위한 재시도 래퍼"""
             for attempt in range(max_retries):
                 try:
                     return request_fn()
                 except HttpError as e:
                     if e.resp.status == 429 and attempt < max_retries - 1:
-                        wait_time = initial_delay * (2 ** attempt)
+                        wait_time = initial_delay * (1.5 ** attempt)
+                        print(f"     [429] Rate limit, {wait_time:.0f}초 대기 후 재시도...")
                         time.sleep(wait_time)
                     else:
                         raise
@@ -1129,27 +1153,9 @@ class MarkdownToDocsConverter:
                 }
             )
         else:
-            # URL이 유효하지 않으면 경고 텍스트만 삽입
-            warning = f"[⚠️ 이미지 로드 실패: {url}]"
-            start = self._add_text(warning)
-            self.requests.append(
-                {
-                    "updateTextStyle": {
-                        "range": {
-                            "startIndex": start,
-                            "endIndex": self.current_index - 1,
-                        },
-                        "textStyle": {
-                            "foregroundColor": {
-                                "color": {
-                                    "rgbColor": {"red": 0.8, "green": 0.4, "blue": 0.0}
-                                }
-                            }
-                        },
-                        "fields": "foregroundColor",
-                    }
-                }
-            )
+            # URL이 유효하지 않으면 아무것도 삽입하지 않음 (문서 독립성 보장)
+            # 경고 메시지 삭제: Google Docs에 깨진 참조 표시 방지
+            pass
 
     def _normalize_image_url(self, url: str) -> tuple[str | None, bool]:
         """
@@ -1168,10 +1174,15 @@ class MarkdownToDocsConverter:
             - 파일 없음: (None, False)
         """
         from pathlib import Path
+        from urllib.parse import unquote
 
         url = url.strip()
 
-        # HTTP/HTTPS URL
+        # URL 디코딩 (로컬 경로에서 %20 → 공백 등 변환)
+        # 예: "스크린샷%202026-01-21%20113700.png" → "스크린샷 2026-01-21 113700.png"
+        decoded_url = unquote(url)
+
+        # HTTP/HTTPS URL (디코딩 없이 원본 사용)
         if url.startswith(("http://", "https://")):
             return url, False
 
@@ -1179,22 +1190,22 @@ class MarkdownToDocsConverter:
         if url.startswith("data:image/"):
             return url, False
 
-        # 로컬 경로 처리
+        # 로컬 경로 처리 (디코딩된 URL 사용)
         local_path = None
 
         # 절대 경로
-        if url.startswith(("/", "C:", "D:", "E:")):
-            local_path = Path(url)
+        if decoded_url.startswith(("/", "C:", "D:", "E:")):
+            local_path = Path(decoded_url)
         # 상대 경로 (base_path 기준)
-        elif url.startswith(("./", "../")) or not url.startswith("http"):
+        elif decoded_url.startswith(("./", "../")) or not decoded_url.startswith("http"):
             if self.base_path:
                 base = Path(self.base_path)
                 if base.is_file():
                     base = base.parent
-                local_path = (base / url).resolve()
+                local_path = (base / decoded_url).resolve()
             else:
                 # base_path 없으면 현재 디렉토리 기준
-                local_path = Path(url).resolve()
+                local_path = Path(decoded_url).resolve()
 
         # 파일 존재 확인
         if local_path and local_path.exists() and local_path.is_file():
@@ -1339,14 +1350,14 @@ class MarkdownToDocsConverter:
             )
 
 
-def _execute_with_retry(request_fn, max_retries=3, initial_delay=2):
+def _execute_with_retry(request_fn, max_retries=5, initial_delay=30):
     """
     Rate Limit (429) 처리를 위한 지수 백오프 재시도 래퍼
 
     Args:
         request_fn: 실행할 API 요청 함수 (람다 또는 callable)
-        max_retries: 최대 재시도 횟수
-        initial_delay: 초기 대기 시간 (초)
+        max_retries: 최대 재시도 횟수 (기본 5회)
+        initial_delay: 초기 대기 시간 (초, 기본 30초 - 분당 60회 쿼터 고려)
 
     Returns:
         API 응답
@@ -1362,7 +1373,8 @@ def _execute_with_retry(request_fn, max_retries=3, initial_delay=2):
             return request_fn()
         except HttpError as e:
             if e.resp.status == 429 and attempt < max_retries - 1:
-                wait_time = initial_delay * (2 ** attempt)
+                wait_time = initial_delay * (1.5 ** attempt)  # 30, 45, 67.5, 101...초
+                print(f"     [429] Rate limit, {wait_time:.0f}초 대기 후 재시도 ({attempt + 1}/{max_retries})...")
                 time.sleep(wait_time)
             else:
                 raise
