@@ -1,10 +1,11 @@
 ---
 name: auto-workflow
 description: >
-  자율 판단 + 자율 발견 워크플로우 (v2.0 - Ralph Wiggum 철학 통합).
+  하이브리드 자율 발견 워크플로우 (v4.1 - OMC 통합).
+  /auto = WHAT (5계층 자율 발견 + Context 예측 + Loop Control)
+  OMC = HOW (Ralplan + Ultrawork + Architect 검증)
   "할 일 없음 → 종료"가 아닌 "할 일 없음 → 스스로 발견".
-  5계층 우선순위, 9개 커맨드 자동 트리거, Context 예측 기반 관리.
-version: 4.0.0
+version: 4.1.0
 
 triggers:
   keywords:
@@ -19,9 +20,17 @@ triggers:
     - "대규모 작업 자동화"
     - "Context 관리 자동화"
     - "자율 발견"
-    - "9개 커맨드 통합"
+    - "OMC 위임"
+    - "하이브리드 워크플로우"
 
 capabilities:
+  # v15.0 하이브리드 기능 (신규)
+  - five_tier_discovery    # 5계층 자율 발견 (Tier 0-5)
+  - context_prediction     # 작업 전 비용 예측
+  - omc_delegation         # OMC 에이전트 위임
+  - hybrid_verification    # Self-Check + OMC Architect
+  - loop_control           # 세션 및 반복 관리
+
   # 기본 기능
   - log_all_actions        # 모든 작업 로깅
   - chunk_logs             # 로그 자동 청킹
@@ -29,30 +38,24 @@ capabilities:
   - auto_checkpoint        # 자동 체크포인트
   - prd_management         # PRD 작성/검토
   - completion_promise     # Ralph 스타일 종료 조건
-  - autonomous_discovery   # 자율 발견 (Tier 4)
 
-  # 9개 커맨드 자동 트리거
-  - auto_debug             # /debug 자동 트리거
-  - auto_check             # /check --fix 자동 실행
-  - auto_commit            # /commit 자동 실행 (100줄+)
-  - auto_issue_fix         # /issue fix 자동 실행
-  - auto_pr                # /pr auto 자동 실행
-  - auto_tdd               # /tdd 자동 트리거
-  - auto_research          # /research 자동 트리거
-  - auto_audit             # /audit quick 세션 시작 시
+  # 9개 커맨드 자동 트리거 (OMC 위임)
+  - auto_debug             # /debug → architect:opus
+  - auto_check             # /check --fix → build-fixer:sonnet
+  - auto_commit            # /commit → git-master
+  - auto_issue_fix         # /issue fix → executor:sonnet
+  - auto_pr                # /pr auto → executor:sonnet
+  - auto_tdd               # /tdd → tdd-guide:sonnet
+  - auto_research          # /research → researcher:sonnet
+  - auto_audit             # /audit quick → security-reviewer:haiku
   - auto_parallel          # 병렬 처리 자동 적용
-
-  # Context 예측 관리
-  - context_prediction     # 작업별 예상 Context 분석
-  - context_cleanup        # 80%/90% 도달 시 자동 정리
-  - context_restart        # /clear 후 자동 재시작
 
   # 검증
   - e2e_validation         # E2E 4방향 병렬 검증 (Playwright)
   - e2e_parallel           # Functional/Visual/A11y/Perf 병렬
   - tdd_validation         # TDD 검증 (pytest + 커버리지)
 
-  # 자율 개선 (Tier 4+)
+  # 자율 개선 (Tier 5)
   - prd_analysis           # PRD 분석하여 개선점 탐색
   - solution_search        # 더 나은 솔루션 탐색
   - solution_migrate       # 자동 마이그레이션
@@ -62,6 +65,7 @@ model_preference: opus
 phase: [1, 2, 3, 4, 5]
 auto_trigger: false
 dependencies:
+  - oh-my-claudecode       # OMC 에이전트 위임 (신규)
   - journey-sharing
   - session
   - create     # PRD 생성용
@@ -76,7 +80,7 @@ dependencies:
 token_budget: 4000
 ---
 
-# auto-workflow 스킬 (v4.0 - 9개 커맨드 통합)
+# auto-workflow 스킬 (v4.1 - OMC 하이브리드)
 
 ## 개요
 
@@ -106,9 +110,22 @@ token_budget: 4000
 ├── scripts/
 │   ├── auto_cli.py             # CLI 진입점 (python auto_cli.py)
 │   ├── auto_orchestrator.py    # 메인 루프 엔진
-│   ├── auto_discovery.py       # 2계층 자율 발견 로직
+│   ├── auto_discovery.py       # 레거시 2계층 발견 (deprecated)
 │   ├── auto_logger.py          # 로그 관리
-│   └── auto_state.py           # 상태/체크포인트 관리
+│   ├── auto_state.py           # 상태/체크포인트 관리
+│   │
+│   │  # v15.0 하이브리드 모듈 (신규)
+│   ├── discovery.py            # 5계층 자율 발견 엔진 (Tier 0-5)
+│   ├── context_predictor.py    # Context 예측 모듈
+│   ├── omc_bridge.py           # OMC 위임 인터페이스
+│   ├── verification.py         # 하이브리드 검증 (Self + Architect)
+│   ├── loop_control.py         # 세션 및 반복 관리
+│   │
+│   │  # 레거시 모듈 (유지)
+│   ├── context_manager.py      # 인과관계 그래프
+│   ├── model_router.py         # 자동 모델 선택
+│   ├── phase_gate.py           # Phase 기반 세션 복원
+│   └── unified_state.py        # 통합 상태 관리
 └── references/
     └── log-schema.md           # 로그 스키마 문서
 
@@ -119,6 +136,9 @@ token_budget: 4000
 │       ├── log_001.json        # 로그 청크
 │       └── checkpoint.json     # 체크포인트
 └── archive/                    # 완료된 세션
+
+.omc/plans/
+└── auto-v15-hybrid.md          # v15.0 설계 문서
 ```
 
 ## 오케스트레이터 실행 (권장)
