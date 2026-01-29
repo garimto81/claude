@@ -16,6 +16,7 @@
 | [05-supabase.md](./05-supabase.md) | Supabase | HIGH | ❌ |
 | [06-documentation.md](./06-documentation.md) | 문서화 | MEDIUM | ❌ |
 | [07-build-test.md](./07-build-test.md) | 빌드/테스트 | HIGH | ❌ |
+| [08-skill-routing.md](./08-skill-routing.md) | OMC 스킬 라우팅 | HIGH | ❌ |
 
 ## 영향도 정의
 

@@ -12,11 +12,38 @@ triggers:
     - "ralph"
 model_preference: opus
 auto_trigger: true
+omc_delegate: oh-my-claudecode:autopilot
+omc_agents:
+  - executor
+  - executor-high
+  - architect
+  - planner
+  - critic
 ---
 
 # /auto - 하이브리드 자율 워크플로우
 
 > **핵심**: `/auto "작업"` = Ralph 루프 + Ultrawork 병렬 실행 + Architect 검증
+
+## OMC Integration
+
+이 스킬은 oh-my-claudecode의 `autopilot` 스킬로 위임됩니다.
+
+**Skill() 호출 형식**:
+```
+Skill(skill="oh-my-claudecode:autopilot", args="작업 설명")
+```
+
+**omc_delegate 필드**:
+- YAML frontmatter의 `omc_delegate: oh-my-claudecode:autopilot`는 자동 위임 대상을 지정합니다.
+- 호출 시 OMC 시스템이 자동으로 해당 스킬로 라우팅합니다.
+
+**사용되는 OMC 에이전트**:
+- `executor`: 일반 구현 작업
+- `executor-high`: 복잡한 구현 작업
+- `architect`: 분석 및 검증
+- `planner`: 계획 수립
+- `critic`: 계획 검토
 
 ## ⚠️ 필수 실행 규칙 (CRITICAL)
 
@@ -39,6 +66,38 @@ auto_trigger: true
 ```
 
 **옵션 실패 시**: 에러 메시지 출력하고 **절대 조용히 스킵하지 않음**
+
+## Ralph 루프 워크플로우 (CRITICAL)
+
+**autopilot = Ralplan + Ultrawork + Ralph 루프**
+
+### 실행 흐름
+
+```
+Ralplan (계획 합의)
+       │
+       ▼
+Ultrawork (병렬 실행)
+       │
+       ▼
+Architect 검증
+       │
+       ▼
+┌──────────────────────────────────────┐
+│         Ralph 루프 (5개 조건)          │
+│                                      │
+│  조건 1: TODO == 0                   │
+│  조건 2: 기능 동작                    │
+│  조건 3: 테스트 통과                  │
+│  조건 4: 에러 == 0                   │
+│  조건 5: Architect 승인              │
+│                                      │
+│  ANY 실패? ──YES──▶ 자동 재시도       │
+│              NO ──▶ 완료 선언         │
+└──────────────────────────────────────┘
+```
+
+**5개 조건 모두 충족될 때까지 자동으로 반복합니다.**
 
 ### Phase 2: 메인 워크플로우 (Ralph + Ultrawork)
 
