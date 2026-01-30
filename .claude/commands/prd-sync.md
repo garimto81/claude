@@ -44,7 +44,11 @@ Google Docs 마스터 문서에서 로컬 캐시로 동기화합니다.
 ### /prd-sync PRD-NNNN
 
 ```bash
-python scripts/prd_manager.py sync PRD-0001
+# 루트에서 실행 (권장)
+cd C:\claude && python scripts/prd_sync.py check --project {프로젝트명}
+
+# 또는 특정 프로젝트
+python C:\claude\scripts\prd_sync.py pull --project wsoptv_ott
 ```
 
 **수행 작업**:
@@ -65,7 +69,7 @@ python scripts/prd_manager.py sync PRD-0001
 모든 등록된 PRD를 순차적으로 동기화합니다.
 
 ```bash
-python scripts/prd_manager.py sync --all
+cd C:\claude && python scripts/prd_sync.py pull --force
 ```
 
 ### /prd-sync --list
@@ -73,7 +77,7 @@ python scripts/prd_manager.py sync --all
 등록된 모든 PRD 목록을 표시합니다.
 
 ```bash
-python scripts/prd_manager.py list
+cd C:\claude && python scripts/prd_sync.py list
 ```
 
 **출력 예시**:
@@ -129,7 +133,8 @@ PRD Registry (2 documents)
 | `.prd-registry.json` | PRD 메타데이터 레지스트리 |
 | `tasks/prds/PRD-NNNN.cache.md` | 로컬 캐시 (읽기 전용) |
 | `docs/checklists/PRD-NNNN.md` | 진행 체크리스트 |
-| `scripts/prd_manager.py` | PRD 관리 스크립트 |
+| `scripts/prd_sync.py` | PRD 동기화 스크립트 |
+| `lib/google_docs/` | Google Docs API 모듈 |
 
 ---
 

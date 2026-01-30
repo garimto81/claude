@@ -1,7 +1,7 @@
 # Rules Index
 
-**Version**: 1.0.0
-**Last Updated**: 2026-01-19
+**Version**: 1.1.0
+**Last Updated**: 2026-01-28
 
 모듈화된 규칙 시스템의 마스터 색인입니다.
 
@@ -9,13 +9,14 @@
 
 | 파일 | 영역 | 영향도 | Hook 강제 |
 |------|------|--------|-----------|
-| [01-language.md](./01-language.md) | 언어/응답 | MEDIUM | ❌ |
+| [01-language.md](./01-language.md) | 언어/응답 + AI 티 제거 | HIGH | ❌ |
 | [02-paths.md](./02-paths.md) | 경로 | HIGH | ✅ 경고 |
 | [03-git.md](./03-git.md) | Git/커밋 | HIGH | ✅ 자동 커밋 |
 | [04-tdd.md](./04-tdd.md) | TDD | CRITICAL | ✅ 경고 |
 | [05-supabase.md](./05-supabase.md) | Supabase | HIGH | ❌ |
 | [06-documentation.md](./06-documentation.md) | 문서화 | MEDIUM | ❌ |
 | [07-build-test.md](./07-build-test.md) | 빌드/테스트 | HIGH | ❌ |
+| [08-skill-routing.md](./08-skill-routing.md) | OMC 스킬 라우팅 | HIGH | ❌ |
 
 ## 영향도 정의
 
