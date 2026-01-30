@@ -161,6 +161,16 @@ class AutoTriggerHandler:
                 "file_path": file_path,
             }
 
+        # 파일 크기 확인 (너무 크면 패턴 매칭 전에 차단)
+        file_size = file_path.stat().st_size
+        if file_size > 1_000_000:  # 1MB
+            return {
+                "should_convert": False,
+                "reason": f"파일이 너무 큽니다 ({file_size / 1024 / 1024:.1f} MB)",
+                "confidence": 0.0,
+                "file_path": file_path,
+            }
+
         # 파일 패턴 매칭
         matched_patterns = []
         for pattern in self.TRIGGERS["file_patterns"]:
@@ -175,16 +185,6 @@ class AutoTriggerHandler:
                 "should_convert": True,
                 "reason": f'파일 패턴 매칭: {", ".join(matched_patterns)}',
                 "confidence": confidence,
-                "file_path": file_path,
-            }
-
-        # 파일 크기 확인 (너무 크면 경고)
-        file_size = file_path.stat().st_size
-        if file_size > 1_000_000:  # 1MB
-            return {
-                "should_convert": False,
-                "reason": f"파일이 너무 큽니다 ({file_size / 1024 / 1024:.1f} MB)",
-                "confidence": 0.0,
                 "file_path": file_path,
             }
 

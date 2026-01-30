@@ -1,7 +1,7 @@
 # Google Docs Converter Documentation
 
-**Version**: 1.3.0
-**Last Updated**: 2026-01-23
+**Version**: 1.5.0
+**Last Updated**: 2026-01-30
 
 ---
 
@@ -11,6 +11,8 @@
 |------|------|------|
 | [CONVERSION_PROCESS.md](./CONVERSION_PROCESS.md) | **전체 변환 프로세스 설계** (6단계) | 모든 사용자 |
 | [BATCH_PROCESSOR_GUIDE.md](./BATCH_PROCESSOR_GUIDE.md) | 배치 변환 및 자동 트리거 가이드 | 개발자 |
+| [API_INSERTABLE_ELEMENTS.md](./API_INSERTABLE_ELEMENTS.md) | **API 삽입 가능 형식 완전 리스트** (37개 Request) | 개발자 |
+| [TESTING.md](./TESTING.md) | **테스트 가이드** (36개 테스트, Fixture/Mock/Parametrize) | 개발자 |
 
 ---
 
@@ -81,4 +83,4 @@ Markdown → 전처리 → 파싱 → 문서 생성 → 콘텐츠 삽입 → 이
 
 ---
 
-*Last Updated: 2026-01-23*
+*Last Updated: 2026-01-30*
