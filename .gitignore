@@ -177,6 +177,26 @@ claudeyoutuber/
 secretary/
 youtuber/
 
+# 서브 프로젝트들 (별도 레포로 분리 필요)
+ae_nexrender_module/
+archive-analyzer/
+automation_aep_csv/
+automation_dashboard/
+automation_orchestration/
+automation_schema/
+ebs/
+fq4/
+gfx_json/
+kanban_board/
+tft-assist/
+vscode_setting/
+wsop_viewership/
+wsoptv_candidates/
+wsoptv_nbatv_clone/
+wsoptv_ott/
+youtuber_chatbot/
+youtuber_vertuber/
+
 # 임시 스캔/출력 파일
 drive_*.json
 ollama/

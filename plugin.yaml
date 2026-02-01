@@ -1,0 +1,82 @@
+name: claude-workflow
+version: 1.0.0
+description: Claude Code 워크플로우 시스템 - 커스텀 커맨드, 에이전트, 스킬 모음
+author: garimto81
+repository: https://github.com/garimto81/claude
+
+# 플러그인이 제공하는 기능
+provides:
+  commands:
+    - auto           # 하이브리드 자율 워크플로우
+    - work           # 작업 실행
+    - commit         # Conventional Commit
+    - check          # 코드 품질 검사
+    - debug          # 가설-검증 디버깅
+    - issue          # GitHub 이슈 관리
+    - tdd            # TDD 워크플로우
+    - deploy         # 배포
+    - pr             # PR 관리
+    - research       # 리서치
+    - mockup         # 목업 생성
+    - verify         # Cross-AI 검증
+    - chunk          # PDF 청킹
+    - ai-login       # AI 서비스 인증
+    - create         # PRD/PR/문서 생성
+    - session        # 세션 관리
+    - todo           # TODO 관리
+    - parallel       # 병렬 에이전트
+    - prd-sync       # PRD 동기화
+    - audit          # 설정 감사
+
+  agents:
+    - ai-engineer
+    - architect
+    - backend-dev
+    - claude-expert
+    - cloud-architect
+    - code-reviewer
+    - data-specialist
+    - database-specialist
+    - debugger
+    - devops-engineer
+    - docs-writer
+    - frontend-dev
+    - fullstack-dev
+    - github-engineer
+    - python-dev
+    - security-auditor
+    - test-engineer
+    - typescript-dev
+    - catalog-engineer
+
+  skills:
+    - auto-workflow
+    - code-quality-checker
+    - command-analytics
+    - debugging-workflow
+    - final-check-automation
+    - google-workspace
+    - issue-resolution
+    - journey-sharing
+    - parallel-agent-orchestration
+    - phase-validation
+    - playwright-wrapper
+    - pr-review-agent
+    - pre-work-research
+    - supabase-integration
+    - tdd-workflow
+    - vercel-deployment
+    - webapp-testing
+    - cross-ai-verifier
+    - ultimate-debate
+    - secretary
+    - mockup-hybrid
+    - vercel-react-best-practices
+
+# 의존성
+dependencies:
+  - oh-my-claudecode  # OMC 플러그인 필수
+
+# 설치 후 실행
+postinstall:
+  - echo "claude-workflow 플러그인이 설치되었습니다!"
