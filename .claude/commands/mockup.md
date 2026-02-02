@@ -253,6 +253,106 @@ STITCH_API_BASE_URL=https://api.stitch.withgoogle.com/v1  # 선택
 
 ---
 
+## ASCII 다이어그램 자동 교체 (--bnw 핵심 기능)
+
+`--bnw` 옵션 사용 시 **기존 Markdown 파일의 ASCII 다이어그램을 이미지로 자동 교체**합니다.
+
+### 워크플로우
+
+```
+/mockup "화면" --bnw --target=docs/example.md
+      │
+      ▼
+┌─────────────────────────────────────────────────────┐
+│ Step 1: ASCII 다이어그램 탐지                        │
+│   - 대상 Markdown 파일에서 ``` 블록 내 ASCII 검색   │
+│   - 박스(┌─┐), 화살표(→, ▼), 선(│, ─) 패턴 감지    │
+└─────────────────────────────────────────────────────┘
+      │
+      ▼
+┌─────────────────────────────────────────────────────┐
+│ Step 2: HTML 목업 생성                               │
+│   - 각 ASCII 다이어그램을 HTML 와이어프레임으로 변환│
+│   - Black & White 스타일 적용                       │
+│   - docs/mockups/{name}-{index}.html 저장           │
+└─────────────────────────────────────────────────────┘
+      │
+      ▼
+┌─────────────────────────────────────────────────────┐
+│ Step 3: PNG 스크린샷 캡처                            │
+│   - Playwright로 HTML → PNG 변환                    │
+│   - docs/images/{name}-{index}.png 저장             │
+└─────────────────────────────────────────────────────┘
+      │
+      ▼
+┌─────────────────────────────────────────────────────┐
+│ Step 4: Markdown 교체 (핵심)                         │
+│   - ASCII 다이어그램 블록을 이미지 참조로 교체      │
+│   - ![{caption}](../images/{name}-{index}.png)      │
+│   - 원본 ASCII는 주석 또는 삭제                     │
+└─────────────────────────────────────────────────────┘
+```
+
+### 사용 예시
+
+```bash
+# 특정 파일의 ASCII 다이어그램 교체
+/mockup "시스템 아키텍처" --bnw --target=docs/ARCHITECTURE.md
+
+# PRD 파일의 모든 ASCII 교체
+/mockup --bnw --target=docs/prds/PRD-0001.md
+
+# 현재 작업 중인 문서 (자동 감지)
+/auto --mockup --bnw "대시보드 화면"
+```
+
+### 교체 전/후 예시
+
+**Before (ASCII):**
+```markdown
+## 시스템 구조
+
+┌─────────┐     ┌─────────┐
+│ Client  │────▶│ Server  │
+└─────────┘     └─────────┘
+```
+
+**After (이미지):**
+```markdown
+## 시스템 구조
+
+![시스템 구조](../images/system-architecture-01.png)
+
+[HTML 원본](../mockups/system-architecture-01.html)
+```
+
+### 옵션
+
+| 옵션 | 설명 | 기본값 |
+|------|------|--------|
+| `--target=FILE` | 교체 대상 Markdown 파일 | 자동 감지 |
+| `--keep-ascii` | 원본 ASCII를 주석으로 보존 | false |
+| `--dry-run` | 교체 미리보기 (실제 수정 안함) | false |
+| `--all` | 파일 내 모든 ASCII 다이어그램 교체 | true |
+
+### ASCII 감지 패턴
+
+| 패턴 | 설명 | 예시 |
+|------|------|------|
+| 박스 문자 | `┌ ┐ └ ┘ ├ ┤ ┬ ┴ ┼` | `┌───┐` |
+| 선 문자 | `─ │ ═ ║` | `│   │` |
+| 화살표 | `→ ← ↑ ↓ ▶ ◀ ▲ ▼` | `──▶` |
+| 코너 | `╔ ╗ ╚ ╝` | `╔═══╗` |
+
+### 주의사항
+
+- `--bnw` 없이 `--mockup`만 사용하면 ASCII 교체 **안함** (HTML만 생성)
+- `--target` 없으면 현재 컨텍스트에서 자동 감지
+- 교체 전 반드시 확인 질문 표시 (기본값)
+- `--force`로 확인 없이 즉시 교체
+
+---
+
 ## 관련 커맨드
 
 | 커맨드 | 용도 |
@@ -267,3 +367,55 @@ STITCH_API_BASE_URL=https://api.stitch.withgoogle.com/v1  # 선택
 - 와이어프레임: `.claude/templates/mockup-wireframe.html`
 - 고품질 폴백: `.claude/templates/mockup-hifi.html`
 - 흐름도: `.claude/templates/mockup-flow.html`
+
+---
+
+## 스크린샷 캡처 (여백 없음)
+
+### 기본 명령
+
+```powershell
+# 단일 파일 캡처 (900x600 viewport)
+npx playwright screenshot "file.html" "output.png" --full-page --viewport-size="900,600"
+
+# 넓은 화면 캡처 (1200x800)
+npx playwright screenshot "file.html" "output.png" --full-page --viewport-size="1200,800"
+```
+
+### 스크립트 사용
+
+```powershell
+# 단일 파일
+C:\claude\.claude\scripts\screenshot-capture.ps1 -InputFile "file.html" -OutputFile "output.png"
+
+# 일괄 처리
+C:\claude\.claude\scripts\screenshot-capture.ps1 -InputDir "docs/mockups/" -OutputDir "docs/images/"
+
+# 커스텀 viewport
+C:\claude\.claude\scripts\screenshot-capture.ps1 -InputFile "file.html" -OutputFile "output.png" -Width 1200 -Height 800
+```
+
+### CSS 요구사항 (여백 없는 캡처)
+
+템플릿과 목업 HTML에 적용된 CSS:
+
+```css
+body {
+    padding: 0;
+    margin: 0;
+}
+.container {
+    max-width: 100%;
+    margin: 0;
+    padding: 15px;  /* 내부 여백만 유지 */
+}
+```
+
+### 권장 viewport 크기
+
+| 용도 | Width | Height |
+|------|:-----:|:------:|
+| 표준 목업 | 900 | 600 |
+| 넓은 대시보드 | 1200 | 800 |
+| 모바일 | 375 | 667 |
+| 태블릿 | 768 | 1024 |

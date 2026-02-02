@@ -21,15 +21,83 @@ omc_delegate: oh-my-claudecode:autopilot
 3. `omc_delegate` 필드 확인
 4. `Skill(skill="oh-my-claudecode:autopilot", args="작업")` 자동 호출
 
-## 스킬 매핑 테이블
+## 스킬 매핑 테이블 (최종)
 
-| 로컬 스킬 | OMC 스킬 | 용도 |
-|-----------|----------|------|
-| `/auto` | `oh-my-claudecode:autopilot` | 자율 워크플로우 |
-| `/check` | `oh-my-claudecode:ultraqa` | QA 사이클 |
-| `/debug` | `oh-my-claudecode:analyze` | 디버깅 분석 |
-| `/commit` | (직접 실행) | Git 커밋 |
-| `/tdd` | `oh-my-claudecode:tdd` | TDD 워크플로우 |
+| 로컬 스킬 | OMC 위임 | 서브커맨드 | 비고 |
+|-----------|----------|-----------|------|
+| `/auto` | `autopilot` | --gdocs, --mockup, --debate, --research | Orchestrator |
+| `/check` | `ultraqa` | --fix, --e2e, --perf, --security, --all | QA 사이클 |
+| `/debug` | `analyze` | D0-D4 Phase | 디버깅 |
+| `/tdd` | `tdd` | - | TDD 워크플로우 |
+| `/parallel` | `ultrawork` | dev, test, review, research, check | 병렬 실행 |
+| `/research` | `research` | code, web, plan, review | 리서치 |
+| `/commit` | - | --no-push | 직접 실행 |
+| `/issue` | - | list, create, fix, failed | 직접 실행 |
+| `/pr` | - | review, merge, auto, list | 직접 실행 |
+| `/verify` | - | --provider openai/gemini | Cross-AI 고유 |
+| `/mockup-hybrid` | - | --bnw, --hifi | Stitch API 고유 |
+
+## 인과관계 그래프 (CRITICAL - 절대 보존)
+
+```
+                    ┌─────────────────────────────────────────────┐
+                    │              /auto (v15.1.0)                │
+                    │         5-Tier Discovery + OMC              │
+                    └─────────────────────────────────────────────┘
+                                        │
+        ┌───────────────┬───────────────┼───────────────┬────────────────┐
+        ▼               ▼               ▼               ▼                ▼
+   Tier 2 URGENT   Tier 3 WORK    Tier 4 SUPPORT   Tier 5 AUTO      Options
+        │               │               │               │                │
+   ┌────┴────┐    ┌────┴────┐    ┌────┴────┐    ┌────┴────┐    ┌────────┴────────┐
+   │ /debug  │    │ /issue  │    │ /commit │    │  /tdd   │    │ --gdocs --mockup│
+   │ /check  │    │  fix    │    │ /pr auto│    │ /audit  │    │ --debate        │
+   └────┬────┘    └────┬────┘    └─────────┘    └────┬────┘    └─────────────────┘
+        │               │                            │
+        ▼               ▼                            ▼
+   OMC analyze     OMC executor                 OMC tdd-guide
+
+
+                    ┌─────────────────────────────────────────────┐
+                    │           /work --loop (자율 루프)           │
+                    └─────────────────────────────────────────────┘
+                                        │
+        ┌───────────────┬───────────────┼───────────────┐
+        ▼               ▼               ▼               ▼
+      Tier 1          Tier 2          Tier 3        완료 후
+        │               │               │               │
+   ┌────┴────┐    ┌────┴────┐    ┌────┴────┐    ┌────┴────┐
+   │ /debug  │    │ /commit │    │  /tdd   │    │/create  │
+   │ /check  │    │ /issue  │    │/research│    │   pr    │
+   │ --fix   │    │ /pr auto│    └────┬────┘    └────┬────┘
+   └─────────┘    └─────────┘         │              │
+                                      ▼              ▼
+                              OMC tdd/research  /session journey
+```
+
+**⚠️ 이 인과관계가 무너지면 `/auto`, `/work --loop`의 5계층 Discovery 시스템 전체가 작동하지 않음**
+
+## Deprecated 스킬 (Alias 처리)
+
+| Deprecated 스킬 | 리다이렉트 대상 | 처리 방식 |
+|----------------|----------------|----------|
+| `/auto-workflow` | `/auto` | redirect 필드 |
+| `/auto-executor` | `/auto` | redirect 필드 |
+| `/tdd-workflow` | `/tdd` | redirect 필드 |
+| `/cross-ai-verifier` | `/verify` | redirect 필드 |
+| `/issue-resolution` | `/issue fix` | redirect 필드 |
+
+**Deprecated 스킬 YAML 예시:**
+```yaml
+---
+name: auto-workflow
+deprecated: true
+redirect: auto
+deprecation_message: "/auto-workflow는 /auto로 통합되었습니다."
+triggers:
+  keywords: []  # 비활성화
+---
+```
 
 ## 에이전트 티어 라우팅
 
@@ -62,3 +130,4 @@ New-Item -ItemType SymbolicLink `
 - ❌ SKILL.md에 "참조하세요"만 작성 (실행 지시 필수)
 - ❌ omc_delegate 없이 OMC 기능 기대
 - ❌ 서브프로젝트에 스킬 복제 (심볼릭 링크 사용)
+- ❌ 인과관계 파괴 (커맨드 삭제/변경 시 연쇄 확인 필수)

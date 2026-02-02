@@ -141,44 +141,63 @@ $ /work API 응답 캐싱 추가
 
 ---
 
-## 2. /auto - 자율 판단 자동 완성 (Ralph Wiggum 통합)
+## 2. /auto - 통합 자율 완성 모드 (v10.0)
 
-> **Note**: `/auto`는 `/work --loop`의 alias입니다. 동일한 기능을 수행합니다.
+> **슈퍼모드**: Ralph + Ultrawork + Ralplan이 자동 통합됩니다.
 
-Claude가 다음 작업을 스스로 판단하고 자동 실행합니다.
-**"할 일 없음"은 종료 조건이 아닙니다** → 스스로 개선점을 발견합니다.
+별도 키워드 없이 `/auto "작업"` 하나로 모든 고급 기능이 활성화됩니다.
+
+### 통합된 기능
+
+| 기능 | 자동 적용 조건 |
+|------|----------------|
+| **Ultrawork** | 항상 (병렬 에이전트 오케스트레이션) |
+| **Ralph** | 항상 (완료까지 루프 + Architect 검증) |
+| **Ralplan** | 복잡한 작업 시 (Planner→Architect→Critic 합의) |
 
 ### 사용법
 
 ```bash
-# /auto 사용 (기존 방식 - 하위 호환)
-/auto                         # 자율 판단 루프 시작 (무한)
-/auto --max 10                # 최대 10회 반복 후 종료
-/auto --promise "ALL_DONE"    # 조건 충족 시 종료
-/auto resume [id]             # 세션 재개
-/auto status                  # 현재 상태 확인
-/auto pause                   # 일시 정지
+# 기본 사용 (모든 고급 기능 자동 적용)
+/auto "로그인 기능 구현"
+/auto "전체 테스트 통과시켜줘"
 
-# /work --loop 사용 (권장 - 통합 인터페이스)
-/work --loop                  # 자율 판단 루프 시작
-/work --loop --max 5          # 최대 5회 반복
-/work --loop resume           # 세션 재개
+# 지시 없이 실행 (자율 판단)
+/auto
+
+# 옵션
+/auto --max 10 "버그 수정"    # 최대 반복 횟수
+/auto --eco "간단한 수정"     # 토큰 절약 모드
+/auto status                  # 현재 상태
+/auto stop                    # 중지
+/auto resume                  # 재개
 ```
 
-### 핵심 기능
+### 자동 실행 흐름
 
-| 기능 | 설명 |
-|------|------|
-| **자율 발견** | 명시적 작업 없으면 스스로 개선점 탐색 (Tier 2) |
-| **2계층 우선순위** | Tier 1(명시적) → Tier 2(자율 발견) |
-| **로그 기록** | `.claude/auto-logs/`에 JSON Lines 형식 기록 |
-| **Context 관리** | 90% 도달 시 체크포인트 → 세션 종료 |
-| **체크포인트** | 80%에서 자동 저장, resume 지원 |
+```
+/auto "작업"
+    │
+    ├─[1] 작업 분석 → 복잡도, 범위 판단
+    ├─[2] 계획 필요 시 → Ralplan (Planner→Architect→Critic)
+    ├─[3] Ultrawork 활성화 → 병렬 에이전트 스폰
+    ├─[4] Ralph 루프 → 완료까지 반복
+    ├─[5] Architect 검증 → 필수 (거부 시 재작업)
+    └─[6] 완료: <promise>TASK_COMPLETE</promise>
+```
+
+### 레거시 키워드 지원
+
+| 기존 키워드 | 동작 |
+|-------------|------|
+| `ralph: 작업` | → `/auto "작업"` |
+| `ulw: 작업` | → `/auto "작업"` |
+| `ultrawork: 작업` | → `/auto "작업"` |
+| `ralplan: 작업` | → `/auto "작업"` (계획 모드 강제) |
 
 ### 상세 문서
 
-전체 기능은 `/work` 커맨드의 `--loop` 모드 섹션 참조:
-→ `.claude/commands/work.md` > `## --loop 모드 (자율 판단 + 자율 발견)`
+→ `.claude/commands/auto.md` (v10.0)
 
 ---
 

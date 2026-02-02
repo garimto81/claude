@@ -105,9 +105,54 @@ HTML 와이어프레임과 Google Stitch API를 통합한 하이브리드 목업
 
 5. **기본값** → HTML (가장 빠름)
 
+## 핵심 기능: ASCII 다이어그램 → 이미지 교체
+
+`--bnw` 옵션의 **핵심 목적**은 Markdown 파일의 ASCII 다이어그램을 이미지로 교체하는 것입니다.
+
+### 워크플로우
+
+```
+ASCII 다이어그램 감지 → HTML 목업 생성 → PNG 캡처 → Markdown 교체
+```
+
+### 단계별 동작
+
+| 단계 | 동작 | 출력 |
+|:----:|------|------|
+| 1 | 대상 파일에서 ASCII 다이어그램 탐지 | 박스/화살표/선 패턴 |
+| 2 | 각 ASCII를 HTML 와이어프레임으로 변환 | `docs/mockups/*.html` |
+| 3 | Playwright로 스크린샷 캡처 | `docs/images/*.png` |
+| 4 | **원본 Markdown의 ASCII를 이미지 참조로 교체** | `![](../images/*.png)` |
+
+### ASCII 감지 패턴
+
+```python
+ASCII_PATTERNS = [
+    r'[┌┐└┘├┤┬┴┼]',  # 박스 코너/교차점
+    r'[─│═║]',        # 선
+    r'[→←↑↓▶◀▲▼]',    # 화살표
+    r'[╔╗╚╝╠╣╦╩╬]',   # 이중선 박스
+]
+```
+
+### 교체 옵션
+
+| 옵션 | 설명 |
+|------|------|
+| `--target=FILE` | 교체 대상 Markdown 파일 지정 |
+| `--keep-ascii` | 원본 ASCII를 HTML 주석으로 보존 |
+| `--dry-run` | 미리보기 (실제 수정 안함) |
+| `--force` | 확인 질문 없이 즉시 교체 |
+
 ## 사용 예시
 
 ```bash
+# ASCII 다이어그램 교체 (핵심 용례)
+/mockup "시스템 구조" --bnw --target=docs/ARCHITECTURE.md
+
+# PRD 파일의 모든 ASCII 교체
+/mockup --bnw --target=docs/prds/PRD-0001.md
+
 # 자동 선택 → HTML (단순 요청)
 /mockup "로그인 화면" --bnw
 

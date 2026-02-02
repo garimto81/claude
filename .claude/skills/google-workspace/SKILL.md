@@ -4,7 +4,7 @@ description: >
   Google Workspace 통합 스킬. Docs, Sheets, Drive, Gmail, Calendar API 연동.
   OAuth 2.0 인증, 서비스 계정 설정, 데이터 읽기/쓰기 자동화 지원.
   파랑 계열 전문 문서 스타일, 2단계 네이티브 테이블 렌더링 포함.
-version: 2.7.0
+version: 2.8.0
 
 triggers:
   keywords:
@@ -106,18 +106,64 @@ Google Workspace API 통합을 위한 전문 스킬입니다.
 | `drive.google.com/drive/folders/1xyz...` | `/folders/` 뒤 | `1xyz...` |
 | `docs.google.com/spreadsheets/d/1def.../edit` | `/d/` 뒤, `/edit` 앞 | `1def...` |
 
-### `/auto --gdocs` 처리 규칙
+### `/auto --gdocs` 처리 규칙 (CRITICAL - 세션 초기화 후에도 유지)
 
 `/auto --gdocs` 옵션 감지 시:
+
+```
+┌─────────────────────────────────────────────────────────────────────────┐
+│  🚨 MANDATORY: Google Docs ID 자동 조회 워크플로우                       │
+├─────────────────────────────────────────────────────────────────────────┤
+│                                                                         │
+│  STEP 1: CLAUDE.md에서 Google Docs ID 조회 (필수!)                      │
+│     - 프로젝트 CLAUDE.md의 "Google Docs 동기화" 섹션 읽기               │
+│     - 대상 파일명과 매칭되는 Google Docs ID 찾기                        │
+│                                                                         │
+│  STEP 2: ID 존재 여부에 따른 분기                                       │
+│     ✅ ID 있음 → --doc-id 옵션으로 기존 문서 업데이트                   │
+│     ❌ ID 없음 → 새 문서 생성 후 CLAUDE.md에 ID 등록                    │
+│                                                                         │
+│  STEP 3: 명령 실행                                                      │
+│     # 기존 문서 업데이트 (ID 있을 때)                                   │
+│     cd C:\claude && python -m lib.google_docs convert "파일.md" \       │
+│        --doc-id {CLAUDE.md에서_조회한_ID}                               │
+│                                                                         │
+│     # 새 문서 생성 (ID 없을 때)                                         │
+│     cd C:\claude && python -m lib.google_docs convert "파일.md"         │
+│                                                                         │
+│  STEP 4: 새 문서 생성 시 CLAUDE.md 업데이트                             │
+│     - "Google Docs 동기화" 섹션에 새 ID 추가                            │
+│     - URL도 함께 기록                                                   │
+│                                                                         │
+└─────────────────────────────────────────────────────────────────────────┘
+```
+
+**파일명 → Google Docs ID 매핑 예시 (CLAUDE.md 참조):**
+
+| 파일명 | CLAUDE.md 키 | Google Docs ID |
+|--------|-------------|----------------|
+| `PRD-0002-wsoptv-concept-paper.md` | PRD-0002 | `1Y5KMRFunHJEXmR0MrXbb_flmf-_88obGnJBe0AC94_A` |
+| `PRD-0002-executive-summary.md` | PRD-0002-executive-summary | `1Y_GmF6AYOEkj7TEX3CptimlFVDEGZdssRysdzXHIQDs` |
+
+**⚠️ 절대 하면 안 되는 것:**
+
+| 금지 행동 | 결과 |
+|-----------|------|
+| ❌ CLAUDE.md 확인 없이 `convert` 실행 | 중복 문서 생성 |
+| ❌ 기존 ID 무시하고 새 문서 생성 | 공유 링크 깨짐 |
+| ❌ 새 문서 생성 후 ID 미등록 | 다음 세션에서 또 중복 생성 |
+
+**명령어 예시:**
 
 ```python
 # ❌ 하면 안 되는 것
 WebFetch(url="https://docs.google.com/...")  # 401 에러 발생
+Bash(command="python -m lib.google_docs convert ...")  # ID 확인 없이 새 문서 생성
 
 # ✅ 해야 하는 것
-Bash(command="cd C:\\claude && python scripts/prd_sync.py check")
-# 또는
-Bash(command="cd C:\\claude && python -m lib.google_docs convert ...")
+# 1. 먼저 CLAUDE.md 읽어서 ID 확인
+# 2. ID가 있으면 --doc-id 옵션 사용
+Bash(command="cd C:\\claude && python -m lib.google_docs convert 파일.md --doc-id {ID}")
 ```
 
 ---
@@ -1069,6 +1115,44 @@ def apply_heading_style(service, doc_id, start_idx, end_idx, heading_level):
 | 테이블 | `\| a \| b \|` | 네이티브 테이블 |
 | 이미지 | `![alt](path)` | Drive 업로드 후 삽입 |
 | 수평선 | `---` | H1 하단 구분선 스타일 |
+| HTML Callout | `<div style="border:...red...">` | Blockquote 경고 박스 |
+
+### HTML Callout 박스 자동 변환 (v2.7.0+)
+
+Markdown 내 HTML `<div>` 블록이 자동으로 Callout 스타일로 변환됩니다.
+
+**입력 (Markdown 내 HTML):**
+```html
+<div style="border: 3px solid red; padding: 15px;">
+경고: 5V 연결하면 MFRC522가 고장납니다!
+ESP32 보드에는 3.3V 핀과 5V 핀이 둘 다 있습니다.
+</div>
+```
+
+**출력 (Google Docs):**
+```
+> 🚨 **경고: 5V 연결하면 MFRC522가 고장납니다!**
+> ESP32 보드에는 3.3V 핀과 5V 핀이 둘 다 있습니다.
+```
+
+**색상 기반 자동 감지:**
+
+| HTML 스타일 | 감지 키워드 | 변환 결과 |
+|------------|-----------|----------|
+| `border:...red...` | red, #dc2626 | 🚨 **경고** |
+| `border:...orange...` | orange, #d97706 | ⚠️ **주의** |
+| `border:...yellow...` | yellow, #ca8a04 | 💡 **팁** |
+| `border:...green...` | green, #059669 | ✅ **성공** |
+| `border:...blue...` | blue, #1a4d8c | ℹ️ **정보** |
+| `border:...purple...` | purple, #7c3aed | 🔮 **특수** |
+| 기타/없음 | - | 📝 **메모** |
+
+**지원 HTML 태그:**
+- `<div>`, `<p>`, `<span>` → 텍스트 추출
+- `<strong>`, `<b>` → `**bold**`
+- `<em>`, `<i>` → `*italic*`
+- `<code>` → `` `code` ``
+- `<br>` → 줄바꿈
 
 ### 🚨 이미지 삽입 필수 규칙 (CRITICAL)
 
@@ -1456,6 +1540,26 @@ python scripts/migrate_prds_to_gdocs.py PRD-0001  # 단일 마이그레이션
 ---
 
 ## 변경 로그
+
+### v2.8.0 (2026-01-30)
+
+**Features:**
+- HTML Callout 박스 자동 변환 기능 추가
+  - `<div style="border:...red...">` → 🚨 경고 Callout
+  - `<div style="border:...orange...">` → ⚠️ 주의 Callout
+  - `<div style="border:...green...">` → ✅ 성공 Callout
+  - `<div style="border:...blue...">` → ℹ️ 정보 Callout
+- 색상 기반 Callout 타입 자동 감지 (red, orange, yellow, green, blue, purple)
+- 내부 HTML 태그 처리 (`<strong>`, `<em>`, `<code>`, `<br>`, `<p>`)
+
+**Bug Fixes:**
+- Markdown 내 HTML `<div>` 블록이 원시 텍스트로 출력되던 문제 수정
+
+**Improvements:**
+- 코드 블록을 테이블 기반 박스 스타일로 업그레이드
+  - 1x1 테이블 + 배경색 + 고정폭 폰트로 시각적 코드 박스 구현
+  - 언어 헤더 포함 시 2x1 테이블 (헤더 + 코드)
+  - Google Docs 네이티브 코드 블록 스타일과 유사한 UI
 
 ### v2.6.0 (2026-01-23)
 
