@@ -8,10 +8,27 @@ from pydantic import BaseModel, Field, computed_field
 
 
 class SlackCredentials(BaseModel):
-    """OAuth app credentials from slack_credentials.json"""
+    """OAuth app credentials from slack_credentials.json
 
-    client_id: str
-    client_secret: str
+    Two authentication modes:
+    1. Direct bot_token: If provided, OAuth flow is skipped
+    2. OAuth: Uses client_id/client_secret for browser-based auth
+
+    Example with bot_token (recommended for simplicity):
+        {
+            "bot_token": "xoxb-..."
+        }
+
+    Example with OAuth:
+        {
+            "client_id": "...",
+            "client_secret": "..."
+        }
+    """
+
+    client_id: Optional[str] = None
+    client_secret: Optional[str] = None
+    bot_token: Optional[str] = None  # Direct Bot User OAuth Token (xoxb-...)
     redirect_uri: str = "http://localhost:8765/slack/oauth/callback"
 
 

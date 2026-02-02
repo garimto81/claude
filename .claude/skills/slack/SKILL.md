@@ -48,7 +48,14 @@ Slack API 연동 스킬. Browser OAuth 2.0 인증, 메시지 전송/수신, 채�
 3. App Name 입력, Workspace 선택
 4. "OAuth & Permissions" 메뉴 이동
 
-### 2. OAuth Scopes 설정
+### 2. Redirect URL 설정
+
+**OAuth & Permissions** 페이지에서 **Redirect URLs** 섹션에 추가:
+```
+http://localhost:8765/slack/oauth/callback
+```
+
+### 3. OAuth Scopes 설정
 
 Bot Token Scopes에 다음 추가:
 - `chat:write` - 메시지 전송
@@ -59,9 +66,21 @@ Bot Token Scopes에 다음 추가:
 - `im:write` - DM 전송
 - `users:read` - 사용자 정보
 
-### 3. Credentials 저장
+### 4. Credentials 저장
 
-`C:\claude\json\slack_credentials.json` 파일 생성:
+`C:\claude\json\slack_credentials.json` 파일 생성.
+
+**방법 A: Bot Token 직접 입력 (권장 - 간단함)**
+
+```json
+{
+  "bot_token": "xoxb-YOUR-BOT-TOKEN"
+}
+```
+
+Bot Token은 **OAuth & Permissions** 페이지 상단의 **Bot User OAuth Token** 복사.
+
+**방법 B: OAuth 인증 (브라우저 팝업)**
 
 ```json
 {
@@ -72,13 +91,14 @@ Bot Token Scopes에 다음 추가:
 
 Client ID/Secret은 "Basic Information" 페이지에서 확인.
 
-### 4. 인증 실행
+### 5. 인증 실행
 
 ```powershell
 python -m lib.slack login
 ```
 
-브라우저가 열리고 Slack 인증 후 토큰이 자동 저장됨.
+- **Bot Token 방식**: 즉시 검증 후 완료
+- **OAuth 방식**: 브라우저가 열리고 Slack 인증 후 토큰 자동 저장
 
 ## Commands
 
