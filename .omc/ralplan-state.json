@@ -1,0 +1,34 @@
+{
+  "active": false,
+  "mode": "ralplan",
+  "iteration": 2,
+  "max_iterations": 5,
+  "plan_path": ".omc/plans/omc-bkit-auto-unified-integration.md",
+  "current_phase": "complete",
+  "started_at": "2026-02-02T11:00:00.000Z",
+  "completed_at": "2026-02-02T14:30:00.000Z",
+  "task_description": "OMC + BKIT + /auto 3자 통합 전략: /auto가 Master, OMC 실행 패턴 + BKIT PDCA 문서화를 /auto에 흡수",
+  "final_verdict": "OKAY",
+  "iterations_used": 2,
+  "critic_feedback": {
+    "iteration_1": {
+      "verdict": "REJECT",
+      "critical_issues": [
+        "BKIT 에이전트 호출 방식 불명확",
+        "43 에이전트 완전 매핑 테이블 없음",
+        "gap-detector 90% 임계값 근거 없음"
+      ]
+    },
+    "iteration_2": {
+      "verdict": "OKAY",
+      "verified_items": [
+        "bkit: prefix 확인 (lib/intent/trigger.js:48)",
+        "43 에이전트 전체 테이블 (OMC 32 + BKIT 11)",
+        "gap-detector 임계값 BKIT 원본과 일치",
+        "Phase 의존성 다이어그램 추가",
+        "롤백 전략 (git tag) 추가"
+      ],
+      "all_criteria_passed": true
+    }
+  }
+}

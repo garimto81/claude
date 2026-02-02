@@ -45,6 +45,45 @@ AGENT_ESTIMATES: Dict[str, float] = {
 
 
 @dataclass
+class TaskEstimate:
+    """작업 예상치"""
+    task: str
+    estimated_cost: float
+    can_proceed: bool
+    reason: str
+
+
+def predict_and_decide(current_usage: float, task: str, threshold: float = 20.0) -> TaskEstimate:
+    """작업 수행 가능 여부 결정
+
+    Args:
+        current_usage: 현재 Context 사용량 (0-100)
+        task: 수행할 작업
+        threshold: 남은 여유 임계값 (%)
+
+    Returns:
+        TaskEstimate with decision
+    """
+    predictor = ContextPredictor(current_usage)
+    cost = predictor.estimate_cost(task)
+    remaining = 100.0 - current_usage
+
+    can_proceed = cost <= remaining - threshold
+
+    if can_proceed:
+        reason = f"충분한 여유 ({remaining:.1f}% 남음, {cost:.1f}% 필요)"
+    else:
+        reason = f"Context 부족 ({remaining:.1f}% 남음, {cost:.1f}% + {threshold:.1f}% 여유 필요)"
+
+    return TaskEstimate(
+        task=task,
+        estimated_cost=cost,
+        can_proceed=can_proceed,
+        reason=reason
+    )
+
+
+@dataclass
 class ContextPrediction:
     """Context 예측 결과"""
     current_usage: float
