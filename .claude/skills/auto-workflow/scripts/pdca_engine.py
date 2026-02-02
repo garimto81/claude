@@ -623,8 +623,14 @@ class PDCAEngine:
 
         return str(path)
 
-    def check_gap_result(self, gap_result: GapAnalysisResult) -> bool:
-        """Gap 결과가 통과 기준 충족하는지 확인"""
+    def check_gap_result(self, gap_result: GapAnalysisResult | int | float) -> bool:
+        """Gap 결과가 통과 기준 충족하는지 확인
+
+        Args:
+            gap_result: GapAnalysisResult 객체 또는 퍼센트 값 (int/float)
+        """
+        if isinstance(gap_result, (int, float)):
+            return gap_result >= self.config.gap_threshold_pass
         return gap_result.match_percentage >= self.config.gap_threshold_pass
 
     # -------------------------------------------------------------------------
