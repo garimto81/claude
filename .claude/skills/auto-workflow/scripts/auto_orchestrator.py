@@ -57,6 +57,12 @@ class LoopConfig:
     retry_on_error: int = 3  # 에러 시 재시도 횟수
     max_debug_attempts: int = 3  # E2E 실패 시 최대 디버그 시도
 
+    # PDCA 설정 (BKIT 통합)
+    pdca_enabled: bool = True  # PDCA 문서화 필수 여부 (기본: 활성화)
+    pdca_gap_threshold: int = 90  # gap-detector 통과 임계값
+    pdca_max_iterations: int = 5  # PDCA Check-Act 최대 반복
+    parallel_comparison: bool = True  # OMC/BKIT 병렬 비교 검토
+
 
 @dataclass
 class ValidationResult:
