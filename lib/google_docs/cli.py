@@ -80,14 +80,20 @@ def main():
         formatter_class=argparse.RawDescriptionHelpFormatter,
         epilog="""
 Examples:
-  # 단일 파일 변환
+  # 단일 파일 변환 (새 문서 생성)
   python -m lib.google_docs convert file.md
+
+  # 기존 문서 업데이트 (--doc-id 옵션 사용)
+  python -m lib.google_docs convert file.md --doc-id 1Y_GmF6xxxxx
 
   # 커스텀 제목으로 변환
   python -m lib.google_docs convert file.md --title "My PRD"
 
   # 목차 포함
   python -m lib.google_docs convert file.md --toc
+
+  # 기존 문서 업데이트 + 목차 포함
+  python -m lib.google_docs convert file.md --doc-id 1Y_GmF6xxxxx --toc
 
   # 네이티브 테이블 비활성화 (기본값: 네이티브 테이블 사용)
   python -m lib.google_docs convert file.md --no-native-tables
@@ -97,6 +103,9 @@ Examples:
 
   # 폴더에 문서 목록 조회
   python -m lib.google_docs list
+
+  # [레거시] update 명령도 계속 사용 가능
+  python -m lib.google_docs update 1Y_GmF6xxxxx file.md
         """,
     )
 
@@ -104,10 +113,15 @@ Examples:
 
     # convert 명령
     convert_parser = subparsers.add_parser(
-        "convert", help="마크다운을 Google Docs로 변환"
+        "convert", help="마크다운을 Google Docs로 변환 (신규 생성 또는 기존 문서 업데이트)"
     )
     convert_parser.add_argument("file", help="마크다운 파일 경로")
     convert_parser.add_argument("--title", "-t", help="문서 제목 (기본: 파일에서 추출)")
+    convert_parser.add_argument(
+        "--doc-id",
+        "-d",
+        help="기존 Google Docs 문서 ID (지정 시 해당 문서를 업데이트, 미지정 시 새 문서 생성)",
+    )
     convert_parser.add_argument(
         "--folder",
         "-f",
@@ -143,10 +157,73 @@ Examples:
     )
     batch_parser.set_defaults(native_tables=True)
 
+    # update 명령 (기존 문서 내용 교체)
+    update_parser = subparsers.add_parser(
+        "update", help="기존 Google Docs 문서 내용을 교체 (ID 유지)"
+    )
+    update_parser.add_argument("doc_id", help="Google Docs 문서 ID")
+    update_parser.add_argument("file", help="마크다운 파일 경로")
+    update_parser.add_argument("--toc", action="store_true", help="목차 포함")
+    update_parser.add_argument(
+        "--no-native-tables",
+        dest="native_tables",
+        action="store_false",
+        help="네이티브 테이블 비활성화",
+    )
+    update_parser.set_defaults(native_tables=True)
+
     # list 명령
     list_parser = subparsers.add_parser("list", help="폴더의 문서 목록 조회")
     list_parser.add_argument(
         "--folder", "-f", default=DEFAULT_FOLDER_ID, help="Google Drive 폴더 ID"
+    )
+
+    # drive 명령 (폴더 정리)
+    drive_parser = subparsers.add_parser(
+        "drive", help="Google Drive 폴더 정리 및 관리"
+    )
+    drive_subparsers = drive_parser.add_subparsers(dest="drive_command", help="Drive 명령")
+
+    # drive status
+    drive_status_parser = drive_subparsers.add_parser("status", help="현재 상태 분석")
+    drive_status_parser.add_argument(
+        "--folder", "-f", default=DEFAULT_FOLDER_ID, help="대상 폴더 ID"
+    )
+    drive_status_parser.add_argument(
+        "--json", action="store_true", help="JSON 형식 출력"
+    )
+
+    # drive duplicates
+    drive_dup_parser = drive_subparsers.add_parser("duplicates", help="중복 파일 분석")
+    drive_dup_parser.add_argument(
+        "--folder", "-f", default=DEFAULT_FOLDER_ID, help="대상 폴더 ID"
+    )
+    drive_dup_parser.add_argument(
+        "--delete", action="store_true", help="중복 파일 삭제 (기본: dry-run)"
+    )
+    drive_dup_parser.add_argument(
+        "--json", action="store_true", help="JSON 형식 출력"
+    )
+
+    # drive init
+    drive_init_parser = drive_subparsers.add_parser("init", help="폴더 구조 생성")
+    drive_init_parser.add_argument(
+        "--folder", "-f", default=DEFAULT_FOLDER_ID, help="대상 폴더 ID"
+    )
+
+    # drive organize
+    drive_org_parser = drive_subparsers.add_parser("organize", help="파일 자동 정리")
+    drive_org_parser.add_argument(
+        "--folder", "-f", default=DEFAULT_FOLDER_ID, help="대상 폴더 ID"
+    )
+    drive_org_parser.add_argument(
+        "--dry-run", action="store_true", default=True, help="미리보기 (기본)"
+    )
+    drive_org_parser.add_argument(
+        "--execute", action="store_true", help="실제 실행"
+    )
+    drive_org_parser.add_argument(
+        "--json", action="store_true", help="JSON 형식 출력"
     )
 
     args = parser.parse_args()
@@ -167,20 +244,50 @@ Examples:
         if not file_path.is_absolute():
             file_path = Path.cwd() / file_path
 
-        result = process_file(
-            file_path=file_path,
-            folder_id=folder_id,
-            include_toc=args.toc,
-            use_native_tables=use_native,
-            custom_title=args.title,
-        )
+        # --doc-id 옵션이 있으면 기존 문서 업데이트, 없으면 새 문서 생성
+        if args.doc_id:
+            from .converter import update_google_doc
 
-        print("\n" + "=" * 60)
-        if result:
-            print(f"[SUCCESS] 문서 생성 완료: {result}")
+            if not file_path.exists():
+                print(f"[FAIL] 파일을 찾을 수 없습니다: {file_path}")
+                sys.exit(1)
+
+            content = file_path.read_text(encoding="utf-8")
+
+            print(f"\n[FILE] {file_path.name}")
+            print(f"[DOC]  {args.doc_id} (업데이트 모드)")
+
+            try:
+                result = update_google_doc(
+                    doc_id=args.doc_id,
+                    content=content,
+                    include_toc=args.toc,
+                    use_native_tables=use_native,
+                    base_path=str(file_path),
+                )
+                print(f"[OK] {result}")
+                print("\n" + "=" * 60)
+                print(f"[SUCCESS] 문서 업데이트 완료: {result}")
+            except Exception as e:
+                print(f"[FAIL] {e}")
+                import traceback
+                traceback.print_exc()
+                sys.exit(1)
         else:
-            print("[FAILED] 문서 생성 실패")
-            sys.exit(1)
+            result = process_file(
+                file_path=file_path,
+                folder_id=folder_id,
+                include_toc=args.toc,
+                use_native_tables=use_native,
+                custom_title=args.title,
+            )
+
+            print("\n" + "=" * 60)
+            if result:
+                print(f"[SUCCESS] 문서 생성 완료: {result}")
+            else:
+                print("[FAILED] 문서 생성 실패")
+                sys.exit(1)
 
     elif args.command == "batch":
         use_native = args.native_tables
@@ -229,6 +336,39 @@ Examples:
             if url:
                 print(f"       {url}")
 
+    elif args.command == "update":
+        from .converter import update_google_doc
+
+        file_path = Path(args.file)
+        if not file_path.is_absolute():
+            file_path = Path.cwd() / file_path
+
+        if not file_path.exists():
+            print(f"[FAIL] 파일을 찾을 수 없습니다: {file_path}")
+            sys.exit(1)
+
+        content = file_path.read_text(encoding="utf-8")
+
+        print(f"\n[FILE] {file_path.name}")
+        print(f"[DOC]  {args.doc_id}")
+
+        try:
+            doc_url = update_google_doc(
+                doc_id=args.doc_id,
+                content=content,
+                include_toc=args.toc,
+                use_native_tables=args.native_tables,
+                base_path=str(file_path),
+            )
+            print(f"[OK] {doc_url}")
+            print("\n" + "=" * 60)
+            print(f"[SUCCESS] 문서 업데이트 완료: {doc_url}")
+        except Exception as e:
+            print(f"[FAIL] {e}")
+            import traceback
+            traceback.print_exc()
+            sys.exit(1)
+
     elif args.command == "list":
         from googleapiclient.discovery import build
         from .auth import get_credentials
@@ -256,6 +396,93 @@ Examples:
             print(f"  - {f['name']}")
             print(f"    {f['webViewLink']}")
             print()
+
+    elif args.command == "drive":
+        from .drive_organizer import DriveOrganizer, print_status, print_duplicates
+        import json as json_module
+
+        if not args.drive_command:
+            drive_parser.print_help()
+            return
+
+        organizer = DriveOrganizer(args.folder)
+
+        if args.drive_command == "status":
+            status = organizer.get_status()
+            if args.json:
+                print(json_module.dumps(status, indent=2, ensure_ascii=False))
+            else:
+                print_status(status)
+
+        elif args.drive_command == "duplicates":
+            if args.delete:
+                # 실제 삭제
+                result = organizer.delete_duplicates(dry_run=False)
+                if args.json:
+                    print(json_module.dumps(result, indent=2, ensure_ascii=False))
+                else:
+                    print(f"\nDeleted {len(result['deleted'])} duplicate files")
+                    print(f"Errors: {len(result['errors'])}")
+                    if result['errors']:
+                        for err in result['errors'][:5]:
+                            print(f"  - {err['name']}: {err['error']}")
+            else:
+                # 분석만
+                duplicates = organizer.find_duplicates()
+                if args.json:
+                    output = [
+                        {
+                            "name": d.name,
+                            "count": d.count,
+                            "keep": d.keep.id if d.keep else None,
+                            "to_delete": [f.id for f in d.to_delete]
+                        }
+                        for d in duplicates
+                    ]
+                    print(json_module.dumps(output, indent=2, ensure_ascii=False))
+                else:
+                    print_duplicates(duplicates)
+                    print("\nTo delete duplicates, run:")
+                    print("  python -m lib.google_docs drive duplicates --delete")
+
+        elif args.drive_command == "init":
+            print("\nCreating folder structure...")
+            created = organizer.create_folder_structure()
+            print(f"Created {len(created)} folders:")
+            for path, folder_id in created.items():
+                print(f"  - {path}: {folder_id[:15]}...")
+            print("\n[OK] Folder structure created")
+
+        elif args.drive_command == "organize":
+            dry_run = not args.execute
+            result = organizer.organize_files(dry_run=dry_run)
+
+            if args.json:
+                print(json_module.dumps(result, indent=2, ensure_ascii=False))
+            else:
+                mode = "DRY-RUN" if dry_run else "EXECUTED"
+                print(f"\nFile Organization ({mode})")
+                print("=" * 60)
+                print(f"Total files: {result['total_files']}")
+                print(f"Classified: {result['classified']}")
+                print(f"Unclassified: {result['unclassified']}")
+                print()
+
+                if result['moved']:
+                    print("Files to move:" if dry_run else "Files moved:")
+                    for item in result['moved'][:20]:
+                        print(f"  - {item['name']} -> {item['target']}")
+                    if len(result['moved']) > 20:
+                        print(f"  ... and {len(result['moved']) - 20} more")
+
+                if result['errors']:
+                    print(f"\nErrors: {len(result['errors'])}")
+                    for err in result['errors'][:5]:
+                        print(f"  - {err['name']}: {err['error']}")
+
+                if dry_run:
+                    print("\nTo execute, run:")
+                    print("  python -m lib.google_docs drive organize --execute")
 
     print("=" * 60)
 

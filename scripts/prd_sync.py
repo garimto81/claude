@@ -388,7 +388,7 @@ def cmd_pull(mapping: DocMapping, force: bool = False):
 
 
 def cmd_push(mapping: DocMapping, force: bool = False):
-    """Local -> Google Docs sync"""
+    """Local -> Google Docs sync (update existing document, preserve ID)"""
     print("=" * 60)
     print("Local -> Google Docs Sync (push)")
     print("=" * 60)
@@ -402,13 +402,14 @@ def cmd_push(mapping: DocMapping, force: bool = False):
 
     print()
     if not force:
-        confirm = input("Overwrite Google Docs? [y/N]: ")
+        confirm = input("Update Google Docs? [y/N]: ")
         if confirm.lower() != 'y':
             print("Cancelled")
             return
 
     print("\nSyncing...")
-    print("Running: cd C:\\claude && python -m lib.google_docs update ...")
+    print(f"[INFO] Doc ID 고정: {mapping.doc_id}")
+    print(f"       Running: python -m lib.google_docs update {mapping.doc_id} \"{mapping.local_path}\"")
 
     import subprocess
     result = subprocess.run(
@@ -419,21 +420,26 @@ def cmd_push(mapping: DocMapping, force: bool = False):
         ],
         cwd=str(CLAUDE_ROOT),
         capture_output=True,
-        text=True
+        text=True,
+        encoding="utf-8",
+        errors="replace"
     )
 
-    if result.returncode == 0:
-        print(result.stdout)
+    stdout = result.stdout or ""
+    stderr = result.stderr or ""
 
-        # Update sync date
+    if result.returncode == 0:
+        print(stdout)
+
+        # Update sync date (Doc ID는 변경되지 않음)
         today = datetime.now().strftime("%Y-%m-%d")
         update_claude_md_sync_date(mapping.project_root, mapping.doc_title, today)
-        print(f"CLAUDE.md sync date updated: {today}")
+        print(f"       Sync date: {today}")
 
         print("\n[DONE] Sync complete!")
     else:
         print(f"[ERROR] Update failed:")
-        print(result.stderr)
+        print(stderr)
 
 
 def cmd_list():

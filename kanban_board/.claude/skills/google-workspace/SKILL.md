@@ -4,7 +4,7 @@ description: >
   Google Workspace 통합 스킬. Docs, Sheets, Drive, Gmail, Calendar API 연동.
   OAuth 2.0 인증, 서비스 계정 설정, 데이터 읽기/쓰기 자동화 지원.
   파랑 계열 전문 문서 스타일, 2단계 네이티브 테이블 렌더링 포함.
-version: 2.4.0
+version: 2.7.0
 
 triggers:
   keywords:
@@ -54,6 +54,74 @@ auto_trigger: true
 
 Google Workspace API 통합을 위한 전문 스킬입니다.
 
+---
+
+## 🚨 MANDATORY: WebFetch 사용 금지 (CRITICAL)
+
+> **Claude는 Google 서비스 URL에 WebFetch를 절대 사용하면 안 됩니다!**
+
+```
+┌─────────────────────────────────────────────────────────────────────────┐
+│  ⛔ WEBFETCH 금지 규칙 (강제)                                            │
+├─────────────────────────────────────────────────────────────────────────┤
+│                                                                         │
+│  다음 URL 패턴 감지 시 WebFetch 도구 사용 금지:                         │
+│                                                                         │
+│    ❌ docs.google.com/*                                                 │
+│    ❌ drive.google.com/*                                                │
+│    ❌ sheets.google.com/*                                               │
+│    ❌ calendar.google.com/*                                             │
+│    ❌ mail.google.com/*                                                 │
+│                                                                         │
+│  이유: OAuth 2.0 인증 필요, WebFetch는 401 Unauthorized 반환            │
+│                                                                         │
+├─────────────────────────────────────────────────────────────────────────┤
+│  ✅ 대신 사용할 방법                                                     │
+├─────────────────────────────────────────────────────────────────────────┤
+│                                                                         │
+│  1. Google Docs 읽기:                                                   │
+│     python -c "                                                         │
+│     from googleapiclient.discovery import build                         │
+│     from lib.google_docs.auth import get_credentials                    │
+│     creds = get_credentials()                                           │
+│     docs = build('docs', 'v1', credentials=creds)                       │
+│     doc = docs.documents().get(documentId='DOC_ID').execute()           │
+│     print(doc.get('title'))                                             │
+│     "                                                                   │
+│                                                                         │
+│  2. PRD 동기화:                                                         │
+│     cd C:\claude && python scripts/prd_sync.py check                    │
+│                                                                         │
+│  3. Markdown → Google Docs 변환:                                        │
+│     cd C:\claude && python -m lib.google_docs convert "파일.md"         │
+│                                                                         │
+└─────────────────────────────────────────────────────────────────────────┘
+```
+
+### URL에서 문서 ID 추출
+
+| URL 예시 | 추출 패턴 | 문서 ID |
+|----------|-----------|---------|
+| `docs.google.com/document/d/1abc.../edit` | `/d/` 뒤, `/edit` 앞 | `1abc...` |
+| `drive.google.com/drive/folders/1xyz...` | `/folders/` 뒤 | `1xyz...` |
+| `docs.google.com/spreadsheets/d/1def.../edit` | `/d/` 뒤, `/edit` 앞 | `1def...` |
+
+### `/auto --gdocs` 처리 규칙
+
+`/auto --gdocs` 옵션 감지 시:
+
+```python
+# ❌ 하면 안 되는 것
+WebFetch(url="https://docs.google.com/...")  # 401 에러 발생
+
+# ✅ 해야 하는 것
+Bash(command="cd C:\\claude && python scripts/prd_sync.py check")
+# 또는
+Bash(command="cd C:\\claude && python -m lib.google_docs convert ...")
+```
+
+---
+
 ## ⚠️ 중요: Google Drive/Docs URL 접근 시
 
 **WebFetch로 Google Drive/Docs URL에 직접 접근 불가!** JavaScript 동적 로딩으로 외부에서 콘텐츠 조회 불가.
@@ -96,6 +164,112 @@ pip install google-api-python-client google-auth-httplib2 google-auth-oauthlib
 # 또는 uv 사용
 uv add google-api-python-client google-auth-httplib2 google-auth-oauthlib
 ```
+
+## ⚠️ 서브 프로젝트에서 사용 시 (중요!)
+
+**서브 프로젝트(`wsoptv_nbatv_clone`, `youtuber_chatbot` 등)에서 `--gdocs` 옵션 사용 시 반드시 절대 경로로 루트 모듈을 호출해야 합니다.**
+
+### 문제 상황
+
+```
+┌─────────────────────────────────────────────────────────────┐
+│  서브 프로젝트에서 실행 시 문제                               │
+├─────────────────────────────────────────────────────────────┤
+│                                                              │
+│  ❌ 실패하는 경우:                                           │
+│     cd C:\claude\wsoptv_nbatv_clone                         │
+│     python -m lib.google_docs convert docs/PRD.md           │
+│     → ModuleNotFoundError: No module named 'lib'            │
+│                                                              │
+│  ✅ 올바른 방법:                                             │
+│     cd C:\claude                                             │
+│     python -m lib.google_docs convert C:\claude\wsoptv_nbatv_clone\docs\PRD.md
+│                                                              │
+└─────────────────────────────────────────────────────────────┘
+```
+
+### 서브 프로젝트 변환 명령
+
+```powershell
+# 방법 1: 루트로 이동 후 절대 경로로 파일 지정 (권장)
+cd C:\claude && python -m lib.google_docs convert "C:\claude\{서브프로젝트}\docs\파일.md"
+
+# 방법 2: 한 줄 명령
+powershell -Command "cd C:\claude; python -m lib.google_docs convert 'C:\claude\wsoptv_nbatv_clone\docs\guides\WSOP-TV-PRD.md'"
+
+# 방법 3: 배치 변환
+cd C:\claude && python -m lib.google_docs batch "C:\claude\wsoptv_nbatv_clone\docs\*.md"
+```
+
+### 🚨 Claude 강제 실행 규칙 (MANDATORY)
+
+**`--gdocs` 키워드 감지 시 Claude는 다음을 자동으로 수행해야 합니다:**
+
+```
+┌─────────────────────────────────────────────────────────────┐
+│  --gdocs 자동 처리 워크플로우 (강제)                          │
+├─────────────────────────────────────────────────────────────┤
+│                                                              │
+│  1. 대상 파일 탐색                                           │
+│     - PRD, 문서 등 변환할 .md 파일 찾기                      │
+│     - 사용자가 지정한 파일 또는 컨텍스트에서 추론            │
+│                                                              │
+│  2. 절대 경로 변환                                           │
+│     - 상대 경로 → 절대 경로 (C:\claude\...)                  │
+│                                                              │
+│  3. 루트에서 실행 (필수!)                                    │
+│     cd C:\claude && python -m lib.google_docs convert "..."  │
+│                                                              │
+│  4. 결과 URL 반환                                            │
+│     - Google Docs URL 출력                                   │
+│     - 실패 시 에러 메시지 출력                               │
+│                                                              │
+└─────────────────────────────────────────────────────────────┘
+```
+
+**실행 템플릿 (복사-붙여넣기 가능):**
+
+```powershell
+# 서브 프로젝트 파일을 Google Docs로 변환
+cd C:\claude && python -m lib.google_docs convert "{절대_파일_경로}"
+
+# 예시: wsoptv_ott 프로젝트
+cd C:\claude && python -m lib.google_docs convert "C:\claude\wsoptv_ott\docs\prds\PRD-0002-wsoptv-ott-platform-mvp.md"
+
+# 예시: wsoptv_nbatv_clone 프로젝트
+cd C:\claude && python -m lib.google_docs convert "C:\claude\wsoptv_nbatv_clone\docs\guides\WSOP-TV-PRD.md"
+```
+
+**⚠️ 절대 하지 말아야 할 것:**
+
+| 금지 행동 | 이유 |
+|-----------|------|
+| ❌ `prd_manager.py` 존재 여부 확인 | 루트 모듈 직접 사용 |
+| ❌ `.prd-registry.json` 존재 여부 확인 | 불필요 |
+| ❌ 사용자에게 "인프라가 없습니다" 메시지 | 직접 실행하면 됨 |
+| ❌ 서브 프로젝트에서 `python -m lib.google_docs` 직접 실행 | 모듈 없음 에러 |
+
+**✅ 항상 해야 할 것:**
+
+| 필수 행동 | 설명 |
+|-----------|------|
+| ✅ `cd C:\claude &&` 접두사 사용 | 루트에서 모듈 실행 |
+| ✅ 절대 경로로 파일 지정 | 상대 경로 해석 오류 방지 |
+| ✅ 변환 결과 URL 반환 | 사용자가 바로 접속 가능 |
+
+### 인증 파일 경로 (고정)
+
+서브 프로젝트에서도 **항상 루트의 인증 파일 사용**:
+
+| 파일 | 경로 |
+|------|------|
+| OAuth 클라이언트 | `C:\claude\json\desktop_credentials.json` |
+| OAuth 토큰 | `C:\claude\json\token.json` |
+| 서비스 계정 | `C:\claude\json\service_account_key.json` |
+
+⚠️ **주의**: 서브 프로젝트에 `json/` 폴더를 복사하지 마세요! 중복 인증 파일은 혼란을 야기합니다.
+
+---
 
 ## API 설정 흐름
 
@@ -706,7 +880,8 @@ NOTION_COLORS = {
 
 | 항목 | 값 |
 |------|-----|
-| **너비** | 페이지 컨텐츠 영역에 맞춤 (451pt) |
+| **너비** | 18cm (510pt) - 컬럼 수에 따라 자동 분배 |
+| **컬럼 너비** | 1열: 18cm, 2열: 9cm×2, 3열: 6cm×3, 4열: 4.5cm×4 |
 | **헤더 배경** | 연한 회색 `#E6E6E6` |
 | **헤더 텍스트** | 진한 회색 `#404040`, Bold |
 | **셀 패딩** | 5pt |
@@ -754,9 +929,20 @@ Google Docs API의 인덱스 계산 문제를 해결하기 위해 2단계 방식
 |------|------|
 | 구분선 (─ 반복) | 시각적 노이즈, H1 하단 구분선으로 대체 |
 | **불필요한 빈 줄** | 가독성 저하, 단락 전환 시에만 허용 |
+| **HTML 원본 링크** | Google Docs는 사람을 위한 문서, 소스 코드 불필요 |
 | 150% 이상 줄간격 | 페이지 낭비, 115% 권장 |
 | Letter 용지 | A4로 통일 |
 | Slate 계열 색상 | 파랑 계열로 통일 |
+
+### 줄바꿈 정책 (v2.5.0+)
+
+| 항목 | 정책 |
+|------|------|
+| **단락 전환** | 줄바꿈 1개 허용 |
+| **섹션 전환** | 줄바꿈 허용 (제목 전) |
+| **테이블/이미지 앞뒤** | 줄바꿈 제거 |
+| **목록 항목 사이** | 줄바꿈 제거 |
+| **연속 문장** | 줄바꿈 제거 (같은 단락 내)
 
 ### 스타일 적용 코드 템플릿
 
@@ -884,6 +1070,50 @@ def apply_heading_style(service, doc_id, start_idx, end_idx, heading_level):
 | 이미지 | `![alt](path)` | Drive 업로드 후 삽입 |
 | 수평선 | `---` | H1 하단 구분선 스타일 |
 
+### 🚨 이미지 삽입 필수 규칙 (CRITICAL)
+
+**이미지가 Google Docs에 자동 삽입되려면 반드시 표준 마크다운 이미지 문법을 사용해야 합니다!**
+
+```markdown
+# ✅ 올바른 형식 (이미지 자동 삽입됨)
+![Viewer Overlay 컨셉](images/mockups/01-viewer-overlay.png)
+
+### 섹션 제목
+설명 텍스트
+
+![다이어그램](images/diagrams/architecture.png)
+
+# ❌ 잘못된 형식 (이미지 삽입 안됨 - 테이블 내 경로)
+| 목업 | 파일 경로 |
+|------|----------|
+| Viewer Overlay | `images/mockups/01-viewer-overlay.png` |
+
+# ❌ 잘못된 형식 (이미지 삽입 안됨 - 인라인 코드)
+이미지 파일: `images/mockups/01-viewer-overlay.png`
+```
+
+**변환 시 출력 확인:**
+
+```
+# 이미지가 올바르게 인식된 경우:
+[4/5] 이미지 삽입 중...
+       로컬 이미지 3개 업로드됨
+       이미지 3개 삽입됨
+
+# 이미지가 인식되지 않은 경우:
+[4/5] 이미지 삽입 중...
+       이미지 없음
+```
+
+**자주 하는 실수:**
+
+| 실수 | 원인 | 해결 |
+|------|------|------|
+| 테이블에 경로만 기재 | 마크다운 이미지 문법 아님 | `![alt](path)` 형식 사용 |
+| 인라인 코드로 경로 표시 | 마크다운 이미지 문법 아님 | `![alt](path)` 형식 사용 |
+| 절대 경로 사용 | 상대 경로 권장 | 문서 기준 상대 경로 사용 |
+| 경로에 백슬래시 | Windows 경로 구분자 | 슬래시 `/` 사용 |
+
 ### CLI 변환 도구
 
 ```powershell
@@ -922,7 +1152,8 @@ PRD 문서에 다이어그램/UI를 포함하기 위한 워크플로우입니다
 
 | 항목 | 값 | 비고 |
 |------|-----|------|
-| **가로 너비** | 540px | Google Docs 삽입 기준 |
+| **이미지 너비** | 18cm (510pt) | Google Docs 삽입 기준 |
+| **가로 너비** | 540px | HTML 목업 기준 |
 | **최소 폰트** | 16px | 가독성 보장 |
 | **캡처 대상** | `#capture-area` | 선택자 지정 |
 | **저장 위치** | `docs/mockups/` | 프로젝트별 |
@@ -1225,6 +1456,32 @@ python scripts/migrate_prds_to_gdocs.py PRD-0001  # 단일 마이그레이션
 ---
 
 ## 변경 로그
+
+### v2.6.0 (2026-01-23)
+
+**Features:**
+- 서브 프로젝트 지원 지침 추가
+  - 서브 프로젝트에서 `--gdocs` 옵션 사용 시 절대 경로 호출 방법 문서화
+  - **Claude 강제 실행 규칙 추가** (MANDATORY 섹션)
+  - 인증 파일 경로 고정 정책 추가
+
+**Documentation:**
+- "서브 프로젝트에서 사용 시" 섹션 신규 추가
+- 문제 상황 및 해결 방법 다이어그램 추가
+- **금지 행동 / 필수 행동 테이블 추가** (Claude가 자동 실행하도록 명시)
+- 실행 템플릿 예시 추가 (복사-붙여넣기 가능)
+
+### v2.5.0 (2026-01-19)
+
+**Features:**
+- 테이블/이미지 크기 18cm 표준화
+  - 테이블: 1열 18cm, 2열 9cm×2, 3열 6cm×3, 4열 4.5cm×4
+  - 이미지: 18cm (510pt) 너비
+- blockquote 내 인라인 포맷팅 지원 (`**bold**`, `*italic*`, `` `code` ``, `[link](url)`)
+
+**Bug Fixes:**
+- `_add_quote()` 메서드에 `_parse_inline_formatting()` 호출 추가
+- 테이블 인덱스 동기화 버그 수정 (v2.3.3)
 
 ### v2.4.0 (2026-01-13)
 

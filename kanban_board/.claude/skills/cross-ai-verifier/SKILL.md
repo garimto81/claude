@@ -1,79 +1,45 @@
 ---
 name: cross-ai-verifier
-description: "다중 AI 모델을 통한 코드 검증 (OpenAI + Gemini)"
-version: "2.0.0"
-author: "Claude Code"
-
+description: "[DEPRECATED] /verify로 리다이렉트됨"
+version: 2.0.0
+deprecated: true
+redirect: verify
+deprecation_message: "/cross-ai-verifier는 /verify로 통합되었습니다. /verify를 사용하세요."
 triggers:
-  keywords:
-    - "검증"
-    - "verify"
-    - "GPT 리뷰"
-    - "Gemini 검토"
-    - "교차 검증"
-    - "외부 AI"
-  file_patterns:
-    - "src/**/*.py"
-    - "src/**/*.ts"
-    - "**/*.tsx"
-    - "**/*.jsx"
-  context:
-    - "코드 품질 검증"
-    - "외부 AI 리뷰"
-    - "보안 취약점 분석"
-
-capabilities:
-  - parallel_verification
-  - security_analysis
-  - bug_detection
-  - performance_review
-
-model_preference: opus
-phase: [4, 5]
+  keywords: []
 auto_trigger: false
-token_budget: 3000
 ---
 
-# Cross-AI Verifier Skill
+# /cross-ai-verifier → /verify (Deprecated)
 
-Claude가 작성한 코드를 외부 AI(GPT, Gemini)가 교차 검증합니다.
+⚠️ **이 스킬은 deprecated 되었습니다.**
 
-## 사용법
+## 리다이렉트
+
+`/cross-ai-verifier`는 `/verify`로 통합되었습니다.
 
 ```bash
-# 단일 Provider 검증
-/verify src/auth.py --focus security --provider openai
-/verify tests/ --focus bugs --provider gemini
-
-# 병렬 검증 (OpenAI + Gemini 동시)
+# 대신 사용하세요
+/verify src/auth.py --focus security
 /verify --all src/ --parallel
 ```
 
-## 지원 Provider
+## 마이그레이션 안내
 
-| Provider | 모델 | 인증 |
-|----------|------|------|
-| **OpenAI** | GPT-4 | OAuth 토큰 (ai-login 스킬) |
-| **Gemini** | Gemini Pro | OAuth 토큰 (ai-login 스킬) |
+| 기존 | 새로운 |
+|------|--------|
+| `/cross-ai-verifier` | `/verify` |
+| `verify --provider openai` | `/verify --provider openai` |
+| `verify --provider gemini` | `/verify --provider gemini` |
 
-## 검증 Focus
+## 기능
 
-| Focus | 설명 |
-|-------|------|
-| `security` | 보안 취약점 분석 (SQL Injection, XSS 등) |
-| `bugs` | 논리 오류 및 버그 검사 |
-| `performance` | 성능 이슈 및 최적화 제안 |
-| `all` | 종합 코드 리뷰 |
+`/verify`는 동일한 Cross-AI 검증 기능을 제공합니다:
 
-## 인증 설정
+- OpenAI GPT-4 검증
+- Gemini Pro 검증
+- 보안/버그/성능 분석
 
-```bash
-# OAuth 로그인 (권장)
-/ai-login openai
-/ai-login gemini
-```
+## 상세 문서
 
-## 관련 문서
-
-- [AI Login Skill](../ai-login/SKILL.md)
-- [PRD-0035](../../../tasks/prds/PRD-0035-multi-ai-consensus-verifier.md)
+통합된 스킬: `.claude/skills/verify/SKILL.md`

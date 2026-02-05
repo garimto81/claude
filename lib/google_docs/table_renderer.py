@@ -59,8 +59,8 @@ class NativeTableRenderer:
     TABLE_WIDTH_PT = 510  # 18cm = 510pt
 
     # 컬럼 최소/최대 너비 (pt)
-    MIN_COLUMN_WIDTH_PT = 50   # 최소 약 1.8cm
-    MAX_COLUMN_WIDTH_PT = 340  # 최대 약 12cm
+    MIN_COLUMN_WIDTH_PT = 30   # 최소 약 1.0cm (더 컴팩트)
+    MAX_COLUMN_WIDTH_PT = 400  # 최대 약 14cm (더 넓은 단일 컬럼 허용)
 
     # 레거시: 컬럼 수에 따른 고정 컬럼 너비 (pt) - 동적 계산 실패 시 폴백
     COLUMN_WIDTHS = {
@@ -216,12 +216,22 @@ class NativeTableRenderer:
             column_alignments=alignments[:column_count],
         )
 
+    # 글자당 예상 너비 (pt) - Google Docs 기본 폰트 기준
+    CHAR_WIDTH_PT_ASCII = 6.5    # ASCII 문자 (영문, 숫자, 기호)
+    CHAR_WIDTH_PT_CJK = 12.0     # CJK 문자 (한글, 중국어, 일본어)
+
+    # 한 줄 표시 임계값 (이 너비 이하면 한 줄 표시 우선)
+    SINGLE_LINE_THRESHOLD_PT = 180  # 약 6.3cm
+
     def calculate_dynamic_column_widths(self, table_data: TableData) -> list[float]:
         """
-        테이블 콘텐츠 기반 동적 컬럼 너비 계산
+        테이블 콘텐츠 기반 동적 컬럼 너비 계산 (Single-Line First 최적화)
 
-        각 열의 최대 텍스트 길이를 분석하여 비율 기반으로 너비를 분배합니다.
-        전체 너비는 18cm(510pt)로 고정됩니다.
+        최적화 전략:
+        1. 각 컬럼의 "한 줄 표시 필요 너비" 계산 (글자수 × 평균 글자폭)
+        2. 한 줄에 표시 가능한 컬럼은 정확한 너비 할당
+        3. 긴 텍스트 컬럼은 남은 공간에서 유연하게 분배
+        4. 전체 너비는 18cm(510pt) 고정
 
         Args:
             table_data: 파싱된 테이블 데이터
@@ -232,38 +242,135 @@ class NativeTableRenderer:
         if table_data.column_count == 0:
             return []
 
-        # 각 열의 최대 텍스트 길이 계산
+        # 각 열의 최대 텍스트 너비 계산 (pt 단위)
         all_rows = [table_data.headers] + table_data.rows
-        max_lengths = [0] * table_data.column_count
+        max_widths_pt = [0.0] * table_data.column_count
 
         for row in all_rows:
             for col_idx, cell in enumerate(row):
                 if col_idx < table_data.column_count:
-                    # 마크다운 기호 제거 후 길이 계산
+                    # 마크다운 기호 제거 후 너비 계산
                     parsed = self._parse_cell_inline_formatting(cell)
-                    text_len = len(parsed.plain_text)
-
-                    # 한글/CJK 문자는 2배 너비로 계산
-                    cjk_count = sum(1 for c in parsed.plain_text if '\u4e00' <= c <= '\u9fff' or '\uac00' <= c <= '\ud7af')
-                    adjusted_len = text_len + cjk_count  # CJK는 1.5배 정도 넓음
-
-                    max_lengths[col_idx] = max(max_lengths[col_idx], adjusted_len)
+                    text_width = self._calculate_text_width_pt(parsed.plain_text)
+                    max_widths_pt[col_idx] = max(max_widths_pt[col_idx], text_width)
 
         # 모든 열이 비어있으면 균등 분배
-        total_length = sum(max_lengths)
-        if total_length == 0:
+        total_width = sum(max_widths_pt)
+        if total_width == 0:
             equal_width = self.TABLE_WIDTH_PT / table_data.column_count
             return [equal_width] * table_data.column_count
 
-        # 비율 기반 너비 계산
-        widths = []
-        for length in max_lengths:
-            ratio = length / total_length
-            width = self.TABLE_WIDTH_PT * ratio
-            widths.append(width)
+        # Single-Line First 최적화 적용
+        widths = self._optimize_single_line_first(max_widths_pt, table_data.column_count)
 
         # 최소/최대 너비 제한 적용
         widths = self._apply_width_constraints(widths, table_data.column_count)
+
+        return widths
+
+    def _calculate_text_width_pt(self, text: str) -> float:
+        """
+        텍스트의 예상 표시 너비 계산 (pt 단위)
+
+        Google Docs 기본 폰트 기준으로 ASCII와 CJK 문자를 구분하여 계산합니다.
+        패딩(10pt)을 포함한 실제 필요 너비를 반환합니다.
+
+        Args:
+            text: 측정할 텍스트
+
+        Returns:
+            float: 예상 너비 (pt)
+        """
+        if not text:
+            return 0.0
+
+        width = 0.0
+        for char in text:
+            # CJK 문자 판별 (한글, 중국어, 일본어)
+            if '\u4e00' <= char <= '\u9fff':  # CJK 통합 한자
+                width += self.CHAR_WIDTH_PT_CJK
+            elif '\uac00' <= char <= '\ud7af':  # 한글 음절
+                width += self.CHAR_WIDTH_PT_CJK
+            elif '\u3040' <= char <= '\u30ff':  # 히라가나/가타카나
+                width += self.CHAR_WIDTH_PT_CJK
+            elif '\uff00' <= char <= '\uffef':  # 전각 문자
+                width += self.CHAR_WIDTH_PT_CJK
+            else:
+                width += self.CHAR_WIDTH_PT_ASCII
+
+        # 셀 패딩 추가 (좌우 각 5pt)
+        return width + (self.CELL_PADDING_PT * 2)
+
+    def _optimize_single_line_first(
+        self, max_widths_pt: list[float], col_count: int
+    ) -> list[float]:
+        """
+        Single-Line First 최적화: 짧은 텍스트는 한 줄 표시 우선
+
+        전략:
+        1. 한 줄 표시 가능한 컬럼 (≤ SINGLE_LINE_THRESHOLD_PT) 식별
+        2. 한 줄 컬럼에 정확한 필요 너비 할당
+        3. 남은 공간을 긴 텍스트 컬럼에 비율 분배
+        4. 총합이 TABLE_WIDTH_PT가 되도록 조정
+
+        Args:
+            max_widths_pt: 각 컬럼의 최대 텍스트 너비 (pt)
+            col_count: 컬럼 수
+
+        Returns:
+            list[float]: 최적화된 컬럼 너비 (pt)
+        """
+        widths = [0.0] * col_count
+
+        # 1. 컬럼 분류: 한 줄 표시 가능 vs 줄바꿈 필요
+        single_line_cols = []  # (index, width)
+        multi_line_cols = []   # (index, width)
+
+        for i, w in enumerate(max_widths_pt):
+            # 최소 너비 보장
+            w = max(w, self.MIN_COLUMN_WIDTH_PT)
+
+            if w <= self.SINGLE_LINE_THRESHOLD_PT:
+                single_line_cols.append((i, w))
+            else:
+                multi_line_cols.append((i, w))
+
+        # 2. 한 줄 컬럼에 정확한 너비 할당
+        single_line_total = sum(w for _, w in single_line_cols)
+
+        # 한 줄 컬럼들의 총 너비가 테이블의 70%를 초과하면 비율 축소
+        max_single_line_budget = self.TABLE_WIDTH_PT * 0.7
+        if single_line_total > max_single_line_budget and single_line_cols:
+            scale = max_single_line_budget / single_line_total
+            for i, w in single_line_cols:
+                widths[i] = max(w * scale, self.MIN_COLUMN_WIDTH_PT)
+            single_line_total = sum(widths[i] for i, _ in single_line_cols)
+        else:
+            for i, w in single_line_cols:
+                widths[i] = w
+
+        # 3. 남은 공간을 긴 텍스트 컬럼에 분배
+        remaining_budget = self.TABLE_WIDTH_PT - single_line_total
+
+        if multi_line_cols:
+            multi_line_total = sum(w for _, w in multi_line_cols)
+
+            if multi_line_total > 0:
+                # 비율 기반 분배
+                for i, w in multi_line_cols:
+                    ratio = w / multi_line_total
+                    widths[i] = max(remaining_budget * ratio, self.MIN_COLUMN_WIDTH_PT)
+            else:
+                # 균등 분배
+                equal_share = remaining_budget / len(multi_line_cols)
+                for i, _ in multi_line_cols:
+                    widths[i] = max(equal_share, self.MIN_COLUMN_WIDTH_PT)
+
+        # 4. 총합 정규화 (오차 보정)
+        current_total = sum(widths)
+        if abs(current_total - self.TABLE_WIDTH_PT) > 0.5:
+            scale = self.TABLE_WIDTH_PT / current_total
+            widths = [w * scale for w in widths]
 
         return widths
 
@@ -828,14 +935,15 @@ class NativeTableRenderer:
         """
         shifts: dict[int, int] = {}
 
-        # 삽입 순서대로 (역순 = 인덱스 큰 것부터) 처리
-        # 자신보다 인덱스가 작은 삽입들의 텍스트 길이 합이 시프트량
+        # 역순 삽입 후 스타일 적용 시 인덱스 시프트 계산
+        # 역순 삽입: 인덱스 큰 것부터 삽입 (예: 100, 80, 60, 40, 20)
+        # 스타일 적용 시: 인덱스 작은 것은 큰 것들의 삽입으로 인해 밀림
         for i, item in enumerate(insertions):
             current_index = item["index"]
             shift = 0
 
-            # 자신보다 뒤에 있는 항목들 (이미 처리된 = 인덱스 더 큰 것들)은 영향 없음
-            # 자신보다 앞에 있는 항목들 (아직 처리 안 됨 = 인덱스 더 작은 것들)의 텍스트 길이 합
+            # 자신보다 인덱스가 작은 것들에 삽입된 텍스트 길이만큼 시프트됨
+            # (역순 정렬이므로 i 이후에 있는 것들이 인덱스가 작음)
             for j in range(i + 1, len(insertions)):
                 other = insertions[j]
                 if other["index"] < current_index:
