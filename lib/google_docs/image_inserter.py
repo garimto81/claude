@@ -23,6 +23,7 @@ Usage:
     inserter.insert_image_at_position(doc_id, image_url, position=100, width=400)
 """
 
+import re
 from pathlib import Path
 from typing import Optional
 
@@ -46,12 +47,58 @@ class ImageInserter:
             "drive", "v3", credentials=credentials
         )
 
+    def find_existing_file(
+        self,
+        file_name: str,
+        folder_id: Optional[str] = None,
+    ) -> Optional[tuple[str, str]]:
+        """
+        Drive에서 동일 이름의 기존 파일 검색
+
+        Args:
+            file_name: 파일명
+            folder_id: 폴더 ID (없으면 전체 검색)
+
+        Returns:
+            (file_id, image_url) 또는 None
+        """
+        query_parts = [f"name='{file_name}'", "trashed=false"]
+        if folder_id:
+            query_parts.append(f"'{folder_id}' in parents")
+
+        query = " and ".join(query_parts)
+
+        try:
+            results = self.drive_service.files().list(
+                q=query,
+                pageSize=1,
+                fields="files(id, thumbnailLink)"
+            ).execute()
+
+            files = results.get("files", [])
+            if files:
+                file_id = files[0]["id"]
+                thumbnail_link = files[0].get("thumbnailLink", "")
+
+                if thumbnail_link and "lh3.googleusercontent.com" in thumbnail_link:
+                    image_url = re.sub(r"=s\d+$", "=s0", thumbnail_link)
+                else:
+                    image_url = f"https://lh3.googleusercontent.com/d/{file_id}"
+
+                return file_id, image_url
+
+        except Exception:
+            pass
+
+        return None
+
     def upload_to_drive(
         self,
         file_path: Path,
         folder_id: Optional[str] = None,
         make_public: bool = True,
         file_name: Optional[str] = None,
+        skip_duplicates: bool = True,
     ) -> tuple[str, str]:
         """
         Google Drive에 이미지 업로드
@@ -61,15 +108,24 @@ class ImageInserter:
             folder_id: 대상 폴더 ID (없으면 루트)
             make_public: 공개 URL 생성 여부
             file_name: 저장할 파일명 (없으면 원본 파일명)
+            skip_duplicates: True이면 동일 이름 파일이 있으면 재사용
 
         Returns:
             (file_id, public_url) 튜플
         """
         file_path = Path(file_path)
+        target_name = file_name or file_path.name
+
+        # 중복 검사 (skip_duplicates=True인 경우)
+        if skip_duplicates:
+            existing = self.find_existing_file(target_name, folder_id)
+            if existing:
+                # 기존 파일 재사용
+                return existing
 
         # 파일 메타데이터
         file_metadata = {
-            "name": file_name or file_path.name,
+            "name": target_name,
         }
 
         if folder_id:
@@ -111,8 +167,25 @@ class ImageInserter:
             except Exception as e:
                 print(f"공개 권한 설정 실패: {e}")
 
-        # 직접 접근 URL 생성
-        image_url = f"https://drive.google.com/uc?id={file_id}"
+        # 직접 접근 URL 생성 (lh3.googleusercontent.com 형식 사용)
+        # 기존 drive.google.com/uc?id= 는 deprecated됨
+        # thumbnailLink에서 lh3 URL 추출
+        try:
+            file_meta = self.drive_service.files().get(
+                fileId=file_id,
+                fields="thumbnailLink"
+            ).execute()
+            thumbnail_link = file_meta.get("thumbnailLink", "")
+
+            if thumbnail_link and "lh3.googleusercontent.com" in thumbnail_link:
+                # =s220 등의 크기 제한을 =s0 (원본 크기)로 변경
+                image_url = re.sub(r"=s\d+$", "=s0", thumbnail_link)
+            else:
+                # 폴백: 직접 콘텐츠 링크 사용
+                image_url = f"https://lh3.googleusercontent.com/d/{file_id}"
+        except Exception:
+            # 최종 폴백
+            image_url = f"https://lh3.googleusercontent.com/d/{file_id}"
 
         return file_id, image_url
 

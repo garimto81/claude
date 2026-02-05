@@ -7,6 +7,8 @@ Usage:
     python -m lib.slack history "#general" --limit 10
     python -m lib.slack channels --include-private
     python -m lib.slack user U123456789
+    python -m lib.slack list-create "My List" --description "Todo list"
+    python -m lib.slack list-add F0ACFAJ50BE "Task 1"
 """
 
 import sys
@@ -33,22 +35,39 @@ console = Console()
 
 @app.command()
 def login(
-    port: int = typer.Option(None, "--port", "-p", help="OAuth callback port (default: auto-detect)")
+    port: int = typer.Option(None, "--port", "-p", help="OAuth callback port (default: auto-detect)"),
+    user: bool = typer.Option(False, "--user", "-u", help="Also request user token for Lists API"),
 ):
     """
     Authenticate with Slack via OAuth.
 
     Opens browser for Slack authorization and saves token locally.
+
+    Use --user flag to also request user token with lists:read/write scopes
+    for Slack Lists API access.
     """
     from .auth import login as do_login
     from .errors import SlackError
 
     try:
-        token = do_login(port=port)
+        if user:
+            console.print("[cyan]Requesting both bot and user tokens...[/cyan]")
+            console.print("[dim]User token required for Slack Lists API (lists:read, lists:write)[/dim]")
+
+        token = do_login(port=port, include_user_scopes=user)
         console.print("[green]✓ Logged in successfully![/green]")
         console.print(f"  Bot User: {token.bot_user_id}")
         console.print(f"  Workspace: {token.team.name}")
         console.print(f"  Scopes: {token.scope}")
+
+        if user:
+            from .auth import get_user_token
+            user_token = get_user_token()
+            if user_token:
+                console.print(f"\n[green]✓ User token obtained![/green]")
+                console.print(f"  User Scopes: {user_token.scope}")
+            else:
+                console.print(f"\n[yellow]⚠ User token not obtained. Check Slack App settings.[/yellow]")
     except SlackError as e:
         console.print(f"[red]✗ Login failed: {e}[/red]")
         raise typer.Exit(1)
@@ -281,6 +300,247 @@ def user(
             print(json.dumps({"error": str(e)}, ensure_ascii=False))
         else:
             console.print(f"[red]✗ Failed to get user info: {e}[/red]")
+        raise typer.Exit(1)
+
+
+# Cache directory for list schemas
+from pathlib import Path
+LIST_SCHEMA_CACHE = Path("C:/claude/json/slack_list_schemas.json")
+
+
+def _load_schema_cache() -> dict:
+    """Load cached list schemas."""
+    if LIST_SCHEMA_CACHE.exists():
+        try:
+            return json.loads(LIST_SCHEMA_CACHE.read_text(encoding="utf-8"))
+        except (json.JSONDecodeError, IOError):
+            pass
+    return {}
+
+
+def _save_schema_cache(cache: dict) -> None:
+    """Save list schemas to cache."""
+    LIST_SCHEMA_CACHE.parent.mkdir(parents=True, exist_ok=True)
+    LIST_SCHEMA_CACHE.write_text(json.dumps(cache, indent=2, ensure_ascii=False), encoding="utf-8")
+
+
+def _get_primary_column_id(list_id: str, cache: dict) -> Optional[str]:
+    """Get primary column ID from cache."""
+    if list_id in cache:
+        schema = cache[list_id].get("schema", [])
+        for col in schema:
+            if col.get("is_primary_column") or col.get("key") == "name":
+                return col.get("id")
+    return None
+
+
+@app.command("list-create")
+def list_create(
+    name: str = typer.Argument(..., help="List name/title"),
+    description: str = typer.Option("", "--description", "-d", help="List description"),
+    todo_mode: bool = typer.Option(True, "--todo/--no-todo", help="Create as todo list with completion/assignee/due date columns"),
+    json_output: bool = typer.Option(False, "--json", "-j", help="Output as JSON"),
+):
+    """
+    Create a new Slack List.
+
+    Requires user token (xoxp-). Add 'user_token' to slack_credentials.json
+    or run 'python -m lib.slack login --user' for OAuth.
+    """
+    from .client import SlackUserClient
+    from .errors import SlackError, SlackAuthError
+
+    try:
+        client = SlackUserClient()
+        result = client.create_list(name, description, todo_mode=todo_mode)
+
+        list_id = result.get("list_id", "")
+        metadata = result.get("list_metadata", {})
+        schema = metadata.get("schema", [])
+
+        # Cache schema for later use
+        if list_id and schema:
+            cache = _load_schema_cache()
+            cache[list_id] = {"name": name, "schema": schema}
+            _save_schema_cache(cache)
+
+        if json_output:
+            print(json.dumps({
+                "ok": True,
+                "list_id": list_id,
+                "name": name,
+                "columns": [col.get("name") for col in schema],
+            }, ensure_ascii=False, indent=2))
+        else:
+            console.print("[green]✓ List created![/green]")
+            console.print(f"  List ID: {list_id}")
+            console.print(f"  Name: {name}")
+            if schema:
+                cols = ", ".join(col.get("name", "") for col in schema)
+                console.print(f"  Columns: {cols}")
+    except SlackAuthError as e:
+        if json_output:
+            print(json.dumps({"ok": False, "error": str(e)}, ensure_ascii=False))
+        else:
+            console.print(f"[red]✗ Auth error: {e}[/red]")
+            console.print("[yellow]Hint: Add 'user_token' to slack_credentials.json or run 'login --user'[/yellow]")
+        raise typer.Exit(1)
+    except SlackError as e:
+        if json_output:
+            print(json.dumps({"ok": False, "error": str(e)}, ensure_ascii=False))
+        else:
+            console.print(f"[red]✗ Failed to create list: {e}[/red]")
+        raise typer.Exit(1)
+
+
+@app.command("list-add")
+def list_add(
+    list_id: str = typer.Argument(..., help="List ID (F...)"),
+    title: str = typer.Argument(..., help="Item title/name"),
+    json_output: bool = typer.Option(False, "--json", "-j", help="Output as JSON"),
+):
+    """
+    Add an item to a Slack List.
+
+    Requires user token (xoxp-). The list must be created via 'list-create' first
+    to cache the schema, or manually provide column_id.
+    """
+    from .client import SlackUserClient
+    from .errors import SlackError, SlackAuthError
+
+    try:
+        client = SlackUserClient()
+
+        # Get primary column ID from cache
+        cache = _load_schema_cache()
+        primary_col = _get_primary_column_id(list_id, cache)
+
+        if not primary_col:
+            # Fallback: try common default patterns or raise error
+            if json_output:
+                print(json.dumps({
+                    "ok": False,
+                    "error": f"Schema not cached for list {list_id}. Create list via 'list-create' first.",
+                }, ensure_ascii=False))
+            else:
+                console.print(f"[red]✗ Schema not cached for list {list_id}[/red]")
+                console.print("[yellow]Hint: Create list via 'list-create' to cache schema, or use 'list-register'[/yellow]")
+            raise typer.Exit(1)
+
+        result = client.add_list_item(list_id, {primary_col: title})
+
+        if json_output:
+            print(json.dumps({
+                "ok": True,
+                "list_id": list_id,
+                "item": result.get("item", {}),
+            }, ensure_ascii=False, indent=2))
+        else:
+            console.print("[green]✓ Item added![/green]")
+            console.print(f"  List ID: {list_id}")
+            console.print(f"  Title: {title}")
+    except SlackAuthError as e:
+        if json_output:
+            print(json.dumps({"ok": False, "error": str(e)}, ensure_ascii=False))
+        else:
+            console.print(f"[red]✗ Auth error: {e}[/red]")
+        raise typer.Exit(1)
+    except SlackError as e:
+        if json_output:
+            print(json.dumps({"ok": False, "error": str(e)}, ensure_ascii=False))
+        else:
+            console.print(f"[red]✗ Failed to add item: {e}[/red]")
+        raise typer.Exit(1)
+
+
+@app.command("list-register")
+def list_register(
+    list_id: str = typer.Argument(..., help="List ID (F...)"),
+    primary_column_id: str = typer.Argument(..., help="Primary column ID (Col...)"),
+    name: str = typer.Option("", "--name", "-n", help="List name for reference"),
+    json_output: bool = typer.Option(False, "--json", "-j", help="Output as JSON"),
+):
+    """
+    Register an existing Slack List schema for use with list-add.
+
+    Use this to add items to lists not created via this CLI.
+    Get the column ID from Slack's web interface (inspect network requests).
+    """
+    cache = _load_schema_cache()
+    cache[list_id] = {
+        "name": name or list_id,
+        "schema": [{"id": primary_column_id, "key": "name", "is_primary_column": True}],
+    }
+    _save_schema_cache(cache)
+
+    if json_output:
+        print(json.dumps({
+            "ok": True,
+            "list_id": list_id,
+            "primary_column_id": primary_column_id,
+        }, ensure_ascii=False, indent=2))
+    else:
+        console.print("[green]✓ List schema registered![/green]")
+        console.print(f"  List ID: {list_id}")
+        console.print(f"  Primary Column: {primary_column_id}")
+        console.print(f"  You can now use 'list-add {list_id} \"Item\"'")
+
+
+@app.command("list-items")
+def list_items(
+    list_id: str = typer.Argument(..., help="List ID (F...)"),
+    limit: int = typer.Option(50, "--limit", "-n", help="Max items to retrieve"),
+    json_output: bool = typer.Option(False, "--json", "-j", help="Output as JSON"),
+):
+    """
+    Get items from a Slack List.
+
+    Requires user token (xoxp-).
+    """
+    from .client import SlackUserClient
+    from .errors import SlackError, SlackAuthError
+
+    try:
+        client = SlackUserClient()
+        result = client.get_list_items(list_id, limit=limit)
+
+        items = result.get("items", [])
+        metadata = result.get("list_metadata", {})
+
+        if json_output:
+            print(json.dumps({
+                "ok": True,
+                "list_id": list_id,
+                "count": len(items),
+                "items": items,
+                "metadata": metadata,
+            }, ensure_ascii=False, indent=2))
+        else:
+            if not items:
+                console.print("[yellow]No items in list.[/yellow]")
+                return
+
+            console.print(f"[bold]Items in list {list_id} ({len(items)}):[/bold]\n")
+            for item in items:
+                fields = item.get("fields", [])
+                # Try to get the name/title field (fields is a list, not dict)
+                name_value = "Unknown"
+                for field in fields:
+                    if field.get("key") == "name" and field.get("text"):
+                        name_value = field.get("text")
+                        break
+                console.print(f"  • {name_value}")
+    except SlackAuthError as e:
+        if json_output:
+            print(json.dumps({"ok": False, "error": str(e)}, ensure_ascii=False))
+        else:
+            console.print(f"[red]✗ Auth error: {e}[/red]")
+        raise typer.Exit(1)
+    except SlackError as e:
+        if json_output:
+            print(json.dumps({"ok": False, "error": str(e)}, ensure_ascii=False))
+        else:
+            console.print(f"[red]✗ Failed to get items: {e}[/red]")
         raise typer.Exit(1)
 
 

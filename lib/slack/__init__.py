@@ -9,7 +9,7 @@ Usage:
     # First time: OAuth flow
     login()
 
-    # Create client
+    # Create client (bot token)
     client = SlackClient()
 
     # Send message
@@ -21,8 +21,21 @@ Usage:
     # List channels
     channels = client.list_channels(include_private=True)
 
+User Token (for Slack Lists API):
+    from lib.slack import SlackUserClient
+
+    # First time: OAuth with user scopes
+    # python -m lib.slack login --user
+
+    # Create client with user token
+    client = SlackUserClient()
+
+    # Create Slack List
+    result = client.create_list("My List", "Description")
+
 CLI Usage:
-    python -m lib.slack login
+    python -m lib.slack login           # Bot token only
+    python -m lib.slack login --user    # Bot + User token (for Lists API)
     python -m lib.slack send "#general" "Hello!"
     python -m lib.slack history "#general"
     python -m lib.slack channels
@@ -30,8 +43,8 @@ CLI Usage:
 
 __version__ = "1.0.0"
 
-from .client import SlackClient, RateLimiter, load_token
-from .auth import login, get_token, load_credentials, save_token
+from .client import SlackClient, SlackUserClient, RateLimiter, load_token
+from .auth import login, get_token, get_user_token, load_credentials, save_token
 from .models import (
     SlackCredentials,
     SlackTeam,
@@ -57,11 +70,13 @@ __all__ = [
     "__version__",
     # Client
     "SlackClient",
+    "SlackUserClient",
     "RateLimiter",
     "load_token",
     # Auth
     "login",
     "get_token",
+    "get_user_token",
     "load_credentials",
     "save_token",
     # Models

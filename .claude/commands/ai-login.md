@@ -8,10 +8,13 @@ description: AI 서비스 인증 설정 (GPT, Gemini)
 ## 사용법
 
 ```bash
-/ai-login openai                    # 자동 인증 (브라우저 → 로그인 → 완료)
-/ai-login google                    # Google OAuth 자동 인증 (Gemini CLI 토큰 우선)
-/ai-login google --api-key          # API Key 방식 (직접 입력)
-/ai-login status                    # 인증 상태 확인
+# AI 서비스 인증
+/ai-login openai                    # OpenAI OAuth 인증
+/ai-login google                    # Google OAuth 인증
+/ai-login google --api-key          # API Key 방식
+
+# 상태 확인
+/ai-login status                    # 전체 인증 상태
 /ai-login logout                    # 모든 세션 로그아웃
 ```
 
@@ -48,6 +51,9 @@ from ultimate_debate.auth.storage import TokenStore
 
 def try_import_codex_token():
     '''Codex CLI 토큰 가져오기 시도'''
+    import base64
+    from datetime import timedelta
+
     codex_auth_path = Path.home() / '.codex' / 'auth.json'
 
     if not codex_auth_path.exists():
@@ -60,17 +66,45 @@ def try_import_codex_token():
         tokens = codex_auth.get('tokens', {})
         access_token = tokens.get('access_token')
         refresh_token = tokens.get('refresh_token')
-        expires_at_str = tokens.get('expires_at')
 
         if not access_token:
             return None
 
-        # expires_at 파싱
-        if expires_at_str:
-            expires_at = datetime.fromisoformat(expires_at_str.replace('Z', '+00:00'))
-            expires_at = expires_at.replace(tzinfo=None)  # naive datetime으로 변환
+        # JWT access_token에서 exp 클레임 추출 (검증 없이 디코딩만)
+        def decode_jwt_exp(token: str):
+            try:
+                # JWT 구조: header.payload.signature
+                parts = token.split('.')
+                if len(parts) != 3:
+                    return None
+
+                # payload (두 번째 파트) 디코딩
+                payload = parts[1]
+                # base64url → base64 변환 (패딩 추가)
+                payload += '=' * (4 - len(payload) % 4)
+                decoded = base64.urlsafe_b64decode(payload)
+                claims = json.loads(decoded)
+
+                return claims.get('exp')
+            except Exception:
+                return None
+
+        # JWT에서 만료 시간 추출
+        exp_timestamp = decode_jwt_exp(access_token)
+
+        if exp_timestamp:
+            # Unix timestamp → datetime
+            expires_at = datetime.fromtimestamp(exp_timestamp)
         else:
-            return None
+            # exp 없으면 last_refresh + 10일로 추정
+            last_refresh_str = codex_auth.get('last_refresh')
+            if last_refresh_str:
+                last_refresh = datetime.fromisoformat(last_refresh_str.replace('Z', '+00:00'))
+                last_refresh = last_refresh.replace(tzinfo=None)
+                expires_at = last_refresh + timedelta(days=10)
+            else:
+                # last_refresh도 없으면 현재 시간 + 10일
+                expires_at = datetime.now() + timedelta(days=10)
 
         # 만료 확인
         if expires_at <= datetime.now():

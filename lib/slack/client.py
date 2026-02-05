@@ -308,3 +308,234 @@ class SlackClient:
             return response.data.get("ok", False)
         except SlackApiError:
             return False
+
+    def auth_test(self) -> dict:
+        """
+        Test authentication and get user/team info.
+
+        Returns:
+            Auth info dict with user_id, team_id, team, user, etc.
+        """
+        self._rate_limiter.wait_if_needed("auth.test")
+
+        try:
+            response = self._client.auth_test()
+            return response.data
+        except SlackApiError as e:
+            self._handle_error(e)
+
+    # ==========================================
+    # Slack Lists API (2025.09 Public Release)
+    # Requires paid Slack plan
+    # ==========================================
+
+    def create_list(
+        self,
+        name: str,
+        description: str = "",
+        todo_mode: bool = True,
+        schema: list[dict] = None,
+    ) -> dict:
+        """
+        Create a new Slack List.
+
+        Args:
+            name: List name (title)
+            description: Optional description
+            todo_mode: If True, creates with Completed, Assignee, Due date columns
+            schema: Custom column schema (optional)
+
+        Returns:
+            Created list info with list_id
+        """
+        self._rate_limiter.wait_if_needed("slackLists.create")
+
+        try:
+            params = {
+                "name": name,
+                "todo_mode": todo_mode,
+            }
+
+            if description:
+                # description needs to be in Block Kit format
+                params["description_blocks"] = [
+                    {
+                        "type": "rich_text",
+                        "elements": [{
+                            "type": "rich_text_section",
+                            "elements": [{
+                                "type": "text",
+                                "text": description,
+                            }]
+                        }]
+                    }
+                ]
+
+            if schema:
+                params["schema"] = schema
+
+            response = self._client.api_call(
+                "slackLists.create",
+                json=params,
+            )
+
+            if not response.data.get("ok"):
+                raise SlackAPIError(
+                    response.data.get("error", "unknown"),
+                    response.data,
+                )
+
+            return response.data
+        except SlackApiError as e:
+            self._handle_error(e)
+
+    def add_list_item(
+        self,
+        list_id: str,
+        fields: dict[str, any],
+    ) -> dict:
+        """
+        Add an item to a Slack List.
+
+        Args:
+            list_id: ID of the list
+            fields: Field values keyed by column_id
+
+        Returns:
+            Created item info
+        """
+        self._rate_limiter.wait_if_needed("slackLists.items.create")
+
+        try:
+            # Convert fields to initial_fields format
+            initial_fields = []
+            for column_id, value in fields.items():
+                if isinstance(value, str):
+                    # Text fields require rich_text as array (not wrapped in value)
+                    initial_fields.append({
+                        "column_id": column_id,
+                        "rich_text": [{
+                            "type": "rich_text",
+                            "elements": [{
+                                "type": "rich_text_section",
+                                "elements": [{
+                                    "type": "text",
+                                    "text": value,
+                                }]
+                            }]
+                        }]
+                    })
+                elif isinstance(value, bool):
+                    # Boolean fields (like todo_completed)
+                    initial_fields.append({
+                        "column_id": column_id,
+                        "checkbox": value,
+                    })
+                else:
+                    initial_fields.append({
+                        "column_id": column_id,
+                        "value": value,
+                    })
+
+            response = self._client.api_call(
+                "slackLists.items.create",
+                json={
+                    "list_id": list_id,
+                    "initial_fields": initial_fields,
+                },
+            )
+
+            if not response.data.get("ok"):
+                raise SlackAPIError(
+                    response.data.get("error", "unknown"),
+                    response.data,
+                )
+
+            return response.data
+        except SlackApiError as e:
+            self._handle_error(e)
+
+    def delete_message(self, channel: str, ts: str) -> bool:
+        """
+        Delete a message from a channel.
+
+        Args:
+            channel: Channel ID
+            ts: Message timestamp
+
+        Returns:
+            True if deleted successfully
+        """
+        self._rate_limiter.wait_if_needed("chat.delete")
+
+        try:
+            response = self._client.chat_delete(channel=channel, ts=ts)
+            return response.data.get("ok", False)
+        except SlackApiError as e:
+            self._handle_error(e)
+
+    def get_list_items(self, list_id: str, limit: int = 100) -> dict:
+        """
+        Get items from a Slack List.
+
+        Args:
+            list_id: ID of the list
+            limit: Max items to return
+
+        Returns:
+            List items data
+        """
+        self._rate_limiter.wait_if_needed("slackLists.items.list")
+
+        try:
+            response = self._client.api_call(
+                "slackLists.items.list",
+                params={
+                    "list_id": list_id,
+                    "limit": limit,
+                },
+            )
+
+            if not response.data.get("ok"):
+                raise SlackAPIError(
+                    response.data.get("error", "unknown"),
+                    response.data,
+                )
+
+            return response.data
+        except SlackApiError as e:
+            self._handle_error(e)
+
+
+class SlackUserClient(SlackClient):
+    """
+    Slack client using User Token for features not available to bots.
+
+    Required for:
+    - Slack Lists API (lists:read, lists:write)
+
+    Usage:
+        from lib.slack import SlackUserClient
+
+        client = SlackUserClient()  # Uses stored user token
+        result = client.create_list("My List", "Description")
+    """
+
+    def __init__(self, token: Optional[str] = None):
+        """
+        Initialize client with user token.
+
+        Args:
+            token: User token (xoxp-...). If None, loads from file.
+        """
+        if token is None:
+            from .auth import get_user_token
+            user_token = get_user_token()
+            if user_token is None:
+                raise SlackAuthError(
+                    "User token not found. Run 'python -m lib.slack login --user' to authenticate."
+                )
+            token = user_token.access_token
+
+        # Initialize parent with user token
+        super().__init__(token=token)
