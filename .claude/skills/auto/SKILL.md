@@ -1,7 +1,7 @@
 ---
 name: auto
 description: 하이브리드 자율 워크플로우 - OMC+BKIT 통합 (Ralph + Ultrawork + PDCA 필수)
-version: 16.0.0
+version: 16.1.0
 triggers:
   keywords:
     - "/auto"
@@ -29,15 +29,6 @@ bkit_agents:
 # /auto - 하이브리드 자율 워크플로우 (v16.0 - OMC+BKIT 통합)
 
 > **핵심**: `/auto "작업"` = **PDCA 문서화(필수)** + Ralph 루프 + Ultrawork 병렬 + **이중 검증**
-
-## 🆕 v16.0 변경사항 (OMC + BKIT 통합)
-
-| 기능 | 설명 | 활성화 |
-|------|------|:------:|
-| **PDCA 문서화** | Plan→Design→Do→Check→Act 자동 | ✅ 필수 |
-| **이중 검증** | OMC Architect + BKIT gap-detector 병렬 | ✅ 기본 |
-| **43 에이전트** | OMC 32개 + BKIT 11개 통합 | ✅ |
-| **병렬 비교** | 동일 도메인 OMC/BKIT 결과 비교 | ✅ |
 
 ## OMC + BKIT Integration
 
@@ -99,16 +90,70 @@ Skill(skill="oh-my-claudecode:autopilot", args="작업 설명")
 └─────────────────────────────────────────────────────────────┘
 ```
 
-**Step 0.1: Plan 문서 생성**
+**Step 0.1: Plan 문서 생성 (Ralplan 연동)**
+
+**복잡도 점수 판단 (MANDATORY - 5점 만점):**
+
+작업 설명을 분석하여 아래 5개 조건을 평가합니다. 각 조건 충족 시 1점.
+
+| # | 조건 | 1점 기준 | 0점 기준 |
+|:-:|------|---------|---------|
+| 1 | **파일 범위** | 3개 이상 파일 수정 예상 | 1-2개 파일 |
+| 2 | **아키텍처** | 새 패턴/구조 도입 | 기존 패턴 내 수정 |
+| 3 | **의존성** | 새 라이브러리/서비스 추가 | 기존 의존성만 사용 |
+| 4 | **모듈 영향** | 2개 이상 모듈/패키지 영향 | 단일 모듈 내 변경 |
+| 5 | **사용자 명시** | `ralplan` 키워드 포함 | 키워드 없음 |
+
+**판단 규칙:**
+- **score >= 3** → Ralplan 실행 (Planner + Architect + Critic 합의)
+- **score < 3** → Planner 단독 실행
+
+**판단 로그 출력 (항상 필수):**
+```
+═══ 복잡도 판단 ═══
+파일 범위: {0|1}점 ({근거})
+아키텍처: {0|1}점 ({근거})
+의존성:   {0|1}점 ({근거})
+모듈 영향: {0|1}점 ({근거})
+사용자 명시: {0|1}점
+총점: {score}/5 → {Ralplan 실행|Planner 단독}
+═══════════════════
+```
+
+**score >= 3: Ralplan 실행**
+
+```
+# Step A: Ralplan 실행 (Planner → Architect → Critic 합의)
+Skill(skill="oh-my-claudecode:ralplan", args="작업 설명")
+
+# Step B: 합의 결과를 PDCA Plan 문서로 기록
+Task(
+  subagent_type="oh-my-claudecode:executor",
+  model="sonnet",
+  description="[PDCA Plan] Ralplan 결과 문서화",
+  prompt="Ralplan 합의 결과를 docs/01-plan/{feature}.plan.md에 기록하세요.
+
+  포함 항목:
+  - 복잡도 점수: {score}/5 (각 조건별 판단 근거)
+  - 합의된 아키텍처 결정사항
+  - 구현 범위 및 제외 항목
+  - 예상 영향 파일 목록
+  - 위험 요소 및 완화 방안
+  - Planner/Architect/Critic 각 관점 요약"
+)
+```
+→ `docs/01-plan/{feature}.plan.md` 생성 (Ralplan 합의 결과 포함)
+
+**score < 3: Planner 단독 실행**
 ```
 Task(
   subagent_type="oh-my-claudecode:planner",
   model="opus",
   description="[PDCA Plan] 기능 계획",
-  prompt="..."
+  prompt="... (복잡도 점수: {score}/5, 판단 근거 포함)"
 )
 ```
-→ `docs/01-plan/{feature}.plan.md` 생성
+→ `docs/01-plan/{feature}.plan.md` 생성 (단독 Planner 결과)
 
 **Step 0.2: Design 문서 생성**
 ```
@@ -153,6 +198,7 @@ Task(subagent_type="bkit:pdca-iterator", model="sonnet", ...)
 | `--research` | `Skill(skill="research", args="...")` | 리서치 모드 |
 | `--slack <채널>` | Slack 채널 분석 후 컨텍스트 주입 | 채널 히스토리 기반 작업 |
 | `--gmail` | Gmail 메일 분석 후 컨텍스트 주입 | 메일 기반 작업 |
+| `--interactive` | 각 Phase 전환 시 사용자 승인 요청 | 단계적 승인 모드 |
 
 **옵션 체인 예시:**
 ```
@@ -364,6 +410,41 @@ Task(
 → 결과 출력
 ```
 
+### `--interactive` 옵션 워크플로우
+
+각 PDCA Phase 전환 시 사용자에게 확인을 요청하여 단계적 승인을 받습니다.
+
+**사용 형식:**
+```bash
+/auto --interactive "작업 설명"        # 모든 Phase에서 승인 요청
+/auto --interactive --skip-plan "작업"  # Plan 건너뛰고 Design부터 시작
+```
+
+**동작 방식:**
+
+각 Phase 전환 시 `AskUserQuestion`을 호출하여 사용자 선택을 받습니다:
+
+| Phase 전환 | 선택지 | 기본값 |
+|-----------|--------|:------:|
+| Plan 완료 → Design | 진행 / 수정 / 건너뛰기 | 진행 |
+| Design 완료 → Do | 진행 / 수정 / 건너뛰기 | 진행 |
+| Do 완료 → Check | 진행 / 수정 | 진행 |
+| Check 결과 → Act | 자동 개선 / 수동 수정 / 완료 | 자동 개선 |
+
+**Phase 전환 시 출력 형식:**
+
+```
+═══════════════════════════════════════════════════
+ Phase [현재] 완료 → Phase [다음] 진입 대기
+═══════════════════════════════════════════════════
+ 산출물: docs/01-plan/{feature}.plan.md
+ 소요 에이전트: planner (opus), critic (opus)
+ 핵심 결정: [1줄 요약]
+═══════════════════════════════════════════════════
+```
+
+**--interactive 미사용 시** (기본 동작): 모든 Phase를 자동으로 진행합니다.
+
 ## Ralph 루프 워크플로우 (CRITICAL)
 
 **autopilot = Ralplan + Ultrawork + Ralph 루프**
@@ -400,11 +481,12 @@ Architect 검증
 
 **작업이 주어지면 (`/auto "작업내용"`):**
 
-1. **Ralplan 호출** (복잡한 작업인 경우):
+1. **Ralplan 호출** (Step 0.1의 복잡도 점수 >= 3인 경우):
    ```
    Skill(skill="oh-my-claudecode:ralplan", args="작업내용")
    ```
    - Planner → Architect → Critic 합의 도달까지 반복
+   - 판단 기준: Step 0.1의 5점 만점 복잡도 점수표 참조
 
 2. **Ultrawork 모드 활성화**:
    - 모든 독립적 작업은 **병렬 실행**
@@ -446,6 +528,30 @@ Architect 검증
 | 4 | SUPPORT | staged 파일, 린트 에러 | `/commit`, `/check` |
 | 5 | AUTONOMOUS | 코드 품질 개선 | 리팩토링 제안 |
 
+### Phase 4: /work --loop 통합 (장기 계획)
+
+> **상태**: 설계 완료, 구현 예정 (2026-03 목표)
+
+`/work --loop`의 자율 반복 기능을 `/auto --work`로 흡수합니다.
+
+**통합 매핑:**
+
+| 기존 | 신규 | 동작 |
+|------|------|------|
+| `/work --loop` | `/auto --work` | PDCA 없이 빠른 자율 반복 실행 |
+| `/work "작업"` | `/work "작업"` | 단일 작업 실행 (변경 없음) |
+
+**`/auto --work` 모드:**
+- PDCA 문서화 생략 (빠른 실행)
+- Ralplan 대신 단순 Planner 호출
+- Ralph 루프 5개 조건 검증 유지
+- Context 90% 임계값 관리 유지
+
+**마이그레이션:**
+1. `/work --loop` 사용 시 `/auto --work`로 자동 redirect
+2. 기존 /work 커맨드는 단일 작업 실행으로 역할 유지
+3. `.claude/rules/08-skill-routing.md` 인과관계 그래프 업데이트
+
 ## 세션 관리
 
 ```bash
@@ -464,3 +570,14 @@ Architect 검증
 ## 상세 워크플로우
 
 추가 세부사항: `.claude/commands/auto.md`
+
+## 변경 이력
+
+### v16.0 (OMC + BKIT 통합)
+
+| 기능 | 설명 | 활성화 |
+|------|------|:------:|
+| **PDCA 문서화** | Plan→Design→Do→Check→Act 자동 | ✅ 필수 |
+| **이중 검증** | OMC Architect + BKIT gap-detector 병렬 | ✅ 기본 |
+| **43 에이전트** | OMC 32개 + BKIT 11개 통합 | ✅ |
+| **병렬 비교** | 동일 도메인 OMC/BKIT 결과 비교 | ✅ |
