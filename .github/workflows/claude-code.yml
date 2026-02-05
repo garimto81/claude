@@ -5,6 +5,10 @@ on:
     types: [opened, labeled]
   issue_comment:
     types: [created]
+  pull_request:
+    types: [opened, synchronize]
+  pull_request_review_comment:
+    types: [created]
   workflow_dispatch:
     inputs:
       issue_number:
@@ -12,21 +16,24 @@ on:
         required: true
         type: number
 
-# Claude Code Action 사용을 위한 권한
 permissions:
   contents: write
   issues: write
   pull-requests: write
 
 jobs:
-  process-issue:
-    name: Process Issue with Claude
+  # =========================================================================
+  # Phase A: 이슈 기반 자동 버그 수정
+  # =========================================================================
+  fix-issue:
+    name: Fix Issue with Claude
     runs-on: ubuntu-latest
-    # claude-autofix 라벨이 있는 이슈만 처리
     if: |
-      github.event_name == 'workflow_dispatch' ||
+      (github.event_name == 'workflow_dispatch') ||
       (github.event_name == 'issues' && contains(github.event.issue.labels.*.name, 'claude-autofix')) ||
-      (github.event_name == 'issue_comment' && contains(github.event.issue.labels.*.name, 'claude-autofix'))
+      (github.event_name == 'issue_comment' &&
+       contains(github.event.issue.labels.*.name, 'claude-autofix') &&
+       contains(github.event.comment.body, '@claude'))
 
     steps:
       - uses: actions/checkout@v4
@@ -36,40 +43,43 @@ jobs:
       - name: Set up Python
         uses: actions/setup-python@v5
         with:
-          python-version: "3.11"
+          python-version: "3.12"
 
       - name: Install dependencies
         run: |
           pip install -e ".[dev]" 2>/dev/null || pip install pytest ruff black
           pip install -r requirements.txt 2>/dev/null || true
 
-      # Claude Code Action (공식 Action 출시 시 교체)
-      # - uses: anthropics/claude-code-action@v1
-      #   with:
-      #     anthropic_api_key: ${{ secrets.ANTHROPIC_API_KEY }}
-      #     issue_number: ${{ github.event.issue.number || inputs.issue_number }}
-      #     max_tokens: 50000
-      #     auto_commit: true
-      #     create_pr: true
-
-      - name: Process with Claude (Placeholder)
+      - name: Run Claude Code
+        uses: anthropics/claude-code-action@beta
+        with:
+          anthropic_api_key: ${{ secrets.ANTHROPIC_API_KEY }}
+          max_turns: 30
+          timeout_minutes: 15
         env:
           GITHUB_TOKEN: ${{ secrets.GITHUB_TOKEN }}
-          ANTHROPIC_API_KEY: ${{ secrets.ANTHROPIC_API_KEY }}
-        run: |
-          ISSUE_NUMBER="${{ github.event.issue.number || inputs.issue_number }}"
-          echo "Processing issue #${ISSUE_NUMBER}"
 
-          # 이슈 정보 조회
-          gh issue view ${ISSUE_NUMBER} --json title,body,labels
+  # =========================================================================
+  # Phase B: PR 자동 리뷰
+  # =========================================================================
+  review-pr:
+    name: Review PR with Claude
+    runs-on: ubuntu-latest
+    if: |
+      github.event_name == 'pull_request' ||
+      (github.event_name == 'pull_request_review_comment' &&
+       contains(github.event.comment.body, '@claude'))
 
-          # TODO: Claude API 호출 및 처리
-          echo "Claude Code integration pending official Action release"
+    steps:
+      - uses: actions/checkout@v4
+        with:
+          fetch-depth: 0
 
-      - name: Add processing comment
-        if: github.event_name != 'workflow_dispatch'
+      - name: Run Claude Code Review
+        uses: anthropics/claude-code-action@beta
+        with:
+          anthropic_api_key: ${{ secrets.ANTHROPIC_API_KEY }}
+          max_turns: 10
+          timeout_minutes: 10
         env:
           GITHUB_TOKEN: ${{ secrets.GITHUB_TOKEN }}
-        run: |
-          ISSUE_NUMBER="${{ github.event.issue.number }}"
-          gh issue comment ${ISSUE_NUMBER} --body "🤖 Claude Code가 이 이슈를 분석 중입니다..."
