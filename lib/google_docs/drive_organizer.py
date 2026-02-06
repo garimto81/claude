@@ -18,6 +18,7 @@ from googleapiclient.http import MediaIoBaseDownload
 import io
 
 from .auth import get_credentials, DEFAULT_FOLDER_ID
+from .project_registry import get_project_folder_id
 
 
 @dataclass
@@ -94,8 +95,11 @@ class DriveOrganizer:
         (r"^\d{2}-", "images/prds/general"),  # 01-xxx, 02-xxx 등
     ]
 
-    def __init__(self, root_folder_id: str = DEFAULT_FOLDER_ID):
-        self.root_folder_id = root_folder_id
+    def __init__(self, root_folder_id: Optional[str] = None):
+        try:
+            self.root_folder_id = root_folder_id or get_project_folder_id()
+        except Exception:
+            self.root_folder_id = root_folder_id or DEFAULT_FOLDER_ID
         self.creds = get_credentials()
         self.drive = build("drive", "v3", credentials=self.creds)
         self._folder_cache: dict[str, str] = {}  # path → folder_id

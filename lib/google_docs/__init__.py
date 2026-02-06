@@ -33,6 +33,7 @@ from .diagram_generator import DiagramGenerator, create_generator
 from .image_inserter import ImageInserter, create_inserter
 from .batch_processor import BatchConverter, ConvertResult as BatchConvertResult
 from .auto_trigger import AutoTriggerHandler
+from .project_registry import ProjectRegistry, get_project_folder_id, get_default_folder_id
 
 __version__ = "1.3.0"
 __all__ = [
@@ -68,4 +69,8 @@ __all__ = [
     "BatchConvertResult",
     # Auto Trigger (Phase 1)
     "AutoTriggerHandler",
+    # Project Registry (Drive 프로젝트 매핑)
+    "ProjectRegistry",
+    "get_project_folder_id",
+    "get_default_folder_id",
 ]

@@ -17,7 +17,18 @@ if sys.platform == "win32":
 from typing import Optional
 
 from .auth import DEFAULT_FOLDER_ID
+from .project_registry import get_project_folder_id
 from .converter import create_google_doc
+
+
+def _resolve_folder_id(args_folder: Optional[str] = None, project: Optional[str] = None) -> str:
+    """CLI에서 폴더 ID 해석 (--project 우선, --folder 차선, 자동 감지 최종)"""
+    if args_folder and args_folder != DEFAULT_FOLDER_ID:
+        return args_folder  # 명시적 --folder 지정
+    try:
+        return get_project_folder_id(project=project, subfolder="documents")
+    except Exception:
+        return DEFAULT_FOLDER_ID  # fallback
 
 
 def process_file(
@@ -123,10 +134,13 @@ Examples:
         help="기존 Google Docs 문서 ID (지정 시 해당 문서를 업데이트, 미지정 시 새 문서 생성)",
     )
     convert_parser.add_argument(
+        "--project", "-p", help="프로젝트 이름 (예: WSOPTV, EBS, 지지프로덕션, 브로드스튜디오)"
+    )
+    convert_parser.add_argument(
         "--folder",
         "-f",
         default=DEFAULT_FOLDER_ID,
-        help=f"Google Drive 폴더 ID (기본: {DEFAULT_FOLDER_ID[:15]}...)",
+        help=f"Google Drive 폴더 ID (기본: 프로젝트 자동 감지)",
     )
     convert_parser.add_argument("--toc", action="store_true", help="목차 포함")
     convert_parser.add_argument(
@@ -144,6 +158,9 @@ Examples:
     batch_parser = subparsers.add_parser("batch", help="여러 파일 배치 변환")
     batch_parser.add_argument(
         "files", nargs="+", help="마크다운 파일들 (glob 패턴 지원)"
+    )
+    batch_parser.add_argument(
+        "--project", "-p", help="프로젝트 이름"
     )
     batch_parser.add_argument(
         "--folder", "-f", default=DEFAULT_FOLDER_ID, help="Google Drive 폴더 ID"
@@ -237,7 +254,7 @@ Examples:
     print("=" * 60)
 
     if args.command == "convert":
-        folder_id = None if args.no_folder else args.folder
+        folder_id = None if args.no_folder else _resolve_folder_id(args.folder, getattr(args, 'project', None))
         use_native = args.native_tables
 
         file_path = Path(args.file)
@@ -307,8 +324,9 @@ Examples:
                     path = Path.cwd() / path
                 files.append(path)
 
+        batch_folder = _resolve_folder_id(args.folder, getattr(args, 'project', None))
         print(f"파일 수: {len(files)}")
-        print(f"폴더 ID: {args.folder}")
+        print(f"폴더 ID: {batch_folder}")
         print(f"테이블: {'네이티브' if use_native else '텍스트'}")
         print("=" * 60)
 
@@ -316,7 +334,7 @@ Examples:
         for file_path in files:
             result = process_file(
                 file_path=file_path,
-                folder_id=args.folder,
+                folder_id=batch_folder,
                 include_toc=args.toc,
                 use_native_tables=use_native,
             )

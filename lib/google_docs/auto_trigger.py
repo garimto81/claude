@@ -8,6 +8,7 @@ from pathlib import Path
 
 from .converter import create_google_doc
 from .auth import DEFAULT_FOLDER_ID
+from .project_registry import get_project_folder_id
 
 
 class AutoTriggerHandler:
@@ -35,7 +36,10 @@ class AutoTriggerHandler:
         Args:
             folder_id: Google Drive 폴더 ID (None이면 기본 폴더)
         """
-        self.folder_id = folder_id or DEFAULT_FOLDER_ID
+        try:
+            self.folder_id = folder_id or get_project_folder_id(subfolder="documents")
+        except Exception:
+            self.folder_id = folder_id or DEFAULT_FOLDER_ID
 
     def should_trigger(
         self,
