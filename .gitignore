@@ -21,6 +21,7 @@
 !/tasks/
 !/inbox/
 !/.vscode/
+!/vimeo_ott/
 
 # 3) 루트 파일들 추적
 !/.gitignore
