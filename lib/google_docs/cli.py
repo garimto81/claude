@@ -228,6 +228,18 @@ Examples:
         "--folder", "-f", default=DEFAULT_FOLDER_ID, help="대상 폴더 ID"
     )
 
+    # drive audit
+    drive_audit_parser = drive_subparsers.add_parser("audit", help="폴더 구조 감사 및 교정")
+    drive_audit_parser.add_argument(
+        "--fix", action="store_true", help="교정 계획 생성 (dry-run)"
+    )
+    drive_audit_parser.add_argument(
+        "--apply", action="store_true", help="교정 실제 적용 (--fix와 함께 사용)"
+    )
+    drive_audit_parser.add_argument(
+        "--json", action="store_true", help="JSON 형식 출력"
+    )
+
     # drive organize
     drive_org_parser = drive_subparsers.add_parser("organize", help="파일 자동 정리")
     drive_org_parser.add_argument(
@@ -423,84 +435,132 @@ Examples:
             drive_parser.print_help()
             return
 
-        organizer = DriveOrganizer(args.folder)
+        if args.drive_command == "audit":
+            from .drive_guardian import DriveGuardian, print_audit_report, print_fix_plan
 
-        if args.drive_command == "status":
-            status = organizer.get_status()
+            guardian = DriveGuardian()
+            report = guardian.audit()
+
             if args.json:
-                print(json_module.dumps(status, indent=2, ensure_ascii=False))
+                output = {
+                    "total_root_items": report.total_root_items,
+                    "is_clean": report.is_clean,
+                    "critical": report.critical_count,
+                    "warning": report.warning_count,
+                    "info": report.info_count,
+                    "project_status": report.project_status,
+                    "violations": [
+                        {
+                            "severity": v.severity.value,
+                            "category": v.category,
+                            "message": v.message,
+                            "file_name": v.file_name,
+                            "suggested_action": v.suggested_action,
+                        }
+                        for v in report.violations
+                    ],
+                }
+                print(json_module.dumps(output, indent=2, ensure_ascii=False))
             else:
-                print_status(status)
+                print_audit_report(report)
 
-        elif args.drive_command == "duplicates":
-            if args.delete:
-                # 실제 삭제
-                result = organizer.delete_duplicates(dry_run=False)
+            if args.fix:
+                plan = guardian.generate_fix_plan(report)
+                if not plan.actions:
+                    print("\nNo fixes needed.")
+                else:
+                    print_fix_plan(plan)
+
+                    if args.apply:
+                        print("\nApplying fixes...")
+                        result = guardian.apply_fixes(plan, dry_run=False)
+                        print(f"Applied: {len(result['applied'])}")
+                        if result['errors']:
+                            print(f"Errors: {len(result['errors'])}")
+                            for err in result['errors'][:5]:
+                                print(f"  - {err['file']}: {err['error']}")
+                    else:
+                        print("\nTo apply fixes, run:")
+                        print("  python -m lib.google_docs drive audit --fix --apply")
+
+        else:
+            # status, duplicates, init, organize는 DriveOrganizer 사용
+            organizer = DriveOrganizer(args.folder)
+
+            if args.drive_command == "status":
+                status = organizer.get_status()
+                if args.json:
+                    print(json_module.dumps(status, indent=2, ensure_ascii=False))
+                else:
+                    print_status(status)
+
+            elif args.drive_command == "duplicates":
+                if args.delete:
+                    result = organizer.delete_duplicates(dry_run=False)
+                    if args.json:
+                        print(json_module.dumps(result, indent=2, ensure_ascii=False))
+                    else:
+                        print(f"\nDeleted {len(result['deleted'])} duplicate files")
+                        print(f"Errors: {len(result['errors'])}")
+                        if result['errors']:
+                            for err in result['errors'][:5]:
+                                print(f"  - {err['name']}: {err['error']}")
+                else:
+                    duplicates = organizer.find_duplicates()
+                    if args.json:
+                        output = [
+                            {
+                                "name": d.name,
+                                "count": d.count,
+                                "keep": d.keep.id if d.keep else None,
+                                "to_delete": [f.id for f in d.to_delete]
+                            }
+                            for d in duplicates
+                        ]
+                        print(json_module.dumps(output, indent=2, ensure_ascii=False))
+                    else:
+                        print_duplicates(duplicates)
+                        print("\nTo delete duplicates, run:")
+                        print("  python -m lib.google_docs drive duplicates --delete")
+
+            elif args.drive_command == "init":
+                print("\nCreating folder structure...")
+                created = organizer.create_folder_structure()
+                print(f"Created {len(created)} folders:")
+                for path, folder_id in created.items():
+                    print(f"  - {path}: {folder_id[:15]}...")
+                print("\n[OK] Folder structure created")
+
+            elif args.drive_command == "organize":
+                dry_run = not args.execute
+                result = organizer.organize_files(dry_run=dry_run)
+
                 if args.json:
                     print(json_module.dumps(result, indent=2, ensure_ascii=False))
                 else:
-                    print(f"\nDeleted {len(result['deleted'])} duplicate files")
-                    print(f"Errors: {len(result['errors'])}")
+                    mode = "DRY-RUN" if dry_run else "EXECUTED"
+                    print(f"\nFile Organization ({mode})")
+                    print("=" * 60)
+                    print(f"Total files: {result['total_files']}")
+                    print(f"Classified: {result['classified']}")
+                    print(f"Unclassified: {result['unclassified']}")
+                    print()
+
+                    if result['moved']:
+                        print("Files to move:" if dry_run else "Files moved:")
+                        for item in result['moved'][:20]:
+                            print(f"  - {item['name']} -> {item['target']}")
+                        if len(result['moved']) > 20:
+                            print(f"  ... and {len(result['moved']) - 20} more")
+
                     if result['errors']:
+                        print(f"\nErrors: {len(result['errors'])}")
                         for err in result['errors'][:5]:
                             print(f"  - {err['name']}: {err['error']}")
-            else:
-                # 분석만
-                duplicates = organizer.find_duplicates()
-                if args.json:
-                    output = [
-                        {
-                            "name": d.name,
-                            "count": d.count,
-                            "keep": d.keep.id if d.keep else None,
-                            "to_delete": [f.id for f in d.to_delete]
-                        }
-                        for d in duplicates
-                    ]
-                    print(json_module.dumps(output, indent=2, ensure_ascii=False))
-                else:
-                    print_duplicates(duplicates)
-                    print("\nTo delete duplicates, run:")
-                    print("  python -m lib.google_docs drive duplicates --delete")
 
-        elif args.drive_command == "init":
-            print("\nCreating folder structure...")
-            created = organizer.create_folder_structure()
-            print(f"Created {len(created)} folders:")
-            for path, folder_id in created.items():
-                print(f"  - {path}: {folder_id[:15]}...")
-            print("\n[OK] Folder structure created")
-
-        elif args.drive_command == "organize":
-            dry_run = not args.execute
-            result = organizer.organize_files(dry_run=dry_run)
-
-            if args.json:
-                print(json_module.dumps(result, indent=2, ensure_ascii=False))
-            else:
-                mode = "DRY-RUN" if dry_run else "EXECUTED"
-                print(f"\nFile Organization ({mode})")
-                print("=" * 60)
-                print(f"Total files: {result['total_files']}")
-                print(f"Classified: {result['classified']}")
-                print(f"Unclassified: {result['unclassified']}")
-                print()
-
-                if result['moved']:
-                    print("Files to move:" if dry_run else "Files moved:")
-                    for item in result['moved'][:20]:
-                        print(f"  - {item['name']} -> {item['target']}")
-                    if len(result['moved']) > 20:
-                        print(f"  ... and {len(result['moved']) - 20} more")
-
-                if result['errors']:
-                    print(f"\nErrors: {len(result['errors'])}")
-                    for err in result['errors'][:5]:
-                        print(f"  - {err['name']}: {err['error']}")
-
-                if dry_run:
-                    print("\nTo execute, run:")
-                    print("  python -m lib.google_docs drive organize --execute")
+                    if dry_run:
+                        print("\nTo execute, run:")
+                        print("  python -m lib.google_docs drive organize --execute")
 
     print("=" * 60)
 
