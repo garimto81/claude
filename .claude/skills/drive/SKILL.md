@@ -4,7 +4,7 @@ description: >
   Google Drive 맥락 기반 정리 스킬. AI가 파일명, 내용, 폴더 구조를 분석하여
   의미적으로 분류하고 중복 제거, 버전 관리, 폴더 구조화를 수행합니다.
   단순 패턴 매칭이 아닌 문맥 이해 기반 정리.
-version: 2.0.0
+version: 2.1.0
 
 triggers:
   keywords:
@@ -17,10 +17,18 @@ triggers:
     - "drive cleanup"
     - "drive organize"
     - "구글 드라이브 정리"
+    - "drive audit"
+    - "드라이브 감사"
+    - "폴더 점검"
+    - "구조 확인"
+    - "드라이브 점검"
+    - "폴더 구조 유지"
   context:
     - "Drive 파일 분류"
     - "문서 정리"
     - "폴더 구조화"
+    - "구조 감사"
+    - "드리프트 감지"
 
 capabilities:
   - semantic_analysis      # 파일명/내용 의미 분석
@@ -211,6 +219,9 @@ _아카이브/
 | `/drive --project "WSOPTV"` | 특정 프로젝트만 정리 |
 | `/drive --dedupe` | 중복 제거만 |
 | `/drive --archive` | 구버전 아카이브만 |
+| `/drive --audit` | 구조 감사 (거버넌스 점검) |
+| `/drive --audit --fix` | 감사 + 교정 계획 생성 |
+| `/drive --audit --fix --apply` | 감사 + 교정 실행 |
 
 ---
 
@@ -570,7 +581,86 @@ Archive/
 
 ---
 
+## 구조 감사 (Drive Guardian)
+
+### 개요
+
+`drive_projects.yaml`에 정의된 **기대 구조**와 실제 Drive 상태를 비교하여 위반 사항을 탐지하고 교정합니다.
+
+### 거버넌스 정책 (YAML)
+
+```yaml
+governance:
+  root_policy:
+    allowed_folders: [WSOPTV, EBS, ...]  # 루트 허용 폴더
+    files_allowed: false                  # 루트 파일 금지
+  required_subfolders: [documents, images]
+  orphan_policy:
+    auto_classify: true                   # 키워드 자동 분류
+    fallback_folder: "_아카이브"           # 미분류 → 아카이브
+  type_routing:
+    "application/vnd.google-apps.document": "documents"
+    "image/*": "images"
+```
+
+### 위반 심각도
+
+| 심각도 | 조건 | 예시 |
+|--------|------|------|
+| CRITICAL | 루트에 파일/미허용 폴더 존재 | `Root/report.pdf` |
+| WARNING | 필수 하위 폴더 누락 | `EBS/images/` 없음 |
+| INFO | 프로젝트 루트에 미분류 파일 | `WSOPTV/memo.doc` |
+
+### 사용법
+
+```bash
+# 감사만 (읽기 전용)
+python -m lib.google_docs drive audit
+
+# 감사 + 교정 계획 (dry-run)
+python -m lib.google_docs drive audit --fix
+
+# 감사 + 교정 실행
+python -m lib.google_docs drive audit --fix --apply
+
+# JSON 출력
+python -m lib.google_docs drive audit --json
+```
+
+### Python API
+
+```python
+from lib.google_docs.drive_guardian import DriveGuardian
+
+guardian = DriveGuardian()
+report = guardian.audit()
+
+if not report.is_clean:
+    plan = guardian.generate_fix_plan(report)
+    # dry-run으로 확인
+    result = guardian.apply_fixes(plan, dry_run=True)
+    # 실제 적용
+    result = guardian.apply_fixes(plan, dry_run=False)
+```
+
+### 자동 트리거
+
+다음 키워드로 자동 활성화됩니다:
+- "드라이브 감사", "폴더 점검", "구조 확인", "drive audit"
+
+---
+
 ## 변경 로그
+
+### v2.1.0 (2026-02-06)
+
+**Drive Guardian 추가 (구조 거버넌스):**
+- `DriveGuardian` 클래스: 감사 → 교정 계획 → 적용 파이프라인
+- `drive_projects.yaml`에 `governance` 섹션 추가
+- CLI `drive audit` 서브커맨드 추가 (`--fix`, `--apply`, `--json`)
+- 위반 심각도 분류: CRITICAL, WARNING, INFO
+- MIME type 기반 자동 라우팅 (`type_routing`)
+- 키워드 기반 프로젝트 자동 분류 (`orphan_policy`)
 
 ### v2.0.0 (2026-02-06)
 

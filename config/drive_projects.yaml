@@ -4,7 +4,7 @@
 # 구조: 프로젝트 최상위 폴더 > documents/ + images/
 # 해석 우선순위: --project 옵션 > CWD 패턴 > 파일 키워드 > default_project
 
-version: "1.0"
+version: "2.0"
 default_project: "WSOPTV"
 
 projects:
@@ -80,6 +80,38 @@ special_folders:
 
   _아카이브:
     folder_id: "1ikIc2TOjA15rkeiCxEd4MlOw-Vp2EzrG"
+
+# 구조 거버넌스 정책
+governance:
+  # 루트 폴더 정책: 허용된 폴더만 존재 가능
+  root_policy:
+    allowed_folders:
+      - "WSOPTV"
+      - "EBS"
+      - "지지프로덕션"
+      - "브로드스튜디오"
+      - "_개인"
+      - "_아카이브"
+    files_allowed: false  # 루트에 파일 존재 금지
+
+  # 프로젝트 필수 하위 폴더
+  required_subfolders:
+    - "documents"
+    - "images"
+
+  # 미분류 파일 처리 정책
+  orphan_policy:
+    auto_classify: true           # 키워드 기반 자동 분류 시도
+    fallback_folder: "_아카이브"  # 분류 실패 시 이동 대상
+    notify_on_orphan: true        # 미분류 파일 발견 시 알림
+
+  # 파일 유형별 라우팅 (MIME type → subfolder)
+  type_routing:
+    "application/vnd.google-apps.document": "documents"
+    "application/vnd.google-apps.spreadsheet": "documents"
+    "application/vnd.google-apps.presentation": "documents"
+    "application/pdf": "documents"
+    "image/*": "images"
 
 # Legacy (이전 버전 호환)
 legacy:

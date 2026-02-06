@@ -34,8 +34,9 @@ from .image_inserter import ImageInserter, create_inserter
 from .batch_processor import BatchConverter, ConvertResult as BatchConvertResult
 from .auto_trigger import AutoTriggerHandler
 from .project_registry import ProjectRegistry, get_project_folder_id, get_default_folder_id
+from .drive_guardian import DriveGuardian, AuditReport, FixPlan
 
-__version__ = "1.3.0"
+__version__ = "1.4.0"
 __all__ = [
     # Models
     "TextSegment",
@@ -73,4 +74,8 @@ __all__ = [
     "ProjectRegistry",
     "get_project_folder_id",
     "get_default_folder_id",
+    # Drive Guardian (구조 감사)
+    "DriveGuardian",
+    "AuditReport",
+    "FixPlan",
 ]
