@@ -11,6 +11,7 @@ from typing import Any, Optional
 from googleapiclient.discovery import build
 
 from .auth import get_credentials, DEFAULT_FOLDER_ID
+from .project_registry import get_project_folder_id
 from .models import TextSegment, InlineParseResult
 from .table_renderer import NativeTableRenderer
 from .notion_style import NotionStyle
@@ -1902,7 +1903,10 @@ def create_google_doc(
     print(f"     ID: {doc_id}")
 
     # 2. 폴더로 이동
-    target_folder = folder_id or DEFAULT_FOLDER_ID
+    try:
+        target_folder = folder_id or get_project_folder_id(subfolder="documents")
+    except Exception:
+        target_folder = folder_id or DEFAULT_FOLDER_ID
     try:
         file = drive_service.files().get(fileId=doc_id, fields="parents").execute()
         previous_parents = ",".join(file.get("parents", []))
@@ -2306,9 +2310,13 @@ def update_google_doc(
                     try:
                         local_path = Path(img_info["url"])
                         if local_path.exists():
+                            try:
+                                image_folder = get_project_folder_id(subfolder="images")
+                            except Exception:
+                                image_folder = folder_id or DEFAULT_FOLDER_ID
                             file_id, public_url = image_inserter.upload_to_drive(
                                 local_path,
-                                folder_id=DEFAULT_FOLDER_ID,
+                                folder_id=image_folder,
                                 make_public=True,
                             )
                             img_info["url"] = public_url
