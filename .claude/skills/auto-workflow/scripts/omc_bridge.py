@@ -318,15 +318,15 @@ UNIFIED_AGENT_REGISTRY: Dict[str, AgentInfo] = {
     ),
     "bkit:gap-detector": AgentInfo(
         "bkit:gap-detector", ModelTier.OPUS, AgentDomain.VERIFICATION,
-        "bkit", "설계-구현 갭 분석"
+        "bkit", "PDCA Check: 설계 문서 기반 수치적 갭 분석 (match_percentage 0-100)"
     ),
     "bkit:design-validator": AgentInfo(
         "bkit:design-validator", ModelTier.SONNET, AgentDomain.VERIFICATION,
-        "bkit", "설계 문서 검증"
+        "bkit", "PDCA Design: 설계 문서 완성도 및 일관성 검증"
     ),
     "bkit:code-analyzer": AgentInfo(
         "bkit:code-analyzer", ModelTier.SONNET, AgentDomain.REVIEW,
-        "bkit", "코드 품질 분석"
+        "bkit", "PDCA Check: 아키텍처 컨벤션 준수 및 코드 품질 정량 분석"
     ),
     "bkit:qa-monitor": AgentInfo(
         "bkit:qa-monitor", ModelTier.SONNET, AgentDomain.TESTING,
@@ -334,11 +334,11 @@ UNIFIED_AGENT_REGISTRY: Dict[str, AgentInfo] = {
     ),
     "bkit:pdca-iterator": AgentInfo(
         "bkit:pdca-iterator", ModelTier.SONNET, AgentDomain.IMPROVEMENT,
-        "bkit", "Check-Act 반복 개선"
+        "bkit", "PDCA Act: gap < 90% 시 자동 개선 사이클 (최대 5회)"
     ),
     "bkit:report-generator": AgentInfo(
         "bkit:report-generator", ModelTier.HAIKU, AgentDomain.DOCS,
-        "bkit", "완료 보고서 생성"
+        "bkit", "PDCA Report: Plan/Design/Do/Check 결과 종합 보고서 생성"
     ),
 }
 
@@ -407,15 +407,15 @@ class OMCBridge:
         """에이전트 정보 조회"""
         return self.registry.get(agent_type)
 
-    def get_agent_with_fallback(self, agent_type: str, force_omc: bool = True) -> Tuple[str, Optional[AgentInfo], bool]:
-        """에이전트 조회 (BKIT 호출 불가 시 OMC로 폴백)
+    def get_agent_with_fallback(self, agent_type: str, force_omc: bool = False) -> Tuple[str, Optional[AgentInfo], bool]:
+        """에이전트 조회 (BKIT 우선 실행, 실패 시 OMC 폴백)
 
-        BKIT 에이전트는 현재 Claude Code에서 직접 호출이 불가능합니다.
-        따라서 bkit: prefix 에이전트는 항상 OMC 에이전트로 폴백됩니다.
+        BKIT 에이전트는 PDCA 특화 역할을 수행합니다.
+        force_omc=True 시에만 OMC로 강제 폴백됩니다.
 
         Args:
             agent_type: 요청된 에이전트 타입
-            force_omc: True면 bkit: prefix 에이전트를 항상 OMC로 폴백 (기본값: True)
+            force_omc: True면 bkit: prefix 에이전트를 항상 OMC로 폴백 (기본값: False)
 
         Returns:
             Tuple[실제 사용할 agent_type, AgentInfo, 폴백 발생 여부]
@@ -564,7 +564,9 @@ class OMCBridge:
         """PDCA Check 단계용 에이전트 결정
 
         이중 검증(OMC Architect + BKIT gap-detector)을 위한 에이전트 쌍을 반환합니다.
-        BKIT이 불가능한 경우 OMC만 사용합니다.
+        - OMC Architect: 기능적 완성도 검증 (APPROVED/REJECTED)
+        - BKIT gap-detector: 설계-구현 수치적 일치도 (match_percentage 0-100)
+        두 에이전트는 서로 다른 관점으로 검증하여 이중 안전장치를 제공합니다.
 
         Args:
             use_bkit: BKIT 에이전트 시도 여부 (False면 OMC만 사용)
@@ -1002,7 +1004,7 @@ if __name__ == "__main__":
         "bkit:pdca-iterator"
     ]
     for bkit_agent in test_bkit_agents:
-        actual_agent, agent_info = bridge.get_agent_with_fallback(bkit_agent)
+        actual_agent, agent_info, did_fallback = bridge.get_agent_with_fallback(bkit_agent)
         if agent_info:
             fallback_status = " (폴백됨)" if actual_agent != bkit_agent else ""
             print(f"{bkit_agent} -> {actual_agent}{fallback_status} ({agent_info.model.value})")
@@ -1016,7 +1018,7 @@ if __name__ == "__main__":
         "oh-my-claudecode:executor",
     ]
     for omc_agent in test_omc_agents:
-        actual_agent, agent_info = bridge.get_agent_with_fallback(omc_agent)
+        actual_agent, agent_info, did_fallback = bridge.get_agent_with_fallback(omc_agent)
         if agent_info:
             print(f"{omc_agent} -> {actual_agent} ({agent_info.model.value})")
 

@@ -159,6 +159,41 @@ def send(
 
 
 @app.command()
+def update(
+    channel: str = typer.Argument(..., help="Channel ID (C...) where the message exists"),
+    ts: str = typer.Argument(..., help="Timestamp of the message to update"),
+    message: str = typer.Argument(..., help="New message text"),
+    json_output: bool = typer.Option(False, "--json", "-j", help="Output as JSON"),
+):
+    """
+    Update an existing message in a Slack channel.
+    """
+    from .client import SlackClient
+    from .errors import SlackError
+
+    try:
+        client = SlackClient()
+        result = client.update_message(channel, ts, message)
+
+        if json_output:
+            print(json.dumps({
+                "ok": True,
+                "channel": result.channel,
+                "ts": result.ts,
+            }, ensure_ascii=False, indent=2))
+        else:
+            console.print("[green]✓ Message updated![/green]")
+            console.print(f"  Channel: {result.channel}")
+            console.print(f"  Timestamp: {result.ts}")
+    except SlackError as e:
+        if json_output:
+            print(json.dumps({"ok": False, "error": str(e)}, ensure_ascii=False))
+        else:
+            console.print(f"[red]✗ Failed to update message: {e}[/red]")
+        raise typer.Exit(1)
+
+
+@app.command()
 def history(
     channel: str = typer.Argument(..., help="Channel ID (C...) or name"),
     limit: int = typer.Option(10, "--limit", "-n", help="Number of messages to retrieve"),

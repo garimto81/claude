@@ -1,122 +1,47 @@
-# ⚠️ 경고: 이 레포는 메타 워크플로우 시스템입니다
-# 실제 프로젝트 코드는 절대 이 레포에 추가하지 마세요!
-# 프로젝트는 별도 레포지토리에서 관리하세요.
+# ===================================================
+# C:\claude - 전역 워크플로우/지침 레포
+# ===================================================
+# 화이트리스트 방식: 모든 것을 무시하고 핵심만 추적
+# 서브 프로젝트들은 자체 .git으로 독립 관리 (CLAUDE.md 상속 유지)
 
-# 실제 프로젝트 폴더들 (전역 워크플로우와 무관)
-VTC_Logger/
-actiontracker/
-ai-production/
-archive-mam/
-broadcast-qc/
-classic-isekai/
-claude-code-config/
-commercial/
-/config/
-contents-factory/
-handlogger/
-keyplayer_manager/
-man_subclip/
-ojt-platform/
-pd-note/
-qwen_hand_analysis/
-repo-analyzer/
-softsender/
-sso-nextjs/
-sso-system/
-table_analysis/
-table_tracker/
-ggp_ojt_v2/
-frontend/
-backend/
-Archive_Converter/
-GGP-showroom/
-db_architecture/
-field-uploader/
-ggp_heritage_mall/
-ggp_store_parser/
-json/
-pokergo_crawling/
-project_master/
-shorts-generator/
-side_monitor/
-slakc_list/
-tools/
-wsoptv/
-wsoptv_v2/
-wsoptv_v2_db/
-youtube-dlp/
+# 1) 루트의 모든 것을 무시
+/*
 
-# 별도 레포 프로젝트들
-archive-statistics/
-mad_framework/
-arreangement_web/
-automation_ae/
-automation_hub/
-automation_sub/
-automation_feature_table/
-ggp_fasion_01/
-ggp_showroom/
-hcl_poker_clips/
-pocketbase/
-pocketbase.zip
-project-showcase-hub/
-ultimate-debate/
-wsoptv_solution/
+# 2) 핵심 인프라 디렉토리만 추적 (화이트리스트)
+!/.claude/
+!/.github/
+!/.omc/
+!/.claude-plugin/
+!/docs/
+!/lib/
+!/packages/
+!/scripts/
+!/src/
+!/tests/
+!/tasks/
+!/inbox/
+!/.vscode/
 
-# 로컬 에이전트 데이터
-.agent/
+# 3) 루트 파일들 추적
+!/.gitignore
+!/CLAUDE.md
+!/README.md
+!/CHANGELOG.md
+!/CONTRIBUTING.md
+!/LICENSE
+!/TODO.md
+!/requirements.txt
+!/requirements-test.txt
+!/pytest.ini
+!/plugin.yaml
+!/claude-config.json
+!/.env.example
+!/.env.template
+!/.mcp.json.example
 
-# 개발 환경
-.venv/
-.vscode/
-__pycache__/
-*.pyc
-node_modules/
-
-# 환경 변수 (민감 정보)
-.env
-.env.local
-.env.*.local
-.env.development
-.env.production
-!.env.template
-!.env.example
-
-# 인증서 및 키
-*.pem
-*.key
-*.p12
-*credentials*.json
-!*credentials*.template.json
-
-# 백업 파일
-*.backup
-docs.backup/
-scripts.backup/
-
-# 임시 파일
-*.md.backup
-nul
-temp_*.py
-temp_*.txt
-temp_*.md
-test_*.py
-!tests/test_*.py
-tmpclaude-*
-ralph-counter.txt
-ralph-test-*.md
-test-diagram.*
-D*test-diagram.mmd
-*_checklist.yaml
-gemini.md
-mcp-credentials.env
-
-# MCP 설정 (API 키 포함)
-.mcp.json
-!.mcp.json.example
-
-# Claude 설정 - 핵심 디렉토리는 추적
-!.claude/config/
+# 4) 핵심 인프라 내부 제외 항목
+.claude/hooks/*.js
+.claude/statusline.js
 .claude/evolution/.env
 .claude/evolution/data/
 .claude/evolution/feedback/*.jsonl
@@ -125,86 +50,47 @@ mcp-credentials.env
 .claude/plugins.old/
 .claude/settings.local.json
 .claude/session_state.json
-.claude-global/
-.claude.backup-*/
-
-# Agent tracking data (local only)
-.agent-quality-v2.jsonl
-
-# 구버전 문서들
-
-generate-tasks.md
-process-task-list.md
-SUMMARY.md
-TASKS_HISTORY.md
-CLAUDE.md.backup
-.gitmodules
-.claude-sync.sh
-
-# Symlinks
-docs-global/
-scripts-global/
-
-# 테스트 및 빌드 산출물
-playwright-report/
-test-results/
-coverage/
-dist/
-build/
-
-# Auto orchestrator logs
 .claude/auto-logs/
-
-# Ralph Wiggum loop state
 .claude/ralph-loop.local.md
 
-# Local utility scripts (personal use)
-chrome_mem.ps1
-claude-bypass.bat
-check_display_detail.ps1
-check_monitor_detail.ps1
-get_display_info.ps1
-
-# Duplicate JS hooks (Python versions used)
-.claude/hooks/*.js
-.claude/statusline.js
-iconik_parser/
-
-# 중첩 Git 레포 (별도 관리)
-airi/
-claudeproject_master/
-claudeyoutuber/
-secretary/
-youtuber/
-
-# 서브 프로젝트들 (별도 레포로 분리 필요)
-ae_nexrender_module/
-archive-analyzer/
-automation_aep_csv/
-automation_dashboard/
-automation_orchestration/
-automation_schema/
-ebs/
-fq4/
-gfx_json/
-kanban_board/
-tft-assist/
-vscode_setting/
-wsop_viewership/
-wsoptv_candidates/
-wsoptv_nbatv_clone/
-wsoptv_ott/
-youtuber_chatbot/
-youtuber_vertuber/
-
-# 임시 스캔/출력 파일
-drive_*.json
-ollama/
+# 5) 공통 제외 패턴
+__pycache__/
+*.pyc
+node_modules/
+.venv/
+.env
+.env.local
+.env.*.local
+.env.development
+.env.production
+!.env.template
+!.env.example
+*.pem
+*.key
+*.p12
+*credentials*.json
+!*credentials*.template.json
+*.backup
 *.log
 !.claude/hooks/*.log
+dist/
+build/
+coverage/
+playwright-report/
+test-results/
+.agent/
+.agent-quality-v2.jsonl
+.mcp.json
+!.mcp.json.example
 
-# VS Code profiles (로컬 설정)
-vibe-profiles/
-vswitch*.json
-vswitch*.ps1
-check_ides.ps1
+# 6) 임시 파일
+temp_*.py
+temp_*.txt
+temp_*.md
+tmpclaude-*
+ralph-counter.txt
+ralph-test-*.md
+nul
+*_checklist.yaml
+gemini.md
+mcp-credentials.env
