@@ -1,7 +1,7 @@
 # Rules Index
 
-**Version**: 1.1.0
-**Last Updated**: 2026-01-28
+**Version**: 1.2.0
+**Last Updated**: 2026-02-06
 
 모듈화된 규칙 시스템의 마스터 색인입니다.
 
@@ -17,6 +17,7 @@
 | [06-documentation.md](./06-documentation.md) | 문서화 | MEDIUM | ❌ |
 | [07-build-test.md](./07-build-test.md) | 빌드/테스트 | HIGH | ❌ |
 | [08-skill-routing.md](./08-skill-routing.md) | OMC 스킬 라우팅 | HIGH | ❌ |
+| [09-global-only.md](./09-global-only.md) | Global-Only Policy | CRITICAL | ✅ 경고 (계획 중) |
 
 ## 영향도 정의
 

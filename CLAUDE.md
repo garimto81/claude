@@ -103,6 +103,7 @@ src/agents/
 | 영역 | 파일 | 영향도 |
 |------|------|--------|
 | TDD | `.claude/rules/04-tdd.md` | CRITICAL |
+| Global-Only | `.claude/rules/09-global-only.md` | CRITICAL |
 | Git | `.claude/rules/03-git.md` | HIGH |
 | Supabase | `.claude/rules/05-supabase.md` | HIGH |
 | 경로 | `.claude/rules/02-paths.md` | HIGH |
