@@ -1,7 +1,7 @@
 ---
 name: auto
 description: 하이브리드 자율 워크플로우 - OMC+BKIT 통합 (Ralph + Ultrawork + PDCA 필수)
-version: 16.5.0
+version: 17.0.0
 triggers:
   keywords:
     - "/auto"
@@ -268,8 +268,8 @@ Task(
 | `--research` | `Skill(skill="research", args="...")` | 리서치 모드 |
 | `--slack <채널>` | Slack 채널 분석 후 컨텍스트 주입 | 채널 히스토리 기반 작업 |
 | `--gmail` | Gmail 메일 분석 후 컨텍스트 주입 | 메일 기반 작업 |
-| `--daily` | `Skill(skill="daily", args="...")` | 통합 대시보드 (개인+프로젝트) |
-| `--daily --slack` | `Skill(skill="daily")` → `Skill(skill="slack")` 체인 | 채널에 진행률 게시 + List 동기화 |
+| `--daily` | **Context Discovery** → 프로젝트 전용 스킬 또는 범용 `daily` | 프로젝트별 커스터마이징 대시보드 |
+| `--daily --slack` | **Context Discovery** → 전용 스킬 + Slack Lists 갱신 | 프로젝트 대시보드 + 채널 포스팅 |
 | `--interactive` | 각 Phase 전환 시 사용자 승인 요청 | 단계적 승인 모드 |
 
 **옵션 체인 예시:**
@@ -481,6 +481,88 @@ Task(
 → Step 5: 각 메일별 응답 초안 생성
 → 결과 출력
 ```
+
+### Project Context Discovery (`--daily` 전처리)
+
+`--daily` 실행 시 **프로젝트 컨텍스트**를 자동 감지하여 해당 프로젝트에 맞는 워크플로우를 선택합니다.
+
+**핵심 원리**: `/auto --daily`는 글로벌 커맨드이지만, 각 프로젝트의 `.project-sync.yaml` 설정에 따라 커스터마이징된 작업을 실행합니다.
+
+**Discovery 알고리즘:**
+
+```
+/auto --daily [--slack] 파싱
+         │
+         ▼
+Step 0: CWD에서 .project-sync.yaml 탐색
+        - CWD 직접 확인
+        - CWD 부모 1단계까지 확인
+         │
+    ┌────┴─────────────────────────┐
+    │                              │
+    ▼                              ▼
+.project-sync.yaml 발견        파일 없음
+    │                              │
+    ▼                              ▼
+config = YAML 파싱             Fallback: 범용 daily
+skill = config.daily.skill     Skill(skill="daily", args="--json")
+    │
+    ▼
+Skill(skill=skill, args=사용자 옵션)
+→ 프로젝트 전용 워크플로우 실행
+```
+
+**라우팅 결과:**
+
+| 프로젝트 CWD | `.project-sync.yaml` | 실행 스킬 | 동작 |
+|-------------|:--------------------:|----------|------|
+| `wsoptv_ott/` | 있음 (`daily.skill: "daily-sync"`) | `daily-sync` | 업체 3단계 검색, 견적 분석, Slack Lists 갱신 |
+| `ebs/` | 있음 (`daily.skill: "daily"`) | `daily` (args="ebs") | EBS 업체 follow-up |
+| (기타) | 없음 | `daily` (범용) | Gmail + Calendar + GitHub |
+
+**`--slack` 옵션 조합:**
+
+프로젝트 컨텍스트 발견 시 `--slack` 채널도 자동 결정:
+
+| 입력 | 채널 결정 |
+|------|----------|
+| `--daily --slack` (채널 미지정) | `config.daily.output.slack_channel` 사용 |
+| `--daily --slack "#custom"` | 사용자 지정 채널 우선 |
+
+**wsoptv_ott 예시:**
+
+```
+/auto --daily --slack
+
+→ Discovery: .project-sync.yaml 발견 (WSOPTV OTT)
+→ Skill("daily-sync") 호출
+→   Phase 1: Gmail 3단계 검색 + Slack 히스토리
+→   Phase 2: AI 분석 (견적, 상태, 긴급도)
+→   Phase 3: 보고서 생성
+→   Phase 4: Gmail Housekeeping
+→   Phase 5: Slack Lists 갱신 + 채널 포스팅
+```
+
+**`.project-sync.yaml` 스키마:**
+
+```yaml
+version: "1.0"
+project_name: "프로젝트명"
+daily:
+  skill: "daily-sync"          # 전용 스킬 이름
+  sources:
+    gmail: { enabled: true, label: "라벨명", vendor_domains: [...] }
+    slack: { enabled: true, channel_id: "CXXXXXXXX" }
+    slack_lists: { enabled: true, list_id: "FXXXXXXXXXX" }
+  config_file: "상세설정.yaml"
+  output:
+    slack_channel: "CXXXXXXXX"
+  housekeeping:
+    gmail_label_auto: true
+    inbox_cleanup: "confirm"
+```
+
+---
 
 ### `--daily` 옵션 워크플로우
 
@@ -891,6 +973,15 @@ Architect 검증
 추가 세부사항: `.claude/commands/auto.md`
 
 ## 변경 이력
+
+### v17.0.0 (Project Context Discovery)
+
+| 기능 | 설명 | 활성화 |
+|------|------|:------:|
+| **Project Context Discovery** | `.project-sync.yaml` 기반 프로젝트별 --daily 라우팅 | ✅ |
+| **CWD 기반 스킬 위임** | 프로젝트 전용 daily 스킬 자동 선택 | ✅ |
+| **범용 Fallback** | 설정 없는 프로젝트는 기존 daily 스킬로 | ✅ |
+| **--slack 채널 자동 결정** | .project-sync.yaml에서 채널 ID 참조 | ✅ |
 
 ### v16.5.0 (스킬 체인 아키텍처 적용)
 
