@@ -1,34 +1,27 @@
 {
-  "active": false,
+  "active": true,
   "mode": "ralplan",
-  "iteration": 2,
+  "iteration": 3,
   "max_iterations": 5,
-  "plan_path": ".omc/plans/omc-bkit-auto-unified-integration.md",
-  "current_phase": "complete",
-  "started_at": "2026-02-02T11:00:00.000Z",
-  "completed_at": "2026-02-02T14:30:00.000Z",
-  "task_description": "OMC + BKIT + /auto 3자 통합 전략: /auto가 Master, OMC 실행 패턴 + BKIT PDCA 문서화를 /auto에 흡수",
-  "final_verdict": "OKAY",
-  "iterations_used": 2,
-  "critic_feedback": {
-    "iteration_1": {
-      "verdict": "REJECT",
-      "critical_issues": [
-        "BKIT 에이전트 호출 방식 불명확",
-        "43 에이전트 완전 매핑 테이블 없음",
-        "gap-detector 90% 임계값 근거 없음"
-      ]
-    },
-    "iteration_2": {
-      "verdict": "OKAY",
-      "verified_items": [
-        "bkit: prefix 확인 (lib/intent/trigger.js:48)",
-        "43 에이전트 전체 테이블 (OMC 32 + BKIT 11)",
-        "gap-detector 임계값 BKIT 원본과 일치",
-        "Phase 의존성 다이어그램 추가",
-        "롤백 전략 (git tag) 추가"
-      ],
-      "all_criteria_passed": true
-    }
+  "plan_path": "docs/01-plan/pcm-architecture-redesign.plan.md",
+  "current_phase": "planner_planning",
+  "started_at": "2026-02-05T14:00:00.000Z",
+  "completed_at": null,
+  "task_description": "PCM v2.1 - Critic Gate + Intelligent Orchestration 추가 (2-Way Active + 2-Way Passive 패턴)",
+  "plan_doc": "docs/01-plan/pcm-architecture-redesign.plan.md",
+  "critic_verdict": "PENDING",
+  "verdict_summary": "v2.0 승인 후 사용자 피드백 반영: Critic 누락 해결 + 단순병합→AI추론 재구성으로 개선",
+  "implementation_status": "PLANNING_v2.1",
+  "acceptance_criteria": {
+    "AC-1": "PENDING - Plan Phase (2 Active + 2 Passive) 구현",
+    "AC-2": "PENDING - Design Phase 구현",
+    "AC-3": "PENDING - Do Phase 구현",
+    "AC-4": "PENDING - Check Phase (Intelligent Orchestrator) 구현",
+    "AC-5": "PENDING - Act Phase (루프 판단) 구현",
+    "AC-6": "PENDING - Intelligent Orchestrator 역할 정의",
+    "AC-7": "PENDING - SKILL.md v17.1 업데이트",
+    "AC-8": "PENDING - BKIT fallback 문서 참조",
+    "AC-9": "PENDING - Critic Gate 4개 구현 (신규)",
+    "AC-10": "PENDING - Intelligent Orchestrator 구현 (신규)"
   }
 }

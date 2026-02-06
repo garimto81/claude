@@ -2,7 +2,7 @@
 
 **목적**: 에이전트 분류 및 활용법
 
-**버전**: 6.8.0 | **업데이트**: 2026-01-03 | **PRD**: PRD-0031
+**버전**: 7.0.0 | **업데이트**: 2026-02-05 | **PRD**: PRD-0031
 
 ---
 
@@ -12,7 +12,7 @@
 |------|------|------|------|
 | **내장** | Claude Code | 4개 | 기본 subagent |
 | **커스텀** | `.claude/agents/` | 19개 | 전문 에이전트 |
-| **스킬** | `.claude/skills/` | 18개 | 자동/수동 트리거 |
+| **스킬** | `.claude/skills/` | 47개 | 자동/수동 트리거 |
 | **MCP** | `.claude.json` | 1개 | 외부 도구 연동 |
 
 ---
@@ -34,12 +34,12 @@
 
 | Agent | 용도 | 모델 |
 |-------|------|------|
-| `code-reviewer` | 코드 리뷰, 품질 검사 | sonnet |
+| `code-reviewer` | 코드 리뷰, 품질 검사 | haiku |
 | `architect` | 설계, 아키텍처 결정 | opus |
 | `debugger` | 버그 분석, 트러블슈팅 | sonnet |
 | `test-engineer` | 테스트 (TDD, E2E, 단위) | sonnet |
 | `security-auditor` | 보안 취약점 분석 | sonnet |
-| `docs-writer` | API/시스템 문서화 | sonnet |
+| `docs-writer` | API/시스템 문서화 | haiku |
 
 ### Tier 2: DOMAIN (8개) - 도메인별 전문
 
@@ -65,7 +65,7 @@
 
 | Agent | 용도 | 모델 |
 |-------|------|------|
-| `github-engineer` | GitHub 워크플로우 | sonnet |
+| `github-engineer` | GitHub 워크플로우 | haiku |
 | `claude-expert` | Claude Code, MCP, 에이전트 | opus |
 | `catalog-engineer` | WSOPTV 카탈로그/제목 생성 (Block F/G) | sonnet |
 
@@ -185,6 +185,7 @@ claude mcp remove <name>
 
 | 버전 | 날짜 | 변경 |
 |------|------|------|
+| 7.0.0 | 2026-02-05 | 모델 정보 동기화 (code-reviewer/docs-writer/github-engineer: sonnet→haiku), 스킬 개수 47개 반영 |
 | 6.8.0 | 2026-01-03 | 스킬 개수 정정 (16개 → 18개: 실제 파일 개수와 동기화) |
 | 6.7.0 | 2025-12-20 | ACE-FCA 스킬 제거 시도 (context-compaction, research-validation) - 실제 미삭제 |
 | 6.6.0 | 2025-12-20 | ACE-FCA 스킬 추가 (17개 → 19개: context-compaction, research-validation) |

@@ -53,6 +53,7 @@ class RateLimiter:
     def __init__(self):
         self.method_intervals = {
             "chat.postMessage": 3.0,      # Tier 2
+            "chat.update": 3.0,           # Tier 2
             "conversations.history": 1.2,  # Tier 3
             "conversations.list": 3.0,     # Tier 2
             "users.info": 0.6,             # Tier 4
@@ -175,6 +176,41 @@ class SlackClient:
                 channel=channel,
                 text=text,
                 thread_ts=thread_ts,
+            )
+
+            return SendResult(
+                ok=response.data.get("ok", True),
+                ts=response.data["ts"],
+                channel=response.data["channel"],
+                message=response.data.get("message"),
+            )
+        except SlackApiError as e:
+            self._handle_error(e)
+
+    def update_message(
+        self,
+        channel: str,
+        ts: str,
+        text: str,
+    ) -> SendResult:
+        """
+        Update an existing message.
+
+        Args:
+            channel: Channel ID where the message exists
+            ts: Timestamp of the message to update
+            text: New message text
+
+        Returns:
+            SendResult with updated ts, channel
+        """
+        self._rate_limiter.wait_if_needed("chat.update")
+
+        try:
+            response = self._client.chat_update(
+                channel=channel,
+                ts=ts,
+                text=text,
             )
 
             return SendResult(
