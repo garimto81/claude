@@ -116,18 +116,26 @@ triggers:
 
 ## 서브프로젝트 설정
 
-서브프로젝트에서 스킬을 사용하려면 심볼릭 링크 필요:
+서브프로젝트에서 스킬을 사용하려면 Junction 필요:
 
 ```powershell
-# 관리자 권한 필요
+# Junction 생성 (관리자 권한 필요)
+cmd /c mklink /J 서브프로젝트\.claude\skills C:\claude\.claude\skills
+cmd /c mklink /J 서브프로젝트\.claude\commands C:\claude\.claude\commands
+cmd /c mklink /J 서브프로젝트\.claude\agents C:\claude\.claude\agents
+
+# 대안: 심볼릭 링크
 New-Item -ItemType SymbolicLink `
-  -Path "서브프로젝트/.claude/skills" `
+  -Path "서브프로젝트\.claude\skills" `
   -Target "C:\claude\.claude\skills"
 ```
+
+**상세 가이드**: `.claude/rules/09-global-only.md`
 
 ## 금지 사항
 
 - ❌ SKILL.md에 "참조하세요"만 작성 (실행 지시 필수)
 - ❌ omc_delegate 없이 OMC 기능 기대
-- ❌ 서브프로젝트에 스킬 복제 (심볼릭 링크 사용)
+- ❌ 서브프로젝트에 스킬/커맨드/에이전트 로컬 생성 (Junction 사용)
+- ❌ 서브프로젝트에 리소스 복제 (Global-Only Policy 위반)
 - ❌ 인과관계 파괴 (커맨드 삭제/변경 시 연쇄 확인 필수)
