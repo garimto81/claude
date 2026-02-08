@@ -26,6 +26,8 @@ DANGEROUS_BASH_PATTERNS = [
     r"rm\s+(-[a-zA-Z]+\s+)*(\.git|[^\s]+[/\\]\.git)(\s|/|$)",  # rm .git (정확한 .git 디렉토리만)
     r"git\s+push.*--force\s+.*main",  # force push to main
     r"git\s+push.*-f\s+.*main",  # force push to main
+    r"taskkill\s+/[fF]\s+/[iI][mM]\s+node",  # taskkill /F /IM node.exe
+    r"stop-process\s+-name\s+node",  # Stop-Process -Name node
 ]
 
 # 민감 파일 패턴 (Write 차단)
