@@ -258,11 +258,9 @@ class DriveOrganizer:
     def move_file(self, file_id: str, new_parent_id: str) -> bool:
         """파일 이동 (폴더 변경)"""
         try:
-            # 현재 부모 폴더 가져오기
             file = self.drive.files().get(fileId=file_id, fields="parents").execute()
             previous_parents = ",".join(file.get("parents", []))
 
-            # 부모 변경
             self.drive.files().update(
                 fileId=file_id,
                 addParents=new_parent_id,
@@ -270,7 +268,12 @@ class DriveOrganizer:
                 fields="id, parents"
             ).execute()
             return True
-        except Exception:
+        except Exception as e:
+            import logging
+            logging.getLogger(__name__).error(
+                "파일 이동 실패: file_id=%s, target=%s, error=%s",
+                file_id, new_parent_id, e
+            )
             return False
 
     def organize_files(self, dry_run: bool = True) -> dict:

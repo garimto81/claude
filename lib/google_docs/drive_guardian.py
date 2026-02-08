@@ -179,13 +179,17 @@ class DriveGuardian:
 
     def _get_root_folder_id(self) -> str:
         """Claude Code 연동 Drive 루트 폴더 ID"""
-        # 프로젝트 폴더들의 공통 부모 = 루트
-        # 첫 번째 프로젝트의 parent를 조회
-        first_project = self.registry.list_projects()[0]
+        projects = self.registry.list_projects()
+        if not projects:
+            raise RuntimeError("등록된 프로젝트가 없습니다. config/drive_projects.yaml을 확인하세요.")
+        first_project = projects[0]
         folder_id = self.registry.get_folder_id(first_project)
-        file = self.drive.files().get(
-            fileId=folder_id, fields="parents"
-        ).execute()
+        try:
+            file = self.drive.files().get(
+                fileId=folder_id, fields="parents"
+            ).execute()
+        except Exception as e:
+            raise RuntimeError(f"Drive API 호출 실패 (folder_id={folder_id}): {e}")
         parents = file.get("parents", [])
         if parents:
             return parents[0]
@@ -403,7 +407,8 @@ class DriveGuardian:
                         result["errors"].append({
                             "action": "move",
                             "file": action.file_name,
-                            "error": str(e),
+                            "target": action.target_folder_id,
+                            "error": f"{type(e).__name__}: {e}",
                         })
 
             elif action.action == "create_folder":

@@ -16,8 +16,18 @@ PROJECT_DIR = os.environ.get("CLAUDE_PROJECT_DIR", os.getcwd())
 SESSION_FILE = Path(PROJECT_DIR) / ".claude" / "session_state.json"
 AUTO_STATE_FILE = Path(PROJECT_DIR) / ".claude" / "workflow" / "auto_state.json"
 
-# 루트 프로젝트 경로 (커맨드 Junction 소스)
-ROOT_PROJECT_DIR = Path("C:/claude")
+# 루트 프로젝트 경로 (커맨드 Junction 소스) - WSL/Windows 호환
+def _get_project_root() -> Path:
+    """플랫폼에 따라 루트 프로젝트 경로 반환"""
+    if os.name == "nt":
+        return Path("C:/claude")
+    # WSL 환경
+    wsl_path = Path("/mnt/c/claude")
+    if wsl_path.exists():
+        return wsl_path
+    return Path(os.environ.get("CLAUDE_PROJECT_DIR", os.getcwd()))
+
+ROOT_PROJECT_DIR = _get_project_root()
 ROOT_COMMANDS_DIR = ROOT_PROJECT_DIR / ".claude" / "commands"
 
 # Claude Code Task 도구가 생성하는 임시 파일 패턴
