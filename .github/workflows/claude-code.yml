@@ -51,11 +51,10 @@ jobs:
           pip install -r requirements.txt 2>/dev/null || true
 
       - name: Run Claude Code
-        uses: anthropics/claude-code-action@beta
+        uses: anthropics/claude-code-action@v1
         with:
           anthropic_api_key: ${{ secrets.ANTHROPIC_API_KEY }}
-          max_turns: 30
-          timeout_minutes: 15
+          claude_args: --max-turns 30
         env:
           GITHUB_TOKEN: ${{ secrets.GITHUB_TOKEN }}
 
@@ -76,10 +75,10 @@ jobs:
           fetch-depth: 0
 
       - name: Run Claude Code Review
-        uses: anthropics/claude-code-action@beta
+        uses: anthropics/claude-code-action@v1
         with:
           anthropic_api_key: ${{ secrets.ANTHROPIC_API_KEY }}
-          max_turns: 10
-          timeout_minutes: 10
+          prompt: "Review this PR based on the CLAUDE.md guidelines. Check for code quality, security vulnerabilities, and test coverage."
+          claude_args: --max-turns 10
         env:
           GITHUB_TOKEN: ${{ secrets.GITHUB_TOKEN }}
