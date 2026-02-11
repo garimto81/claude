@@ -5,7 +5,9 @@ Drive 파일 정리, 중복 제거, 폴더 구조화를 위한 모듈
 """
 
 import hashlib
+import io
 import json
+import logging
 import re
 from collections import defaultdict
 from dataclasses import dataclass, field
@@ -15,10 +17,11 @@ from typing import Optional
 
 from googleapiclient.discovery import build
 from googleapiclient.http import MediaIoBaseDownload
-import io
 
 from .auth import get_credentials, DEFAULT_FOLDER_ID
 from .project_registry import get_project_folder_id
+
+logger = logging.getLogger(__name__)
 
 
 @dataclass
@@ -30,7 +33,7 @@ class FileInfo:
     size: int = 0
     modified_time: str = ""
     md5_checksum: str = ""
-    parents: list = field(default_factory=list)
+    parents: list[str] = field(default_factory=list)
 
     @property
     def is_folder(self) -> bool:
@@ -49,7 +52,7 @@ class FileInfo:
 class DuplicateGroup:
     """중복 파일 그룹"""
     name: str
-    files: list  # List[FileInfo]
+    files: list[FileInfo]
     keep: Optional[FileInfo] = None  # 유지할 파일
 
     @property
@@ -57,7 +60,7 @@ class DuplicateGroup:
         return len(self.files)
 
     @property
-    def to_delete(self) -> list:
+    def to_delete(self) -> list[FileInfo]:
         if not self.keep:
             return []
         return [f for f in self.files if f.id != self.keep.id]
@@ -104,8 +107,15 @@ class DriveOrganizer:
         self.drive = build("drive", "v3", credentials=self.creds)
         self._folder_cache: dict[str, str] = {}  # path → folder_id
 
-    def get_all_files(self, folder_id: Optional[str] = None, recursive: bool = False) -> list[FileInfo]:
-        """폴더 내 모든 파일 조회"""
+    def get_all_files(self, folder_id: Optional[str] = None, recursive: bool = False, max_depth: int = 10, _current_depth: int = 0) -> list[FileInfo]:
+        """폴더 내 모든 파일 조회
+
+        Args:
+            folder_id: 대상 폴더 ID (None이면 root)
+            recursive: 재귀 탐색 여부
+            max_depth: 최대 재귀 깊이 (기본 10)
+            _current_depth: 현재 깊이 (내부용)
+        """
         folder_id = folder_id or self.root_folder_id
         all_files = []
         page_token = None
@@ -132,9 +142,23 @@ class DriveOrganizer:
                 )
                 all_files.append(file_info)
 
-                # 재귀적으로 하위 폴더 탐색
+                # 재귀적으로 하위 폴더 탐색 (max_depth 체크)
                 if recursive and file_info.is_folder:
-                    all_files.extend(self.get_all_files(file_info.id, recursive=True))
+                    if _current_depth < max_depth:
+                        all_files.extend(
+                            self.get_all_files(
+                                file_info.id,
+                                recursive=True,
+                                max_depth=max_depth,
+                                _current_depth=_current_depth + 1
+                            )
+                        )
+                    else:
+                        logger.warning(
+                            "Max depth (%d) reached, skipping folder: %s",
+                            max_depth,
+                            file_info.name
+                        )
 
             page_token = results.get("nextPageToken")
             if not page_token:
@@ -269,12 +293,39 @@ class DriveOrganizer:
             ).execute()
             return True
         except Exception as e:
-            import logging
-            logging.getLogger(__name__).error(
+            logger.error(
                 "파일 이동 실패: file_id=%s, target=%s, error=%s",
                 file_id, new_parent_id, e
             )
             return False
+
+    def _ensure_folder_path(self, target_folder: str) -> str:
+        """폴더 경로 확보 (없으면 생성)
+
+        Args:
+            target_folder: 대상 폴더 경로 (예: "images/prds/PRD-0001")
+
+        Returns:
+            폴더 ID
+        """
+        # 캐시에 있으면 반환
+        if target_folder in self._folder_cache:
+            return self._folder_cache[target_folder]
+
+        # 경로 순회하며 폴더 생성
+        parts = target_folder.split("/")
+        current_parent = self.root_folder_id
+        current_path = ""
+
+        for part in parts:
+            current_path = f"{current_path}/{part}" if current_path else part
+            if current_path in self._folder_cache:
+                current_parent = self._folder_cache[current_path]
+            else:
+                current_parent = self.create_folder(part, current_parent)
+                self._folder_cache[current_path] = current_parent
+
+        return current_parent
 
     def organize_files(self, dry_run: bool = True) -> dict:
         """파일 자동 정리"""
@@ -306,21 +357,7 @@ class DriveOrganizer:
             result["classified"] += 1
 
             if not dry_run:
-                # 대상 폴더 ID 확보
-                folder_id = self._folder_cache.get(target_folder)
-                if not folder_id:
-                    # 폴더 생성 필요
-                    parts = target_folder.split("/")
-                    current_parent = self.root_folder_id
-                    current_path = ""
-                    for part in parts:
-                        current_path = f"{current_path}/{part}" if current_path else part
-                        if current_path in self._folder_cache:
-                            current_parent = self._folder_cache[current_path]
-                        else:
-                            current_parent = self.create_folder(part, current_parent)
-                            self._folder_cache[current_path] = current_parent
-                    folder_id = current_parent
+                folder_id = self._ensure_folder_path(target_folder)
 
                 # 파일 이동
                 if self.move_file(file.id, folder_id):
@@ -392,7 +429,7 @@ class DriveOrganizer:
         """문제점 분석"""
         issues = []
 
-        if len(duplicates) > 0:
+        if duplicates:
             total_dup = sum(d.count - 1 for d in duplicates)
             issues.append({
                 "type": "duplicates",
@@ -400,7 +437,7 @@ class DriveOrganizer:
                 "message": f"{len(duplicates)} duplicate file groups detected ({total_dup} excess files)"
             })
 
-        if len(folders) == 0:
+        if not folders:
             issues.append({
                 "type": "no_structure",
                 "severity": "warning",

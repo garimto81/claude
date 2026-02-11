@@ -5,6 +5,7 @@ YAML 설정 파일에서 프로젝트별 Drive 폴더 ID를 관리하고 자동 
 """
 
 import os
+import warnings
 from pathlib import Path
 from fnmatch import fnmatch
 from typing import Optional
@@ -47,6 +48,26 @@ class ProjectRegistry:
         self._config = self._load_config()
         self._initialized = True
 
+    @classmethod
+    def get_instance(cls, config_path: Optional[Path] = None) -> 'ProjectRegistry':
+        """
+        Singleton 인스턴스 반환 (팩토리 메서드)
+
+        Args:
+            config_path: 설정 파일 경로 (첫 호출 시만 사용)
+
+        Returns:
+            ProjectRegistry 인스턴스
+        """
+        if cls._instance is None:
+            cls._instance = cls(config_path)
+        return cls._instance
+
+    @classmethod
+    def reset(cls):
+        """Singleton 인스턴스 초기화 (테스트용)"""
+        cls._instance = None
+
     def _load_config(self) -> dict:
         """YAML 설정 파일 로드"""
         if not self.config_path.exists():
@@ -59,8 +80,13 @@ class ProjectRegistry:
                 "PyYAML이 설치되지 않았습니다. 'pip install pyyaml'을 실행하세요."
             )
 
-        with open(self.config_path, 'r', encoding='utf-8') as f:
-            config = yaml.safe_load(f)
+        try:
+            with open(self.config_path, 'r', encoding='utf-8') as f:
+                config = yaml.safe_load(f)
+        except yaml.YAMLError as e:
+            raise ValueError(f"YAML 파싱 오류: {self.config_path} - {e}")
+        except Exception as e:
+            raise RuntimeError(f"설정 파일 읽기 실패: {self.config_path} - {e}")
 
         if not config or 'projects' not in config:
             raise ValueError(f"잘못된 설정 파일 형식: {self.config_path}")
@@ -107,8 +133,16 @@ class ProjectRegistry:
                 if fnmatch(cwd, pattern) or fnmatch(cwd.lower(), pattern.lower()):
                     return project_name
 
-        # 3. 기본 프로젝트 반환
-        return self._config.get('default_project', list(projects.keys())[0])
+        # 3. 기본 프로젝트 반환 (빈 dict 방어)
+        default_project = self._config.get('default_project')
+        if default_project:
+            return default_project
+
+        # default_project가 없으면 첫 번째 프로젝트 반환
+        if projects:
+            return next(iter(projects.keys()))
+
+        raise ValueError("설정 파일에 프로젝트가 정의되지 않았습니다")
 
     def get_folder_id(self, project: Optional[str] = None, subfolder: Optional[str] = None) -> str:
         """
@@ -209,12 +243,22 @@ class ProjectRegistry:
         """
         레거시 Google AI Studio 폴더 ID 반환 (하위 호환성)
 
+        .. deprecated::
+            프로젝트 기반 구조로 전환 권장. get_folder_id() 사용을 권장합니다.
+
         Returns:
             레거시 폴더 ID
 
         Raises:
             KeyError: 레거시 설정이 없는 경우
         """
+        warnings.warn(
+            "get_legacy_folder_id()는 deprecated입니다. "
+            "get_folder_id()를 사용하세요.",
+            DeprecationWarning,
+            stacklevel=2
+        )
+
         legacy = self._config.get('legacy', {})
         if 'google_ai_studio' not in legacy:
             raise KeyError("레거시 Google AI Studio 폴더 설정이 없습니다")
@@ -237,10 +281,8 @@ def get_project_folder_id(project: Optional[str] = None, subfolder: Optional[str
     Returns:
         Drive 폴더 ID
     """
-    global _registry
-    if _registry is None:
-        _registry = ProjectRegistry()
-    return _registry.get_folder_id(project, subfolder)
+    registry = ProjectRegistry.get_instance()
+    return registry.get_folder_id(project, subfolder)
 
 
 def get_default_folder_id(project: Optional[str] = None) -> str:

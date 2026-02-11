@@ -4,7 +4,7 @@ description: >
   WSOPTV 프로젝트 일일 동기화 스킬. Gmail/Slack 데이터를 Claude Code가 직접 분석하여
   업체 상태, 견적, 회신 필요 여부를 추론하고 Slack Lists를 업데이트합니다.
   별도 API 호출 없이 Claude Code 세션 내에서 분석합니다.
-version: 1.3.0
+version: 1.4.0
 
 triggers:
   keywords:
@@ -462,6 +462,63 @@ for msg_info in messages:
 
 ---
 
+### Phase 5: Slack Lists 갱신 (`--slack` 옵션 시)
+
+`/auto --daily --slack` 실행 시, Phase 1~4 완료 후 Slack Lists 업체 현황을 자동 갱신합니다.
+
+**트리거**: `/auto --daily --slack` 또는 `.project-sync.yaml`의 `daily.sources.slack_lists.enabled: true`
+
+#### 5a. 분석 결과 → Slack Lists 업데이트
+
+Phase 2 AI 분석 결과를 기반으로 업체별 필드를 업데이트합니다.
+
+```python
+# ListsSyncManager로 업체별 업데이트
+from scripts.sync.lists_sync import ListsSyncManager
+
+manager = ListsSyncManager()
+manager.update_item('Vimeo OTT',
+    status='협상 중',
+    quote='Fixed $115K/yr + Infra $10K-$275K/yr',
+    last_contact='2026-02-06',
+    next_action='수정 견적 대기')
+```
+
+**업데이트 필드 매핑:**
+
+| AI 분석 결과 | Slack Lists 필드 | 규칙 |
+|-------------|-----------------|------|
+| 협상 상태 | `status` | `wsoptv_sync_config.yaml` status_options 매핑 |
+| 견적 금액 | `quote` | QuoteFormatter 3줄 이내 |
+| 마지막 연락일 | `last_contact` | 최신 이메일 날짜 |
+| 권장 액션 | `next_action` | AI 권장 사항 |
+
+**안전장치:**
+
+| 조건 | 동작 |
+|------|------|
+| status가 부정 방향 (on_hold, excluded) | AskUserQuestion 확인 필수 |
+| 견적 금액 변경 | 기존 → 새 값 비교 출력 후 적용 |
+| 새 업체 발견 | 자동 추가 안함, 사용자 확인 |
+
+#### 5b. 요약 메시지 Slack 채널 포스팅
+
+```python
+manager.generate_summary_message()
+manager.post_summary()
+```
+
+#### 5c. 결과 보고
+
+```
+### Slack Lists 갱신 결과
+- Vimeo OTT: status → "협상 중", quote 업데이트
+- Brightcove: last_contact → "2026-02-06"
+- 요약 메시지: #wsoptv 채널에 포스팅 완료
+```
+
+---
+
 ## 토큰 효율성
 
 ### 증분 분석
@@ -512,6 +569,13 @@ cd C:\claude && python -m lib.slack login
 ---
 
 ## 변경 로그
+
+### v1.4.0 (2026-02-06)
+
+- Phase 5: Slack Lists 자동 갱신 추가 (--slack 옵션 연동)
+- `.project-sync.yaml` 기반 Project Context Discovery 연동
+- ListsSyncManager를 통한 업체 상태/견적/next_action 자동 업데이트
+- 안전장치: 부정 상태 변경 시 사용자 확인, 견적 변경 비교 출력
 
 ### v1.3.0 (2026-02-06)
 

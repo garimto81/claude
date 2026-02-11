@@ -10,6 +10,7 @@ from enum import Enum
 from typing import Optional
 
 from googleapiclient.discovery import build
+from googleapiclient.errors import HttpError
 
 from .auth import get_credentials
 from .project_registry import ProjectRegistry
@@ -40,8 +41,8 @@ class Violation:
 class AuditReport:
     """감사 결과 보고서"""
     total_root_items: int = 0
-    violations: list = field(default_factory=list)
-    project_status: dict = field(default_factory=dict)  # project_name → {documents: N, images: N}
+    violations: list[Violation] = field(default_factory=list)
+    project_status: dict[str, dict[str, int]] = field(default_factory=dict)  # project_name → {documents: N, images: N}
 
     @property
     def critical_count(self) -> int:
@@ -115,7 +116,7 @@ class FixAction:
 @dataclass
 class FixPlan:
     """교정 계획"""
-    actions: list = field(default_factory=list)  # List[FixAction]
+    actions: list[FixAction] = field(default_factory=list)
 
     @property
     def move_count(self) -> int:
@@ -152,6 +153,7 @@ class DriveGuardian:
         self.registry = ProjectRegistry()
         self.creds = get_credentials()
         self.drive = build("drive", "v3", credentials=self.creds)
+        # NOTE: ProjectRegistry._config는 public getter가 없어 직접 접근
         self._config = self.registry._config
         self._governance = self._config.get("governance", {})
 
@@ -160,20 +162,26 @@ class DriveGuardian:
         all_items = []
         page_token = None
 
-        while True:
-            query = f"'{folder_id}' in parents and trashed=false"
-            results = self.drive.files().list(
-                q=query,
-                pageSize=200,
-                pageToken=page_token,
-                fields="nextPageToken, files(id, name, mimeType, modifiedTime, parents)"
-            ).execute()
+        try:
+            while True:
+                query = f"'{folder_id}' in parents and trashed=false"
+                results = self.drive.files().list(
+                    q=query,
+                    pageSize=200,
+                    pageToken=page_token,
+                    fields="nextPageToken, files(id, name, mimeType, modifiedTime, parents)"
+                ).execute()
 
-            all_items.extend(results.get("files", []))
+                all_items.extend(results.get("files", []))
 
-            page_token = results.get("nextPageToken")
-            if not page_token:
-                break
+                page_token = results.get("nextPageToken")
+                if not page_token:
+                    break
+
+        except HttpError as e:
+            # API 에러 시 빈 리스트 반환 (폴더 접근 불가 등)
+            print(f"Warning: Drive API error for folder {folder_id}: {e}")
+            return []
 
         return all_items
 
@@ -221,29 +229,17 @@ class DriveGuardian:
         # 기본값: documents
         return "documents"
 
-    def audit(self) -> AuditReport:
-        """전체 Drive 구조 감사"""
-        report = AuditReport()
-
-        root_id = self._get_root_folder_id()
-        root_items = self._list_children(root_id)
-        report.total_root_items = len(root_items)
-
-        # 허용된 폴더 목록
-        root_policy = self._governance.get("root_policy", {})
-        allowed_folders = root_policy.get("allowed_folders", [])
-        files_allowed = root_policy.get("files_allowed", True)
-
-        # 모든 등록된 폴더 ID 수집
-        known_folder_ids = set()
+    def _audit_root_level(
+        self,
+        root_items: list[dict],
+        allowed_folders: list[str],
+        known_folder_ids: set[str],
+        files_allowed: bool,
+        report: AuditReport,
+    ) -> None:
+        """루트 레벨 검사 (위반 사항 report에 추가)"""
         projects = self._config.get("projects", {})
-        for p_config in projects.values():
-            known_folder_ids.add(p_config["folder_id"])
-        special = self._config.get("special_folders", {})
-        for s_config in special.values():
-            known_folder_ids.add(s_config["folder_id"])
 
-        # 1. 루트 레벨 검사
         for item in root_items:
             is_folder = item["mimeType"] == "application/vnd.google-apps.folder"
 
@@ -293,54 +289,88 @@ class DriveGuardian:
                             suggested_target=archive_id,
                         ))
 
+    def _audit_project_structure(
+        self,
+        project_name: str,
+        project_config: dict,
+        required_subs: list[str],
+        report: AuditReport,
+    ) -> None:
+        """프로젝트별 하위 구조 검사 (위반 사항 report에 추가)"""
+        project_folder_id = project_config["folder_id"]
+        children = self._list_children(project_folder_id)
+
+        child_names = {c["name"]: c for c in children if c["mimeType"] == "application/vnd.google-apps.folder"}
+        child_files = [c for c in children if c["mimeType"] != "application/vnd.google-apps.folder"]
+
+        status = {"documents": 0, "images": 0, "other": 0}
+
+        # 필수 하위 폴더 존재 확인
+        for sub_name in required_subs:
+            if sub_name not in child_names:
+                report.violations.append(Violation(
+                    severity=Severity.WARNING,
+                    category="missing_subfolder",
+                    message=f"'{project_name}'에 필수 하위 폴더 누락: {sub_name}",
+                    current_location=project_name,
+                    suggested_action=f"'{sub_name}' 폴더 생성",
+                ))
+
+        # 하위 폴더 내 파일 수 집계
+        for sub_name in ["documents", "images"]:
+            sub_id = project_config.get("subfolders", {}).get(sub_name)
+            if sub_id:
+                sub_files = self._list_children(sub_id)
+                status[sub_name] = len(sub_files)
+
+        # 프로젝트 루트에 직접 파일이 있으면 경고
+        for f in child_files:
+            subfolder = self._determine_subfolder(f["mimeType"])
+            target_id = project_config.get("subfolders", {}).get(subfolder)
+            report.violations.append(Violation(
+                severity=Severity.INFO,
+                category="misplaced_file",
+                message=f"'{project_name}' 루트에 파일: '{f['name']}' → {subfolder}/",
+                file_id=f["id"],
+                file_name=f["name"],
+                mime_type=f["mimeType"],
+                current_location=project_name,
+                suggested_action=f"{project_name}/{subfolder}로 이동",
+                suggested_target=target_id,
+            ))
+            status["other"] += 1
+
+        report.project_status[project_name] = status
+
+    def audit(self) -> AuditReport:
+        """전체 Drive 구조 감사"""
+        report = AuditReport()
+
+        root_id = self._get_root_folder_id()
+        root_items = self._list_children(root_id)
+        report.total_root_items = len(root_items)
+
+        # 허용된 폴더 목록
+        root_policy = self._governance.get("root_policy", {})
+        allowed_folders = root_policy.get("allowed_folders", [])
+        files_allowed = root_policy.get("files_allowed", True)
+
+        # 모든 등록된 폴더 ID 수집
+        known_folder_ids = set()
+        projects = self._config.get("projects", {})
+        for p_config in projects.values():
+            known_folder_ids.add(p_config["folder_id"])
+        special = self._config.get("special_folders", {})
+        for s_config in special.values():
+            known_folder_ids.add(s_config["folder_id"])
+
+        # 1. 루트 레벨 검사
+        self._audit_root_level(root_items, allowed_folders, known_folder_ids, files_allowed, report)
+
         # 2. 프로젝트별 하위 구조 검사
         required_subs = self._governance.get("required_subfolders", ["documents", "images"])
-
         for project_name, project_config in projects.items():
-            project_folder_id = project_config["folder_id"]
-            children = self._list_children(project_folder_id)
-
-            child_names = {c["name"]: c for c in children if c["mimeType"] == "application/vnd.google-apps.folder"}
-            child_files = [c for c in children if c["mimeType"] != "application/vnd.google-apps.folder"]
-
-            status = {"documents": 0, "images": 0, "other": 0}
-
-            # 필수 하위 폴더 존재 확인
-            for sub_name in required_subs:
-                if sub_name not in child_names:
-                    report.violations.append(Violation(
-                        severity=Severity.WARNING,
-                        category="missing_subfolder",
-                        message=f"'{project_name}'에 필수 하위 폴더 누락: {sub_name}",
-                        current_location=project_name,
-                        suggested_action=f"'{sub_name}' 폴더 생성",
-                    ))
-
-            # 하위 폴더 내 파일 수 집계
-            for sub_name in ["documents", "images"]:
-                sub_id = project_config.get("subfolders", {}).get(sub_name)
-                if sub_id:
-                    sub_files = self._list_children(sub_id)
-                    status[sub_name] = len(sub_files)
-
-            # 프로젝트 루트에 직접 파일이 있으면 경고
-            for f in child_files:
-                subfolder = self._determine_subfolder(f["mimeType"])
-                target_id = project_config.get("subfolders", {}).get(subfolder)
-                report.violations.append(Violation(
-                    severity=Severity.INFO,
-                    category="misplaced_file",
-                    message=f"'{project_name}' 루트에 파일: '{f['name']}' → {subfolder}/",
-                    file_id=f["id"],
-                    file_name=f["name"],
-                    mime_type=f["mimeType"],
-                    current_location=project_name,
-                    suggested_action=f"{project_name}/{subfolder}로 이동",
-                    suggested_target=target_id,
-                ))
-                status["other"] += 1
-
-            report.project_status[project_name] = status
+            self._audit_project_structure(project_name, project_config, required_subs, report)
 
         return report
 

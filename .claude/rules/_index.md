@@ -1,6 +1,6 @@
 # Rules Index
 
-**Version**: 1.2.0
+**Version**: 1.3.0
 **Last Updated**: 2026-02-06
 
 모듈화된 규칙 시스템의 마스터 색인입니다.
@@ -18,6 +18,7 @@
 | [07-build-test.md](./07-build-test.md) | 빌드/테스트 | HIGH | ❌ |
 | [08-skill-routing.md](./08-skill-routing.md) | OMC 스킬 라우팅 | HIGH | ❌ |
 | [09-global-only.md](./09-global-only.md) | Global-Only Policy | CRITICAL | ✅ 경고 (계획 중) |
+| [10-task-decomposition.md](./10-task-decomposition.md) | Task 분해 표준 패턴 | HIGH | ❌ |
 
 ## 영향도 정의
 
@@ -35,6 +36,7 @@
 | `tool_validator.py` | 03-git (프로세스 종료 금지) | **차단** |
 | `session_init.py` | 04-tdd | 경고 |
 | `branch_guard.py` | 03-git (100줄+ 수정) | 자동 커밋 |
+| `post_edit_check.js` | 04-tdd (편집 후 자동 검증) | 경고 (PostToolUse) |
 
 ## 사용법
 
