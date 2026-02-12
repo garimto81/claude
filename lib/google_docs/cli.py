@@ -195,6 +195,27 @@ Examples:
         "--folder", "-f", default=DEFAULT_FOLDER_ID, help="Google Drive 폴더 ID"
     )
 
+    # sheets 명령
+    sheets_parser = subparsers.add_parser(
+        "sheets", help="Google Sheets 데이터 읽기"
+    )
+    sheets_parser.add_argument(
+        "url", help="Google Sheets URL 또는 Spreadsheet ID"
+    )
+    sheets_parser.add_argument(
+        "--range", "-r", default=None, help="A1 표기법 범위 (예: 'Sheet1!A1:Z100')"
+    )
+    sheets_parser.add_argument(
+        "--format", "-fmt", choices=["table", "json", "raw"], default="table",
+        help="출력 형식 (기본: table)"
+    )
+    sheets_parser.add_argument(
+        "--max-rows", type=int, default=50, help="최대 출력 행 수 (기본: 50)"
+    )
+    sheets_parser.add_argument(
+        "--list-sheets", action="store_true", help="시트 목록만 조회"
+    )
+
     # drive 명령 (폴더 정리)
     drive_parser = subparsers.add_parser(
         "drive", help="Google Drive 폴더 정리 및 관리"
@@ -426,6 +447,44 @@ Examples:
             print(f"  - {f['name']}")
             print(f"    {f['webViewLink']}")
             print()
+
+    elif args.command == "sheets":
+        from .sheets import SheetsClient, parse_sheet_url
+        import json as json_module
+
+        client = SheetsClient()
+
+        # URL인지 ID인지 판단
+        url_or_id = args.url
+        if url_or_id.startswith("http"):
+            parsed = parse_sheet_url(url_or_id)
+            spreadsheet_id = parsed["spreadsheet_id"]
+        else:
+            spreadsheet_id = url_or_id
+
+        if args.list_sheets:
+            sheets_list = client.list_sheets(spreadsheet_id)
+            print(f"\n시트 목록 ({len(sheets_list)}개):")
+            print("-" * 60)
+            for s in sheets_list:
+                print(f"  - {s['title']} (gid={s['sheetId']}, {s['rowCount']}x{s['columnCount']})")
+        else:
+            if args.range:
+                result = client.read_from_url(url_or_id, range_notation=args.range)
+            else:
+                result = client.read_from_url(url_or_id)
+
+            print(f"\n제목: {result['title']}")
+            print(f"시트: {result['sheet_name']}")
+            print(f"크기: {result['rows']}행 x {result['cols']}열")
+            print("-" * 60)
+
+            if args.format == "table":
+                print(client.to_markdown_table(result["data"], max_rows=args.max_rows))
+            elif args.format == "json":
+                print(client.to_json(result["data"], max_rows=args.max_rows))
+            elif args.format == "raw":
+                print(json_module.dumps(result["data"][:args.max_rows + 1], indent=2, ensure_ascii=False))
 
     elif args.command == "drive":
         from .drive_organizer import DriveOrganizer, print_status, print_duplicates
