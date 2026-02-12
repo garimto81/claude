@@ -122,7 +122,7 @@ lib/
 
 ### 3. 커맨드 시스템 (`.claude/commands/`)
 
-24개 커맨드 (`/work`, `/auto`, `/commit`, `/check` 등). 각 `.md` 파일이 슬래시 커맨드 정의.
+25개 커맨드 (`/work`, `/auto`, `/commit`, `/check` 등). 각 `.md` 파일이 슬래시 커맨드 정의.
 
 ### 4. 에이전트 시스템 (`.claude/agents/`)
 
@@ -130,7 +130,7 @@ lib/
 
 ### 5. 스킬 시스템 (`.claude/skills/`)
 
-47개 스킬 (+ 5개 deprecated). 각 디렉토리에 `SKILL.md` + 관련 파일. 자동/수동 트리거 지원.
+48개 스킬 (+ 5개 deprecated). 각 디렉토리에 `SKILL.md` + 관련 파일. 자동/수동 트리거 지원.
 
 ---
 
