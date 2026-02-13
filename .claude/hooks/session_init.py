@@ -8,8 +8,9 @@ SessionStart 이벤트에서 실행됩니다.
 import json
 import subprocess
 import os
+import sys
 import glob
-from datetime import datetime
+from datetime import datetime, timezone, timedelta
 from pathlib import Path
 
 PROJECT_DIR = os.environ.get("CLAUDE_PROJECT_DIR", os.getcwd())
@@ -214,6 +215,106 @@ def setup_commands_junction() -> tuple[bool, str]:
         return False, f"⚠️ Junction 설정 오류: {e}"
 
 
+def cleanup_stale_omc_states(ttl_hours: int = 2) -> list[str]:
+    """OMC persistent mode의 stale 상태를 TTL 기반으로 정리
+
+    Stop hook(persistent-mode.mjs)이 이전 세션의 잔재 때문에
+    새 세션을 차단하는 문제를 방지합니다.
+
+    Args:
+        ttl_hours: 상태가 stale로 간주되는 시간 (기본 2시간)
+
+    Returns:
+        정리 결과 메시지 목록
+    """
+    messages = []
+    now = datetime.now(timezone.utc)
+    omc_dir = Path(PROJECT_DIR) / ".omc"
+
+    if not omc_dir.exists():
+        return messages
+
+    # ultrawork-state.json TTL 검사
+    ultrawork_path = omc_dir / "ultrawork-state.json"
+    if ultrawork_path.exists():
+        try:
+            with open(ultrawork_path, "r", encoding="utf-8") as f:
+                state = json.load(f)
+
+            if state.get("active"):
+                started_str = state.get("started_at", "")
+                if started_str:
+                    started = datetime.fromisoformat(
+                        started_str.replace("Z", "+00:00")
+                    )
+                    elapsed = now - started
+                    if elapsed > timedelta(hours=ttl_hours):
+                        state["active"] = False
+                        state["deactivated_reason"] = (
+                            f"TTL expired ({ttl_hours}h, elapsed {elapsed})"
+                        )
+                        state["deactivated_at"] = now.isoformat()
+                        with open(ultrawork_path, "w", encoding="utf-8") as f:
+                            json.dump(state, f, indent=2)
+                        hours = elapsed.total_seconds() / 3600
+                        messages.append(
+                            f"🔄 Stale ultrawork 상태 정리 "
+                            f"(시작: {started_str[:16]}, 경과: {hours:.1f}h)"
+                        )
+        except Exception as e:
+            print(f"ultrawork state cleanup error: {e}", file=sys.stderr)
+
+    # ralph-state.json TTL 검사
+    ralph_path = omc_dir / "ralph-state.json"
+    if ralph_path.exists():
+        try:
+            with open(ralph_path, "r", encoding="utf-8") as f:
+                state = json.load(f)
+
+            if state.get("active"):
+                started_str = state.get("started_at", "")
+                if started_str:
+                    started = datetime.fromisoformat(
+                        started_str.replace("Z", "+00:00")
+                    )
+                    elapsed = now - started
+                    if elapsed > timedelta(hours=ttl_hours):
+                        state["active"] = False
+                        state["deactivated_reason"] = (
+                            f"TTL expired ({ttl_hours}h, elapsed {elapsed})"
+                        )
+                        state["deactivated_at"] = now.isoformat()
+                        with open(ralph_path, "w", encoding="utf-8") as f:
+                            json.dump(state, f, indent=2)
+                        hours = elapsed.total_seconds() / 3600
+                        messages.append(
+                            f"🔄 Stale ralph 상태 정리 "
+                            f"(시작: {started_str[:16]}, 경과: {hours:.1f}h)"
+                        )
+        except Exception as e:
+            print(f"ralph state cleanup error: {e}", file=sys.stderr)
+
+    # continuation-count.json 항상 리셋 (새 세션이므로)
+    cont_path = omc_dir / "continuation-count.json"
+    if cont_path.exists():
+        try:
+            with open(cont_path, "r", encoding="utf-8") as f:
+                cont_state = json.load(f)
+            prev_count = cont_state.get("count", 0)
+            if prev_count > 0:
+                with open(cont_path, "w", encoding="utf-8") as f:
+                    json.dump(
+                        {"count": 0, "reset_at": now.isoformat()}, f, indent=2
+                    )
+                messages.append(
+                    f"🔄 Todo continuation 카운터 리셋 (이전: {prev_count}회)"
+                )
+        except Exception:
+            pass
+
+    return messages
+
+
 def load_previous_session() -> dict:
     """이전 세션 상태 로드"""
     if SESSION_FILE.exists():
@@ -246,6 +347,9 @@ def save_session_state(state: dict):
 
 def main():
     try:
+        # OMC stale 상태 정리 (TTL 2시간 - Stop hook 차단 방지)
+        stale_messages = cleanup_stale_omc_states(ttl_hours=2)
+
         # 이전 세션 임시 파일 정리 (Claude Code Task 도구 버그 대응)
         cleaned_files = cleanup_tmpclaude_files()
 
@@ -264,6 +368,9 @@ def main():
 
         # 세션 정보 생성
         session_info = []
+
+        # OMC stale 상태 정리 결과
+        session_info.extend(stale_messages)
 
         # Junction 자동 설정 결과
         if junction_created:
