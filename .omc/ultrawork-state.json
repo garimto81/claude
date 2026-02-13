@@ -1,0 +1,9 @@
+{
+  "active": false,
+  "started_at": "2026-02-12T07:32:26.706Z",
+  "original_prompt": "/auto daily workflow analysis",
+  "reinforcement_count": 0,
+  "last_checked_at": "2026-02-12T07:32:26.706Z",
+  "deactivated_reason": "TTL expired (2h, manual fix + session_init automation)",
+  "deactivated_at": "2026-02-13T12:00:00+00:00"
+}
