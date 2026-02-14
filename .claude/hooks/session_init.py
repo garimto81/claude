@@ -1,6 +1,6 @@
 #!/usr/bin/env python3
 """
-세션 시작 Hook - 이전 컨텍스트 로드, 브랜치 확인, TODO 표시
+세션 시작 Hook - 브랜치 확인, TODO 표시, Stale 상태 정리
 
 SessionStart 이벤트에서 실행됩니다.
 """
@@ -8,31 +8,24 @@ SessionStart 이벤트에서 실행됩니다.
 import json
 import subprocess
 import os
-import sys
-import glob
 from datetime import datetime, timezone, timedelta
 from pathlib import Path
 
 PROJECT_DIR = os.environ.get("CLAUDE_PROJECT_DIR", os.getcwd())
-SESSION_FILE = Path(PROJECT_DIR) / ".claude" / "session_state.json"
-AUTO_STATE_FILE = Path(PROJECT_DIR) / ".claude" / "workflow" / "auto_state.json"
 
-# 루트 프로젝트 경로 (커맨드 Junction 소스) - WSL/Windows 호환
+
 def _get_project_root() -> Path:
     """플랫폼에 따라 루트 프로젝트 경로 반환"""
     if os.name == "nt":
         return Path("C:/claude")
-    # WSL 환경
     wsl_path = Path("/mnt/c/claude")
     if wsl_path.exists():
         return wsl_path
-    return Path(os.environ.get("CLAUDE_PROJECT_DIR", os.getcwd()))
+    return Path(PROJECT_DIR)
+
 
 ROOT_PROJECT_DIR = _get_project_root()
 ROOT_COMMANDS_DIR = ROOT_PROJECT_DIR / ".claude" / "commands"
-
-# Claude Code Task 도구가 생성하는 임시 파일 패턴
-TMPCLAUDE_PATTERN = "tmpclaude-*-cwd"
 
 
 def get_current_branch() -> str:
@@ -63,137 +56,35 @@ def get_uncommitted_changes() -> int:
         return 0
 
 
-def cleanup_tmpclaude_files() -> int:
-    """tmpclaude-*-cwd 임시 파일 재귀적 삭제 (Claude Code Task 도구 버그 대응)"""
-    cleaned = 0
-    try:
-        # 모든 하위 디렉토리에서 재귀 검색
-        pattern = os.path.join(PROJECT_DIR, "**", TMPCLAUDE_PATTERN)
-        for filepath in glob.glob(pattern, recursive=True):
-            try:
-                os.remove(filepath)
-                cleaned += 1
-            except Exception:
-                pass
-        # 루트 디렉토리도 검색
-        pattern = os.path.join(PROJECT_DIR, TMPCLAUDE_PATTERN)
-        for filepath in glob.glob(pattern):
-            try:
-                os.remove(filepath)
-                cleaned += 1
-            except Exception:
-                pass
-    except Exception:
-        pass
-    return cleaned
-
-
-def cleanup_malformed_folders() -> int:
-    """경로 버그로 생성된 비정상 폴더 삭제 (재귀적 검사)
-
-    검사 패턴:
-    - C:로 시작하는 폴더명 (예: C:claude.claudeworkflowresults)
-    - Cclaud로 시작하는 폴더명 (예: Cclaudegfx_json)
-    - .claude 뒤에 알파벳이 붙은 폴더 (예: .claudeX)
-
-    검사 범위:
-    - 루트 레벨 + 1단계 하위 프로젝트 (node_modules, .git 등 제외)
-    """
-    import re
-    import shutil
-
-    # 비정상 폴더 패턴 (malformed path patterns)
-    MALFORMED_PATTERNS = [
-        r'^[A-Z]:',           # C:로 시작 (하드코딩 경로 버그)
-        r'^Cclaud',           # Cclaud로 시작 (경로 버그 변형)
-        r'\.claude[a-zA-Z]',  # .claudeX 형태 (정상 .claude는 제외)
-    ]
-
-    # 검사 제외 폴더
-    SKIP_DIRS = {'node_modules', '.git', '__pycache__', 'venv', '.venv', 'dist', 'build', '.next'}
-
-    cleaned = 0
-
-    def is_malformed(name: str) -> bool:
-        """폴더명이 malformed 패턴에 해당하는지 확인"""
-        return any(re.match(pattern, name) for pattern in MALFORMED_PATTERNS)
-
-    def clean_directory(path: Path, depth: int = 0, max_depth: int = 2) -> int:
-        """재귀적으로 디렉토리 검사 및 정리"""
-        count = 0
-        if depth > max_depth:
-            return count
-        try:
-            for item in path.iterdir():
-                if not item.is_dir():
-                    continue
-                # malformed 패턴 감지
-                if is_malformed(item.name):
-                    try:
-                        shutil.rmtree(item)
-                        count += 1
-                    except Exception:
-                        pass
-                # 재귀 탐색 (스킵 폴더 제외)
-                elif item.name not in SKIP_DIRS:
-                    count += clean_directory(item, depth + 1, max_depth)
-        except PermissionError:
-            pass
-        except Exception:
-            pass
-        return count
-
-    try:
-        project_path = Path(PROJECT_DIR)
-        cleaned = clean_directory(project_path)
-    except Exception:
-        pass
-
-    return cleaned
-
-
 def setup_commands_junction() -> tuple[bool, str]:
-    """서브 프로젝트에 커맨드 Junction 자동 설정
-
-    Returns:
-        tuple[bool, str]: (설정 여부, 메시지)
-    """
+    """서브 프로젝트에 커맨드 Junction 자동 설정"""
     project_path = Path(PROJECT_DIR)
 
-    # 루트 프로젝트면 스킵
     if project_path == ROOT_PROJECT_DIR:
         return False, ""
 
-    # C:\claude 하위 프로젝트가 아니면 스킵
     try:
         project_path.relative_to(ROOT_PROJECT_DIR)
     except ValueError:
         return False, ""
 
-    # 루트 커맨드가 없으면 스킵
     if not ROOT_COMMANDS_DIR.exists():
         return False, ""
 
-    # .claude 폴더 생성 (없으면)
     claude_dir = project_path / ".claude"
     claude_dir.mkdir(parents=True, exist_ok=True)
 
     commands_dir = claude_dir / "commands"
-
-    # 이미 커맨드 폴더가 있으면 스킵 (Junction 또는 실제 폴더)
     if commands_dir.exists():
         return False, ""
 
-    # Junction 생성 (Windows)
     try:
-        # subprocess로 mklink /J 실행 (관리자 권한 불필요)
         result = subprocess.run(
             ["cmd.exe", "/c", "mklink", "/J", str(commands_dir), str(ROOT_COMMANDS_DIR)],
             capture_output=True,
             text=True,
         )
         if result.returncode == 0 or commands_dir.exists():
-            # .gitignore에 추가
             gitignore_path = project_path / ".gitignore"
             gitignore_entry = ".claude/commands/"
 
@@ -210,91 +101,87 @@ def setup_commands_junction() -> tuple[bool, str]:
 
             return True, f"✨ 커맨드 Junction 자동 설정됨 → {ROOT_COMMANDS_DIR}"
         else:
-            return False, f"⚠️ Junction 생성 실패: {result.stderr}"
-    except Exception as e:
-        return False, f"⚠️ Junction 설정 오류: {e}"
+            return False, ""
+    except Exception:
+        return False, ""
+
+
+def _deactivate_state_file(path: Path, now: datetime) -> str | None:
+    """상태 JSON 파일의 active 플래그를 비활성화 (새 세션이므로 무조건 stale)"""
+    if not path.exists():
+        return None
+    try:
+        with open(path, "r", encoding="utf-8") as f:
+            state = json.load(f)
+
+        if not state.get("active"):
+            return None
+
+        state["active"] = False
+        state["deactivated_reason"] = "SessionStart cleanup (new session)"
+        state["deactivated_at"] = now.isoformat()
+        with open(path, "w", encoding="utf-8") as f:
+            json.dump(state, f, indent=2)
+
+        name = path.stem
+        return f"🔄 {name} 비활성화 (새 세션 시작)"
+    except Exception:
+        return None
 
 
 def cleanup_stale_omc_states(ttl_hours: int = 2) -> list[str]:
-    """OMC persistent mode의 stale 상태를 TTL 기반으로 정리
+    """OMC persistent mode의 stale 상태를 정리 (Stop hook 차단 방지)
 
-    Stop hook(persistent-mode.mjs)이 이전 세션의 잔재 때문에
-    새 세션을 차단하는 문제를 방지합니다.
-
-    Args:
-        ttl_hours: 상태가 stale로 간주되는 시간 (기본 2시간)
-
-    Returns:
-        정리 결과 메시지 목록
+    정리 대상:
+    - .omc/ultrawork-state.json (local)
+    - ~/.claude/ultrawork-state.json (global)
+    - .omc/ralph-state.json
+    - .omc/ralph-verification.json
+    - .omc/continuation-count.json
+    - ~/.claude/.session-stats.json
     """
     messages = []
     now = datetime.now(timezone.utc)
     omc_dir = Path(PROJECT_DIR) / ".omc"
+    global_claude_dir = Path.home() / ".claude"
 
-    if not omc_dir.exists():
-        return messages
+    # ultrawork-state (LOCAL + GLOBAL)
+    for ultrawork_path in [
+        omc_dir / "ultrawork-state.json",
+        global_claude_dir / "ultrawork-state.json",
+    ]:
+        msg = _deactivate_state_file(ultrawork_path, now)
+        if msg:
+            loc = "global" if ultrawork_path.parent == global_claude_dir else "local"
+            messages.append(f"{msg} [{loc}]")
 
-    # ultrawork-state.json TTL 검사
-    ultrawork_path = omc_dir / "ultrawork-state.json"
-    if ultrawork_path.exists():
+    # ralph-state
+    msg = _deactivate_state_file(omc_dir / "ralph-state.json", now)
+    if msg:
+        messages.append(msg)
+
+    # ralph-verification
+    ralph_verify_path = omc_dir / "ralph-verification.json"
+    if ralph_verify_path.exists():
         try:
-            with open(ultrawork_path, "r", encoding="utf-8") as f:
+            with open(ralph_verify_path, "r", encoding="utf-8") as f:
                 state = json.load(f)
+            modified = False
+            if state.get("pending"):
+                state["pending"] = False
+                modified = True
+            if state.get("status") == "pending":
+                state["status"] = "expired"
+                modified = True
+            if modified:
+                state["expired_reason"] = "SessionStart cleanup (new session)"
+                with open(ralph_verify_path, "w", encoding="utf-8") as f:
+                    json.dump(state, f, indent=2)
+                messages.append("🔄 ralph-verification pending 상태 만료 처리")
+        except Exception:
+            pass
 
-            if state.get("active"):
-                started_str = state.get("started_at", "")
-                if started_str:
-                    started = datetime.fromisoformat(
-                        started_str.replace("Z", "+00:00")
-                    )
-                    elapsed = now - started
-                    if elapsed > timedelta(hours=ttl_hours):
-                        state["active"] = False
-                        state["deactivated_reason"] = (
-                            f"TTL expired ({ttl_hours}h, elapsed {elapsed})"
-                        )
-                        state["deactivated_at"] = now.isoformat()
-                        with open(ultrawork_path, "w", encoding="utf-8") as f:
-                            json.dump(state, f, indent=2)
-                        hours = elapsed.total_seconds() / 3600
-                        messages.append(
-                            f"🔄 Stale ultrawork 상태 정리 "
-                            f"(시작: {started_str[:16]}, 경과: {hours:.1f}h)"
-                        )
-        except Exception as e:
-            print(f"ultrawork state cleanup error: {e}", file=sys.stderr)
-
-    # ralph-state.json TTL 검사
-    ralph_path = omc_dir / "ralph-state.json"
-    if ralph_path.exists():
-        try:
-            with open(ralph_path, "r", encoding="utf-8") as f:
-                state = json.load(f)
-
-            if state.get("active"):
-                started_str = state.get("started_at", "")
-                if started_str:
-                    started = datetime.fromisoformat(
-                        started_str.replace("Z", "+00:00")
-                    )
-                    elapsed = now - started
-                    if elapsed > timedelta(hours=ttl_hours):
-                        state["active"] = False
-                        state["deactivated_reason"] = (
-                            f"TTL expired ({ttl_hours}h, elapsed {elapsed})"
-                        )
-                        state["deactivated_at"] = now.isoformat()
-                        with open(ralph_path, "w", encoding="utf-8") as f:
-                            json.dump(state, f, indent=2)
-                        hours = elapsed.total_seconds() / 3600
-                        messages.append(
-                            f"🔄 Stale ralph 상태 정리 "
-                            f"(시작: {started_str[:16]}, 경과: {hours:.1f}h)"
-                        )
-        except Exception as e:
-            print(f"ralph state cleanup error: {e}", file=sys.stderr)
-
-    # continuation-count.json 항상 리셋 (새 세션이므로)
+    # continuation-count 항상 리셋
     cont_path = omc_dir / "continuation-count.json"
     if cont_path.exists():
         try:
@@ -303,23 +190,127 @@ def cleanup_stale_omc_states(ttl_hours: int = 2) -> list[str]:
             prev_count = cont_state.get("count", 0)
             if prev_count > 0:
                 with open(cont_path, "w", encoding="utf-8") as f:
-                    json.dump(
-                        {"count": 0, "reset_at": now.isoformat()}, f, indent=2
-                    )
-                messages.append(
-                    f"🔄 Todo continuation 카운터 리셋 (이전: {prev_count}회)"
+                    json.dump({"count": 0, "reset_at": now.isoformat()}, f, indent=2)
+                messages.append(f"🔄 Todo continuation 카운터 리셋 (이전: {prev_count}회)")
+        except Exception:
+            pass
+
+    # 로컬 TODO 파일 정리
+    for local_todo_path in [
+        omc_dir / "todos.json",
+        Path(PROJECT_DIR) / ".claude" / "todos.json",
+    ]:
+        if local_todo_path.exists():
+            try:
+                mtime = datetime.fromtimestamp(
+                    local_todo_path.stat().st_mtime, tz=timezone.utc
                 )
+                elapsed = now - mtime
+                if elapsed > timedelta(hours=ttl_hours):
+                    with open(local_todo_path, "r", encoding="utf-8") as f:
+                        todos = json.load(f)
+                    if isinstance(todos, list) and any(
+                        isinstance(t, dict)
+                        and t.get("status") not in ("completed", "cancelled")
+                        for t in todos
+                    ):
+                        with open(local_todo_path, "w", encoding="utf-8") as f:
+                            json.dump([], f)
+                        messages.append(f"🔄 로컬 TODO 정리: {local_todo_path.name}")
+            except Exception:
+                pass
+
+    # 세션 통계 리셋
+    stats_path = global_claude_dir / ".session-stats.json"
+    if stats_path.exists():
+        try:
+            with open(stats_path, "r", encoding="utf-8") as f:
+                stats = json.load(f)
+            if isinstance(stats.get("sessions"), dict):
+                stats["sessions"] = {}
+                stats["sessionStart"] = now.isoformat()
+                with open(stats_path, "w", encoding="utf-8") as f:
+                    json.dump(stats, f, indent=2)
+            elif stats.get("toolCalls", 0) > 0:
+                stats["toolCalls"] = 0
+                stats["sessionStart"] = now.isoformat()
+                with open(stats_path, "w", encoding="utf-8") as f:
+                    json.dump(stats, f, indent=2)
         except Exception:
             pass
 
     return messages
 
 
+def cleanup_stale_global_todos(ttl_hours: int = 2) -> list[str]:
+    """~/.claude/todos/ 내 이전 세션의 stale TODO 파일 정리
+
+    persistent-mode.mjs의 countIncompleteTodos()가 이전 agent 세션의
+    미완료 TODO를 감지하여 새 세션의 Stop hook을 차단하는 문제를 방지합니다.
+    """
+    messages = []
+    now = datetime.now(timezone.utc)
+    todos_dir = Path.home() / ".claude" / "todos"
+
+    if not todos_dir.exists():
+        return messages
+
+    cleaned_count = 0
+    incomplete_total = 0
+
+    try:
+        for todo_file in todos_dir.glob("*.json"):
+            try:
+                mtime = datetime.fromtimestamp(
+                    todo_file.stat().st_mtime, tz=timezone.utc
+                )
+                elapsed = now - mtime
+
+                if elapsed <= timedelta(hours=ttl_hours):
+                    continue
+
+                with open(todo_file, "r", encoding="utf-8") as f:
+                    todos = json.load(f)
+
+                if not isinstance(todos, list) or len(todos) == 0:
+                    continue
+
+                incomplete = [
+                    t for t in todos
+                    if isinstance(t, dict)
+                    and t.get("status") not in ("completed", "cancelled")
+                ]
+
+                if not incomplete:
+                    continue
+
+                incomplete_total += len(incomplete)
+
+                with open(todo_file, "w", encoding="utf-8") as f:
+                    json.dump([], f)
+                cleaned_count += 1
+
+            except Exception:
+                continue
+
+    except Exception:
+        pass
+
+    if cleaned_count > 0:
+        messages.append(
+            f"🔄 Stale TODO 파일 정리: {cleaned_count}개 파일, "
+            f"{incomplete_total}개 미완료 항목 초기화 (TTL {ttl_hours}h 초과)"
+        )
+
+    return messages
+
+
 def load_previous_session() -> dict:
     """이전 세션 상태 로드"""
-    if SESSION_FILE.exists():
+    session_file = Path(PROJECT_DIR) / ".claude" / "session_state.json"
+    if session_file.exists():
         try:
-            with open(SESSION_FILE, "r", encoding="utf-8") as f:
+            with open(session_file, "r", encoding="utf-8") as f:
                 return json.load(f)
         except Exception:
             pass
@@ -328,9 +319,10 @@ def load_previous_session() -> dict:
 
 def load_auto_state() -> dict:
     """자동 완성 상태 로드"""
-    if AUTO_STATE_FILE.exists():
+    auto_state_file = Path(PROJECT_DIR) / ".claude" / "workflow" / "auto_state.json"
+    if auto_state_file.exists():
         try:
-            with open(AUTO_STATE_FILE, "r", encoding="utf-8") as f:
+            with open(auto_state_file, "r", encoding="utf-8") as f:
                 return json.load(f)
         except Exception:
             pass
@@ -339,53 +331,34 @@ def load_auto_state() -> dict:
 
 def save_session_state(state: dict):
     """세션 상태 저장"""
-    SESSION_FILE.parent.mkdir(parents=True, exist_ok=True)
+    session_file = Path(PROJECT_DIR) / ".claude" / "session_state.json"
+    session_file.parent.mkdir(parents=True, exist_ok=True)
     state["last_start"] = datetime.now().isoformat()
-    with open(SESSION_FILE, "w", encoding="utf-8") as f:
+    with open(session_file, "w", encoding="utf-8") as f:
         json.dump(state, f, indent=2, ensure_ascii=False)
 
 
 def main():
     try:
-        # OMC stale 상태 정리 (TTL 2시간 - Stop hook 차단 방지)
+        # Stale 상태 정리 (Stop hook 차단 방지)
         stale_messages = cleanup_stale_omc_states(ttl_hours=2)
+        stale_messages.extend(cleanup_stale_global_todos(ttl_hours=2))
 
-        # 이전 세션 임시 파일 정리 (Claude Code Task 도구 버그 대응)
-        cleaned_files = cleanup_tmpclaude_files()
-
-        # 비정상 폴더 정리 (경로 버그로 생성된 폴더)
-        cleaned_folders = cleanup_malformed_folders()
-
-        # 서브 프로젝트 커맨드 Junction 자동 설정
+        # Junction 설정
         junction_created, junction_message = setup_commands_junction()
 
-        # 이전 세션 로드
+        # 세션 정보
         prev_session = load_previous_session()
-
-        # 현재 상태 수집
         branch = get_current_branch()
         changes = get_uncommitted_changes()
 
-        # 세션 정보 생성
         session_info = []
-
-        # OMC stale 상태 정리 결과
         session_info.extend(stale_messages)
 
-        # Junction 자동 설정 결과
         if junction_created:
             session_info.append(junction_message)
 
-        # 임시 파일/폴더 정리 결과
-        if cleaned_files > 0 or cleaned_folders > 0:
-            msg = "🗑️ 정리 완료:"
-            if cleaned_files > 0:
-                msg += f" 임시 파일 {cleaned_files}개"
-            if cleaned_folders > 0:
-                msg += f" 비정상 폴더 {cleaned_folders}개"
-            session_info.append(msg)
-
-        # 브랜치 경고 (main에서 작업 중인 경우)
+        # 브랜치 경고
         if branch in ["main", "master"]:
             session_info.append(
                 f"⚠️ 현재 {branch} 브랜치입니다. 기능 개발 시 새 브랜치 생성 권장"
@@ -399,21 +372,14 @@ def main():
         if prev_session.get("pending_tasks"):
             tasks = prev_session["pending_tasks"]
             session_info.append(f"📋 이전 세션 미완료 작업: {len(tasks)}개")
-            for task in tasks[:3]:  # 최대 3개만 표시
+            for task in tasks[:3]:
                 session_info.append(f"   - {task}")
             if len(tasks) > 3:
                 session_info.append(f"   ... 외 {len(tasks) - 3}개")
 
-        # 이전 세션 종료 시간
-        if prev_session.get("last_end"):
-            session_info.append(f"🕐 이전 세션: {prev_session['last_end'][:16]}")
-
-        # 자동 완성 상태 확인
+        # 자동 완성 상태
         auto_state = load_auto_state()
-        if auto_state.get("enabled") and auto_state.get("status") in [
-            "running",
-            "paused",
-        ]:
+        if auto_state.get("enabled") and auto_state.get("status") in ["running", "paused"]:
             queue_len = len(auto_state.get("taskQueue", []))
             completed = auto_state.get("stats", {}).get("completed", 0)
             session_info.append("")
@@ -435,12 +401,10 @@ def main():
             }
         )
 
-        # 결과 출력
+        # 출력
         if session_info:
             message = "\n".join(session_info)
-            print(
-                json.dumps({"continue": True, "message": f"📍 세션 시작\n\n{message}"})
-            )
+            print(json.dumps({"continue": True, "message": f"📍 세션 시작\n\n{message}"}))
         else:
             print(json.dumps({"continue": True}))
 

@@ -2,9 +2,9 @@
 name: issue-resolution
 deprecated: true
 redirect: issue
+deprecation_message: "/issue-resolution은 /issue fix로 통합되었습니다."
 triggers:
   keywords: []
 ---
-# [DEPRECATED] /issue fix로 리다이렉트
 
-이 스킬은 `/issue fix`로 통합되었습니다. `/issue fix #N` 을 사용하세요.
+이 스킬은 deprecated되었습니다. /issue fix를 사용하세요.

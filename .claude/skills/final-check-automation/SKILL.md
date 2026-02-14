@@ -30,8 +30,8 @@ model_preference: sonnet
 phase: [5]
 auto_trigger: true
 dependencies:
-  - test-engineer
-  - security-auditor
+  - oh-my-claudecode:qa-tester
+  - oh-my-claudecode:security-reviewer
 token_budget: 2000
 ---
 
@@ -230,8 +230,8 @@ pytest --benchmark-only
 | 단계 | 에이전트 |
 |------|----------|
 | E2E 테스트 | `playwright-engineer` |
-| 보안 스캔 | `security-auditor` |
-| 코드 리뷰 | `code-reviewer` |
+| 보안 스캔 | `oh-my-claudecode:security-reviewer` |
+| 코드 리뷰 | `oh-my-claudecode:code-reviewer` |
 | 성능 체크 | `performance-engineer` |
 
 ### 병렬 실행
@@ -239,7 +239,7 @@ pytest --benchmark-only
 ```python
 # Phase 5 병렬 검증
 Task(subagent_type="playwright-engineer", prompt="E2E 최종 검증")
-Task(subagent_type="security-auditor", prompt="보안 점검")
+Task(subagent_type="oh-my-claudecode:security-reviewer", prompt="보안 점검")
 Task(subagent_type="performance-engineer", prompt="성능 테스트")
 ```
 

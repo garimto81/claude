@@ -8,7 +8,7 @@
 
 | Agent | 역할 | Model | 토큰 비용 |
 |-------|------|-------|----------|
-| architect | 설계 및 구조 분석 | sonnet | 높음 |
+| oh-my-claudecode:architect | 설계 및 구조 분석 | sonnet | 높음 |
 | coder | 코드 구현 | sonnet | 높음 |
 | tester | 테스트 작성 | sonnet | 중간 |
 | docs | 문서화 | haiku | 낮음 |
@@ -56,8 +56,8 @@ Task(subagent_type="parallel-agent-orchestration",
 
 | Agent | 역할 | Model | 토큰 비용 |
 |-------|------|-------|----------|
-| code-reviewer | 코드 리뷰 | sonnet | 중간 |
-| security-auditor | 보안 리뷰 | sonnet | 중간 |
+| oh-my-claudecode:code-reviewer | 코드 리뷰 | sonnet | 중간 |
+| oh-my-claudecode:security-reviewer | 보안 리뷰 | sonnet | 중간 |
 | architect-reviewer | 아키텍처 리뷰 | opus | 높음 |
 
 **사용 시점**:
@@ -83,9 +83,9 @@ Task(subagent_type="parallel-agent-orchestration",
 | 버그 수정 | dev | coder + tester |
 | 테스트 추가 | test | unit + integration |
 | PR 생성 전 | review | 전체 |
-| 배포 전 | test + review | e2e + security + security-auditor |
+| 배포 전 | test + review | e2e + security + oh-my-claudecode:security-reviewer |
 | 문서화 | dev | docs |
-| 성능 최적화 | dev + test | architect + coder + integration |
+| 성능 최적화 | dev + test | oh-my-claudecode:architect + coder + integration |
 
 ### Model Tiering 전략
 
@@ -104,7 +104,7 @@ Task(subagent_type="parallel-agent-orchestration",
 ```bash
 # 개별 에이전트 지정
 python run_parallel.py \
-  --agents "architect,coder,security-auditor" \
+  --agents "oh-my-claudecode:architect,coder,oh-my-claudecode:security-reviewer" \
   --task "보안 중심 기능 구현"
 
 # 타임아웃 설정 (초)
@@ -120,7 +120,7 @@ python run_parallel.py \
 
 ```
 dev group:
-  architect → coder → tester → docs
+  oh-my-claudecode:architect → coder → tester → docs
               (순차적 의존 가능)
 
 test group:
@@ -129,8 +129,8 @@ test group:
             (부분 병렬)
 
 review group:
-  code-reviewer ─┐
-  security-auditor ─┼─→ 최종 판단
+  oh-my-claudecode:code-reviewer ─┐
+  oh-my-claudecode:security-reviewer ─┼─→ 최종 판단
   architect-reviewer ─┘
             (완전 병렬)
 ```

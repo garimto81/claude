@@ -94,11 +94,11 @@ lib/
 
 ### 4. 에이전트 시스템 (`.claude/agents/`)
 
-19개 커스텀 에이전트. Tier 1(Core) 6개, Tier 2(Domain) 8개, Tier 3(Language) 2개, Tier 4(Tooling) 3개.
+8개 커스텀 에이전트 (11개 OMC 중복 삭제). 나머지는 OMC 에이전트로 위임.
 
 ### 5. 스킬 시스템 (`.claude/skills/`)
 
-48개 스킬 (+ 5개 deprecated). 각 디렉토리에 `SKILL.md` + 관련 파일. 자동/수동 트리거 지원.
+48개 스킬 (+ 6개 deprecated redirect stub). 각 디렉토리에 `SKILL.md` + 관련 파일. 자동/수동 트리거 지원.
 
 ---
 
@@ -151,3 +151,4 @@ lib/
 | `docs/AGENTS_REFERENCE.md` | 에이전트/스킬 상세 |
 | `docs/BUILD_TEST.md` | 빌드/테스트 명령어 |
 | `docs/RESPONSE_STYLE.md` | 응답 스타일 |
+| `.claude/references/` | Supabase, 문서화, 글로벌 전용, 작업 분해 참조 |

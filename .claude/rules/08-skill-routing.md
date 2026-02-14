@@ -1,7 +1,6 @@
 # OMC 스킬 라우팅 규칙
 
-로컬 스킬(`.claude/skills/`)은 OMC 플러그인으로 **자동 위임**됩니다.
-SKILL.md의 `omc_delegate` frontmatter가 있으면 해당 OMC 스킬로 자동 라우팅.
+로컬 스킬 SKILL.md의 `omc_delegate` frontmatter가 있으면 해당 OMC 스킬로 자동 라우팅.
 
 ## 스킬 매핑 테이블
 
@@ -14,10 +13,6 @@ SKILL.md의 `omc_delegate` frontmatter가 있으면 해당 OMC 스킬로 자동 
 | `/parallel` | `ultrawork` | dev, test, review, research, check |
 | `/research` | `research` | code, web, plan, review |
 | `/commit`, `/issue`, `/pr`, `/verify`, `/mockup-hybrid` | - (직접 실행) | 각 고유 서브커맨드 |
-
-## 인과관계 그래프
-
-**CRITICAL**: `.claude/references/skill-causality-graph.md` 참조. 이 관계가 무너지면 5계층 Discovery 전체 작동 불가.
 
 ## Deprecated 스킬
 
@@ -35,6 +30,10 @@ SKILL.md의 `omc_delegate` frontmatter가 있으면 해당 OMC 스킬로 자동 
 | 간단 | LOW (haiku) | `explore`, `executor-low`, `writer` |
 | 보통 | MEDIUM (sonnet) | `executor`, `designer`, `qa-tester` |
 | 복잡 | HIGH (opus) | `architect`, `planner`, `executor-high` |
+
+## 인과관계 그래프
+
+상세: `.claude/references/skill-causality-graph.md` (이 관계가 무너지면 5계층 Discovery 전체 작동 불가)
 
 ## 금지 사항
 

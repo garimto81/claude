@@ -297,8 +297,8 @@ $ /work API 응답 캐싱 추가
 |-------|----------|------|
 | 1 | `Explore` x2 | 병렬 분석 |
 | 2 | `general-purpose` | 이슈/문서 처리 |
-| 4 | `test-engineer` | E2E 테스트 |
-| 5 | `test-engineer` | TDD 검증 |
+| 4 | `oh-my-claudecode:qa-tester` | E2E 테스트 |
+| 5 | `oh-my-claudecode:qa-tester` | TDD 검증 |
 
 ## 옵션
 

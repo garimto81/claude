@@ -7,7 +7,7 @@ omc_agents:
   - executor
   - executor-high
   - qa-tester
-  - architect
+  - oh-my-claudecode:architect
 triggers:
   keywords:
     - "parallel"
@@ -41,7 +41,7 @@ Task(subagent_type="oh-my-claudecode:executor", model="sonnet",
 | `executor` | sonnet | 일반 구현 작업 |
 | `executor-high` | opus | 복잡한 구현 |
 | `qa-tester` | sonnet | 테스트 작업 |
-| `architect` | opus | 아키텍처 분석 |
+| `oh-my-claudecode:architect` | opus | 아키텍처 분석 |
 
 ## 서브커맨드 (100% 보존)
 

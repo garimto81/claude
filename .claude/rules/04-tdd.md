@@ -1,9 +1,3 @@
----
-title: TDD 규칙
-impact: CRITICAL
-section: tdd
----
-
 # TDD 규칙
 
 **테스트 먼저 작성 (Red → Green → Refactor)**

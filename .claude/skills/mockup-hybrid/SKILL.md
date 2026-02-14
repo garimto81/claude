@@ -226,8 +226,8 @@ STITCH_API_BASE_URL=https://api.stitch.withgoogle.com/v1
 | 스킬/에이전트 | 연동 시점 |
 |---------------|----------|
 | `google-workspace` | Google Drive 업로드 |
-| `frontend-dev` | UI 구현 |
-| `docs-writer` | PRD 문서 삽입 |
+| `oh-my-claudecode:designer` | UI 구현 |
+| `oh-my-claudecode:writer` | PRD 문서 삽입 |
 
 ## 관련 문서
 
