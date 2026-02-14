@@ -2,7 +2,7 @@
 
 This file provides guidance to Claude Code (claude.ai/code) when working with code in this repository.
 
-**Version**: 12.0.0 | **Context**: Windows, PowerShell, Root: `C:\claude`
+**Version**: 13.0.0 | **Context**: Windows, PowerShell, Root: `C:\claude`
 
 **GitHub**: `garimto81/claude`
 
@@ -30,55 +30,23 @@ Claude Code 워크플로우 및 자동화 도구 메타 레포지토리. 커스�
 |------|------|
 | **언어** | 한글 출력, 기술 용어는 영어 유지 |
 | **AI 티 제거** | `한글(영문)` 형식 금지 → 한글 또는 영어 중 하나만 |
-| **경로** | 절대 경로만 (`C:\claude\...`) |
+| **경로** | 절대 경로만 (`C:\claude\...`), 상대 경로 금지 |
 | **충돌** | 사용자에게 질문 (임의 판단 금지) |
 | **API 키 금지** | API 키 방식 절대 사용 금지, Browser OAuth만 허용 |
+| **프로세스 종료 금지** | `taskkill /F /IM node.exe` 등 전체 종료 절대 금지 |
+| **Git** | Conventional Commit, main 직접 수정은 허용 파일만 (`CLAUDE.md`, `README.md`, `.claude/`, `docs/`) |
+| **TDD** | 테스트 먼저 작성 (상세: `.claude/rules/04-tdd.md`) |
 
 ---
 
 ## 빌드 및 테스트
 
-### Python (루트)
+상세: `docs/BUILD_TEST.md`
 
-```powershell
-# 린트
-ruff check src/ --fix
-
-# 개별 테스트 (권장 - 120초 타임아웃 방지)
-pytest tests/test_specific.py -v
-
-# 전체 테스트 (background 필수)
-pytest tests/ -v --cov=src
-```
-
-### E2E 테스트 (Playwright)
-
-```powershell
-npx playwright install              # 최초 설치
-npx playwright test                 # 전체 실행
-npx playwright test tests/e2e/auth.spec.ts  # 개별 실행
-```
-
-### 하위 프로젝트
-
-| 프로젝트 | 테스트 명령 |
-|----------|-------------|
-| automation_hub | `pytest tests/ -v` (asyncio_mode=auto) |
-| archive-analyzer | `pytest tests/ -v` |
-| lib/google_docs | `pytest lib/google_docs/tests/ -v` |
-| lib/pdf_utils | `pytest lib/pdf_utils/tests/ -v` |
-| lib/slack | `pytest lib/slack/tests/ -v` |
-
-### lib CLI 도구
-
-```powershell
-python -m lib.gmail login           # Gmail OAuth 인증
-python -m lib.gmail inbox --limit 10
-python -m lib.slack login           # Slack Bot OAuth
-python -m lib.slack login --user    # Slack User OAuth (Lists API용)
-python -m lib.google_docs           # Google Docs PRD 변환
-python -m lib.pdf_utils             # PDF 청킹/추출
-```
+**필수 명령:**
+- 린트: `ruff check src/ --fix`
+- 개별 테스트: `pytest tests/test_specific.py -v` (권장)
+- E2E: `npx playwright test tests/e2e/auth.spec.ts`
 
 > **주의**: 전체 테스트 (`pytest tests/ -v --cov`)는 120초 초과 시 크래시. 개별 파일 실행 권장.
 
@@ -134,37 +102,13 @@ lib/
 
 ---
 
-## 규칙 참조
-
-상세 규칙은 모듈화된 파일 참조: `.claude/rules/`
-
-| 영역 | 파일 | 영향도 |
-|------|------|--------|
-| TDD | `.claude/rules/04-tdd.md` | CRITICAL |
-| Global-Only | `.claude/rules/09-global-only.md` | CRITICAL |
-| Git | `.claude/rules/03-git.md` | HIGH |
-| Supabase | `.claude/rules/05-supabase.md` | HIGH |
-| 경로 | `.claude/rules/02-paths.md` | HIGH |
-| 빌드/테스트 | `.claude/rules/07-build-test.md` | HIGH |
-| Task 분해 | `.claude/rules/10-task-decomposition.md` | HIGH |
-| 스킬 라우팅 | `.claude/rules/08-skill-routing.md` | HIGH |
-| 문서화 | `.claude/rules/06-documentation.md` | MEDIUM |
-| 언어 | `.claude/rules/01-language.md` | MEDIUM |
-
----
-
 ## Hook 강제 규칙
 
 | 규칙 | Hook | 위반 시 |
 |------|------|---------|
 | **전체 프로세스 종료 금지** | `tool_validator.py` | **차단** |
-| **API 키 사용 금지** | - | **절대 금지** |
 | TDD 미준수 | `session_init.py` | 경고 |
 | 100줄+ 수정 | `branch_guard.py` | 자동 커밋 |
-| 상대 경로 사용 | `session_init.py` | 경고 |
-
-⚠️ `taskkill /F /IM node.exe` 등 전체 종료 명령 **절대 금지**
-⚠️ `OPENAI_API_KEY`, `GOOGLE_API_KEY` 등 API 키 환경변수 설정 **절대 금지**
 
 ---
 
@@ -197,17 +141,12 @@ lib/
 
 **전체 24개**: `docs/COMMAND_REFERENCE.md`
 
-### main 브랜치 허용 파일
-
-`CLAUDE.md`, `README.md`, `.claude/`, `docs/`
-
 ---
 
 ## 참조 문서
 
 | 문서 | 용도 |
 |------|------|
-| `.claude/rules/_index.md` | **규칙 마스터 색인** |
 | `docs/COMMAND_REFERENCE.md` | 커맨드 상세 |
 | `docs/AGENTS_REFERENCE.md` | 에이전트/스킬 상세 |
 | `docs/BUILD_TEST.md` | 빌드/테스트 명령어 |
