@@ -2,6 +2,11 @@
 title: 문서화 규칙
 impact: MEDIUM
 section: docs
+paths:
+  - "docs/**/*"
+  - "**/*.md"
+  - "**/mockup*"
+  - "**/SKILL.md"
 ---
 
 # 문서화 규칙

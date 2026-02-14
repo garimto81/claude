@@ -2,6 +2,10 @@
 title: Supabase 작업 규칙
 impact: HIGH
 section: supabase
+paths:
+  - "automation_hub/**/*"
+  - "**/*supabase*"
+  - "**/*.sql"
 ---
 
 # Supabase 작업 규칙

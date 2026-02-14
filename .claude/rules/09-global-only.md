@@ -1,3 +1,13 @@
+---
+paths:
+  - "automation_hub/**/*"
+  - "archive-analyzer/**/*"
+  - "vimeo_ott/**/*"
+  - ".claude/skills/**/*"
+  - ".claude/commands/**/*"
+  - ".claude/agents/**/*"
+---
+
 # Global-Only Policy
 
 ## 핵심 원칙

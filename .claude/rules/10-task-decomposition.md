@@ -1,3 +1,10 @@
+---
+paths:
+  - ".claude/skills/**/*"
+  - ".claude/commands/**/*"
+  - "src/agents/**/*"
+---
+
 # Task 분해 표준 패턴
 
 ## 핵심 원칙
