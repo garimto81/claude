@@ -71,7 +71,7 @@ Phase 2 (Tests Pass) → Phase 2.5 (Reviews) → Phase 3 (Version Tag)
 **Agent**: design-review (Sonnet 모델)
 
 **특징**:
-- Playwright MCP 통합 (실제 환경 테스트)
+- Playwright CLI 통합 (실제 환경 테스트)
 - WCAG 2.1 AA 접근성 준수 검증
 - 반응형 디자인 검증 (Desktop/Tablet/Mobile)
 

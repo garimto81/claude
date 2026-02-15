@@ -41,7 +41,7 @@ model_preference: sonnet
 phase: [1, 2, 5]
 auto_trigger: true
 dependencies:
-  - debugger
+  - oh-my-claudecode:architect
 token_budget: 2500
 ---
 

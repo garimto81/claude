@@ -26,8 +26,8 @@ model_preference: sonnet
 phase: [1, 2]
 auto_trigger: true
 dependencies:
-  - debugger
-  - code-reviewer
+  - oh-my-claudecode:architect
+  - oh-my-claudecode:code-reviewer
 token_budget: 1200
 ---
 
@@ -40,7 +40,7 @@ token_budget: 1200
 ```bash
 # 병렬 개발 에이전트 실행
 python .claude/skills/parallel-agent-orchestration/scripts/run_parallel.py \
-  --agents "architect,coder,tester" \
+  --agents "oh-my-claudecode:architect,coder,tester" \
   --task "새 기능 구현"
 
 # 병렬 테스트 에이전트 실행
@@ -73,7 +73,7 @@ python scripts/run_parallel.py \
 
 | 에이전트 | 역할 |
 |----------|------|
-| architect | 설계 및 구조 |
+| oh-my-claudecode:architect | 설계 및 구조 |
 | coder | 구현 |
 | tester | 테스트 작성 |
 | docs | 문서화 |
@@ -91,8 +91,8 @@ python scripts/run_parallel.py \
 
 | 에이전트 | 역할 |
 |----------|------|
-| code-reviewer | 코드 리뷰 |
-| security-auditor | 보안 리뷰 |
+| oh-my-claudecode:code-reviewer | 코드 리뷰 |
+| oh-my-claudecode:security-reviewer | 보안 리뷰 |
 | architect-reviewer | 아키텍처 리뷰 |
 
 ## 실행 옵션

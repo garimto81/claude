@@ -4,7 +4,7 @@ description: >
   Google Drive 맥락 기반 정리 스킬. AI가 파일명, 내용, 폴더 구조를 분석하여
   의미적으로 분류하고 중복 제거, 버전 관리, 폴더 구조화를 수행합니다.
   단순 패턴 매칭이 아닌 문맥 이해 기반 정리.
-version: 1.1.0
+version: 2.1.0
 
 triggers:
   keywords:
@@ -17,10 +17,18 @@ triggers:
     - "drive cleanup"
     - "drive organize"
     - "구글 드라이브 정리"
+    - "drive audit"
+    - "드라이브 감사"
+    - "폴더 점검"
+    - "구조 확인"
+    - "드라이브 점검"
+    - "폴더 구조 유지"
   context:
     - "Drive 파일 분류"
     - "문서 정리"
     - "폴더 구조화"
+    - "구조 감사"
+    - "드리프트 감지"
 
 capabilities:
   - semantic_analysis      # 파일명/내용 의미 분석
@@ -43,15 +51,29 @@ auto_execute: true  # /drive 호출 시 자동 실행
 
 ### Step 1: 현황 수집 (MANDATORY)
 
-```bash
-cd C:\claude && python -m lib.google_docs drive status --json
+```python
+from lib.google_docs.auth import get_credentials
+from lib.google_docs.project_registry import ProjectRegistry
+
+creds = get_credentials()
+registry = ProjectRegistry()
+
+# 프로젝트별 스캔
+for project in registry.list_projects():
+    folder_id = registry.get_folder_id(project)
+    # 각 프로젝트 폴더 분석
 ```
 
 **출력 예시:**
 ```json
 {
   "total_files": 150,
-  "folders": {"WSOPTV": {...}, "EBS": {...}, "Archive": {...}},
+  "projects": {
+    "WSOPTV": {"documents": 24, "images": 3},
+    "EBS": {"documents": 4, "images": 0},
+    "지지프로덕션": {"documents": 2, "images": 5},
+    "브로드스튜디오": {"documents": 1, "images": 2}
+  },
   "duplicates": 12,
   "unorganized": 55
 }
@@ -64,7 +86,10 @@ cd C:\claude && python -m lib.google_docs drive status --json
 1. **프로젝트 분류**: 파일명에서 프로젝트 키워드 추출
    - `WSOPTV`, `WSOP TV`, `PRD-0002` → WSOPTV 프로젝트
    - `EBS`, `PRD-0003` → EBS 프로젝트
-   - 그 외 → Archive
+   - `지지프로덕션`, `지지` → 지지프로덕션 프로젝트
+   - `브로드스튜디오`, `브로드` → 브로드스튜디오 프로젝트
+   - 개인 자료 → _개인
+   - 그 외 → _아카이브
 
 2. **문서 유형 분류**:
    - `PRD-`, `Product Requirement` → `prds/`
@@ -122,14 +147,21 @@ cd C:\claude && python -m lib.google_docs drive organize
 또는 Drive API 직접 호출:
 
 ```python
-from lib.google_docs.auth import get_credentials, DEFAULT_FOLDER_ID
+from lib.google_docs.auth import get_credentials
+from lib.google_docs.project_registry import get_project_folder_id
 from lib.google_docs.drive_organizer import DriveOrganizer
 
 creds = get_credentials()
-organizer = DriveOrganizer(creds, DEFAULT_FOLDER_ID)
+
+# 자동으로 프로젝트 감지
+organizer = DriveOrganizer()
+
+# 또는 특정 프로젝트 지정
+wsoptv_folder = get_project_folder_id("WSOPTV")
+organizer = DriveOrganizer(root_folder_id=wsoptv_folder)
 
 # 폴더 생성
-organizer.create_folder("WSOPTV/prds", parent_id)
+organizer.create_folder("prds", parent_id)
 
 # 파일 이동
 organizer.move_file(file_id, new_parent_id)
@@ -150,11 +182,27 @@ Google Drive Cleanup Complete
 
 📁 최종 구조
 WSOPTV/
-├── documents/
-│   ├── prds/ (6개)
-│   ├── strategy/ (2개)
-│   └── executive/ (1개)
+├── documents/ (9개)
 └── images/ (3개)
+
+EBS/
+├── documents/ (4개)
+└── images/ (0개)
+
+지지프로덕션/
+├── documents/ (2개)
+└── images/ (5개)
+
+브로드스튜디오/
+├── documents/ (1개)
+└── images/ (2개)
+
+_개인/
+├── 증명서/ (3개)
+└── Meet Recordings/ (12개)
+
+_아카이브/
+└── (미분류 항목)
 
 🔗 Drive: https://drive.google.com/drive/folders/...
 ============================================================
@@ -168,9 +216,12 @@ WSOPTV/
 |------|------|
 | `/drive` | 전체 자동 실행 (분석 → 확인 → 실행) |
 | `/drive --analyze` | 분석만 (실행 없음) |
-| `/drive --folder "WSOPTV"` | 특정 폴더만 정리 |
+| `/drive --project "WSOPTV"` | 특정 프로젝트만 정리 |
 | `/drive --dedupe` | 중복 제거만 |
 | `/drive --archive` | 구버전 아카이브만 |
+| `/drive --audit` | 구조 감사 (거버넌스 점검) |
+| `/drive --audit --fix` | 감사 + 교정 계획 생성 |
+| `/drive --audit --fix --apply` | 감사 + 교정 실행 |
 
 ---
 
@@ -232,8 +283,8 @@ Google Drive를 **AI 맥락 분석** 기반으로 정리하는 스킬입니다.
 # 전체 Drive 분석 및 정리 (자동 실행)
 /drive
 
-# 특정 폴더만 정리
-/drive --folder "WSOPTV"
+# 특정 프로젝트만 정리
+/drive --project "WSOPTV"
 
 # 분석만 (실행 없이)
 /drive --analyze
@@ -287,8 +338,10 @@ Claude: [Drive Organizer 활성화]
 |------------|--------------|
 | `WSOPTV...`, `WSOP TV...`, `PRD-0002...` | WSOPTV |
 | `EBS...`, `PRD-0003...` | EBS |
-| `GGP...`, `Heritage...` | GGP Heritage |
-| 위에 해당 없음 | Archive |
+| `지지프로덕션...`, `지지...` | 지지프로덕션 |
+| `브로드스튜디오...`, `브로드...` | 브로드스튜디오 |
+| 개인 자료, 증명서, Meet 등 | _개인 |
+| 위에 해당 없음 | _아카이브 |
 
 ### 2. 문서 유형 분류
 
@@ -319,8 +372,9 @@ Claude: [Drive Organizer 활성화]
 
 ```python
 # 이미 존재하는 모듈 활용
-from lib.google_docs.auth import get_credentials, DEFAULT_FOLDER_ID
-from lib.google_docs.drive_organizer import DriveOrganizer  # 기존 모듈
+from lib.google_docs.auth import get_credentials
+from lib.google_docs.project_registry import ProjectRegistry, get_project_folder_id
+from lib.google_docs.drive_organizer import DriveOrganizer
 ```
 
 ### 기존 CLI 명령
@@ -358,24 +412,25 @@ python -m lib.google_docs drive organize
 ### Step 1: 현황 수집
 
 ```python
-# Drive 파일 목록 수집
-python -c "
-from lib.google_docs.auth import get_credentials, DEFAULT_FOLDER_ID
+# Drive 파일 목록 수집 (프로젝트별)
+from lib.google_docs.auth import get_credentials
+from lib.google_docs.project_registry import ProjectRegistry
 from googleapiclient.discovery import build
 
 creds = get_credentials()
 drive = build('drive', 'v3', credentials=creds)
+registry = ProjectRegistry()
 
-# 전체 파일 수집 (재귀)
-def get_all_files(folder_id, path=''):
-    query = f\"'{folder_id}' in parents and trashed=false\"
+# 각 프로젝트별 스캔
+for project in registry.list_projects():
+    folder_id = registry.get_folder_id(project)
+    # 프로젝트 폴더 내 파일 수집
+    query = f"'{folder_id}' in parents and trashed=false"
     results = drive.files().list(
         q=query,
         pageSize=200,
         fields='files(id, name, mimeType, modifiedTime, parents)'
     ).execute()
-    # ... 재귀 처리
-"
 ```
 
 ### Step 2: AI 분석
@@ -526,7 +581,97 @@ Archive/
 
 ---
 
+## 구조 감사 (Drive Guardian)
+
+### 개요
+
+`drive_projects.yaml`에 정의된 **기대 구조**와 실제 Drive 상태를 비교하여 위반 사항을 탐지하고 교정합니다.
+
+### 거버넌스 정책 (YAML)
+
+```yaml
+governance:
+  root_policy:
+    allowed_folders: [WSOPTV, EBS, ...]  # 루트 허용 폴더
+    files_allowed: false                  # 루트 파일 금지
+  required_subfolders: [documents, images]
+  orphan_policy:
+    auto_classify: true                   # 키워드 자동 분류
+    fallback_folder: "_아카이브"           # 미분류 → 아카이브
+  type_routing:
+    "application/vnd.google-apps.document": "documents"
+    "image/*": "images"
+```
+
+### 위반 심각도
+
+| 심각도 | 조건 | 예시 |
+|--------|------|------|
+| CRITICAL | 루트에 파일/미허용 폴더 존재 | `Root/report.pdf` |
+| WARNING | 필수 하위 폴더 누락 | `EBS/images/` 없음 |
+| INFO | 프로젝트 루트에 미분류 파일 | `WSOPTV/memo.doc` |
+
+### 사용법
+
+```bash
+# 감사만 (읽기 전용)
+python -m lib.google_docs drive audit
+
+# 감사 + 교정 계획 (dry-run)
+python -m lib.google_docs drive audit --fix
+
+# 감사 + 교정 실행
+python -m lib.google_docs drive audit --fix --apply
+
+# JSON 출력
+python -m lib.google_docs drive audit --json
+```
+
+### Python API
+
+```python
+from lib.google_docs.drive_guardian import DriveGuardian
+
+guardian = DriveGuardian()
+report = guardian.audit()
+
+if not report.is_clean:
+    plan = guardian.generate_fix_plan(report)
+    # dry-run으로 확인
+    result = guardian.apply_fixes(plan, dry_run=True)
+    # 실제 적용
+    result = guardian.apply_fixes(plan, dry_run=False)
+```
+
+### 자동 트리거
+
+다음 키워드로 자동 활성화됩니다:
+- "드라이브 감사", "폴더 점검", "구조 확인", "drive audit"
+
+---
+
 ## 변경 로그
+
+### v2.1.0 (2026-02-06)
+
+**Drive Guardian 추가 (구조 거버넌스):**
+- `DriveGuardian` 클래스: 감사 → 교정 계획 → 적용 파이프라인
+- `drive_projects.yaml`에 `governance` 섹션 추가
+- CLI `drive audit` 서브커맨드 추가 (`--fix`, `--apply`, `--json`)
+- 위반 심각도 분류: CRITICAL, WARNING, INFO
+- MIME type 기반 자동 라우팅 (`type_routing`)
+- 키워드 기반 프로젝트 자동 분류 (`orphan_policy`)
+
+### v2.0.0 (2026-02-06)
+
+**프로젝트 기반 구조 전환 (BREAKING CHANGE):**
+- ProjectRegistry 기반 폴더 자동 감지
+- DEFAULT_FOLDER_ID → get_project_folder_id() 전환
+- 4개 프로젝트 지원: WSOPTV, EBS, 지지프로덕션, 브로드스튜디오
+- `--project` 옵션 추가 (특정 프로젝트만 정리)
+- _개인, _아카이브 특수 폴더 지원
+- DriveOrganizer 자동 프로젝트 감지 기능
+- 프로젝트별 폴더 구조 분리
 
 ### v1.1.0 (2026-02-03)
 

@@ -21,7 +21,7 @@ triggers:
 ```python
 Skill(skill="oh-my-claudecode:analyze", args="문제 분석")
 
-# 또는 architect 직접 호출
+# 또는 oh-my-claudecode:architect 직접 호출
 Task(subagent_type="oh-my-claudecode:architect", model="opus",
      prompt="문제 원인 분석: [에러 내용]")
 ```

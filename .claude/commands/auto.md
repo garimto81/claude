@@ -102,7 +102,7 @@ deprecated: false
 
 | /auto 발견 커맨드 | OMC 위임 대상 | 조건 |
 |------------------|---------------|------|
-| `/debug` | `architect:opus` | 빌드/테스트 실패 감지 |
+| `/debug` | `oh-my-claudecode:architect:opus` | 빌드/테스트 실패 감지 |
 | `/check --fix` | `build-fixer:sonnet` | 린트 에러 감지 |
 | `/commit` | `git-master` | staged 파일 존재 |
 | `/tdd` | `tdd-guide:sonnet` | 테스트 없는 코드 감지 |
@@ -325,7 +325,7 @@ CONTEXT_ESTIMATES = {
     "/check --fix": {"tokens": 3000, "duration_min": 1},
     "/commit": {"tokens": 2000, "duration_min": 1},
     "/tdd": {"tokens": 12000, "duration_min": 5},
-    "architect:opus": {"tokens": 15000, "duration_min": 4},
+    "oh-my-claudecode:architect:opus": {"tokens": 15000, "duration_min": 4},
     "executor:sonnet": {"tokens": 8000, "duration_min": 3},
 }
 

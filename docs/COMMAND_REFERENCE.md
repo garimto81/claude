@@ -1,6 +1,6 @@
 # Command Reference
 
-**Version**: 1.3.0 | **Updated**: 2026-01-03
+**Version**: 1.4.0 | **Updated**: 2026-02-06
 
 이 문서는 모든 슬래시 커맨드의 사용법을 정리합니다.
 
@@ -27,6 +27,13 @@
 | | `/session` | 세션 관리 |
 | | `/deploy` | 버전/Docker 배포 |
 | | `/audit` | 설정 점검 및 개선 |
+| **도구** | `/ai-login` | AI 서비스 인증 (GPT, Gemini) |
+| | `/ai-subtitle` | Claude Vision AI 자막 생성 |
+| | `/chunk` | PDF 청킹 (토큰/페이지 기반) |
+| | `/ccs` | CCS CLI 위임 실행 |
+| | `/gmail` | Gmail 메일 관리 |
+| | `/mockup` | 하이브리드 목업 생성 |
+| | `/shorts` | 쇼츠 영상 생성 |
 
 ---
 
@@ -1123,6 +1130,143 @@ CLAUDE.md, 커맨드, 에이전트, 스킬의 일관성을 점검합니다.
 2. GitHub 트렌드 검색 (스타 수, 업데이트)
 3. 웹 검색 (Exa MCP 활용)
 4. Make vs Buy 분석 + 설치 가이드
+
+---
+
+## 18. /ai-login - AI 서비스 인증
+
+AI 검증용 서비스(OpenAI, Google) 인증을 관리합니다. Browser OAuth와 CLI 토큰 재사용을 지원합니다.
+
+### 사용법
+
+```bash
+/ai-login openai                    # OpenAI OAuth 인증
+/ai-login google                    # Google OAuth 인증
+/ai-login google --api-key          # Google API Key 방식
+/ai-login status                    # 전체 인증 상태
+/ai-login logout                    # 모든 세션 로그아웃
+```
+
+### 인증 우선순위
+
+| Provider | 1순위 | 2순위 | 3순위 |
+|----------|-------|-------|-------|
+| OpenAI | 저장된 토큰 | Codex CLI 토큰 | Browser OAuth |
+| Google | 저장된 토큰 | Gemini CLI 토큰 | Browser OAuth |
+
+---
+
+## 19. /ai-subtitle - Claude Vision AI 자막 생성
+
+Claude의 Read 도구로 이미지를 직접 분석하여 휠 복원 마케팅 자막을 생성합니다.
+
+### 사용법
+
+```bash
+/ai-subtitle                           # temp/ 폴더 이미지 분석
+/ai-subtitle -g <group_id>             # 그룹 이미지 다운로드 후 분석
+/ai-subtitle -g <group_id> -n 10       # 최대 N개 이미지
+/ai-subtitle --output subtitles.json   # JSON 파일로 저장
+```
+
+---
+
+## 20. /chunk - PDF 청킹
+
+PDF를 LLM 입력용 청크로 분할합니다. 토큰 기반과 페이지 기반 두 가지 모드를 지원합니다.
+
+### 사용법
+
+```bash
+/chunk <pdf_path>                    # 기본 청킹 (4000토큰, 200 오버랩)
+/chunk <pdf_path> --tokens 2000      # 토큰 수 지정
+/chunk <pdf_path> --page             # 페이지 기반 (레이아웃 보존)
+/chunk <pdf_path> --info             # PDF 정보만 확인
+/chunk <pdf_path> --preview 3        # 처음 3개 청크 미리보기
+```
+
+### 모드 비교
+
+| 모드 | 옵션 | 특징 | 용도 |
+|------|------|------|------|
+| **토큰** (기본) | - | 텍스트만 추출 | 순수 텍스트 분석 |
+| **페이지** | `--page` | 레이아웃 100% 보존 | 이미지/표 포함 |
+
+---
+
+## 21. /ccs - CCS CLI 위임
+
+CCS CLI를 통해 다른 AI에게 작업을 위임합니다. 프로필 자동 선택 기능이 포함됩니다.
+
+### 사용법
+
+```bash
+/ccs "refactor auth.js to use async/await"    # 단순 작업
+/ccs "analyze entire architecture"            # 장문 분석
+/ccs --glm "add tests for UserService"        # 특정 프로필 강제
+/ccs "/cook create landing page"              # 중첩 커맨드
+```
+
+---
+
+## 22. /gmail - Gmail 관리
+
+Gmail 메일 읽기, 검색, 전송, 관리를 위한 통합 커맨드입니다.
+
+### 사용법
+
+```bash
+/gmail                      # 안 읽은 메일 확인
+/gmail inbox                # 받은편지함 보기
+/gmail search "from:boss"   # 메일 검색
+/gmail send "to" "제목" "본문"  # 메일 전송
+/gmail read <id>            # 메일 상세 보기
+/gmail labels               # 라벨 목록
+```
+
+### 서브커맨드
+
+| 서브커맨드 | 설명 |
+|-----------|------|
+| (없음) | 안 읽은 메일 확인 |
+| `inbox` | 받은편지함 |
+| `unread` | 안 읽은 메일 |
+| `search` | 메일 검색 |
+| `read` | 메일 상세 |
+| `send` | 메일 전송 |
+| `labels` | 라벨 목록 |
+
+---
+
+## 23. /mockup - 하이브리드 목업 생성
+
+HTML 와이어프레임과 Google Stitch를 자동 선택하여 최적의 목업을 생성합니다.
+
+### 사용법
+
+```bash
+/mockup [name]              # 기본 (B&W 와이어프레임)
+/mockup [name] --force-html # 강제 HTML
+/mockup [name] --force-hifi # 강제 Stitch API (고품질)
+/mockup [name] --screens=3  # 3개 화면 생성
+/mockup [name] --prd=PRD-0001  # PRD 연결
+/mockup [name] --flow       # 전체 흐름 다이어그램
+```
+
+---
+
+## 24. /shorts - 쇼츠 영상 생성
+
+PocketBase에서 사진을 가져와 마케팅용 쇼츠 영상을 생성합니다.
+
+### 사용법
+
+```bash
+/shorts list                          # 그룹 목록 조회
+/shorts list -g <group_id>            # 그룹별 사진 조회
+/shorts create -g <group_id> --auto   # 영상 생성
+/shorts batch -g <group_id>           # 전체 워크플로우 (권장)
+```
 
 ---
 

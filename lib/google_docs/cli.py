@@ -17,7 +17,18 @@ if sys.platform == "win32":
 from typing import Optional
 
 from .auth import DEFAULT_FOLDER_ID
+from .project_registry import get_project_folder_id
 from .converter import create_google_doc
+
+
+def _resolve_folder_id(args_folder: Optional[str] = None, project: Optional[str] = None) -> str:
+    """CLI에서 폴더 ID 해석 (--project 우선, --folder 차선, 자동 감지 최종)"""
+    if args_folder and args_folder != DEFAULT_FOLDER_ID:
+        return args_folder  # 명시적 --folder 지정
+    try:
+        return get_project_folder_id(project=project, subfolder="documents")
+    except Exception:
+        return DEFAULT_FOLDER_ID  # fallback
 
 
 def process_file(
@@ -123,10 +134,13 @@ Examples:
         help="기존 Google Docs 문서 ID (지정 시 해당 문서를 업데이트, 미지정 시 새 문서 생성)",
     )
     convert_parser.add_argument(
+        "--project", "-p", help="프로젝트 이름 (예: WSOPTV, EBS, 지지프로덕션, 브로드스튜디오)"
+    )
+    convert_parser.add_argument(
         "--folder",
         "-f",
         default=DEFAULT_FOLDER_ID,
-        help=f"Google Drive 폴더 ID (기본: {DEFAULT_FOLDER_ID[:15]}...)",
+        help=f"Google Drive 폴더 ID (기본: 프로젝트 자동 감지)",
     )
     convert_parser.add_argument("--toc", action="store_true", help="목차 포함")
     convert_parser.add_argument(
@@ -144,6 +158,9 @@ Examples:
     batch_parser = subparsers.add_parser("batch", help="여러 파일 배치 변환")
     batch_parser.add_argument(
         "files", nargs="+", help="마크다운 파일들 (glob 패턴 지원)"
+    )
+    batch_parser.add_argument(
+        "--project", "-p", help="프로젝트 이름"
     )
     batch_parser.add_argument(
         "--folder", "-f", default=DEFAULT_FOLDER_ID, help="Google Drive 폴더 ID"
@@ -176,6 +193,27 @@ Examples:
     list_parser = subparsers.add_parser("list", help="폴더의 문서 목록 조회")
     list_parser.add_argument(
         "--folder", "-f", default=DEFAULT_FOLDER_ID, help="Google Drive 폴더 ID"
+    )
+
+    # sheets 명령
+    sheets_parser = subparsers.add_parser(
+        "sheets", help="Google Sheets 데이터 읽기"
+    )
+    sheets_parser.add_argument(
+        "url", help="Google Sheets URL 또는 Spreadsheet ID"
+    )
+    sheets_parser.add_argument(
+        "--range", "-r", default=None, help="A1 표기법 범위 (예: 'Sheet1!A1:Z100')"
+    )
+    sheets_parser.add_argument(
+        "--format", "-fmt", choices=["table", "json", "raw"], default="table",
+        help="출력 형식 (기본: table)"
+    )
+    sheets_parser.add_argument(
+        "--max-rows", type=int, default=50, help="최대 출력 행 수 (기본: 50)"
+    )
+    sheets_parser.add_argument(
+        "--list-sheets", action="store_true", help="시트 목록만 조회"
     )
 
     # drive 명령 (폴더 정리)
@@ -211,6 +249,18 @@ Examples:
         "--folder", "-f", default=DEFAULT_FOLDER_ID, help="대상 폴더 ID"
     )
 
+    # drive audit
+    drive_audit_parser = drive_subparsers.add_parser("audit", help="폴더 구조 감사 및 교정")
+    drive_audit_parser.add_argument(
+        "--fix", action="store_true", help="교정 계획 생성 (dry-run)"
+    )
+    drive_audit_parser.add_argument(
+        "--apply", action="store_true", help="교정 실제 적용 (--fix와 함께 사용)"
+    )
+    drive_audit_parser.add_argument(
+        "--json", action="store_true", help="JSON 형식 출력"
+    )
+
     # drive organize
     drive_org_parser = drive_subparsers.add_parser("organize", help="파일 자동 정리")
     drive_org_parser.add_argument(
@@ -237,7 +287,7 @@ Examples:
     print("=" * 60)
 
     if args.command == "convert":
-        folder_id = None if args.no_folder else args.folder
+        folder_id = None if args.no_folder else _resolve_folder_id(args.folder, getattr(args, 'project', None))
         use_native = args.native_tables
 
         file_path = Path(args.file)
@@ -307,8 +357,9 @@ Examples:
                     path = Path.cwd() / path
                 files.append(path)
 
+        batch_folder = _resolve_folder_id(args.folder, getattr(args, 'project', None))
         print(f"파일 수: {len(files)}")
-        print(f"폴더 ID: {args.folder}")
+        print(f"폴더 ID: {batch_folder}")
         print(f"테이블: {'네이티브' if use_native else '텍스트'}")
         print("=" * 60)
 
@@ -316,7 +367,7 @@ Examples:
         for file_path in files:
             result = process_file(
                 file_path=file_path,
-                folder_id=args.folder,
+                folder_id=batch_folder,
                 include_toc=args.toc,
                 use_native_tables=use_native,
             )
@@ -397,6 +448,44 @@ Examples:
             print(f"    {f['webViewLink']}")
             print()
 
+    elif args.command == "sheets":
+        from .sheets import SheetsClient, parse_sheet_url
+        import json as json_module
+
+        client = SheetsClient()
+
+        # URL인지 ID인지 판단
+        url_or_id = args.url
+        if url_or_id.startswith("http"):
+            parsed = parse_sheet_url(url_or_id)
+            spreadsheet_id = parsed["spreadsheet_id"]
+        else:
+            spreadsheet_id = url_or_id
+
+        if args.list_sheets:
+            sheets_list = client.list_sheets(spreadsheet_id)
+            print(f"\n시트 목록 ({len(sheets_list)}개):")
+            print("-" * 60)
+            for s in sheets_list:
+                print(f"  - {s['title']} (gid={s['sheetId']}, {s['rowCount']}x{s['columnCount']})")
+        else:
+            if args.range:
+                result = client.read_from_url(url_or_id, range_notation=args.range)
+            else:
+                result = client.read_from_url(url_or_id)
+
+            print(f"\n제목: {result['title']}")
+            print(f"시트: {result['sheet_name']}")
+            print(f"크기: {result['rows']}행 x {result['cols']}열")
+            print("-" * 60)
+
+            if args.format == "table":
+                print(client.to_markdown_table(result["data"], max_rows=args.max_rows))
+            elif args.format == "json":
+                print(client.to_json(result["data"], max_rows=args.max_rows))
+            elif args.format == "raw":
+                print(json_module.dumps(result["data"][:args.max_rows + 1], indent=2, ensure_ascii=False))
+
     elif args.command == "drive":
         from .drive_organizer import DriveOrganizer, print_status, print_duplicates
         import json as json_module
@@ -405,84 +494,132 @@ Examples:
             drive_parser.print_help()
             return
 
-        organizer = DriveOrganizer(args.folder)
+        if args.drive_command == "audit":
+            from .drive_guardian import DriveGuardian, print_audit_report, print_fix_plan
 
-        if args.drive_command == "status":
-            status = organizer.get_status()
+            guardian = DriveGuardian()
+            report = guardian.audit()
+
             if args.json:
-                print(json_module.dumps(status, indent=2, ensure_ascii=False))
+                output = {
+                    "total_root_items": report.total_root_items,
+                    "is_clean": report.is_clean,
+                    "critical": report.critical_count,
+                    "warning": report.warning_count,
+                    "info": report.info_count,
+                    "project_status": report.project_status,
+                    "violations": [
+                        {
+                            "severity": v.severity.value,
+                            "category": v.category,
+                            "message": v.message,
+                            "file_name": v.file_name,
+                            "suggested_action": v.suggested_action,
+                        }
+                        for v in report.violations
+                    ],
+                }
+                print(json_module.dumps(output, indent=2, ensure_ascii=False))
             else:
-                print_status(status)
+                print_audit_report(report)
 
-        elif args.drive_command == "duplicates":
-            if args.delete:
-                # 실제 삭제
-                result = organizer.delete_duplicates(dry_run=False)
+            if args.fix:
+                plan = guardian.generate_fix_plan(report)
+                if not plan.actions:
+                    print("\nNo fixes needed.")
+                else:
+                    print_fix_plan(plan)
+
+                    if args.apply:
+                        print("\nApplying fixes...")
+                        result = guardian.apply_fixes(plan, dry_run=False)
+                        print(f"Applied: {len(result['applied'])}")
+                        if result['errors']:
+                            print(f"Errors: {len(result['errors'])}")
+                            for err in result['errors'][:5]:
+                                print(f"  - {err['file']}: {err['error']}")
+                    else:
+                        print("\nTo apply fixes, run:")
+                        print("  python -m lib.google_docs drive audit --fix --apply")
+
+        else:
+            # status, duplicates, init, organize는 DriveOrganizer 사용
+            organizer = DriveOrganizer(args.folder)
+
+            if args.drive_command == "status":
+                status = organizer.get_status()
+                if args.json:
+                    print(json_module.dumps(status, indent=2, ensure_ascii=False))
+                else:
+                    print_status(status)
+
+            elif args.drive_command == "duplicates":
+                if args.delete:
+                    result = organizer.delete_duplicates(dry_run=False)
+                    if args.json:
+                        print(json_module.dumps(result, indent=2, ensure_ascii=False))
+                    else:
+                        print(f"\nDeleted {len(result['deleted'])} duplicate files")
+                        print(f"Errors: {len(result['errors'])}")
+                        if result['errors']:
+                            for err in result['errors'][:5]:
+                                print(f"  - {err['name']}: {err['error']}")
+                else:
+                    duplicates = organizer.find_duplicates()
+                    if args.json:
+                        output = [
+                            {
+                                "name": d.name,
+                                "count": d.count,
+                                "keep": d.keep.id if d.keep else None,
+                                "to_delete": [f.id for f in d.to_delete]
+                            }
+                            for d in duplicates
+                        ]
+                        print(json_module.dumps(output, indent=2, ensure_ascii=False))
+                    else:
+                        print_duplicates(duplicates)
+                        print("\nTo delete duplicates, run:")
+                        print("  python -m lib.google_docs drive duplicates --delete")
+
+            elif args.drive_command == "init":
+                print("\nCreating folder structure...")
+                created = organizer.create_folder_structure()
+                print(f"Created {len(created)} folders:")
+                for path, folder_id in created.items():
+                    print(f"  - {path}: {folder_id[:15]}...")
+                print("\n[OK] Folder structure created")
+
+            elif args.drive_command == "organize":
+                dry_run = not args.execute
+                result = organizer.organize_files(dry_run=dry_run)
+
                 if args.json:
                     print(json_module.dumps(result, indent=2, ensure_ascii=False))
                 else:
-                    print(f"\nDeleted {len(result['deleted'])} duplicate files")
-                    print(f"Errors: {len(result['errors'])}")
+                    mode = "DRY-RUN" if dry_run else "EXECUTED"
+                    print(f"\nFile Organization ({mode})")
+                    print("=" * 60)
+                    print(f"Total files: {result['total_files']}")
+                    print(f"Classified: {result['classified']}")
+                    print(f"Unclassified: {result['unclassified']}")
+                    print()
+
+                    if result['moved']:
+                        print("Files to move:" if dry_run else "Files moved:")
+                        for item in result['moved'][:20]:
+                            print(f"  - {item['name']} -> {item['target']}")
+                        if len(result['moved']) > 20:
+                            print(f"  ... and {len(result['moved']) - 20} more")
+
                     if result['errors']:
+                        print(f"\nErrors: {len(result['errors'])}")
                         for err in result['errors'][:5]:
                             print(f"  - {err['name']}: {err['error']}")
-            else:
-                # 분석만
-                duplicates = organizer.find_duplicates()
-                if args.json:
-                    output = [
-                        {
-                            "name": d.name,
-                            "count": d.count,
-                            "keep": d.keep.id if d.keep else None,
-                            "to_delete": [f.id for f in d.to_delete]
-                        }
-                        for d in duplicates
-                    ]
-                    print(json_module.dumps(output, indent=2, ensure_ascii=False))
-                else:
-                    print_duplicates(duplicates)
-                    print("\nTo delete duplicates, run:")
-                    print("  python -m lib.google_docs drive duplicates --delete")
 
-        elif args.drive_command == "init":
-            print("\nCreating folder structure...")
-            created = organizer.create_folder_structure()
-            print(f"Created {len(created)} folders:")
-            for path, folder_id in created.items():
-                print(f"  - {path}: {folder_id[:15]}...")
-            print("\n[OK] Folder structure created")
-
-        elif args.drive_command == "organize":
-            dry_run = not args.execute
-            result = organizer.organize_files(dry_run=dry_run)
-
-            if args.json:
-                print(json_module.dumps(result, indent=2, ensure_ascii=False))
-            else:
-                mode = "DRY-RUN" if dry_run else "EXECUTED"
-                print(f"\nFile Organization ({mode})")
-                print("=" * 60)
-                print(f"Total files: {result['total_files']}")
-                print(f"Classified: {result['classified']}")
-                print(f"Unclassified: {result['unclassified']}")
-                print()
-
-                if result['moved']:
-                    print("Files to move:" if dry_run else "Files moved:")
-                    for item in result['moved'][:20]:
-                        print(f"  - {item['name']} -> {item['target']}")
-                    if len(result['moved']) > 20:
-                        print(f"  ... and {len(result['moved']) - 20} more")
-
-                if result['errors']:
-                    print(f"\nErrors: {len(result['errors'])}")
-                    for err in result['errors'][:5]:
-                        print(f"  - {err['name']}: {err['error']}")
-
-                if dry_run:
-                    print("\nTo execute, run:")
-                    print("  python -m lib.google_docs drive organize --execute")
+                    if dry_run:
+                        print("\nTo execute, run:")
+                        print("  python -m lib.google_docs drive organize --execute")
 
     print("=" * 60)
 

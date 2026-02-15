@@ -2,9 +2,9 @@
 name: cross-ai-verifier
 deprecated: true
 redirect: verify
+deprecation_message: "/cross-ai-verifier은 /verify로 통합되었습니다."
 triggers:
   keywords: []
 ---
-# [DEPRECATED] /verify로 리다이렉트
 
-이 스킬은 `/verify`로 통합되었습니다. `/verify` 를 사용하세요.
+이 스킬은 deprecated되었습니다. /verify를 사용하세요.
