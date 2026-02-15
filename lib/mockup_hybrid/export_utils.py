@@ -60,7 +60,7 @@ def capture_screenshot(
     image_path: Path,
     selector: Optional[str] = None,
     full_page: bool = False,
-    width: int = 800,
+    width: int = 720,
     height: int = 600,
     auto_size: bool = True,
 ) -> Optional[Path]:
@@ -112,7 +112,7 @@ def _capture_with_auto_size(
         with sync_playwright() as p:
             browser = p.chromium.launch()
             # 적절한 초기 viewport (목업에 적합한 너비, 높이는 충분히)
-            page = browser.new_page(viewport={"width": 900, "height": 2000})
+            page = browser.new_page(viewport={"width": 720, "height": 2000})
 
             # file:// URL로 변환
             file_url = html_path.resolve().as_uri()
@@ -152,12 +152,12 @@ def _capture_with_auto_size(
                         document.body.offsetHeight
                     );
 
-                    // 콘텐츠 실제 너비 (최소 800px, 최대 1400px)
+                    // 콘텐츠 실제 너비 (최대 720px, 노드 크기에 맞춤)
                     let contentWidth = maxRight - Math.max(0, minLeft);
-                    contentWidth = Math.min(Math.max(contentWidth, 800), 1400);
+                    contentWidth = Math.min(contentWidth, 720);
 
                     // 높이: 가장 아래 요소의 bottom 사용 (더 정확)
-                    const height = Math.max(maxBottom, offsetH);
+                    const height = Math.min(Math.max(maxBottom, offsetH), 1280);
 
                     return {
                         width: contentWidth,
@@ -181,8 +181,8 @@ def _capture_with_auto_size(
             )
 
             # 최소 크기 보장 (너무 작으면 잘못 감지된 것)
-            final_width = max(int(content_width), 400)
-            final_height = max(int(content_height), 300)
+            final_width = max(int(content_width), 50)
+            final_height = max(int(content_height), 50)
 
             # viewport 조정 후 다시 로드
             page.set_viewport_size({"width": final_width, "height": final_height})
@@ -218,7 +218,7 @@ def _capture_with_cli(
     image_path: Path,
     selector: Optional[str] = None,
     full_page: bool = False,
-    width: int = 800,
+    width: int = 720,
     height: int = 600,
 ) -> Optional[Path]:
     """Playwright CLI로 스크린샷 캡처 (폴백용)"""
