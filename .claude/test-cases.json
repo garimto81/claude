@@ -1,7 +1,7 @@
 {
   "version": "1.0.0",
   "description": "Claude Code 시스템 동작 검증을 위한 테스트 케이스",
-  "lastUpdated": "2026-01-19",
+  "lastUpdated": "2026-02-16",
   "testCases": [
     {
       "id": "tdd-001",
@@ -16,7 +16,7 @@
     {
       "id": "tdd-002",
       "category": "skill",
-      "skill": "tdd-workflow",
+      "skill": "tdd",
       "scenario": "TDD 워크플로우 스킬 실행",
       "input": "/tdd 결제 함수 구현",
       "expectedBehavior": "Red-Green-Refactor 사이클 시작",
@@ -68,31 +68,13 @@
       "mustContain": ["supabase", "db dump", "스키마"]
     },
     {
-      "id": "work-001",
-      "category": "command",
-      "command": "/work",
-      "scenario": "작업 워크플로우 실행",
-      "input": "/work API 캐싱 추가",
-      "expectedBehavior": "5단계 워크플로우 실행",
-      "mustContain": ["Phase 1", "분석", "이슈"]
-    },
-    {
-      "id": "work-002",
-      "category": "command",
-      "command": "/work --loop",
-      "scenario": "자율 반복 모드",
-      "input": "/work --loop",
-      "expectedBehavior": "자율 판단 기반 작업 발견 및 실행",
-      "mustContain": ["Tier", "우선순위", "작업 발견"]
-    },
-    {
       "id": "auto-001",
       "category": "command",
       "command": "/auto",
-      "scenario": "/auto가 /work --loop의 alias로 동작",
+      "scenario": "/auto가 통합 자율 워크플로우로 동작",
       "input": "/auto",
-      "expectedBehavior": "/work --loop로 리다이렉트",
-      "mustContain": ["work", "loop"]
+      "expectedBehavior": "5-Tier Discovery + PDCA + Ralph 루프 실행",
+      "mustContain": ["Tier", "PDCA", "Ralph"]
     },
     {
       "id": "verify-001",
@@ -120,6 +102,16 @@
       "input": "/issue list",
       "expectedBehavior": "GitHub 이슈 목록 조회",
       "mustContain": ["gh issue", "Open", "Closed"]
+    },
+    {
+      "id": "auto-002",
+      "category": "command",
+      "command": "/auto",
+      "scenario": "auto-workflow-verification: PDCA Phase 순서 및 모드 분기 검증",
+      "input": "/auto --eco \"기능 구현\"",
+      "expectedBehavior": "Phase 0(옵션 파싱) → Phase 1(PLAN) → Phase 3(DO) → Phase 4(CHECK) → Phase 5(ACT) 순서 실행. --eco로 LIGHT 모드 강제, Phase 2 스킵",
+      "mustContain": ["Phase 0", "Phase 1", "LIGHT", "Phase 3", "Phase 4", "Phase 5"],
+      "mustNotContain": ["Phase 2", "HEAVY", "ralplan"]
     },
     {
       "id": "language-001",
