@@ -9,7 +9,7 @@ paths:
 
 ## 핵심 원칙
 
-**복합 작업은 TaskCreate + addBlockedBy로 명시적 종속성 관리**
+**복합 작업은 Agent Teams(TeamCreate → Task(team_name) → SendMessage → TeamDelete)로 관리**
 
 | 규칙 | 내용 |
 |------|------|
@@ -78,18 +78,27 @@ Task 5: 보고서 생성           (writer, haiku)        - blockedBy: Task 4
 ### 잘못된 예
 
 ```python
-# ❌ 암묵적 순서 의존 (blockedBy 미지정)
-TaskCreate(task_id=1, agent="designer")
-TaskCreate(task_id=2, agent="qa-tester")  # Task 1 완료 필요하지만 명시 안 됨
+# ❌ 구 subagent 패턴 (team_name 없음)
+Task(subagent_type="oh-my-claudecode:designer", model="sonnet", prompt="...")
+Task(subagent_type="oh-my-claudecode:qa-tester", model="sonnet", prompt="...")
 ```
 
 ### 올바른 예
 
 ```python
-# ✅ 명시적 종속성 관리
-TaskCreate(task_id=1, agent="designer")
-TaskCreate(task_id=2, agent="qa-tester")
-addBlockedBy(task_id=2, blocked_by=[1])
+# ✅ Agent Teams 패턴 (team_name + 명시적 종속성)
+TeamCreate(team_name="feature-session")
+TaskCreate(subject="목업 생성", description="...")
+TaskCreate(subject="스크린샷 캡처", description="...")
+TaskUpdate(taskId="2", addBlockedBy=["1"])
+Task(subagent_type="oh-my-claudecode:designer", name="designer",
+     team_name="feature-session", model="sonnet", prompt="...")
+SendMessage(type="message", recipient="designer", content="Task #1 할당.")
+# designer 완료 후 →
+Task(subagent_type="oh-my-claudecode:qa-tester", name="tester",
+     team_name="feature-session", model="sonnet", prompt="...")
+SendMessage(type="message", recipient="tester", content="Task #2 할당.")
+# 완료 → TeamDelete()
 ```
 
 ## 금지 사항

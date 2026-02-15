@@ -27,11 +27,15 @@ triggers:
 ```python
 Skill(skill="oh-my-claudecode:ultrawork", args="작업 설명")
 
-# 또는 직접 에이전트 호출 (병렬)
-Task(subagent_type="oh-my-claudecode:executor", model="sonnet",
-     prompt="작업 1", run_in_background=True)
-Task(subagent_type="oh-my-claudecode:executor", model="sonnet",
-     prompt="작업 2", run_in_background=True)
+# 또는 Agent Teams 직접 호출 (병렬)
+TeamCreate(team_name="parallel-session")
+Task(subagent_type="oh-my-claudecode:executor", name="worker-1",
+     team_name="parallel-session", model="sonnet", prompt="작업 1")
+Task(subagent_type="oh-my-claudecode:executor", name="worker-2",
+     team_name="parallel-session", model="sonnet", prompt="작업 2")
+SendMessage(type="message", recipient="worker-1", content="Task 할당.")
+SendMessage(type="message", recipient="worker-2", content="Task 할당.")
+# 완료 대기 → shutdown_request → TeamDelete()
 ```
 
 ### OMC 에이전트

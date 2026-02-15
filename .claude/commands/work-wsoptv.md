@@ -153,8 +153,10 @@ Read(f"apps/web/{block_folder}/AGENT_RULES.md")
 ### Architecture/LLD 분석 에이전트
 
 ```python
+TeamCreate(team_name="wsoptv-{domain}")
 Task(
-    subagent_type="Explore",
+    subagent_type="oh-my-claudecode:explore", name="arch-analyst",
+    team_name="wsoptv-{domain}", model="haiku",
     prompt="""
     작업 지시: {instruction}
     라우팅된 도메인: {domain}
@@ -190,7 +192,8 @@ Task(
 
 ```python
 Task(
-    subagent_type="Explore",
+    subagent_type="oh-my-claudecode:explore", name="code-analyst",
+    team_name="wsoptv-{domain}", model="haiku",
     prompt="""
     작업 지시: {instruction}
     블럭 폴더: apps/web/features/{domain}/
@@ -216,6 +219,9 @@ Task(
     """,
     description="블럭 코드 분석"
 )
+SendMessage(type="message", recipient="arch-analyst", content="Architecture/LLD 분석 시작.")
+SendMessage(type="message", recipient="code-analyst", content="블럭 코드 분석 시작.")
+# 완료 대기 → 각 teammate shutdown_request → TeamDelete()
 ```
 
 ---

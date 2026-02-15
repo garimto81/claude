@@ -26,9 +26,13 @@ triggers:
 ```python
 Skill(skill="oh-my-claudecode:tdd", args="feature-name")
 
-# 또는 직접 에이전트 호출
-Task(subagent_type="oh-my-claudecode:tdd-guide", model="sonnet",
+# 또는 Agent Teams 직접 호출
+TeamCreate(team_name="tdd-session")
+Task(subagent_type="oh-my-claudecode:tdd-guide", name="tdd-runner",
+     team_name="tdd-session", model="sonnet",
      prompt="TDD 워크플로우 실행: [기능 설명]")
+SendMessage(type="message", recipient="tdd-runner", content="TDD 시작.")
+# 완료 대기 → shutdown_request → TeamDelete()
 ```
 
 ### OMC 에이전트
@@ -44,7 +48,7 @@ Task(subagent_type="oh-my-claudecode:tdd-guide", model="sonnet",
 /auto Tier 5 AUTONOMOUS
     └── /tdd <feature> (테스트 없는 코드 감지 시)
 
-/work --loop Tier 3
+/auto Tier 3
     └── /tdd <feature> (새 기능 구현 요청 시)
 ```
 

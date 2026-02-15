@@ -1,7 +1,7 @@
 ---
 name: auto
-description: PDCA Orchestrator - 통합 자율 워크플로우 (Ralph + Ultrawork + PDCA)
-version: 19.0.0
+description: PDCA Orchestrator - 통합 자율 워크플로우 (Agent Teams + PDCA)
+version: 20.0.0
 triggers:
   keywords:
     - "/auto"
@@ -28,21 +28,51 @@ bkit_agents:
   - report-generator
 ---
 
-# /auto - PDCA Orchestrator (v19.0)
+# /auto - PDCA Orchestrator (v20.0)
 
 > **핵심**: `/auto "작업"` = Phase 0-5 PDCA 자동 진행. `/auto` 단독 = 자율 발견 모드. `/work`는 `/auto`로 통합됨.
 
-## OMC + BKIT Integration (43 에이전트)
+## Agent Teams Protocol (v20.0 - Context 분리)
 
-**OMC** (실행력): executor, executor-high, architect, planner, critic, code-reviewer
-**BKIT** (체계성): gap-detector (90% 검증), pdca-iterator, code-analyzer, report-generator
-**역할**: 이 스킬이 직접 orchestration. OMC 개별 스킬을 Phase별로 호출.
+**모든 에이전트 호출은 Agent Teams in-process 방식을 사용합니다.**
+
+| 항목 | 설명 |
+|------|------|
+| **Context 분리** | 각 teammate는 독립 context window (Lead context 오염 없음) |
+| **통신** | Mailbox 기반 SendMessage (결과가 Lead context에 합류하지 않음) |
+| **조정** | Shared Task List (파일 기반, 락킹 지원) |
+| **모드** | in-process (tmux 불필요, Windows 호환) |
+
+### 팀 라이프사이클
+
+```
+Phase 0: TeamCreate(team_name="pdca-{feature}")
+Phase 1-4: Task(name="역할", team_name="pdca-{feature}") → SendMessage → 완료 대기 → shutdown_request
+Phase 5: 보고서 생성 → TeamDelete()
+```
+
+### 기본 패턴 (모든 Phase에서 동일)
+
+```
+# 1. Teammate 생성 + Task 할당
+TaskCreate(subject="작업 제목", description="상세 내용")
+Task(subagent_type="agent-type", name="role-name", team_name="pdca-{feature}",
+     model="haiku|sonnet|opus", prompt="작업 지시")
+SendMessage(type="message", recipient="role-name", content="Task #{n} 할당. 완료 후 TaskUpdate로 completed 처리.")
+
+# 2. 완료 대기 (Mailbox로 자동 수신)
+
+# 3. 종료
+SendMessage(type="shutdown_request", recipient="role-name")
+```
+
+---
 
 ## 필수 실행 규칙 (CRITICAL)
 
 **이 스킬이 활성화되면 반드시 Phase 0→5 순서로 실행하세요!**
 
-### Phase 0: 옵션 파싱 + 모드 결정
+### Phase 0: 옵션 파싱 + 모드 결정 + 팀 생성
 
 | 옵션 | 효과 |
 |------|------|
@@ -52,22 +82,40 @@ bkit_agents:
 | `--dry-run` | 판단만 출력, 실행 안함 |
 | `--eco` | LIGHT 모드 강제 |
 
+**팀 생성 (MANDATORY):**
+```
+TeamCreate(team_name="pdca-{feature}")
+```
+
 ### Phase 1: PLAN (사전 분석 → 복잡도 판단 → 계획 수립 → 이슈 연동)
 
-**Step 1.0: 사전 분석** - `--skip-analysis`로 스킵 가능. 병렬 실행:
+**Step 1.0: 사전 분석** - `--skip-analysis`로 스킵 가능. 병렬 teammate:
 
 ```
-Task(subagent_type="oh-my-claudecode:explore", model="haiku", prompt="문서 분석: CLAUDE.md, docs/ 탐색")
-Task(subagent_type="oh-my-claudecode:explore", model="haiku", prompt="이슈 분석: gh issue/pr list 탐색")
+Task(subagent_type="oh-my-claudecode:explore", name="doc-analyst", team_name="pdca-{feature}",
+     model="haiku", prompt="docs/, .claude/ 내 관련 문서 탐색. 중복 범위 감지.")
+Task(subagent_type="oh-my-claudecode:explore", name="issue-analyst", team_name="pdca-{feature}",
+     model="haiku", prompt="gh issue list 실행하여 유사 이슈 탐색.")
 ```
+
+→ Mailbox로 결과 수신 후 두 teammate 모두 shutdown_request
 
 **Step 1.1: 복잡도 판단 (5점 만점)** - 상세 기준: `REFERENCE.md`
 
 | 점수 | 모드 | 라우팅 경로 |
 |:----:|:----:|------------|
-| 0-1 | LIGHT | `Task(planner, haiku)` |
-| 2-3 | STANDARD | `Task(planner, sonnet)` |
+| 0-1 | LIGHT | teammate: planner (haiku) |
+| 2-3 | STANDARD | teammate: planner (sonnet) |
 | 4-5 | HEAVY | `Skill(ralplan)` |
+
+**Step 1.2: 계획 수립** - LIGHT/STANDARD:
+
+```
+Task(subagent_type="oh-my-claudecode:planner", name="planner", team_name="pdca-{feature}",
+     model="haiku|sonnet", prompt="... 계획 수립. docs/01-plan/{feature}.plan.md 생성.")
+SendMessage(type="message", recipient="planner", content="Task 할당. 완료 후 TaskUpdate로 completed 처리.")
+# 완료 대기 → shutdown_request
+```
 
 **Step 1.3: 이슈 연동** - `--no-issue`로 스킵 가능
 
@@ -86,8 +134,16 @@ Task(subagent_type="oh-my-claudecode:explore", model="haiku", prompt="이슈 분
 | 모드 | 실행 |
 |------|------|
 | LIGHT | **스킵** (Phase 3 직행) |
-| STANDARD | `Task(architect, sonnet)` |
-| HEAVY | `Task(architect, opus)` |
+| STANDARD | teammate: architect (sonnet) |
+| HEAVY | teammate: architect (opus) |
+
+```
+Task(subagent_type="oh-my-claudecode:architect", name="architect", team_name="pdca-{feature}",
+     model="sonnet|opus",
+     prompt="docs/01-plan/{feature}.plan.md 참조하여 설계 문서 작성. docs/02-design/{feature}.design.md 생성.")
+SendMessage(type="message", recipient="architect", content="설계 문서 생성 요청. 완료 후 TaskUpdate로 completed 처리.")
+# 완료 대기 → shutdown_request
+```
 
 **산출물**: `docs/02-design/{feature}.design.md` (STANDARD/HEAVY만)
 
@@ -112,9 +168,18 @@ Task(subagent_type="oh-my-claudecode:explore", model="haiku", prompt="이슈 분
 
 | 모드 | 실행 |
 |------|------|
-| LIGHT | `Task(executor, sonnet)` - 단일 실행 (Ralph 없음) |
+| LIGHT | teammate: executor (sonnet) - 단일 실행 (Ralph 없음) |
 | STANDARD/HEAVY | `Skill(ralph)` - Ralph 루프 (Ultrawork 내장) |
 
+**LIGHT 모드:**
+```
+Task(subagent_type="oh-my-claudecode:executor", name="executor", team_name="pdca-{feature}",
+     model="sonnet", prompt="docs/01-plan/{feature}.plan.md 기반 구현. TDD 필수.")
+SendMessage(type="message", recipient="executor", content="구현 시작. 완료 후 TaskUpdate로 completed 처리.")
+# 완료 대기 → shutdown_request
+```
+
+**STANDARD/HEAVY 모드:**
 Ralph = Ultrawork(병렬) + Architect 검증 + 5조건(TODO==0, 기능동작, 테스트통과, 에러==0, Architect승인) 충족 시 Phase 4 진입
 
 **에이전트 라우팅**: explore(haiku), executor(sonnet), architect(opus), designer(sonnet), qa-tester(sonnet), build-fixer(sonnet). 상세: `REFERENCE.md`
@@ -127,10 +192,22 @@ Skill(skill="oh-my-claudecode:ultraqa")
 ```
 - 신규 코드 커버리지 80% 미달 시 FAIL 처리
 
-**Step 4.2: 이중 검증** (STANDARD/HEAVY만, 병렬 실행)
+**Step 4.2: 이중 검증** (STANDARD/HEAVY만, **순차 teammate** - context spike 방지)
+
 ```
-Task(subagent_type="oh-my-claudecode:architect", model="{모드별}", ...)  # 기능 완성도
-Task(subagent_type="bkit:gap-detector", model="{모드별}", ...)           # 설계-구현 90% 일치
+# 1. Architect 검증 teammate
+Task(subagent_type="oh-my-claudecode:architect", name="verifier", team_name="pdca-{feature}",
+     model="sonnet|opus",
+     prompt="구현된 기능이 docs/02-design/{feature}.design.md와 일치하는지 검증.")
+SendMessage(type="message", recipient="verifier", content="검증 시작. APPROVE/REJECT 판정 후 TaskUpdate 처리.")
+# verifier 완료 대기 → shutdown_request
+
+# 2. Gap-detector teammate (verifier 완료 후)
+Task(subagent_type="bkit:gap-detector", name="gap-checker", team_name="pdca-{feature}",
+     model="sonnet|opus",
+     prompt="docs/02-design/{feature}.design.md와 실제 구현 코드 간 일치도 분석. 90% 기준.")
+SendMessage(type="message", recipient="gap-checker", content="갭 분석 시작. 완료 후 TaskUpdate 처리.")
+# gap-checker 완료 대기 → shutdown_request
 ```
 
 **Step 4.3: E2E 검증** - Playwright 설정 존재 시만 실행 (상세: `REFERENCE.md`)
@@ -141,13 +218,42 @@ npx playwright test → 실패 시 Skill(skill="debug") 자동 트리거
 
 **Step 4.4: TDD 커버리지 보고** - 신규 코드 80% 이상, 전체 감소 불가
 
-### Phase 5: ACT (결과 기반 자동 실행)
+### Phase 5: ACT (결과 기반 자동 실행 + 팀 정리)
 
 | Check 결과 | 자동 실행 |
 |-----------|----------|
-| gap < 90% | `Task(bkit:pdca-iterator, sonnet)` - 최대 5회 |
-| gap >= 90% + APPROVE | `Task(bkit:report-generator, haiku)` → docs/04-report/ |
-| Architect REJECT | `Task(executor, sonnet)` → Phase 4 재실행 |
+| gap < 90% | teammate: pdca-iterator (sonnet) - 최대 5회 |
+| gap >= 90% + APPROVE | teammate: report-generator (haiku) → docs/04-report/ |
+| Architect REJECT | teammate: executor (sonnet) → Phase 4 재실행 |
+
+**Case 1: gap < 90%**
+```
+Task(subagent_type="bkit:pdca-iterator", name="iterator", team_name="pdca-{feature}",
+     model="sonnet", prompt="설계-구현 갭을 90% 이상으로 개선. 최대 5회 반복.")
+SendMessage(type="message", recipient="iterator", content="갭 자동 개선 시작.")
+# 완료 대기 → shutdown_request → Phase 4 재실행
+```
+
+**Case 2: gap >= 90% + APPROVE**
+```
+Task(subagent_type="bkit:report-generator", name="reporter", team_name="pdca-{feature}",
+     model="haiku", prompt="PDCA 사이클 완료 보고서 생성. 출력: docs/04-report/{feature}.report.md")
+SendMessage(type="message", recipient="reporter", content="보고서 생성 요청.")
+# 완료 대기 → shutdown_request
+```
+
+**Case 3: Architect REJECT**
+```
+Task(subagent_type="oh-my-claudecode:executor", name="fixer", team_name="pdca-{feature}",
+     model="sonnet", prompt="Architect 거부 사유를 해결: {rejection_reason}")
+SendMessage(type="message", recipient="fixer", content="피드백 반영 시작.")
+# 완료 대기 → shutdown_request → Phase 4 재실행
+```
+
+**팀 정리 (MANDATORY):**
+```
+TeamDelete()
+```
 
 **보고서 포맷** (확장): 분석 결과 / 설계 요약 / 구현 내역 / E2E 결과 / TDD 커버리지 / 이슈-PR 링크
 
@@ -157,14 +263,53 @@ npx playwright test → 실패 시 Skill(skill="debug") 자동 트리거
 
 | | LIGHT (0-1) | STANDARD (2-3) | HEAVY (4-5) |
 |------|:-----------:|:--------------:|:-----------:|
+| **Phase 0** | TeamCreate | TeamCreate | TeamCreate |
 | **Phase 1** | haiku 분석 + haiku 계획 | haiku 분석 + sonnet 계획 | haiku 분석 + Ralplan |
 | **Phase 2** | 스킵 | sonnet 설계 | opus 설계 |
 | **Phase 3** | sonnet executor | Ralph (sonnet) | Ralph (opus 검증) |
 | **Phase 4** | UltraQA only | UltraQA + 이중검증 | UltraQA + 이중검증 + E2E |
-| **Phase 5** | haiku 보고서 | sonnet 보고서 | 완전 보고서 |
-| **예상 토큰** | ~5,000t | ~12,000t | ~20,000t |
+| **Phase 5** | haiku 보고서 + TeamDelete | sonnet 보고서 + TeamDelete | 완전 보고서 + TeamDelete |
+| **예상 토큰** | ~8,000t | ~18,000t | ~30,000t |
 
 **자동 승격**: LIGHT에서 빌드 실패 2회 / UltraQA 3사이클 / 영향 파일 5개+ 시 STANDARD로 승격
+
+> **토큰 증가 참고**: Agent Teams는 각 teammate가 독립 context를 사용하므로 기존 subagent 대비 1.5-2배 토큰을 소비합니다. 대신 Lead context overflow 문제가 근본적으로 해결됩니다.
+
+---
+
+## Context Recovery Protocol
+
+### 자동 상태 유지 (추가 비용 0)
+
+PDCA 워크플로우의 정상 동작만으로 모든 상태가 디스크에 유지됨:
+- `docs/.pdca-status.json` → phase, phaseNumber, documents, timestamps 자동 갱신
+- `docs/01-plan/{feature}.plan.md` → Phase 1 산출물
+- `docs/02-design/{feature}.design.md` → Phase 2 산출물
+- `docs/04-report/{feature}.report.md` → Phase 5 산출물
+- 추가 에이전트 생성이나 Note 기록 불필요. 기존 워크플로우가 곧 체크포인트.
+
+### Agent Teams Context 장점
+
+| 기존 (subagent) | 신규 (Agent Teams) |
+|-----------------|-------------------|
+| 결과가 Lead context에 합류 → overflow | 결과가 Mailbox로 전달 → Lead context 보호 |
+| foreground 3개 상한 필요 | 제한 없음 (독립 context) |
+| "5줄 요약" 강제 필요 | 불필요 (context 분리) |
+| compact 실패 위험 | compact 실패 없음 |
+
+### Resume (`/auto resume`)
+
+`/clear` 또는 새 세션 시작 후:
+1. `docs/.pdca-status.json` 읽기 → `primaryFeature`와 `phaseNumber` 확인
+2. 산출물 존재 검증: Plan 파일, Design 파일 유무로 실제 진행 Phase 교차 확인
+3. Git 상태 확인: `git branch --show-current`, `git status --short`
+4. Phase 3 중단 시: `ralphIteration` 필드로 Ralph 반복 위치 확인
+5. `TeamCreate(team_name="pdca-{feature}")` 새로 생성 (이전 팀은 복원 불가)
+6. 해당 Phase부터 재개 (완료된 Phase 재실행 금지)
+
+### 사용자 대응
+
+Context limit 발생 시: `claude --continue` 또는 `/clear` 후 `/auto resume`
 
 ---
 
@@ -172,7 +317,7 @@ npx playwright test → 실패 시 Skill(skill="debug") 자동 트리거
 
 | Tier | 이름 | 발견 대상 | 실행 |
 |:----:|------|----------|------|
-| 0 | CONTEXT | context >= 90% | 체크포인트 생성 |
+| 0 | CONTEXT | context limit 접근 | 사용자에게 `/clear` + `/auto resume` 안내 |
 | 1 | EXPLICIT | 사용자 지시 | 해당 작업 실행 |
 | 2 | URGENT | 빌드/테스트 실패 | `/debug` 실행 |
 | 3 | WORK | pending TODO, 이슈 | 작업 처리 |
@@ -183,12 +328,12 @@ npx playwright test → 실패 시 Skill(skill="debug") 자동 트리거
 
 ```bash
 /auto status    # 현재 상태 확인
-/auto stop      # 중지 (상태 저장)
-/auto resume    # 재개
+/auto stop      # 중지 (pdca-status.json에 상태 저장, TeamDelete 실행)
+/auto resume    # 재개 (pdca-status.json + 산출물 기반 Phase 복원, TeamCreate 재생성)
 ```
 
 ## 금지 사항
 
-옵션 실패 시 조용히 스킵 / Architect 검증 없이 완료 선언 / 증거 없이 "완료됨" 주장 / 테스트 삭제로 문제 해결
+옵션 실패 시 조용히 스킵 / Architect 검증 없이 완료 선언 / 증거 없이 "완료됨" 주장 / 테스트 삭제로 문제 해결 / **TeamDelete 없이 세션 종료**
 
 **상세**: --slack, --gmail, --interactive, Step 상세 워크플로우 → `REFERENCE.md`

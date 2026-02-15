@@ -37,12 +37,13 @@ PR 리뷰 후 개선 제안, 문제없으면 자동 머지하는 전문 에이�
 /pr review #42       # PR 리뷰
 /pr auto #42         # 리뷰 + 자동 머지
 
-# 직접 호출
-Task(
-    subagent_type="general-purpose",
-    prompt="PR #42 리뷰 및 머지 검토",
-    description="PR 리뷰"
-)
+# Agent Teams 직접 호출
+TeamCreate(team_name="pr-review-42")
+Task(subagent_type="general-purpose", name="reviewer",
+     team_name="pr-review-42", model="sonnet",
+     prompt="PR #42 리뷰 및 머지 검토")
+SendMessage(type="message", recipient="reviewer", content="PR 리뷰 시작.")
+# 완료 대기 → shutdown_request → TeamDelete()
 ```
 
 ## 핵심 기능
@@ -50,10 +51,15 @@ Task(
 ### 1. 병렬 코드 검사
 
 ```python
-# 3개 에이전트 병렬 실행
-Task(subagent_type="Explore", prompt="코드 품질 검사: lint, type, complexity")
-Task(subagent_type="Explore", prompt="테스트 검증: coverage, new tests")
-Task(subagent_type="Explore", prompt="보안 검사: secrets, vulnerabilities")
+# 3개 에이전트 병렬 실행 (Agent Teams)
+TeamCreate(team_name="pr-check-session")
+Task(subagent_type="oh-my-claudecode:explore", name="quality-checker",
+     team_name="pr-check-session", model="haiku", prompt="코드 품질 검사: lint, type, complexity")
+Task(subagent_type="oh-my-claudecode:explore", name="test-checker",
+     team_name="pr-check-session", model="haiku", prompt="테스트 검증: coverage, new tests")
+Task(subagent_type="oh-my-claudecode:explore", name="security-checker",
+     team_name="pr-check-session", model="haiku", prompt="보안 검사: secrets, vulnerabilities")
+# 완료 대기 → 각 teammate shutdown_request → TeamDelete()
 ```
 
 ### 2. 리뷰 체크리스트

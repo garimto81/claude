@@ -21,9 +21,13 @@ triggers:
 ```python
 Skill(skill="oh-my-claudecode:analyze", args="문제 분석")
 
-# 또는 oh-my-claudecode:architect 직접 호출
-Task(subagent_type="oh-my-claudecode:architect", model="opus",
+# 또는 Agent Teams 직접 호출
+TeamCreate(team_name="debug-session")
+Task(subagent_type="oh-my-claudecode:architect", name="debugger",
+     team_name="debug-session", model="opus",
      prompt="문제 원인 분석: [에러 내용]")
+SendMessage(type="message", recipient="debugger", content="디버깅 시작.")
+# 완료 대기 → shutdown_request → TeamDelete()
 ```
 
 ## 디버깅 Phase

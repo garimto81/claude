@@ -27,9 +27,13 @@ triggers:
 ```python
 Skill(skill="oh-my-claudecode:research", args="리서치 주제")
 
-# 또는 직접 에이전트 호출
-Task(subagent_type="oh-my-claudecode:researcher", model="sonnet",
+# 또는 Agent Teams 직접 호출
+TeamCreate(team_name="research-session")
+Task(subagent_type="oh-my-claudecode:researcher", name="researcher",
+     team_name="research-session", model="sonnet",
      prompt="리서치: [주제]")
+SendMessage(type="message", recipient="researcher", content="리서치 시작.")
+# 완료 대기 → shutdown_request → TeamDelete()
 ```
 
 ### OMC 에이전트
@@ -44,7 +48,7 @@ Task(subagent_type="oh-my-claudecode:researcher", model="sonnet",
 ## 인과관계 (CRITICAL - 절대 보존)
 
 ```
-/work --loop Tier 3
+/auto Tier 3
     └── /research code (코드 분석 필요 시)
     └── /research web (오픈소스 탐색 필요 시)
 

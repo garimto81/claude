@@ -20,8 +20,11 @@
 
 **호출 예시**:
 ```python
-Task(subagent_type="parallel-agent-orchestration",
+TeamCreate(team_name="dev-session")
+Task(subagent_type="oh-my-claudecode:executor", name="dev-worker",
+     team_name="dev-session", model="sonnet",
      prompt="--group dev --task '사용자 인증 모듈 구현'")
+# SendMessage → 완료 대기 → shutdown_request → TeamDelete()
 ```
 
 ---
@@ -44,8 +47,11 @@ Task(subagent_type="parallel-agent-orchestration",
 
 **호출 예시**:
 ```python
-Task(subagent_type="parallel-agent-orchestration",
+TeamCreate(team_name="test-session")
+Task(subagent_type="oh-my-claudecode:qa-tester", name="test-worker",
+     team_name="test-session", model="sonnet",
      prompt="--group test --task '전체 테스트 실행'")
+# SendMessage → 완료 대기 → shutdown_request → TeamDelete()
 ```
 
 ---
@@ -67,8 +73,11 @@ Task(subagent_type="parallel-agent-orchestration",
 
 **호출 예시**:
 ```python
-Task(subagent_type="parallel-agent-orchestration",
+TeamCreate(team_name="review-session")
+Task(subagent_type="oh-my-claudecode:code-reviewer", name="review-worker",
+     team_name="review-session", model="sonnet",
      prompt="--group review --task 'PR #123 리뷰'")
+# SendMessage → 완료 대기 → shutdown_request → TeamDelete()
 ```
 
 ---

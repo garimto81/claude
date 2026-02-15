@@ -237,10 +237,15 @@ pytest --benchmark-only
 ### 병렬 실행
 
 ```python
-# Phase 5 병렬 검증
-Task(subagent_type="playwright-engineer", prompt="E2E 최종 검증")
-Task(subagent_type="oh-my-claudecode:security-reviewer", prompt="보안 점검")
-Task(subagent_type="performance-engineer", prompt="성능 테스트")
+# Phase 5 병렬 검증 (Agent Teams)
+TeamCreate(team_name="final-check-session")
+Task(subagent_type="oh-my-claudecode:qa-tester", name="e2e-tester",
+     team_name="final-check-session", model="sonnet", prompt="E2E 최종 검증")
+Task(subagent_type="oh-my-claudecode:security-reviewer", name="security-auditor",
+     team_name="final-check-session", model="sonnet", prompt="보안 점검")
+Task(subagent_type="oh-my-claudecode:qa-tester", name="perf-tester",
+     team_name="final-check-session", model="sonnet", prompt="성능 테스트")
+# 완료 대기 → 각 teammate shutdown_request → TeamDelete()
 ```
 
 ## 관련 도구
