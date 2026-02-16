@@ -10,8 +10,7 @@
 
 | 카테고리 | 커맨드 | 설명 |
 |----------|--------|------|
-| **핵심** | `/work` | 통합 작업 실행 (지시 기반 + 자율 판단) |
-| | `/auto` | → `/work --loop` alias (자율 판단 모드) |
+| **핵심** | `/auto` | 통합 PDCA 워크플로우 (v20.1 - Agent Teams + PDCA) |
 | | `/orchestrate` | 메인-서브 에이전트 오케스트레이션 |
 | | `/commit` | Conventional Commit 생성 |
 | | `/check` | 코드 품질/보안 검사 |
@@ -37,120 +36,30 @@
 
 ---
 
-## 1. /work - 통합 작업 실행
+## 1. /work (v19.0 - /auto로 통합됨)
 
-작업 지시를 받아 **분석 → 이슈 → 구현 → 테스트 → PR**까지 자동 수행합니다.
-`--loop` 모드에서는 **자율 판단 기반 반복 실행**을 지원합니다.
-
-### 사용법
+> **`/work`는 `/auto`로 통합되었습니다.** 모든 작업에 `/auto`를 사용하세요.
 
 ```bash
-# 기본: 지시 기반 실행
-/work "작업 지시 내용"
-/work "API 성능 개선"
-
-# 자동: 중간 확인 없이 실행
-/work --auto "완전 자동화"
-
-# 루프: 자율 판단 반복 실행 (기존 /auto)
+# 이전
+/work "작업 내용"
+/work --auto "작업"
 /work --loop
-/work --loop --max 5              # 최대 5개 작업
-/work --loop resume [session_id]  # 세션 재개
-/work --loop status               # 현재 상태
 
-# 기타 옵션
-/work --skip-analysis "빠른 수정"
-/work --no-issue "이슈 없이 작업"
-/work --strict "엄격 모드 (E2E 1회 실패 시 중단)"
+# 이후 (v19.0)
+/auto "작업 내용"
+/auto "작업"
+/auto
 ```
 
-### 모드 비교
-
-| 모드 | 입력 | 실행 방식 | Context 관리 |
-|------|------|-----------|--------------|
-| **기본** | 작업 지시 필수 | 5단계 워크플로우 | - |
-| **--auto** | 작업 지시 필수 | 5단계 자동 실행 | - |
-| **--loop** | 없음 (자율 판단) | 우선순위 기반 루프 | 90% 임계값 |
-
-### 실행 흐름 (기본/--auto 모드)
-
-```
-Phase 1: 병렬 분석
-  ├─ 문서 분석 (PRD, docs/)
-  └─ 이슈 분석 (gh issue list)
-     ↓
-Phase 2: 이슈 생성 + 문서 업데이트
-     ↓
-Phase 3: Todo 작성
-     ↓
-Phase 4: E2E 검증 (실패 시 자동 수정 2회)
-     ↓
-Phase 5: TDD 검증 + 최종 보고서
-```
-
-### 실행 흐름 (--loop 모드) - Ralph Wiggum 통합
-
-> **핵심**: "할 일 없음 → 종료"가 아닌 "할 일 없음 → 스스로 발견"
-
-```
-[1] 세션 초기화 → 로그 폴더 생성, 종료 조건 설정
-     ↓
-[2] 상태 분석 (Git, 이슈, 테스트, Todo)
-     ↓
-[3] 작업 판단 (2계층 우선순위)
-     │
-     ├─ Tier 1 (명시적 작업)
-     │   1. 테스트 실패 → 수정
-     │   2. PR CI 실패 → 수정
-     │   3. 커밋 안 됨 → /commit
-     │   4. 열린 이슈 → /issue fix
-     │   5. Todo 미완료 → 작업
-     │
-     └─ Tier 2 (자율 발견) ← Tier 1 없을 때
-         6. 린트 경고 → 수정
-         7. 커버리지 미달 → 테스트 추가
-         8. 문서 누락 → 문서화
-         9. 리팩토링 → 개선
-        10. 의존성/성능/a11y → 개선
-     ↓
-[4] 작업 실행 (로그 기록, Context 모니터링)
-     ↓
-[5] 반복 (종료 조건 확인)
-     - 종료 조건 미충족 → [2]로
-     - --max 도달 → 종료
-     - --promise 충족 → 종료
-     - Context 90% → /commit → 세션 종료
-```
-
-### 종료 조건 (명시적으로만)
-
-| 조건 | 설명 |
-|------|------|
-| `--max N` | N회 반복 후 종료 |
-| `--promise TEXT` | `<promise>TEXT</promise>` 출력 시 종료 |
-| `pause`/`abort` | 사용자 명시적 중단 |
-| Context 90% | 체크포인트 저장 후 종료 |
-
-**⚠️ "할 일 없음"은 종료 조건이 아님**
-
-### 예시
-
-```bash
-$ /work API 응답 캐싱 추가
-
-🔍 Phase 1: 병렬 분석 중...
-📝 Phase 2: 이슈 #67에 코멘트 추가
-✅ Phase 3: Todo 작성 완료 (7개 항목)
-🧪 Phase 4: E2E 검증 15/15 통과
-📊 Phase 5: 커버리지 85%
-📋 최종 보고서 출력...
-```
+상세 내용은 `/auto` 섹션을 참조하세요.
 
 ---
 
-## 2. /auto - 통합 자율 완성 모드 (v10.0)
+## 2. /auto - PDCA Orchestrator (v20.1 - Agent Teams)
 
-> **슈퍼모드**: Ralph + Ultrawork + Ralplan이 자동 통합됩니다.
+> **Agent Teams**: 모든 에이전트가 독립 context window에서 실행됩니다 (Lead context 오염 없음).
+> **v20.1**: Agent Teams 전면 마이그레이션 + Phase 2 READ-ONLY 버그 수정
 
 별도 키워드 없이 `/auto "작업"` 하나로 모든 고급 기능이 활성화됩니다.
 
@@ -158,9 +67,9 @@ $ /work API 응답 캐싱 추가
 
 | 기능 | 자동 적용 조건 |
 |------|----------------|
-| **Ultrawork** | 항상 (병렬 에이전트 오케스트레이션) |
-| **Ralph** | 항상 (완료까지 루프 + Architect 검증) |
-| **Ralplan** | 복잡한 작업 시 (Planner→Architect→Critic 합의) |
+| **Agent Teams** | 항상 (TeamCreate → Task(name, team_name) → SendMessage → TeamDelete) |
+| **Ralph** | STANDARD/HEAVY (완료까지 루프 + Architect 검증) |
+| **Ralplan** | HEAVY (Planner→Architect→Critic 합의) |
 
 ### 사용법
 
@@ -172,31 +81,37 @@ $ /work API 응답 캐싱 추가
 # 지시 없이 실행 (자율 판단)
 /auto
 
-# 옵션
-/auto --max 10 "버그 수정"    # 최대 반복 횟수
-/auto --eco "간단한 수정"     # 토큰 절약 모드
-/auto status                  # 현재 상태
-/auto stop                    # 중지
-/auto resume                  # 재개
+# 옵션 (v19.0 - /work 옵션 통합)
+/auto --skip-analysis "빠른 수정"    # 사전 분석 스킵
+/auto --no-issue "이슈 없이 작업"    # GitHub 이슈 생성 스킵
+/auto --strict "엄격 모드"           # E2E 1회 실패 시 중단
+/auto --dry-run "작업 계획"          # 계획만 출력, 실행 안 함
+/auto --eco "간단한 수정"            # 토큰 절약 모드
+/auto status                         # 현재 상태
+/auto stop                           # 중지
+/auto resume                         # 재개
 ```
 
-### 자동 실행 흐름
+### 자동 실행 흐름 (v20.1 PDCA Phase 0-5 + Agent Teams)
 
 ```
 /auto "작업"
     │
-    ├─[1] 작업 분석 → 복잡도, 범위 판단
-    ├─[2] 계획 필요 시 → Ralplan (Planner→Architect→Critic)
-    ├─[3] Ultrawork 활성화 → 병렬 에이전트 스폰
-    ├─[4] Ralph 루프 → 완료까지 반복
-    ├─[5] Architect 검증 → 필수 (거부 시 재작업)
-    └─[6] 완료: <promise>TASK_COMPLETE</promise>
+    ├─[Phase 0] 옵션 파싱 + 모드 결정 + TeamCreate
+    ├─[Phase 1] PLAN: explore x2 → 복잡도 판단 → planner/ralplan → 이슈 연동
+    ├─[Phase 2] DESIGN: executor/executor-high (STANDARD/HEAVY만, 문서 생성)
+    ├─[Phase 3] DO: executor/ralph (복잡도별 분기)
+    ├─[Phase 4] CHECK: ultraqa → Architect 검증 → gap-detector → E2E → TDD
+    └─[Phase 5] ACT: gap < 90% → 재실행 / gap >= 90% → 완료 → TeamDelete
 ```
 
 ### 레거시 키워드 지원
 
 | 기존 키워드 | 동작 |
 |-------------|------|
+| `/work "작업"` | → `/auto "작업"` (v19.0) |
+| `/work --auto` | → `/auto "작업"` |
+| `/work --loop` | → `/auto` |
 | `ralph: 작업` | → `/auto "작업"` |
 | `ulw: 작업` | → `/auto "작업"` |
 | `ultrawork: 작업` | → `/auto "작업"` |
@@ -204,7 +119,7 @@ $ /work API 응답 캐싱 추가
 
 ### 상세 문서
 
-→ `.claude/commands/auto.md` (v10.0)
+→ `.claude/commands/auto.md` (v20.1)
 
 ---
 
@@ -486,7 +401,7 @@ git commit -m "refactor: Use User.authenticate method ♻️"
 
 ### 통합 워크플로우
 
-- `/work` E2E 실패 시 자동 트리거
+- `/auto` E2E 실패 시 자동 트리거
 - `/issue fix` confidence < 80% 시 자동 트리거
 - 3회 가설 기각 시 `/issue failed` 호출
 
@@ -1295,8 +1210,8 @@ PocketBase에서 사진을 가져와 마케팅용 쇼츠 영상을 생성합니�
 ### 전체 자동화
 
 ```bash
-/work --auto "기능 구현"      # 분석~PR까지 완전 자동화
-/work --loop                  # 자율 판단 반복 실행 (= /auto)
+/auto "기능 구현"             # PDCA Phase 0-5 완전 자동화
+/auto                         # 자율 판단 반복 실행
 ```
 
 ### 병렬 작업

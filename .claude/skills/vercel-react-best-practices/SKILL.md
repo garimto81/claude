@@ -2,7 +2,7 @@
 name: vercel-react-best-practices
 description: >
   Vercel Engineering의 React/Next.js 성능 최적화 가이드.
-  49개 규칙, 8개 카테고리, 영향도 기반 우선순위.
+  47개 규칙, 8개 카테고리, 영향도 기반 우선순위.
 version: 1.0.0
 
 triggers:
@@ -39,7 +39,7 @@ capabilities:
   - recommend_rerender_fixes
 
 model_preference: sonnet
-phase: [2]
+phase: [2, 4]
 auto_trigger: true
 dependencies:
   - oh-my-claudecode:designer
@@ -140,7 +140,7 @@ setItems(curr => [...curr, newItem])
 
 전체 규칙은 `AGENTS.md`를 참조하세요:
 - 8개 카테고리의 상세 설명
-- 49개 규칙의 잘못된 예 / 올바른 예
+- 47개 규칙의 잘못된 예 / 올바른 예
 - 영향도 및 최적화 효과
 
 ## 관련 리소스

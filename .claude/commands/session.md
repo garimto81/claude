@@ -364,7 +364,7 @@ Subcommands:
 
 ## Related
 
-- `/work` - 전체 워크플로우
+- `/auto` - 전체 워크플로우
 - `/create pr` - PR 생성 (여정 자동 포함)
 - `/commit` - 커밋 생성
 

@@ -1,26 +1,39 @@
 {
   "version": "2.0",
-  "lastUpdated": "2026-02-14T16:47:05.402Z",
+  "lastUpdated": "2026-02-16T14:10:00.000Z",
   "activeFeatures": [
-    "daily-integration",
-    "google_docs",
-    ".claude",
-    "pdf_utils"
+    "mockup_hybrid"
   ],
-  "primaryFeature": "daily-integration",
+  "primaryFeature": "mockup_hybrid",
   "features": {
+    "auto-work-unification": {
+      "phase": "completed",
+      "phaseNumber": 6,
+      "matchRate": 95,
+      "iterationCount": 0,
+      "requirements": [
+        "FR-01: /work→/auto 통합",
+        "FR-02: 3-tier 복잡도 분기",
+        "FR-03: 인과관계 그래프 보존",
+        "FR-04: 잔여 참조 제거"
+      ],
+      "documents": {
+        "plan": "docs/01-plan/auto-work-unification.plan.md",
+        "design": "docs/02-design/auto-work-unification.design.md",
+        "report": "docs/04-report/auto-work-unification.report.md"
+      },
+      "timestamps": {
+        "started": "2026-02-16T08:00:00.000Z",
+        "lastUpdated": "2026-02-16T10:00:00.000Z"
+      },
+      "lastFile": "C:\\claude\\.claude\\skills\\auto\\SKILL.md"
+    },
     "daily-integration": {
       "phase": "completed",
       "phaseNumber": 6,
       "matchRate": 97,
       "iterationCount": 0,
-      "requirements": [
-        "FR-01",
-        "FR-02",
-        "FR-03",
-        "FR-04",
-        "FR-05"
-      ],
+      "requirements": ["FR-01", "FR-02", "FR-03", "FR-04", "FR-05"],
       "documents": {
         "plan": "docs/01-plan/daily-integration.plan.md",
         "design": "docs/02-design/daily-integration.design.md",
@@ -32,7 +45,6 @@
         "lastUpdated": "2026-02-05T16:00:00.000Z",
         "completedAt": "2026-02-05T16:00:00.000Z"
       },
-      "lastFile": "docs/04-report/daily-integration.report.md",
       "ralplan": {
         "iterations": 1,
         "criticVerdict": "OKAY",
@@ -48,10 +60,48 @@
       "documents": {},
       "timestamps": {
         "started": "2026-02-02T03:17:36.948Z",
-        "lastUpdated": "2026-02-14T16:37:53.903Z",
+        "lastUpdated": "2026-02-15T22:42:01.491Z",
+        "completedAt": "2026-02-15T03:09:53.926Z"
+      }
+    },
+    "google_docs": {
+      "phase": "completed",
+      "phaseNumber": 6,
+      "matchRate": 100,
+      "iterationCount": 0,
+      "requirements": [],
+      "documents": {},
+      "timestamps": {
+        "started": "2026-02-03T06:01:57.034Z",
+        "lastUpdated": "2026-02-15T19:05:27.425Z",
         "completedAt": "2026-02-15T00:00:00.000Z"
-      },
-      "lastFile": "C:\\claude\\.claude\\skills\\parallel-agent-orchestration\\scripts\\run_parallel.py"
+      }
+    },
+    ".claude": {
+      "phase": "completed",
+      "phaseNumber": 6,
+      "matchRate": 100,
+      "iterationCount": 0,
+      "requirements": [],
+      "documents": {},
+      "timestamps": {
+        "started": "2026-02-06T05:14:03.765Z",
+        "lastUpdated": "2026-02-15T21:40:48.732Z",
+        "completedAt": "2026-02-15T00:00:00.000Z"
+      }
+    },
+    "pdf_utils": {
+      "phase": "completed",
+      "phaseNumber": 6,
+      "matchRate": 100,
+      "iterationCount": 0,
+      "requirements": [],
+      "documents": {},
+      "timestamps": {
+        "started": "2026-02-06T09:22:40.448Z",
+        "lastUpdated": "2026-02-06T09:33:12.725Z",
+        "completedAt": "2026-02-15T00:00:00.000Z"
+      }
     },
     "slack": {
       "phase": "completed",
@@ -65,146 +115,7 @@
         "started": "2026-02-02T05:42:47.909Z",
         "lastUpdated": "2026-02-05T07:24:52.949Z",
         "completedAt": "2026-02-15T00:00:00.000Z"
-      },
-      "lastFile": "C:\\claude\\lib\\slack\\client.py"
-    },
-    "google_docs": {
-      "phase": "do",
-      "phaseNumber": 3,
-      "matchRate": null,
-      "iterationCount": 0,
-      "requirements": [],
-      "documents": {},
-      "timestamps": {
-        "started": "2026-02-03T06:01:57.034Z",
-        "lastUpdated": "2026-02-12T03:49:55.332Z"
-      },
-      "lastFile": "C:\\claude\\lib\\google_docs\\__init__.py"
-    },
-    "tests": {
-      "phase": "completed",
-      "phaseNumber": 6,
-      "matchRate": 100,
-      "iterationCount": 0,
-      "requirements": [],
-      "documents": {},
-      "timestamps": {
-        "started": "2026-02-05T06:42:59.831Z",
-        "lastUpdated": "2026-02-06T11:57:00.025Z",
-        "completedAt": "2026-02-15T00:00:00.000Z"
-      },
-      "lastFile": "C:\\claude\\tests\\test_teams.py"
-    },
-    "bkit-marketplace": {
-      "phase": "completed",
-      "phaseNumber": 6,
-      "matchRate": 100,
-      "iterationCount": 0,
-      "requirements": [],
-      "documents": {},
-      "successor_plan": "lean-workflow",
-      "timestamps": {
-        "started": "2026-02-05T06:56:38.433Z",
-        "lastUpdated": "2026-02-05T10:49:00.793Z",
-        "completedAt": "2026-02-15T00:00:00.000Z"
-      },
-      "lastFile": "C:\\Users\\AidenKim\\.claude\\plugins\\marketplaces\\bkit-marketplace\\hooks\\session-start.js"
-    },
-    "claude": {
-      "phase": "completed",
-      "phaseNumber": 6,
-      "matchRate": 100,
-      "iterationCount": 0,
-      "requirements": [],
-      "documents": {},
-      "timestamps": {
-        "started": "2026-02-06T02:48:18.449Z",
-        "lastUpdated": "2026-02-08T01:41:09.314Z",
-        "completedAt": "2026-02-15T00:00:00.000Z"
-      },
-      "lastFile": "C:\\claude\\__check_settings.js"
-    },
-    "scratchpad": {
-      "phase": "completed",
-      "phaseNumber": 6,
-      "matchRate": 100,
-      "iterationCount": 0,
-      "requirements": [],
-      "documents": {},
-      "timestamps": {
-        "started": "2026-02-06T02:49:24.678Z",
-        "lastUpdated": "2026-02-06T02:49:24.678Z",
-        "completedAt": "2026-02-15T00:00:00.000Z"
-      },
-      "lastFile": "C:\\Users\\AidenKim\\AppData\\Local\\Temp\\claude\\C--claude\\ba1e0356-ac19-47f7-868f-76f5d67f038c\\scratchpad\\verify_junctions.ps1"
-    },
-    ".claude": {
-      "phase": "do",
-      "phaseNumber": 3,
-      "matchRate": null,
-      "iterationCount": 0,
-      "requirements": [],
-      "documents": {},
-      "timestamps": {
-        "started": "2026-02-06T05:14:03.765Z",
-        "lastUpdated": "2026-02-14T16:47:05.402Z"
-      },
-      "lastFile": "C:\\claude\\.claude\\hooks\\session_init.py"
-    },
-    "pdf_utils": {
-      "phase": "do",
-      "phaseNumber": 3,
-      "matchRate": null,
-      "iterationCount": 0,
-      "requirements": [],
-      "documents": {},
-      "timestamps": {
-        "started": "2026-02-06T09:22:40.448Z",
-        "lastUpdated": "2026-02-06T09:33:12.725Z"
-      },
-      "lastFile": "C:\\claude\\lib\\pdf_utils\\__main__.py"
-    },
-    "tmux-install": {
-      "phase": "completed",
-      "phaseNumber": 6,
-      "matchRate": 100,
-      "iterationCount": 0,
-      "requirements": [],
-      "documents": {},
-      "timestamps": {
-        "started": "2026-02-06T11:48:43.327Z",
-        "lastUpdated": "2026-02-06T11:50:19.154Z",
-        "completedAt": "2026-02-15T00:00:00.000Z"
-      },
-      "lastFile": "C:\\Users\\AidenKim\\AppData\\Local\\Temp\\claude\\C--claude\\f0d4d655-aae1-45db-9e1d-0b797375a081\\scratchpad\\tmux-install\\install_local.py"
-    },
-    "agents": {
-      "phase": "completed",
-      "phaseNumber": 6,
-      "matchRate": 100,
-      "iterationCount": 0,
-      "requirements": [],
-      "documents": {},
-      "timestamps": {
-        "started": "2026-02-06T11:50:31.367Z",
-        "lastUpdated": "2026-02-06T11:55:49.929Z",
-        "completedAt": "2026-02-15T00:00:00.000Z"
-      },
-      "lastFile": "C:\\claude\\src\\agents\\__init__.py"
-    },
-    "teams": {
-      "phase": "completed",
-      "phaseNumber": 6,
-      "matchRate": 100,
-      "iterationCount": 0,
-      "requirements": [],
-      "documents": {},
-      "timestamps": {
-        "started": "2026-02-06T11:51:41.884Z",
-        "lastUpdated": "2026-02-06T11:55:43.863Z",
-        "completedAt": "2026-02-15T00:00:00.000Z"
-      },
-      "lastFile": "C:\\claude\\src\\agents\\teams\\__init__.py"
+      }
     },
     "gmail": {
       "phase": "completed",
@@ -218,8 +129,20 @@
         "started": "2026-02-12T11:18:28.270Z",
         "lastUpdated": "2026-02-12T11:18:28.270Z",
         "completedAt": "2026-02-15T00:00:00.000Z"
+      }
+    },
+    "mockup_hybrid": {
+      "phase": "do",
+      "phaseNumber": 3,
+      "matchRate": null,
+      "iterationCount": 0,
+      "requirements": [],
+      "documents": {},
+      "timestamps": {
+        "started": "2026-02-15T18:10:00.221Z",
+        "lastUpdated": "2026-02-15T20:19:06.711Z"
       },
-      "lastFile": "C:\\claude\\lib\\gmail\\client.py"
+      "lastFile": "C:\\claude\\lib\\mockup_hybrid\\export_utils.py"
     }
   },
   "pipeline": {
@@ -234,9 +157,9 @@
     ]
   },
   "session": {
-    "startedAt": "2026-02-02T02:58:37.709Z",
-    "onboardingCompleted": false,
-    "lastActivity": "2026-02-14T16:47:05.402Z"
+    "startedAt": "2026-02-16T14:10:00.000Z",
+    "onboardingCompleted": true,
+    "lastActivity": "2026-02-16T14:10:00.000Z"
   },
   "history": [
     {
@@ -247,700 +170,32 @@
       "details": "Critic OKAY - 1 iteration"
     },
     {
-      "timestamp": "2026-02-05T06:42:58.807Z",
-      "feature": "scripts",
-      "phase": "do",
-      "action": "updated"
-    },
-    {
-      "timestamp": "2026-02-05T06:42:59.831Z",
-      "feature": "tests",
-      "phase": "do",
-      "action": "updated"
-    },
-    {
-      "timestamp": "2026-02-05T06:43:37.831Z",
-      "feature": "tests",
-      "phase": "do",
-      "action": "updated"
-    },
-    {
-      "timestamp": "2026-02-05T06:44:10.530Z",
-      "feature": "scripts",
-      "phase": "do",
-      "action": "updated"
-    },
-    {
-      "timestamp": "2026-02-05T06:45:31.558Z",
-      "feature": "scripts",
-      "phase": "do",
-      "action": "updated"
-    },
-    {
-      "timestamp": "2026-02-05T06:46:15.317Z",
-      "feature": "tests",
-      "phase": "do",
-      "action": "updated"
-    },
-    {
-      "timestamp": "2026-02-05T06:48:31.368Z",
-      "feature": "scripts",
-      "phase": "do",
-      "action": "updated"
-    },
-    {
-      "timestamp": "2026-02-05T06:56:38.433Z",
-      "feature": "bkit-marketplace",
-      "phase": "do",
-      "action": "updated"
-    },
-    {
-      "timestamp": "2026-02-05T06:56:49.450Z",
-      "feature": "bkit-marketplace",
-      "phase": "do",
-      "action": "updated"
-    },
-    {
-      "timestamp": "2026-02-05T07:22:53.190Z",
-      "feature": "slack",
-      "phase": "do",
-      "action": "updated"
-    },
-    {
-      "timestamp": "2026-02-05T07:23:12.911Z",
-      "feature": "slack",
-      "phase": "do",
-      "action": "updated"
-    },
-    {
-      "timestamp": "2026-02-05T07:24:52.949Z",
-      "feature": "slack",
-      "phase": "do",
-      "action": "updated"
-    },
-    {
-      "timestamp": "2026-02-05T10:49:00.793Z",
-      "feature": "bkit-marketplace",
-      "phase": "do",
-      "action": "updated"
-    },
-    {
-      "timestamp": "2026-02-06T02:48:18.449Z",
-      "feature": "claude",
-      "phase": "do",
-      "action": "updated"
-    },
-    {
-      "timestamp": "2026-02-06T02:49:24.678Z",
-      "feature": "scratchpad",
-      "phase": "do",
-      "action": "updated"
-    },
-    {
-      "timestamp": "2026-02-06T05:14:03.765Z",
-      "feature": ".claude",
-      "phase": "do",
-      "action": "updated"
-    },
-    {
-      "timestamp": "2026-02-06T05:21:30.501Z",
-      "feature": ".claude",
-      "phase": "do",
-      "action": "updated"
-    },
-    {
-      "timestamp": "2026-02-06T05:21:38.007Z",
-      "feature": ".claude",
-      "phase": "do",
-      "action": "updated"
-    },
-    {
-      "timestamp": "2026-02-06T05:21:43.707Z",
-      "feature": ".claude",
-      "phase": "do",
-      "action": "updated"
-    },
-    {
-      "timestamp": "2026-02-06T05:27:38.793Z",
-      "feature": ".claude",
-      "phase": "do",
-      "action": "updated"
-    },
-    {
-      "timestamp": "2026-02-06T05:27:48.566Z",
-      "feature": ".claude",
-      "phase": "do",
-      "action": "updated"
-    },
-    {
-      "timestamp": "2026-02-06T05:28:00.518Z",
-      "feature": ".claude",
-      "phase": "do",
-      "action": "updated"
-    },
-    {
-      "timestamp": "2026-02-06T05:28:08.351Z",
-      "feature": ".claude",
-      "phase": "do",
-      "action": "updated"
-    },
-    {
-      "timestamp": "2026-02-06T05:28:16.373Z",
-      "feature": ".claude",
-      "phase": "do",
-      "action": "updated"
-    },
-    {
-      "timestamp": "2026-02-06T05:28:26.065Z",
-      "feature": ".claude",
-      "phase": "do",
-      "action": "updated"
-    },
-    {
-      "timestamp": "2026-02-06T08:55:26.977Z",
-      "feature": "google_docs",
-      "phase": "do",
-      "action": "updated"
-    },
-    {
-      "timestamp": "2026-02-06T08:55:52.752Z",
-      "feature": "google_docs",
-      "phase": "do",
-      "action": "updated"
-    },
-    {
-      "timestamp": "2026-02-06T08:56:04.544Z",
-      "feature": "google_docs",
-      "phase": "do",
-      "action": "updated"
-    },
-    {
-      "timestamp": "2026-02-06T08:56:11.712Z",
-      "feature": "google_docs",
-      "phase": "do",
-      "action": "updated"
-    },
-    {
-      "timestamp": "2026-02-06T08:56:50.192Z",
-      "feature": "google_docs",
-      "phase": "do",
-      "action": "updated"
-    },
-    {
-      "timestamp": "2026-02-06T08:56:51.440Z",
-      "feature": "google_docs",
-      "phase": "do",
-      "action": "updated"
-    },
-    {
-      "timestamp": "2026-02-06T08:56:52.564Z",
-      "feature": "google_docs",
-      "phase": "do",
-      "action": "updated"
-    },
-    {
-      "timestamp": "2026-02-06T08:56:53.703Z",
-      "feature": "google_docs",
-      "phase": "do",
-      "action": "updated"
-    },
-    {
-      "timestamp": "2026-02-06T08:57:01.414Z",
-      "feature": "google_docs",
-      "phase": "do",
-      "action": "updated"
-    },
-    {
-      "timestamp": "2026-02-06T08:57:02.617Z",
-      "feature": "google_docs",
-      "phase": "do",
-      "action": "updated"
-    },
-    {
-      "timestamp": "2026-02-06T08:57:03.971Z",
-      "feature": "google_docs",
-      "phase": "do",
-      "action": "updated"
-    },
-    {
-      "timestamp": "2026-02-06T08:57:13.627Z",
-      "feature": "google_docs",
-      "phase": "do",
-      "action": "updated"
-    },
-    {
-      "timestamp": "2026-02-06T08:57:22.979Z",
-      "feature": "google_docs",
-      "phase": "do",
-      "action": "updated"
-    },
-    {
-      "timestamp": "2026-02-06T08:57:29.531Z",
-      "feature": "google_docs",
-      "phase": "do",
-      "action": "updated"
-    },
-    {
-      "timestamp": "2026-02-06T08:57:36.996Z",
-      "feature": "google_docs",
-      "phase": "do",
-      "action": "updated"
-    },
-    {
-      "timestamp": "2026-02-06T08:57:46.477Z",
-      "feature": "google_docs",
-      "phase": "do",
-      "action": "updated"
-    },
-    {
-      "timestamp": "2026-02-06T08:57:53.135Z",
-      "feature": "google_docs",
-      "phase": "do",
-      "action": "updated"
-    },
-    {
-      "timestamp": "2026-02-06T08:58:00.824Z",
-      "feature": "google_docs",
-      "phase": "do",
-      "action": "updated"
-    },
-    {
-      "timestamp": "2026-02-06T09:22:40.448Z",
-      "feature": "pdf_utils",
-      "phase": "do",
-      "action": "updated"
-    },
-    {
-      "timestamp": "2026-02-06T09:22:46.188Z",
-      "feature": "pdf_utils",
-      "phase": "do",
-      "action": "updated"
-    },
-    {
-      "timestamp": "2026-02-06T09:22:46.666Z",
-      "feature": "pdf_utils",
-      "phase": "do",
-      "action": "updated"
-    },
-    {
-      "timestamp": "2026-02-06T09:22:47.968Z",
-      "feature": "pdf_utils",
-      "phase": "do",
-      "action": "updated"
-    },
-    {
-      "timestamp": "2026-02-06T09:24:16.905Z",
-      "feature": "pdf_utils",
-      "phase": "do",
-      "action": "updated"
-    },
-    {
-      "timestamp": "2026-02-06T09:24:35.629Z",
-      "feature": "pdf_utils",
-      "phase": "do",
-      "action": "updated"
-    },
-    {
-      "timestamp": "2026-02-06T09:26:38.142Z",
-      "feature": "pdf_utils",
-      "phase": "do",
-      "action": "updated"
-    },
-    {
-      "timestamp": "2026-02-06T09:29:16.105Z",
-      "feature": "tests",
-      "phase": "do",
-      "action": "updated"
-    },
-    {
-      "timestamp": "2026-02-06T09:29:25.348Z",
-      "feature": "tests",
-      "phase": "do",
-      "action": "updated"
-    },
-    {
-      "timestamp": "2026-02-06T09:29:46.483Z",
-      "feature": "tests",
-      "phase": "do",
-      "action": "updated"
-    },
-    {
-      "timestamp": "2026-02-06T09:30:00.012Z",
-      "feature": "tests",
-      "phase": "do",
-      "action": "updated"
-    },
-    {
-      "timestamp": "2026-02-06T09:30:11.903Z",
-      "feature": "tests",
-      "phase": "do",
-      "action": "updated"
-    },
-    {
-      "timestamp": "2026-02-06T09:31:30.890Z",
-      "feature": "pdf_utils",
-      "phase": "do",
-      "action": "updated"
-    },
-    {
-      "timestamp": "2026-02-06T09:31:33.174Z",
-      "feature": "pdf_utils",
-      "phase": "do",
-      "action": "updated"
-    },
-    {
-      "timestamp": "2026-02-06T09:32:09.065Z",
-      "feature": "pdf_utils",
-      "phase": "do",
-      "action": "updated"
-    },
-    {
-      "timestamp": "2026-02-06T09:32:10.970Z",
-      "feature": "pdf_utils",
-      "phase": "do",
-      "action": "updated"
-    },
-    {
-      "timestamp": "2026-02-06T09:32:12.674Z",
-      "feature": "pdf_utils",
-      "phase": "do",
-      "action": "updated"
-    },
-    {
-      "timestamp": "2026-02-06T09:32:26.546Z",
-      "feature": "tests",
-      "phase": "do",
-      "action": "updated"
-    },
-    {
-      "timestamp": "2026-02-06T09:32:53.986Z",
-      "feature": "pdf_utils",
-      "phase": "do",
-      "action": "updated"
-    },
-    {
-      "timestamp": "2026-02-06T09:33:12.725Z",
-      "feature": "pdf_utils",
-      "phase": "do",
-      "action": "updated"
-    },
-    {
-      "timestamp": "2026-02-06T09:46:15.872Z",
-      "feature": "google_docs",
-      "phase": "do",
-      "action": "updated"
-    },
-    {
-      "timestamp": "2026-02-06T09:46:37.793Z",
-      "feature": "google_docs",
-      "phase": "do",
-      "action": "updated"
-    },
-    {
-      "timestamp": "2026-02-06T09:47:13.660Z",
-      "feature": "google_docs",
-      "phase": "do",
-      "action": "updated"
-    },
-    {
-      "timestamp": "2026-02-06T09:47:29.117Z",
-      "feature": "google_docs",
-      "phase": "do",
-      "action": "updated"
-    },
-    {
-      "timestamp": "2026-02-06T09:47:53.141Z",
-      "feature": "google_docs",
-      "phase": "do",
-      "action": "updated"
-    },
-    {
-      "timestamp": "2026-02-06T09:48:01.798Z",
-      "feature": "google_docs",
-      "phase": "do",
-      "action": "updated"
-    },
-    {
-      "timestamp": "2026-02-06T09:49:27.419Z",
-      "feature": "google_docs",
-      "phase": "do",
-      "action": "updated"
-    },
-    {
-      "timestamp": "2026-02-06T09:49:59.110Z",
-      "feature": "google_docs",
-      "phase": "do",
-      "action": "updated"
-    },
-    {
-      "timestamp": "2026-02-06T09:50:21.459Z",
-      "feature": "google_docs",
-      "phase": "do",
-      "action": "updated"
-    },
-    {
-      "timestamp": "2026-02-06T09:50:42.988Z",
-      "feature": "google_docs",
-      "phase": "do",
-      "action": "updated"
-    },
-    {
-      "timestamp": "2026-02-06T09:51:12.847Z",
-      "feature": "google_docs",
-      "phase": "do",
-      "action": "updated"
-    },
-    {
-      "timestamp": "2026-02-06T11:48:43.327Z",
-      "feature": "tmux-install",
-      "phase": "do",
-      "action": "updated"
-    },
-    {
-      "timestamp": "2026-02-06T11:49:42.280Z",
-      "feature": "tmux-install",
-      "phase": "do",
-      "action": "updated"
-    },
-    {
-      "timestamp": "2026-02-06T11:50:19.154Z",
-      "feature": "tmux-install",
-      "phase": "do",
-      "action": "updated"
-    },
-    {
-      "timestamp": "2026-02-06T11:50:31.367Z",
-      "feature": "agents",
-      "phase": "do",
-      "action": "updated"
-    },
-    {
-      "timestamp": "2026-02-06T11:51:41.884Z",
-      "feature": "teams",
-      "phase": "do",
-      "action": "updated"
-    },
-    {
-      "timestamp": "2026-02-06T11:52:19.715Z",
-      "feature": "teams",
-      "phase": "do",
-      "action": "updated"
-    },
-    {
-      "timestamp": "2026-02-06T11:53:03.735Z",
-      "feature": "teams",
-      "phase": "do",
-      "action": "updated"
-    },
-    {
-      "timestamp": "2026-02-06T11:53:40.888Z",
-      "feature": "teams",
-      "phase": "do",
-      "action": "updated"
-    },
-    {
-      "timestamp": "2026-02-06T11:53:55.903Z",
-      "feature": "teams",
-      "phase": "do",
-      "action": "updated"
-    },
-    {
-      "timestamp": "2026-02-06T11:54:12.631Z",
-      "feature": "teams",
-      "phase": "do",
-      "action": "updated"
-    },
-    {
-      "timestamp": "2026-02-06T11:55:14.276Z",
-      "feature": "teams",
-      "phase": "do",
-      "action": "updated"
-    },
-    {
-      "timestamp": "2026-02-06T11:55:43.863Z",
-      "feature": "teams",
-      "phase": "do",
-      "action": "updated"
-    },
-    {
-      "timestamp": "2026-02-06T11:55:49.929Z",
-      "feature": "agents",
-      "phase": "do",
-      "action": "updated"
-    },
-    {
-      "timestamp": "2026-02-06T11:57:00.025Z",
-      "feature": "tests",
-      "phase": "do",
-      "action": "updated"
-    },
-    {
-      "timestamp": "2026-02-08T01:41:09.314Z",
-      "feature": "claude",
-      "phase": "do",
-      "action": "updated"
-    },
-    {
-      "timestamp": "2026-02-12T03:48:35.963Z",
-      "feature": "google_docs",
-      "phase": "do",
-      "action": "updated"
-    },
-    {
-      "timestamp": "2026-02-12T03:48:44.537Z",
-      "feature": "google_docs",
-      "phase": "do",
-      "action": "updated"
-    },
-    {
-      "timestamp": "2026-02-12T03:49:14.982Z",
-      "feature": "google_docs",
-      "phase": "do",
-      "action": "updated"
-    },
-    {
-      "timestamp": "2026-02-12T03:49:27.256Z",
-      "feature": "google_docs",
-      "phase": "do",
-      "action": "updated"
-    },
-    {
-      "timestamp": "2026-02-12T03:49:36.821Z",
-      "feature": "google_docs",
-      "phase": "do",
-      "action": "updated"
-    },
-    {
-      "timestamp": "2026-02-12T03:49:41.445Z",
-      "feature": "google_docs",
-      "phase": "do",
-      "action": "updated"
-    },
-    {
-      "timestamp": "2026-02-12T03:49:46.199Z",
-      "feature": "google_docs",
-      "phase": "do",
-      "action": "updated"
-    },
-    {
-      "timestamp": "2026-02-12T03:49:50.675Z",
-      "feature": "google_docs",
-      "phase": "do",
-      "action": "updated"
-    },
-    {
-      "timestamp": "2026-02-12T03:49:55.332Z",
-      "feature": "google_docs",
-      "phase": "do",
-      "action": "updated"
-    },
-    {
-      "timestamp": "2026-02-12T11:18:28.270Z",
-      "feature": "gmail",
-      "phase": "do",
-      "action": "updated"
-    },
-    {
-      "timestamp": "2026-02-13T03:47:43.347Z",
-      "feature": ".claude",
-      "phase": "do",
-      "action": "updated"
-    },
-    {
-      "timestamp": "2026-02-13T03:48:00.419Z",
-      "feature": ".claude",
-      "phase": "do",
-      "action": "updated"
-    },
-    {
-      "timestamp": "2026-02-13T03:48:07.795Z",
-      "feature": ".claude",
-      "phase": "do",
-      "action": "updated"
-    },
-    {
-      "timestamp": "2026-02-13T03:48:12.653Z",
-      "feature": ".claude",
-      "phase": "do",
-      "action": "updated"
-    },
-    {
-      "timestamp": "2026-02-13T05:55:41.430Z",
-      "feature": ".claude",
-      "phase": "do",
-      "action": "updated"
-    },
-    {
-      "timestamp": "2026-02-13T05:55:47.258Z",
-      "feature": ".claude",
-      "phase": "do",
-      "action": "updated"
-    },
-    {
-      "timestamp": "2026-02-13T06:10:20.520Z",
-      "feature": ".claude",
-      "phase": "do",
-      "action": "updated"
-    },
-    {
-      "timestamp": "2026-02-13T06:12:09.555Z",
-      "feature": ".claude",
-      "phase": "do",
-      "action": "updated"
-    },
-    {
-      "timestamp": "2026-02-13T06:12:26.508Z",
-      "feature": ".claude",
-      "phase": "do",
-      "action": "updated"
-    },
-    {
-      "timestamp": "2026-02-13T06:12:40.699Z",
-      "feature": ".claude",
-      "phase": "do",
-      "action": "updated"
-    },
-    {
-      "timestamp": "2026-02-13T06:16:48.966Z",
-      "feature": ".claude",
-      "phase": "do",
-      "action": "updated"
-    },
-    {
-      "timestamp": "2026-02-13T06:16:55.687Z",
-      "feature": ".claude",
-      "phase": "do",
-      "action": "updated"
-    },
-    {
-      "timestamp": "2026-02-13T06:17:02.496Z",
-      "feature": ".claude",
-      "phase": "do",
-      "action": "updated"
-    },
-    {
-      "timestamp": "2026-02-13T06:17:14.714Z",
-      "feature": ".claude",
-      "phase": "do",
-      "action": "updated"
-    },
-    {
-      "timestamp": "2026-02-14T16:37:49.884Z",
-      "feature": "scripts",
-      "phase": "do",
-      "action": "updated"
-    },
-    {
-      "timestamp": "2026-02-14T16:37:53.903Z",
-      "feature": "scripts",
-      "phase": "do",
-      "action": "updated"
-    },
-    {
-      "timestamp": "2026-02-14T16:47:05.402Z",
-      "feature": ".claude",
-      "phase": "do",
-      "action": "updated"
+      "timestamp": "2026-02-05T16:00:00.000Z",
+      "feature": "daily-integration",
+      "phase": "completed",
+      "action": "completed",
+      "details": "matchRate 97%"
+    },
+    {
+      "timestamp": "2026-02-15T00:00:00.000Z",
+      "feature": "scripts,google_docs,.claude,pdf_utils,slack,gmail,tests,bkit-marketplace,claude,scratchpad,tmux-install,agents,teams",
+      "phase": "completed",
+      "action": "bulk_complete",
+      "details": "Lean Workflow v1 정리 - 13개 피처 일괄 완료"
+    },
+    {
+      "timestamp": "2026-02-16T10:00:00.000Z",
+      "feature": "auto-work-unification",
+      "phase": "completed",
+      "action": "completed",
+      "details": "matchRate 95% - /work→/auto 통합, 3-tier 복잡도, 인과관계 보존"
+    },
+    {
+      "timestamp": "2026-02-16T14:10:00.000Z",
+      "feature": "workflow-review",
+      "phase": "completed",
+      "action": "completed",
+      "details": "matchRate 95% - 6개 WI 완료: OMC 임계값, deprecated 10개 삭제(53→43), drive/supabase 분리, 모델 최적화, state 정리, BKIT 축소"
     }
   ]
 }

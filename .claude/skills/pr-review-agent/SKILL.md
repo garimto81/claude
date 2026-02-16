@@ -295,8 +295,8 @@ git push
 |-------------|----------|
 | `/create pr` | PR 생성 후 → `/pr review` |
 | `/check` | 리뷰 전 로컬 검사 |
-| `tdd-workflow` | 테스트 커버리지 확인 |
-| `debugging-workflow` | 테스트 실패 시 |
+| `/tdd` | 테스트 커버리지 확인 |
+| `/debug` | 테스트 실패 시 |
 
 ## 트러블슈팅
 

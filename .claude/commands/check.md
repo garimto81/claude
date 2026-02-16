@@ -128,7 +128,7 @@ npm run test:coverage
 | E2E Tests | `--e2e` | Playwright 기능/접근성 테스트 |
 | Performance | `--perf` | CPU/Memory 프로파일링 |
 | API Tests | `--api` | 엔드포인트 검증 |
-| React Best Practices | `--react` | Vercel 49개 규칙 검사 |
+| React Best Practices | `--react` | Vercel 47개 규칙 검사 |
 
 ```bash
 # 전체 검사 실행
@@ -262,7 +262,7 @@ Action: Fix npm vulnerabilities before deploy
 ## Related
 
 - `/tdd` - Test-driven development
-- `/work` - 전체 워크플로우
+- `/auto` - 전체 워크플로우
 
 ---
 
@@ -343,7 +343,7 @@ Action: Fix CRITICAL issues before deployment
 
 ### 연동 스킬
 
-`vercel-react-best-practices` 스킬의 49개 규칙을 기반으로 검사합니다.
+`vercel-react-best-practices` 스킬의 47개 규칙을 기반으로 검사합니다.
 상세 규칙은 `.claude/skills/vercel-react-best-practices/AGENTS.md` 참조.
 
 ---

@@ -66,7 +66,7 @@ auto_trigger: false
 {"ts": "2025-12-10T11:00:00", "cmd": "/commit", "args": "", "duration_ms": 5000, "status": "success", "project": "wsoptv"}
 
 // skills.jsonl
-{"ts": "2025-12-10T10:30:00", "skill": "tdd-workflow", "trigger": "auto", "duration_ms": 30000, "status": "success"}
+{"ts": "2025-12-10T10:30:00", "skill": "tdd", "trigger": "auto", "duration_ms": 30000, "status": "success"}
 
 // agents.jsonl
 {"ts": "2025-12-10T10:30:00", "agent": "Explore", "task": "코드베이스 분석", "duration_ms": 15000, "status": "success"}
@@ -124,7 +124,7 @@ echo '{"ts":"'$(date -Iseconds)'","cmd":"/work","args":"...",..."status":"succes
 ## 스킬 (2개)
 | 스킬 | 마지막 사용 | 권장 |
 |------|------------|------|
-| journey-sharing | 없음 | 삭제 |
+| journey-sharing | 없음 | 삭제됨 (v20.1) |
 | phase-validation | 45일 전 | 유지 |
 
 ## 에이전트 (0개)

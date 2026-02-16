@@ -147,7 +147,7 @@ python -m pytest tests/ -v
 ## 관련 문서
 
 - PRD: `tasks/prds/PRD-0035-multi-ai-consensus-verifier.md`
-- Cross-AI Verifier: `.claude/skills/cross-ai-verifier/`
+- Cross-AI Verifier: `/verify` 스킬
 
 ---
 

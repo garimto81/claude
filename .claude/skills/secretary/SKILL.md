@@ -234,7 +234,7 @@ python scripts/gmail_analyzer.py  # 재인증
 |------|----------|
 | `google-workspace` | Gmail/Calendar OAuth 인증 |
 | `github-engineer` | GitHub API 패턴 참조 |
-| `issue-resolution` | GitHub 이슈 처리 연동 |
+| `/issue fix` | GitHub 이슈 처리 연동 |
 
 ---
 

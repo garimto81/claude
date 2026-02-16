@@ -180,7 +180,7 @@ print(f'.claude exists: {(cwd / \".claude\").exists()}')
 
 | 파일 | 역할 |
 |------|------|
-| `auto_executor.py` | `detect_project_root()` 함수 |
+| `prd_sync.py` | `detect_project_root()` 함수 |
 | `CLAUDE.md` | 메인 프로젝트 설정 |
 | `.claude/rules/02-paths.md` | 경로 규칙 |
 
