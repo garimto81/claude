@@ -389,6 +389,27 @@ class GmailClient:
         """Mark email as unread."""
         return self.modify_labels(email_id, add_labels=["UNREAD"])
 
+    def download_attachment(self, message_id: str, attachment_id: str) -> bytes:
+        """Download attachment binary data.
+
+        Args:
+            message_id: Gmail message ID
+            attachment_id: Attachment ID (from GmailAttachment.id)
+
+        Returns:
+            bytes: Decoded binary data
+
+        Raises:
+            GmailAPIError: API call failure
+        """
+        try:
+            result = self.service.users().messages().attachments().get(
+                userId="me", messageId=message_id, id=attachment_id
+            ).execute()
+            return base64.urlsafe_b64decode(result["data"])
+        except HttpError as e:
+            self._handle_error(e)
+
     def archive(self, email_id: str) -> GmailMessage:
         """Archive email (remove from inbox)."""
         return self.modify_labels(email_id, remove_labels=["INBOX"])

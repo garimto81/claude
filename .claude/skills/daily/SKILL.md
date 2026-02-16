@@ -16,7 +16,7 @@ triggers:
     - "데일리 브리핑"
     - "morning briefing"
     - "아침 브리핑"
-    - "daily-sync"
+    - "daily"
     - "일일 동기화"
     - "업체 현황"
     - "vendor status"

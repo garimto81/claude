@@ -79,7 +79,7 @@
     {
       "id": "verify-001",
       "category": "skill",
-      "skill": "cross-ai-verifier",
+      "skill": "verify",
       "scenario": "Cross-AI 검증 실행",
       "input": "/verify src/auth.py --provider openai",
       "expectedBehavior": "OpenAI API로 코드 검증",

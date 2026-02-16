@@ -6,7 +6,7 @@
 
 | 로컬 스킬 | OMC 위임 | 서브커맨드 |
 |-----------|----------|-----------|
-| `/auto` | `autopilot` | --gdocs, --mockup, --debate, --research |
+| `/auto` | - (직접 실행, PDCA orchestrator) | Phase 1-5, --gdocs, --mockup, --daily 등 |
 | `/check` | `ultraqa` | --fix, --e2e, --perf, --security, --all |
 | `/debug` | `analyze` | D0-D4 Phase |
 | `/tdd` | `tdd` | - |
@@ -19,9 +19,13 @@
 | Deprecated | 리다이렉트 |
 |------------|-----------|
 | `/auto-workflow`, `/auto-executor` | `/auto` |
+| `/work` | `/auto` (v19.0 통합) |
+| `/work --auto` | `/auto` |
+| `/work --loop` | `/auto` |
 | `/tdd-workflow` | `/tdd` |
 | `/cross-ai-verifier` | `/verify` |
 | `/issue-resolution` | `/issue fix` |
+| `/daily-sync` | `/daily` |
 
 ## 에이전트 티어 라우팅
 

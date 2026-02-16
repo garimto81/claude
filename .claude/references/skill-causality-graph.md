@@ -4,7 +4,7 @@
 
 ```
                     ┌─────────────────────────────────────────────┐
-                    │              /auto (v20.0.0)                │
+                    │              /auto (v20.1.0)                │
                     │      PDCA Orchestrator (직접 실행)           │
                     └─────────────────────────────────────────────┘
                                         │
@@ -45,10 +45,10 @@
   │   └── Step 1.3: 이슈 연동 [/work 흡수]
   │   └── 산출물: docs/01-plan/{feature}.plan.md
   │
-  ├── Phase 2 DESIGN: 모드별 분기
+  ├── Phase 2 DESIGN: 모드별 분기 (executor 계열 — architect는 READ-ONLY)
   │   ├── LIGHT: 스킵
-  │   ├── STANDARD: Task(name="architect", team_name, architect, sonnet)
-  │   └── HEAVY: Task(name="architect", team_name, architect, opus)
+  │   ├── STANDARD: Task(name="design-writer", team_name, executor, sonnet)
+  │   └── HEAVY: Task(name="design-writer", team_name, executor-high, opus)
   │
   ├── Phase 3 DO: 모드별 분기
   │   ├── LIGHT: Task(name="executor", team_name, executor, sonnet)

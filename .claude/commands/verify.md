@@ -186,5 +186,5 @@ else:
 
 | 경로 | 설명 |
 |------|------|
-| `.claude/skills/cross-ai-verifier/` | Cross-AI Verifier Skill |
+| `.claude/skills/verify/` | Cross-AI Verifier Skill |
 | `.claude/commands/ai-login.md` | API 키 설정 안내 |

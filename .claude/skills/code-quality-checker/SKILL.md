@@ -235,7 +235,7 @@ python scripts/run_quality_check.py --react
 
 ### 연동 스킬
 
-`vercel-react-best-practices` 스킬의 49개 규칙을 기반으로 검사합니다.
+`vercel-react-best-practices` 스킬의 47개 규칙을 기반으로 검사합니다.
 상세 규칙: `.claude/skills/vercel-react-best-practices/AGENTS.md`
 
 ---

@@ -272,8 +272,7 @@ pip install pymupdf tiktoken
 ## Related
 
 - `/research` - 청킹 후 분석 작업
-- `/work` - 청킹 기반 자동화 워크플로우
-- `/auto` - 자율 반복 모드에서 청킹 활용
+- `/auto` - 청킹 기반 자동화 워크플로우 (자율 반복 모드)
 
 ## Troubleshooting
 

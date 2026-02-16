@@ -47,6 +47,17 @@
         ]
       }
     ],
+    "PostToolUse": [
+      {
+        "matcher": "Edit|Write",
+        "hooks": [
+          {
+            "type": "command",
+            "command": "node .claude/hooks/post_edit_check.js"
+          }
+        ]
+      }
+    ],
     "SessionEnd": [
       {
         "matcher": "",
