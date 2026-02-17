@@ -47,12 +47,21 @@ bkit_agents:
 | `--strict` | E2E 1회 실패 시 중단 |
 | `--dry-run` | 판단만 출력, 실행 안함 |
 | `--eco` | LIGHT 모드 강제 |
+| `--worktree` | feature 전용 worktree 생성 후 해당 경로에서 작업, 완료 시 자동 정리 |
 
 **팀 생성 (MANDATORY):** `TeamCreate(team_name="pdca-{feature}")`
 
 ### Phase 1: PLAN (사전 분석 → 복잡도 판단 → 계획 수립 → 이슈 연동)
 
 **Step 1.0**: 병렬 explore(haiku) x2 — 문서 탐색 + 이슈 탐색. `--skip-analysis`로 스킵 가능.
+
+```
+Task(subagent_type="oh-my-claudecode:explore", name="doc-analyst", team_name="pdca-{feature}",
+     model="haiku", prompt="docs/, .claude/ 내 관련 문서 탐색. 결과 5줄 이내 요약.")
+Task(subagent_type="oh-my-claudecode:explore", name="issue-analyst", team_name="pdca-{feature}",
+     model="haiku", prompt="gh issue list로 유사 이슈 탐색. 결과 5줄 이내 요약.")
+# 완료 대기 → 각각 SendMessage(type="shutdown_request", recipient="...")
+```
 
 **Step 1.1: 복잡도 판단 (5점 만점)** — 상세 기준: `REFERENCE.md`
 
@@ -63,6 +72,14 @@ bkit_agents:
 | 4-5 | HEAVY | `Skill(ralplan)` |
 
 **Step 1.2**: 계획 수립 → `docs/01-plan/{feature}.plan.md` 생성
+
+```
+# STANDARD 예시 (LIGHT: model="haiku", HEAVY: Skill(skill="oh-my-claudecode:ralplan"))
+Task(subagent_type="oh-my-claudecode:planner", name="planner", team_name="pdca-{feature}",
+     model="sonnet", prompt="(복잡도: STANDARD {score}/5). docs/01-plan/{feature}.plan.md 생성.")
+SendMessage(type="message", recipient="planner", content="계획 수립 시작.")
+```
+
 **Step 1.3**: 이슈 연동 (없으면 생성, 있으면 코멘트). `--no-issue`로 스킵 가능.
 
 ### Phase 2: DESIGN (설계 문서 생성)
@@ -76,6 +93,13 @@ bkit_agents:
 | HEAVY | design-writer teammate | `oh-my-claudecode:executor-high` (opus) |
 
 > **주의**: `oh-my-claudecode:architect`는 READ-ONLY (Write 도구 없음). 설계 **문서 생성**에는 executor 계열 사용 필수.
+
+```
+# STANDARD 예시 (HEAVY: executor-high + opus)
+Task(subagent_type="oh-my-claudecode:executor", name="design-writer", team_name="pdca-{feature}",
+     model="sonnet", prompt="docs/01-plan/{feature}.plan.md 참조. 설계 문서 작성. 출력: docs/02-design/{feature}.design.md")
+SendMessage(type="message", recipient="design-writer", content="설계 문서 생성 요청.")
+```
 
 **산출물**: `docs/02-design/{feature}.design.md` (STANDARD/HEAVY만)
 
@@ -99,11 +123,24 @@ bkit_agents:
 | LIGHT | executor teammate (sonnet) — 단일 실행 (Ralph 없음) |
 | STANDARD/HEAVY | `Skill(ralph)` — Ralph 루프 (Ultrawork 내장) |
 
+```
+# LIGHT: executor teammate 단일 실행
+Task(subagent_type="oh-my-claudecode:executor", name="executor", team_name="pdca-{feature}",
+     model="sonnet", prompt="docs/01-plan/{feature}.plan.md 기반 구현. TDD 필수.")
+SendMessage(type="message", recipient="executor", content="구현 시작.")
+# STANDARD/HEAVY: Ralph 루프
+Skill(skill="oh-my-claudecode:ralph", args="docs/02-design/{feature}.design.md 기반 구현")
+```
+
 Ralph 5조건: TODO==0, 기능동작, 테스트통과, 에러==0, Architect승인. 상세: `REFERENCE.md`
 
 ### Phase 4: CHECK (UltraQA + 검증 + E2E + TDD)
 
 **Step 4.1**: `Skill(oh-my-claudecode:ultraqa)` — Build→Lint→Test→Fix, 커버리지 80% 필수
+
+```
+Skill(skill="oh-my-claudecode:ultraqa")
+```
 
 **Step 4.2**: 검증 (순차 teammate — context spike 방지)
 
@@ -112,6 +149,14 @@ Ralph 5조건: TODO==0, 기능동작, 테스트통과, 에러==0, Architect승�
 | LIGHT | architect teammate (sonnet) — APPROVE/REJECT만 |
 | STANDARD | architect → gap-detector → code-analyzer (sonnet) 순차 |
 | HEAVY | architect → gap-detector → code-analyzer (opus) 순차 |
+
+```
+# LIGHT: architect만 / STANDARD: architect → gap-detector → code-analyzer 순차
+Task(subagent_type="oh-my-claudecode:architect", name="verifier", team_name="pdca-{feature}",
+     model="sonnet", prompt="구현이 Plan/Design 요구사항과 일치하는지 검증. APPROVE/REJECT 판정.")
+SendMessage(type="message", recipient="verifier", content="검증 시작.")
+# 완료 대기 → shutdown_request → (STANDARD/HEAVY: gap-detector, code-analyzer 순차 spawn)
+```
 
 > architect는 READ-ONLY이므로 **검증/판정에 적합**. 파일 생성에는 사용 금지.
 
@@ -125,6 +170,14 @@ Ralph 5조건: TODO==0, 기능동작, 테스트통과, 에러==0, Architect승�
 | gap < 90% | pdca-iterator teammate (sonnet, 최대 5회) → Phase 4 재실행 |
 | gap >= 90% + APPROVE | report-generator teammate (haiku) → `docs/04-report/` |
 | Architect REJECT | executor teammate (sonnet) → Phase 4 재실행 |
+
+```
+# gap >= 90% + APPROVE → 보고서 생성 후 팀 정리
+Task(subagent_type="bkit:report-generator", name="reporter", team_name="pdca-{feature}",
+     model="haiku", prompt="PDCA 완료 보고서 생성. 출력: docs/04-report/{feature}.report.md")
+SendMessage(type="message", recipient="reporter", content="보고서 생성 요청.")
+# 완료 대기 → shutdown_request → TeamDelete()
+```
 
 **팀 정리 (MANDATORY):** `TeamDelete()`
 
