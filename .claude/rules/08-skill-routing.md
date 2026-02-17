@@ -1,18 +1,18 @@
-# OMC 스킬 라우팅 규칙
+# 스킬 라우팅 규칙
 
-로컬 스킬 SKILL.md의 `omc_delegate` frontmatter가 있으면 해당 OMC 스킬로 자동 라우팅.
+모든 스킬은 Agent Teams 패턴으로 직접 실행합니다. 로컬 에이전트 (`C:\claude\.claude\agents\`)를 사용합니다.
 
 ## 스킬 매핑 테이블
 
-| 로컬 스킬 | OMC 위임 | 서브커맨드 |
-|-----------|----------|-----------|
-| `/auto` | - (직접 실행, PDCA orchestrator) | Phase 1-5, --gdocs, --mockup, --daily 등 |
-| `/check` | `ultraqa` | --fix, --e2e, --perf, --security, --all |
-| `/debug` | `analyze` | D0-D4 Phase |
-| `/tdd` | `tdd` | - |
-| `/parallel` | `ultrawork` | dev, test, review, research, check |
-| `/research` | `research` | code, web, plan, review |
-| `/commit`, `/issue`, `/pr`, `/verify`, `/mockup-hybrid` | - (직접 실행) | 각 고유 서브커맨드 |
+| 스킬 | 실행 방식 | 서브커맨드 |
+|------|----------|-----------|
+| `/auto` | 직접 실행 (PDCA orchestrator, Agent Teams 단일 패턴) | Phase 1-5, --gdocs, --mockup, --daily 등 |
+| `/check` | Agent Teams (QA 사이클) | --fix, --e2e, --perf, --security, --all |
+| `/debug` | Agent Teams (architect 분석) | D0-D4 Phase |
+| `/tdd` | Agent Teams (tdd-guide) | - |
+| `/parallel` | Agent Teams (병렬 executor) | dev, test, review, research, check |
+| `/research` | Agent Teams (researcher) | code, web, plan, review |
+| `/commit`, `/issue`, `/pr`, `/verify`, `/mockup-hybrid` | 직접 실행 | 각 고유 서브커맨드 |
 
 ## Deprecated 스킬
 
@@ -42,6 +42,5 @@
 ## 금지 사항
 
 - SKILL.md에 "참조하세요"만 작성 금지 (실행 지시 필수)
-- omc_delegate 없이 OMC 기능 기대 금지
 - 서브프로젝트에 리소스 로컬 생성 금지 (Junction 사용, 상세: `09-global-only.md`)
 - 인과관계 파괴 금지 (커맨드 삭제/변경 시 연쇄 확인 필수)

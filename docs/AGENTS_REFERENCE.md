@@ -48,7 +48,7 @@
 | `claude-expert` | Claude Code, MCP, 에이전트 | opus |
 | `catalog-engineer` | WSOPTV 카탈로그/제목 생성 (Block F/G) | sonnet |
 
-**OMC 대체 에이전트**: 삭제된 11개 로컬 에이전트의 기능은 OMC 에이전트로 대체됩니다: oh-my-claudecode:architect, oh-my-claudecode:code-reviewer, oh-my-claudecode:qa-tester, oh-my-claudecode:security-reviewer, oh-my-claudecode:designer, oh-my-claudecode:writer, oh-my-claudecode:executor (TypeScript/Python/Frontend/Backend/Fullstack 포함)
+**OMC 대체 에이전트**: 삭제된 11개 로컬 에이전트의 기능은 OMC 에이전트로 대체됩니다: architect, code-reviewer, qa-tester, security-reviewer, designer, writer, executor (TypeScript/Python/Frontend/Backend/Fullstack 포함)
 
 ---
 
@@ -107,22 +107,22 @@ claude mcp remove <name>
 
 | 상황 | 추천 에이전트 |
 |------|--------------|
-| 코드 작성 후 리뷰 | oh-my-claudecode:code-reviewer |
-| 설계 결정 필요 | oh-my-claudecode:architect |
-| 버그 분석 | oh-my-claudecode:debugger |
-| 테스트 작성 | oh-my-claudecode:qa-tester |
-| 보안 점검 | oh-my-claudecode:security-reviewer |
-| 문서 작성 | oh-my-claudecode:writer |
-| React/UI 개발 | oh-my-claudecode:designer |
-| API 개발 | oh-my-claudecode:executor |
-| 전체 기능 개발 | oh-my-claudecode:executor-high |
+| 코드 작성 후 리뷰 | code-reviewer |
+| 설계 결정 필요 | architect |
+| 버그 분석 | debugger |
+| 테스트 작성 | qa-tester |
+| 보안 점검 | security-reviewer |
+| 문서 작성 | writer |
+| React/UI 개발 | designer |
+| API 개발 | executor |
+| 전체 기능 개발 | executor-high |
 | CI/CD, K8s | `devops-engineer` |
 | AWS/Azure/GCP | `cloud-architect` |
 | DB 설계/최적화 | `database-specialist` |
 | 데이터/ML | `data-specialist` |
 | LLM/RAG | `ai-engineer` |
-| TS 고급 타입 | oh-my-claudecode:executor |
-| Python 고급 | oh-my-claudecode:executor |
+| TS 고급 타입 | executor |
+| Python 고급 | executor |
 | GitHub 워크플로우 | `github-engineer` |
 | Claude Code 설정 | `claude-expert` |
 | WSOPTV 카탈로그 | `catalog-engineer` |
@@ -166,6 +166,7 @@ claude mcp remove <name>
 
 | 버전 | 날짜 | 변경 |
 |------|------|------|
+| 8.1.0 | 2026-02-18 | /auto v21.0: 내부 Skill() 호출 제거 (ralplan/ralph/ultraqa → Agent Teams 단일 패턴) |
 | 8.0.0 | 2026-02-15 | OMC 중복 제거 (19개 → 8개: 11개 에이전트를 OMC 플러그인으로 대체) |
 | 7.1.0 | 2026-02-13 | 스킬 개수 동기화 (47개 → 48개: daily 스킬 추가 반영) |
 | 7.0.0 | 2026-02-05 | 모델 정보 동기화 (code-reviewer/docs-writer/github-engineer: sonnet→haiku), 스킬 개수 47개 반영 |
