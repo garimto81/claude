@@ -94,7 +94,7 @@ Worktree 내 파일은 절대 경로로 Read/Write/Edit 가능:
 
 ```
 TeamCreate(team_name="wt-{branch}")
-Task(subagent_type="oh-my-claudecode:executor", name="impl", team_name="wt-{branch}",
+Task(subagent_type="executor", name="impl", team_name="wt-{branch}",
      model="sonnet", prompt="모든 파일은 C:\\claude\\wt\\{branch}\\ 하위에서 작업하세요.")
 SendMessage(type="message", recipient="impl", content="구현 시작.")
 # 완료 대기 → shutdown_request → TeamDelete()

@@ -1,0 +1,567 @@
+{
+  "timestamp": "2026-02-15T22:59:58.279Z",
+  "reason": "compaction",
+  "status": {
+    "version": "2.0",
+    "lastUpdated": "2026-02-15T22:42:01.491Z",
+    "activeFeatures": [
+      "mockup_hybrid",
+      "adapters",
+      "core",
+      "google_docs",
+      "tests",
+      ".claude",
+      "scripts"
+    ],
+    "primaryFeature": "mockup_hybrid",
+    "features": {
+      "auto-work-unification": {
+        "phase": "completed",
+        "phaseNumber": 6,
+        "matchRate": 95,
+        "iterationCount": 0,
+        "requirements": [
+          "FR-01: /work→/auto 통합",
+          "FR-02: 3-tier 복잡도 분기",
+          "FR-03: 인과관계 그래프 보존",
+          "FR-04: 잔여 참조 제거"
+        ],
+        "documents": {
+          "plan": "docs/01-plan/auto-work-unification.plan.md",
+          "design": "docs/02-design/auto-work-unification.design.md",
+          "report": "docs/04-report/auto-work-unification.report.md"
+        },
+        "timestamps": {
+          "started": "2026-02-16T08:00:00.000Z",
+          "lastUpdated": "2026-02-16T10:00:00.000Z"
+        },
+        "lastFile": "C:\\claude\\.claude\\skills\\auto\\SKILL.md"
+      },
+      "daily-integration": {
+        "phase": "completed",
+        "phaseNumber": 6,
+        "matchRate": 97,
+        "iterationCount": 0,
+        "requirements": [
+          "FR-01",
+          "FR-02",
+          "FR-03",
+          "FR-04",
+          "FR-05"
+        ],
+        "documents": {
+          "plan": "docs/01-plan/daily-integration.plan.md",
+          "design": "docs/02-design/daily-integration.design.md",
+          "analysis": "docs/03-analysis/daily-integration.analysis.md",
+          "report": "docs/04-report/daily-integration.report.md"
+        },
+        "timestamps": {
+          "started": "2026-02-05T11:00:00.000Z",
+          "lastUpdated": "2026-02-05T16:00:00.000Z",
+          "completedAt": "2026-02-05T16:00:00.000Z"
+        },
+        "ralplan": {
+          "iterations": 1,
+          "criticVerdict": "OKAY",
+          "completedAt": "2026-02-05T11:45:00.000Z"
+        }
+      },
+      "scripts": {
+        "phase": "do",
+        "phaseNumber": 3,
+        "matchRate": 100,
+        "iterationCount": 0,
+        "requirements": [],
+        "documents": {},
+        "timestamps": {
+          "started": "2026-02-02T03:17:36.948Z",
+          "lastUpdated": "2026-02-15T22:42:01.491Z",
+          "completedAt": "2026-02-15T03:09:53.926Z"
+        },
+        "lastFile": "C:\\claude\\.claude\\skills\\auto\\scripts\\omc_bridge.py"
+      },
+      "google_docs": {
+        "phase": "do",
+        "phaseNumber": 3,
+        "matchRate": 100,
+        "iterationCount": 0,
+        "requirements": [],
+        "documents": {},
+        "timestamps": {
+          "started": "2026-02-03T06:01:57.034Z",
+          "lastUpdated": "2026-02-15T19:05:27.425Z",
+          "completedAt": "2026-02-15T00:00:00.000Z"
+        },
+        "lastFile": "C:\\claude\\lib\\google_docs\\mermaid_renderer.py"
+      },
+      ".claude": {
+        "phase": "do",
+        "phaseNumber": 3,
+        "matchRate": 100,
+        "iterationCount": 0,
+        "requirements": [],
+        "documents": {},
+        "timestamps": {
+          "started": "2026-02-06T05:14:03.765Z",
+          "lastUpdated": "2026-02-15T21:40:48.732Z",
+          "completedAt": "2026-02-15T00:00:00.000Z"
+        },
+        "lastFile": "C:\\claude\\.claude\\hooks\\post_edit_check.js"
+      },
+      "pdf_utils": {
+        "phase": "completed",
+        "phaseNumber": 6,
+        "matchRate": 100,
+        "iterationCount": 0,
+        "requirements": [],
+        "documents": {},
+        "timestamps": {
+          "started": "2026-02-06T09:22:40.448Z",
+          "lastUpdated": "2026-02-06T09:33:12.725Z",
+          "completedAt": "2026-02-15T00:00:00.000Z"
+        }
+      },
+      "slack": {
+        "phase": "completed",
+        "phaseNumber": 6,
+        "matchRate": 100,
+        "iterationCount": 0,
+        "requirements": [],
+        "documents": {},
+        "successor_plan": "daily-redesign",
+        "timestamps": {
+          "started": "2026-02-02T05:42:47.909Z",
+          "lastUpdated": "2026-02-05T07:24:52.949Z",
+          "completedAt": "2026-02-15T00:00:00.000Z"
+        }
+      },
+      "gmail": {
+        "phase": "completed",
+        "phaseNumber": 6,
+        "matchRate": 100,
+        "iterationCount": 0,
+        "requirements": [],
+        "documents": {},
+        "successor_plan": "daily-redesign",
+        "timestamps": {
+          "started": "2026-02-12T11:18:28.270Z",
+          "lastUpdated": "2026-02-12T11:18:28.270Z",
+          "completedAt": "2026-02-15T00:00:00.000Z"
+        }
+      },
+      "mockup_hybrid": {
+        "phase": "do",
+        "phaseNumber": 3,
+        "matchRate": null,
+        "iterationCount": 0,
+        "requirements": [],
+        "documents": {},
+        "timestamps": {
+          "started": "2026-02-15T18:10:00.221Z",
+          "lastUpdated": "2026-02-15T20:19:06.711Z"
+        },
+        "lastFile": "C:\\claude\\lib\\mockup_hybrid\\export_utils.py"
+      },
+      "adapters": {
+        "phase": "do",
+        "phaseNumber": 3,
+        "matchRate": null,
+        "iterationCount": 0,
+        "requirements": [],
+        "documents": {},
+        "timestamps": {
+          "started": "2026-02-15T18:10:44.917Z",
+          "lastUpdated": "2026-02-15T18:10:51.739Z"
+        },
+        "lastFile": "C:\\claude\\.claude\\skills\\mockup-hybrid\\adapters\\__init__.py"
+      },
+      "core": {
+        "phase": "do",
+        "phaseNumber": 3,
+        "matchRate": null,
+        "iterationCount": 0,
+        "requirements": [],
+        "documents": {},
+        "timestamps": {
+          "started": "2026-02-15T18:11:02.683Z",
+          "lastUpdated": "2026-02-15T18:32:12.700Z"
+        },
+        "lastFile": "C:\\claude\\.claude\\skills\\mockup-hybrid\\core\\router.py"
+      },
+      "tests": {
+        "phase": "do",
+        "phaseNumber": 3,
+        "matchRate": null,
+        "iterationCount": 0,
+        "requirements": [],
+        "documents": {},
+        "timestamps": {
+          "started": "2026-02-15T19:00:21.972Z",
+          "lastUpdated": "2026-02-15T19:06:23.317Z"
+        },
+        "lastFile": "C:\\claude\\lib\\google_docs\\tests\\test_mermaid_renderer.py"
+      }
+    },
+    "pipeline": {
+      "currentPhase": 2,
+      "level": "Dynamic",
+      "phaseHistory": [
+        {
+          "phase": 1,
+          "feature": "daily-integration",
+          "completedAt": "2026-02-05T11:15:00.000Z"
+        }
+      ]
+    },
+    "session": {
+      "startedAt": "2026-02-16T08:00:00.000Z",
+      "onboardingCompleted": true,
+      "lastActivity": "2026-02-15T22:42:01.491Z"
+    },
+    "history": [
+      {
+        "timestamp": "2026-02-05T11:45:00.000Z",
+        "feature": "daily-integration",
+        "phase": "design",
+        "action": "ralplan_complete",
+        "details": "Critic OKAY - 1 iteration"
+      },
+      {
+        "timestamp": "2026-02-05T16:00:00.000Z",
+        "feature": "daily-integration",
+        "phase": "completed",
+        "action": "completed",
+        "details": "matchRate 97%"
+      },
+      {
+        "timestamp": "2026-02-15T00:00:00.000Z",
+        "feature": "scripts,google_docs,.claude,pdf_utils,slack,gmail,tests,bkit-marketplace,claude,scratchpad,tmux-install,agents,teams",
+        "phase": "completed",
+        "action": "bulk_complete",
+        "details": "Lean Workflow v1 정리 - 13개 피처 일괄 완료"
+      },
+      {
+        "timestamp": "2026-02-16T08:00:00.000Z",
+        "feature": "auto-work-unification",
+        "phase": "plan",
+        "action": "started",
+        "details": "Phase 1 PLAN - /work + /auto 통합 설계"
+      },
+      {
+        "timestamp": "2026-02-16T08:30:00.000Z",
+        "feature": "auto-work-unification",
+        "phase": "design",
+        "action": "completed",
+        "details": "Phase 2 DESIGN - 16개 파일 변경 설계"
+      },
+      {
+        "timestamp": "2026-02-16T09:00:00.000Z",
+        "feature": "auto-work-unification",
+        "phase": "do",
+        "action": "completed",
+        "details": "Phase 3 DO - SKILL.md v19.0, REFERENCE.md, auto.md, work.md stub, 참조 문서 업데이트"
+      },
+      {
+        "timestamp": "2026-02-16T10:00:00.000Z",
+        "feature": "auto-work-unification",
+        "phase": "check",
+        "action": "started",
+        "details": "Phase 4 CHECK - 인과관계 PASS, SKILL.md 194줄 PASS, /work 잔여참조 정리 중"
+      },
+      {
+        "timestamp": "2026-02-15T18:10:00.221Z",
+        "feature": "mockup_hybrid",
+        "phase": "do",
+        "action": "updated"
+      },
+      {
+        "timestamp": "2026-02-15T18:10:05.501Z",
+        "feature": "mockup_hybrid",
+        "phase": "do",
+        "action": "updated"
+      },
+      {
+        "timestamp": "2026-02-15T18:10:09.586Z",
+        "feature": "mockup_hybrid",
+        "phase": "do",
+        "action": "updated"
+      },
+      {
+        "timestamp": "2026-02-15T18:10:20.136Z",
+        "feature": "mockup_hybrid",
+        "phase": "do",
+        "action": "updated"
+      },
+      {
+        "timestamp": "2026-02-15T18:10:44.917Z",
+        "feature": "adapters",
+        "phase": "do",
+        "action": "updated"
+      },
+      {
+        "timestamp": "2026-02-15T18:10:51.739Z",
+        "feature": "adapters",
+        "phase": "do",
+        "action": "updated"
+      },
+      {
+        "timestamp": "2026-02-15T18:11:02.683Z",
+        "feature": "core",
+        "phase": "do",
+        "action": "updated"
+      },
+      {
+        "timestamp": "2026-02-15T18:11:17.048Z",
+        "feature": "core",
+        "phase": "do",
+        "action": "updated"
+      },
+      {
+        "timestamp": "2026-02-15T18:11:23.887Z",
+        "feature": "core",
+        "phase": "do",
+        "action": "updated"
+      },
+      {
+        "timestamp": "2026-02-15T18:11:33.727Z",
+        "feature": "core",
+        "phase": "do",
+        "action": "updated"
+      },
+      {
+        "timestamp": "2026-02-15T18:11:47.930Z",
+        "feature": "core",
+        "phase": "do",
+        "action": "updated"
+      },
+      {
+        "timestamp": "2026-02-15T18:11:55.648Z",
+        "feature": "core",
+        "phase": "do",
+        "action": "updated"
+      },
+      {
+        "timestamp": "2026-02-15T18:22:37.618Z",
+        "feature": "mockup_hybrid",
+        "phase": "do",
+        "action": "updated"
+      },
+      {
+        "timestamp": "2026-02-15T18:24:13.474Z",
+        "feature": "core",
+        "phase": "do",
+        "action": "updated"
+      },
+      {
+        "timestamp": "2026-02-15T18:24:33.254Z",
+        "feature": "core",
+        "phase": "do",
+        "action": "updated"
+      },
+      {
+        "timestamp": "2026-02-15T18:31:44.401Z",
+        "feature": "core",
+        "phase": "do",
+        "action": "updated"
+      },
+      {
+        "timestamp": "2026-02-15T18:31:51.662Z",
+        "feature": "core",
+        "phase": "do",
+        "action": "updated"
+      },
+      {
+        "timestamp": "2026-02-15T18:31:55.341Z",
+        "feature": "core",
+        "phase": "do",
+        "action": "updated"
+      },
+      {
+        "timestamp": "2026-02-15T18:32:02.944Z",
+        "feature": "core",
+        "phase": "do",
+        "action": "updated"
+      },
+      {
+        "timestamp": "2026-02-15T18:32:12.700Z",
+        "feature": "core",
+        "phase": "do",
+        "action": "updated"
+      },
+      {
+        "timestamp": "2026-02-15T18:58:55.281Z",
+        "feature": "google_docs",
+        "phase": "do",
+        "action": "updated"
+      },
+      {
+        "timestamp": "2026-02-15T19:00:21.972Z",
+        "feature": "tests",
+        "phase": "do",
+        "action": "updated"
+      },
+      {
+        "timestamp": "2026-02-15T19:01:07.336Z",
+        "feature": "google_docs",
+        "phase": "do",
+        "action": "updated"
+      },
+      {
+        "timestamp": "2026-02-15T19:01:14.564Z",
+        "feature": "google_docs",
+        "phase": "do",
+        "action": "updated"
+      },
+      {
+        "timestamp": "2026-02-15T19:01:22.423Z",
+        "feature": "google_docs",
+        "phase": "do",
+        "action": "updated"
+      },
+      {
+        "timestamp": "2026-02-15T19:04:42.985Z",
+        "feature": "google_docs",
+        "phase": "do",
+        "action": "updated"
+      },
+      {
+        "timestamp": "2026-02-15T19:04:52.504Z",
+        "feature": "google_docs",
+        "phase": "do",
+        "action": "updated"
+      },
+      {
+        "timestamp": "2026-02-15T19:05:02.282Z",
+        "feature": "google_docs",
+        "phase": "do",
+        "action": "updated"
+      },
+      {
+        "timestamp": "2026-02-15T19:05:16.530Z",
+        "feature": "google_docs",
+        "phase": "do",
+        "action": "updated"
+      },
+      {
+        "timestamp": "2026-02-15T19:05:27.425Z",
+        "feature": "google_docs",
+        "phase": "do",
+        "action": "updated"
+      },
+      {
+        "timestamp": "2026-02-15T19:05:47.199Z",
+        "feature": "tests",
+        "phase": "do",
+        "action": "updated"
+      },
+      {
+        "timestamp": "2026-02-15T19:05:57.678Z",
+        "feature": "tests",
+        "phase": "do",
+        "action": "updated"
+      },
+      {
+        "timestamp": "2026-02-15T19:06:10.149Z",
+        "feature": "tests",
+        "phase": "do",
+        "action": "updated"
+      },
+      {
+        "timestamp": "2026-02-15T19:06:23.317Z",
+        "feature": "tests",
+        "phase": "do",
+        "action": "updated"
+      },
+      {
+        "timestamp": "2026-02-15T20:17:24.690Z",
+        "feature": "mockup_hybrid",
+        "phase": "do",
+        "action": "updated"
+      },
+      {
+        "timestamp": "2026-02-15T20:17:40.939Z",
+        "feature": "mockup_hybrid",
+        "phase": "do",
+        "action": "updated"
+      },
+      {
+        "timestamp": "2026-02-15T20:17:46.672Z",
+        "feature": "mockup_hybrid",
+        "phase": "do",
+        "action": "updated"
+      },
+      {
+        "timestamp": "2026-02-15T20:17:53.535Z",
+        "feature": "mockup_hybrid",
+        "phase": "do",
+        "action": "updated"
+      },
+      {
+        "timestamp": "2026-02-15T20:17:59.027Z",
+        "feature": "mockup_hybrid",
+        "phase": "do",
+        "action": "updated"
+      },
+      {
+        "timestamp": "2026-02-15T20:18:03.979Z",
+        "feature": "mockup_hybrid",
+        "phase": "do",
+        "action": "updated"
+      },
+      {
+        "timestamp": "2026-02-15T20:19:06.711Z",
+        "feature": "mockup_hybrid",
+        "phase": "do",
+        "action": "updated"
+      },
+      {
+        "timestamp": "2026-02-15T21:40:23.344Z",
+        "feature": ".claude",
+        "phase": "do",
+        "action": "updated"
+      },
+      {
+        "timestamp": "2026-02-15T21:40:31.879Z",
+        "feature": ".claude",
+        "phase": "do",
+        "action": "updated"
+      },
+      {
+        "timestamp": "2026-02-15T21:40:40.478Z",
+        "feature": ".claude",
+        "phase": "do",
+        "action": "updated"
+      },
+      {
+        "timestamp": "2026-02-15T21:40:48.732Z",
+        "feature": ".claude",
+        "phase": "do",
+        "action": "updated"
+      },
+      {
+        "timestamp": "2026-02-15T22:41:04.798Z",
+        "feature": "scripts",
+        "phase": "do",
+        "action": "updated"
+      },
+      {
+        "timestamp": "2026-02-15T22:41:18.521Z",
+        "feature": "scripts",
+        "phase": "do",
+        "action": "updated"
+      },
+      {
+        "timestamp": "2026-02-15T22:41:29.023Z",
+        "feature": "scripts",
+        "phase": "do",
+        "action": "updated"
+      },
+      {
+        "timestamp": "2026-02-15T22:42:01.491Z",
+        "feature": "scripts",
+        "phase": "do",
+        "action": "updated"
+      }
+    ]
+  }
+}

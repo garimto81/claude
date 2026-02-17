@@ -79,8 +79,8 @@ Task 5: 보고서 생성           (writer, haiku)        - blockedBy: Task 4
 
 ```python
 # ❌ 구 subagent 패턴 (team_name 없음)
-Task(subagent_type="oh-my-claudecode:designer", model="sonnet", prompt="...")
-Task(subagent_type="oh-my-claudecode:qa-tester", model="sonnet", prompt="...")
+Task(subagent_type="designer", model="sonnet", prompt="...")
+Task(subagent_type="qa-tester", model="sonnet", prompt="...")
 ```
 
 ### 올바른 예
@@ -91,11 +91,11 @@ TeamCreate(team_name="feature-session")
 TaskCreate(subject="목업 생성", description="...")
 TaskCreate(subject="스크린샷 캡처", description="...")
 TaskUpdate(taskId="2", addBlockedBy=["1"])
-Task(subagent_type="oh-my-claudecode:designer", name="designer",
+Task(subagent_type="designer", name="designer",
      team_name="feature-session", model="sonnet", prompt="...")
 SendMessage(type="message", recipient="designer", content="Task #1 할당.")
 # designer 완료 후 →
-Task(subagent_type="oh-my-claudecode:qa-tester", name="tester",
+Task(subagent_type="qa-tester", name="tester",
      team_name="feature-session", model="sonnet", prompt="...")
 SendMessage(type="message", recipient="tester", content="Task #2 할당.")
 # 완료 → TeamDelete()
