@@ -20,7 +20,7 @@ Claude Code 워크플로우 및 자동화 도구 메타 레포지토리. 커스�
 | **archive-analyzer** | `C:\claude\archive-analyzer` | 미디어 파일 분류 및 MAM 시스템 |
 | **vimeo_ott** | `C:\claude\vimeo_ott` | Vimeo OTT 콘텐츠 업로드/관리 (VHX API, S3) |
 | **src/agents** | `C:\claude\src\agents` | Multi-Agent 병렬 워크플로우 시스템 (LangGraph) |
-| **lib/** | `C:\claude\lib` | 통합 라이브러리 (Gmail, Slack, Google Docs, PDF, Mockup) |
+| **lib/** | `C:\claude\lib` | 통합 라이브러리 (Gmail, Slack, Google Docs, PDF, Mockup, AI Auth) |
 
 ---
 
@@ -36,6 +36,7 @@ Claude Code 워크플로우 및 자동화 도구 메타 레포지토리. 커스�
 | **프로세스 종료 금지** | `taskkill /F /IM node.exe` 등 전체 종료 절대 금지 |
 | **Git** | Conventional Commit, main 직접 수정은 허용 파일만 (`CLAUDE.md`, `README.md`, `.claude/`, `docs/`) |
 | **TDD** | 테스트 먼저 작성 (상세: `.claude/rules/04-tdd.md`) |
+| **이미지 분석** | "이미지 분석" 요청 시 Tesseract OCR 정밀 분석 자동 실행 (상세: `.claude/rules/10-image-analysis.md`) |
 
 ---
 
@@ -83,22 +84,24 @@ lib/
 ├── slack/          # Slack OAuth + 메시징 + Lists API (Bot/User Token)
 ├── google_docs/    # Markdown→Google Docs 변환, Drive 정리, 프로젝트 레지스트리
 ├── pdf_utils/      # PDF 텍스트 추출 + 토큰/페이지 기반 청킹
-└── mockup_hybrid/  # HTML 와이어프레임 + Google Stitch 하이브리드 목업
+├── ocr/            # Tesseract OCR 정밀 텍스트 추출 (pytesseract + OpenCV)
+├── mockup_hybrid/  # HTML 와이어프레임 + Google Stitch 하이브리드 목업
+└── ai_auth/        # AI 서비스 인증 통합 (GPT, Gemini)
 ```
 
 **인증 방식:** 모든 lib은 Browser OAuth 사용 (API 키 금지). 토큰 저장: `C:\claude\json\`
 
 ### 3. 커맨드 시스템 (`.claude/commands/`)
 
-24개 커맨드 (`/auto`, `/commit`, `/check` 등). 각 `.md` 파일이 슬래시 커맨드 정의.
+27개 커맨드 (`/auto`, `/commit`, `/check` 등). 각 `.md` 파일이 슬래시 커맨드 정의.
 
 ### 4. 에이전트 시스템 (`.claude/agents/`)
 
-8개 커스텀 에이전트 (11개 OMC 중복 삭제). 나머지는 OMC 에이전트로 위임.
+10개 커스텀 에이전트 (11개 OMC 중복 삭제). 나머지는 OMC 에이전트로 위임.
 
 ### 5. 스킬 시스템 (`.claude/skills/`)
 
-48개 스킬 (+ 6개 deprecated redirect stub). 각 디렉토리에 `SKILL.md` + 관련 파일. 자동/수동 트리거 지원.
+43개 스킬. 각 디렉토리에 `SKILL.md` + 관련 파일. 자동/수동 트리거 지원.
 
 ---
 
@@ -139,7 +142,7 @@ lib/
 | `/debug` | 가설-검증 기반 디버깅 | 필요 시 |
 | `/issue` | GitHub 이슈 관리 | 필요 시 |
 
-**전체 24개**: `docs/COMMAND_REFERENCE.md`
+**전체 27개**: `docs/COMMAND_REFERENCE.md`
 
 ---
 
