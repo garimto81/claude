@@ -266,8 +266,10 @@ SendMessage(type="message", recipient="verifier", content="검증 시작.")
 
 ```
 # gap >= 90% + APPROVE → 보고서 생성 후 Safe Cleanup
+# 보고서 모델 분기: LIGHT=haiku, STANDARD/HEAVY=sonnet
+report_model = "haiku" if mode == "LIGHT" else "sonnet"
 Task(subagent_type="writer", name="reporter", team_name="pdca-{feature}",
-     model="haiku", prompt="PDCA 완료 보고서 생성. 출력: docs/04-report/{feature}.report.md")
+     model=report_model, prompt="PDCA 완료 보고서 생성. 출력: docs/04-report/{feature}.report.md")
 SendMessage(type="message", recipient="reporter", content="보고서 생성 요청.")
 # 완료 대기 → Safe Cleanup (아래 절차)
 ```

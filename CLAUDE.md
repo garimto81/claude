@@ -2,7 +2,7 @@
 
 This file provides guidance to Claude Code (claude.ai/code) when working with code in this repository.
 
-**Version**: 13.0.0 | **Context**: Windows, PowerShell, Root: `C:\claude`
+**Version**: 14.0.0 | **Context**: Windows, Root: `C:\claude`
 
 **GitHub**: `garimto81/claude`
 
@@ -93,15 +93,26 @@ lib/
 
 ### 3. 커맨드 시스템 (`.claude/commands/`)
 
-27개 커맨드 (`/auto`, `/commit`, `/check` 등). 각 `.md` 파일이 슬래시 커맨드 정의.
+23개 커맨드 (`/auto`, `/commit`, `/check` 등). 각 `.md` 파일이 슬래시 커맨드 정의.
 
 ### 4. 에이전트 시스템 (`.claude/agents/`)
 
-10개 커스텀 에이전트 (11개 OMC 중복 삭제). 나머지는 OMC 에이전트로 위임.
+42개 로컬 에이전트. OMC 플러그인 완전 제거됨 (2026-02-18) — 모든 에이전트가 `.claude/agents/`에서 직접 로드됨.
+
+**주요 에이전트**: `architect`, `executor`, `executor-high`, `planner`, `critic`, `designer`, `code-reviewer`, `qa-tester`, `gap-detector`, `writer`, `researcher`
 
 ### 5. 스킬 시스템 (`.claude/skills/`)
 
-43개 스킬. 각 디렉토리에 `SKILL.md` + 관련 파일. 자동/수동 트리거 지원.
+36개 스킬 디렉토리. 각 디렉토리에 `SKILL.md` + 관련 파일. 자동/수동 트리거 지원.
+
+### 6. Hook 시스템 (`.claude/hooks/`)
+
+| Hook | 역할 |
+|------|------|
+| `tool_validator.py` | 프로세스 전체 종료 명령 차단 (PreToolUse) |
+| `session_init.py` | 세션 시작 시 TDD 준수 경고 (SessionStart) |
+| `branch_guard.py` | 100줄+ 수정 시 자동 커밋 (PostToolUse) |
+| `post_edit_check.js` | 편집 후 품질 검증 (PostToolUse) |
 
 ---
 
@@ -136,13 +147,13 @@ lib/
 
 | 커맨드 | 용도 | 빈도 |
 |--------|------|------|
-| `/auto` | 통합 자율 완성 (Ralph+Ultrawork+Ralplan 자동) | **90%** |
+| `/auto` | 통합 자율 완성 (PDCA 5-Phase, Agent Teams) | **90%** |
 | `/commit` | Conventional Commit 생성 | 필요 시 |
 | `/check` | 린트/테스트/보안 검사 | 필요 시 |
 | `/debug` | 가설-검증 기반 디버깅 | 필요 시 |
 | `/issue` | GitHub 이슈 관리 | 필요 시 |
 
-**전체 27개**: `docs/COMMAND_REFERENCE.md`
+**전체 23개**: `docs/COMMAND_REFERENCE.md`
 
 ---
 

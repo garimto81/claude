@@ -901,7 +901,7 @@ SendMessage(type="message", recipient="verifier", content="검증 시작. APPROV
 # verifier 완료 대기 → shutdown_request
 
 # 2. gap-checker teammate (verifier 완료 후 spawn) — code-reviewer 역할
-Task(subagent_type="architect", name="gap-checker", team_name="pdca-{feature}",
+Task(subagent_type="code-reviewer", name="gap-checker", team_name="pdca-{feature}",
      model="sonnet",
      prompt="[Gap Analysis] docs/02-design/{feature}.design.md와 실제 구현 코드 간 일치도 분석. 설계 문서의 각 항목을 코드에서 검증하고 일치율(0-100%)을 산출하세요. 90% 기준.")
 SendMessage(type="message", recipient="gap-checker", content="갭 분석 시작. 완료 후 TaskUpdate 처리.")
