@@ -37,7 +37,7 @@ capabilities:
   - folder_restructure     # 폴더 재구조화
   - project_classification # 프로젝트별 분류
 
-model_preference: opus  # 의미 분석에 Opus 권장
+model_preference: sonnet  # 의미 분석에 Sonnet 4.6 사용
 
 auto_trigger: true
 auto_execute: true  # /drive 호출 시 자동 실행

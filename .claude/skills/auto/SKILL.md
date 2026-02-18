@@ -7,12 +7,8 @@ triggers:
     - "/auto"
     - "auto"
     - "autopilot"
-    - "ulw"
-    - "ultrawork"
-    - "ralph"
     - "/work"
-    - "work"
-model_preference: opus
+model_preference: sonnet
 auto_trigger: true
 agents:
   - executor
@@ -72,7 +68,7 @@ Task(subagent_type="explore", name="issue-analyst", team_name="pdca-{feature}",
 | 2-3 | STANDARD | planner teammate (sonnet) |
 | 4-5 | HEAVY | Planner-Critic Loop (max 5 iter) |
 
-> **모델 오버라이드**: 에이전트 정의(architect=opus 등)와 무관하게, 호출 시 `model` 파라미터가 복잡도 모드에 따라 결정됨.
+> **모델 오버라이드**: 에이전트 정의(architect=sonnet 등)와 무관하게, 호출 시 `model` 파라미터가 복잡도 모드에 따라 결정됨.
 
 **Step 1.2**: 계획 수립 → `docs/01-plan/{feature}.plan.md` 생성 (Graduated Plan Review)
 
@@ -122,12 +118,12 @@ Loop (i=1..5):
 |------|------|---------|
 | LIGHT | **스킵** (Phase 3 직행) | — |
 | STANDARD | design-writer teammate | `executor` (sonnet) |
-| HEAVY | design-writer teammate | `executor-high` (opus) |
+| HEAVY | design-writer teammate | `executor-high` (sonnet) |
 
 > **주의**: `architect`는 READ-ONLY (Write 도구 없음). 설계 **문서 생성**에는 executor 계열 사용 필수.
 
 ```
-# STANDARD 예시 (HEAVY: executor-high + opus)
+# STANDARD 예시 (HEAVY: executor-high + sonnet)
 Task(subagent_type="executor", name="design-writer", team_name="pdca-{feature}",
      model="sonnet", prompt="docs/01-plan/{feature}.plan.md 참조. 설계 문서 작성. 출력: docs/02-design/{feature}.design.md")
 SendMessage(type="message", recipient="design-writer", content="설계 문서 생성 요청.")
@@ -154,7 +150,7 @@ SendMessage(type="message", recipient="design-writer", content="설계 문서 �
 |------|------|
 | LIGHT | executor teammate (sonnet) — 단일 실행 |
 | STANDARD | impl-manager teammate (sonnet) — 5조건 자체 루프 |
-| HEAVY | impl-manager teammate (opus) — 5조건 자체 루프 + 병렬 가능 |
+| HEAVY | impl-manager teammate (sonnet) — 5조건 자체 루프 + 병렬 가능 |
 
 ```
 # LIGHT: executor teammate 단일 실행
@@ -164,7 +160,7 @@ SendMessage(type="message", recipient="executor", content="구현 시작.")
 
 # STANDARD/HEAVY: impl-manager teammate (5조건 자체 루프) — 상세 prompt: REFERENCE.md
 Task(subagent_type="executor[-high]", name="impl-manager",
-     team_name="pdca-{feature}", model="sonnet|opus",
+     team_name="pdca-{feature}", model="sonnet",
      prompt="설계 문서 기반 구현. 5조건 자체 루프 (max 10회). 상세 prompt: REFERENCE.md")
 SendMessage(type="message", recipient="impl-manager", content="5조건 구현 루프 시작.")
 # Lead는 IMPLEMENTATION_COMPLETED 또는 IMPLEMENTATION_FAILED 메시지만 수신
@@ -242,7 +238,7 @@ QA Runner 6종 goal, Architect 진단 prompt, Domain routing 상세: `REFERENCE.
 |------|------|
 | LIGHT | architect teammate (sonnet) — APPROVE/REJECT만 |
 | STANDARD | architect → code-reviewer (sonnet) 순차 |
-| HEAVY | architect (opus) → code-reviewer (opus) 순차 |
+| HEAVY | architect (sonnet) → code-reviewer (sonnet) 순차 |
 
 ```
 # LIGHT: architect만 / STANDARD/HEAVY: architect → gap-detector → code-analyzer 순차
@@ -286,11 +282,11 @@ SendMessage(type="message", recipient="reporter", content="보고서 생성 요�
 |------|:-----------:|:--------------:|:-----------:|
 | **Phase 0** | TeamCreate | TeamCreate | TeamCreate |
 | **Phase 1** | haiku 계획 + Lead QG | sonnet 계획 + Critic-Lite | Planner-Critic Loop |
-| **Phase 2** | 스킵 | executor (sonnet) 설계 | executor-high (opus) 설계 |
-| **Phase 3.1** | executor (sonnet) | impl-manager (sonnet) | impl-manager (opus) + 병렬 |
+| **Phase 2** | 스킵 | executor (sonnet) 설계 | executor-high (sonnet) 설계 |
+| **Phase 3.1** | executor (sonnet) | impl-manager (sonnet) | impl-manager (sonnet) + 병렬 |
 | **Phase 3.2** | — | Architect Gate | Architect Gate |
 | **Phase 4.1** | QA 1회 (보고만) | QA 3회 + 진단 | QA 5회 + 진단 |
-| **Phase 4.2** | Architect (sonnet) | Architect + code-reviewer (sonnet) | Architect + code-reviewer (opus) |
+| **Phase 4.2** | Architect (sonnet) | Architect + code-reviewer (sonnet) | Architect + code-reviewer (sonnet) |
 | **Phase 5** | writer (haiku) + TeamDelete | writer (sonnet) + TeamDelete | writer (sonnet) + TeamDelete |
 
 **자동 승격**: LIGHT→STANDARD: 빌드 실패 2회 또는 영향 파일 5개+. STANDARD→HEAVY: QA 3사이클 초과 또는 영향 파일 5개+.

@@ -41,7 +41,6 @@ SendMessage(type="message", recipient="tdd-runner", content="TDD 시작.")
     └── /tdd <feature> (새 기능 구현 요청 시)
 ```
 
-**이 인과관계는 OMC 위임과 무관하게 그대로 유지됩니다.**
 
 ## Red-Green-Refactor Cycle
 

@@ -10,7 +10,7 @@
 
 **모든 에이전트 호출은 Agent Teams in-process 방식을 사용합니다. Skill() 호출 0개.**
 
-**모델 오버라이드**: 에이전트 정의의 model 필드(architect=opus, planner=opus 등)는 기본값이며, 호출 시 `model` 파라미터가 복잡도 모드에 따라 결정됩니다. LIGHT=haiku, STANDARD=sonnet, HEAVY=opus.
+**모델 오버라이드**: 에이전트 정의의 model 필드(architect=sonnet, planner=sonnet 등)는 기본값이며, 호출 시 `model` 파라미터가 복잡도 모드에 따라 결정됩니다. LIGHT=haiku, STANDARD=sonnet, HEAVY=sonnet.
 
 ### 팀 라이프사이클
 
@@ -101,9 +101,9 @@ cmd /c "mklink /J \"C:\\claude\\wt\\{feature}-test\\.claude\" \"C:\\claude\\.cla
 
 ```
 Task(subagent_type="executor-high", name="impl", team_name="pdca-{feature}",
-     model="opus", prompt="C:\\claude\\wt\\{feature}-impl\\ 경로에서 구현. 다른 경로 수정 금지.")
+     model="sonnet", prompt="C:\\claude\\wt\\{feature}-impl\\ 경로에서 구현. 다른 경로 수정 금지.")
 Task(subagent_type="executor-high", name="tester", team_name="pdca-{feature}",
-     model="opus", prompt="C:\\claude\\wt\\{feature}-test\\ 경로에서 테스트 작성. 다른 경로 수정 금지.")
+     model="sonnet", prompt="C:\\claude\\wt\\{feature}-test\\ 경로에서 테스트 작성. 다른 경로 수정 금지.")
 ```
 
 cleanup 시 모든 sub-worktree도 함께 제거.
@@ -376,11 +376,11 @@ else:
 | Phase | 실행 |
 |-------|------|
 | Phase 1 | Explore teammates (haiku) x2 + Planner-Critic Loop (max 5 iter, QG1-4) |
-| Phase 2 | Executor-high teammate (opus) — 설계 문서 생성 |
-| Phase 3.1 | impl-manager teammate (opus) — 5조건 자체 루프 + 병렬 가능 |
+| Phase 2 | Executor-high teammate (sonnet) — 설계 문서 생성 |
+| Phase 3.1 | impl-manager teammate (sonnet) — 5조건 자체 루프 + 병렬 가능 |
 | Phase 3.2 | Architect Gate (외부 검증, max 2회 rejection) |
 | Phase 4.1 | QA Runner 5회 + Architect 진단 + Domain-Smart Fix |
-| Phase 4.2 | Architect + gap-detector + code-analyzer (opus, 순차) |
+| Phase 4.2 | Architect + gap-detector + code-analyzer (sonnet, 순차) |
 | Phase 5 | gap < 90% → pdca-iterator teammate (최대 5회) |
 
 ### 자동 승격 규칙 (Phase 중 복잡도 상향 조정)
@@ -411,10 +411,10 @@ SendMessage(type="message", recipient="design-writer", content="설계 문서 �
 # 완료 대기 → shutdown_request
 ```
 
-**HEAVY 모드: Executor-high opus teammate**
+**HEAVY 모드: Executor-high sonnet teammate**
 ```
 Task(subagent_type="executor-high", name="design-writer", team_name="pdca-{feature}",
-     model="opus",
+     model="sonnet",
      prompt="docs/01-plan/{feature}.plan.md를 참조하여 설계 문서를 작성하세요.
      필수 포함: 구현 대상 파일 목록, 인터페이스 설계, 데이터 흐름, 테스트 전략, 예상 위험 요소.
      출력: docs/02-design/{feature}.design.md")
@@ -463,10 +463,10 @@ SendMessage(type="message", recipient="impl-manager", content="5조건 구현 �
 # Lead는 IMPLEMENTATION_COMPLETED 또는 IMPLEMENTATION_FAILED 메시지만 수신
 ```
 
-**HEAVY 모드: impl-manager teammate (opus) — 5조건 자체 루프 + 병렬 가능**
+**HEAVY 모드: impl-manager teammate (sonnet) — 5조건 자체 루프 + 병렬 가능**
 ```
 Task(subagent_type="executor-high", name="impl-manager", team_name="pdca-{feature}",
-     model="opus",
+     model="sonnet",
      prompt="{impl-manager prompt 전문 — 아래 'impl-manager Prompt 전문' 섹션 참조}")
 SendMessage(type="message", recipient="impl-manager", content="5조건 구현 루프 시작.")
 # Lead는 IMPLEMENTATION_COMPLETED 또는 IMPLEMENTATION_FAILED 메시지만 수신
@@ -476,11 +476,11 @@ SendMessage(type="message", recipient="impl-manager", content="5조건 구현 �
 ```
 # Lead가 설계 문서 분석 → 독립 작업 분할
 Task(subagent_type="executor-high", name="impl-api",
-     team_name="pdca-{feature}", model="opus",
+     team_name="pdca-{feature}", model="sonnet",
      prompt="[Phase 3 HEAVY 병렬] API 구현 담당. {impl-manager 전체 prompt}.
              담당 범위: src/api/ 하위 파일만. 다른 경로 수정 금지.")
 Task(subagent_type="executor-high", name="impl-ui",
-     team_name="pdca-{feature}", model="opus",
+     team_name="pdca-{feature}", model="sonnet",
      prompt="[Phase 3 HEAVY 병렬] UI 구현 담당. {impl-manager 전체 prompt}.
              담당 범위: src/components/ 하위 파일만. 다른 경로 수정 금지.")
 
@@ -895,13 +895,13 @@ SendMessage(type="message", recipient="quality-checker", content="코드 품질 
 # quality-checker 완료 대기 → shutdown_request
 ```
 
-**HEAVY 모드: 동일 구조 (순차 teammate, opus)**
+**HEAVY 모드: 동일 구조 (순차 teammate, sonnet)**
 
-HEAVY 모드에서는 Architect, gap-detector, code-analyzer 모두 `model="opus"` 사용:
+HEAVY 모드에서는 Architect, gap-detector, code-analyzer 모두 `model="sonnet"` 사용:
 ```
-Task(subagent_type="architect", name="verifier", ..., model="opus", ...)
-Task(subagent_type="code-reviewer", name="gap-checker", ..., model="opus", ...)
-Task(subagent_type="code-reviewer", name="quality-checker", ..., model="opus", ...)
+Task(subagent_type="architect", name="verifier", ..., model="sonnet", ...)
+Task(subagent_type="code-reviewer", name="gap-checker", ..., model="sonnet", ...)
+Task(subagent_type="code-reviewer", name="quality-checker", ..., model="sonnet", ...)
 ```
 
 - Architect: 기능 완성도 검증 (APPROVE/REJECT)

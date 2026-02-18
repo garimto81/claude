@@ -438,7 +438,7 @@ Gmail 임시보관함의 Claude Code 브리핑 메일을 분석하여 현재 워
     ├─ [3/5] 트렌드 추출 + 현재 워크플로우 비교
     │       ├─ Analyst 에이전트로 메일 본문 분석
     │       │   └─ TeamCreate("audit-trend") → Task(name="analyst", team_name="audit-trend",
-    │       │          subagent_type="analyst", model="opus") → TeamDelete()
+    │       │          subagent_type="analyst", model="sonnet") → TeamDelete()
     │       │
     │       ├─ 현재 워크플로우 인벤토리 수집
     │       │   ├─ 커맨드: .claude/commands/*.md 목록

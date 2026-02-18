@@ -229,10 +229,10 @@ pytest --benchmark-only
 
 | 단계 | 에이전트 |
 |------|----------|
-| E2E 테스트 | `playwright-engineer` |
+| E2E 테스트 | `qa-tester` |
 | 보안 스캔 | `security-reviewer` |
 | 코드 리뷰 | `code-reviewer` |
-| 성능 체크 | `performance-engineer` |
+| 성능 체크 | `code-reviewer` |
 
 ### 병렬 실행
 

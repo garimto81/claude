@@ -168,7 +168,7 @@ else:
 
 3. Create working directory:
 ```bash
-mkdir -p .omc/scientist
+mkdir -p tmp/scientist
 ```
 
 If packages are missing, either:
@@ -392,11 +392,11 @@ python_repl(
   code="""
 # Save
 import pickle
-df.to_pickle('.omc/scientist/state.pkl')
+df.to_pickle('tmp/scientist/state.pkl')
 
 # Load (only if needed after timeout or in different session)
 import pickle
-df = pd.read_pickle('.omc/scientist/state.pkl')
+df = pd.read_pickle('tmp/scientist/state.pkl')
 """
 )
 ```
@@ -408,10 +408,10 @@ python_repl(
   researchSessionID="data-analysis",
   code="""
 # Save
-df.to_parquet('.omc/scientist/state.parquet')
+df.to_parquet('tmp/scientist/state.parquet')
 
 # Load
-df = pd.read_parquet('.omc/scientist/state.parquet')
+df = pd.read_parquet('tmp/scientist/state.parquet')
 """
 )
 ```
@@ -425,12 +425,12 @@ python_repl(
 # Save
 import json
 results = {'mean': 42.5, 'median': 38.0}
-with open('.omc/scientist/results.json', 'w') as f:
+with open('tmp/scientist/results.json', 'w') as f:
     json.dump(results, f)
 
 # Load
 import json
-with open('.omc/scientist/results.json', 'r') as f:
+with open('tmp/scientist/results.json', 'r') as f:
     results = json.load(f)
 """
 )
@@ -444,12 +444,12 @@ python_repl(
   code="""
 # Save
 import pickle
-with open('.omc/scientist/model.pkl', 'wb') as f:
+with open('tmp/scientist/model.pkl', 'wb') as f:
     pickle.dump(model, f)
 
 # Load
 import pickle
-with open('.omc/scientist/model.pkl', 'rb') as f:
+with open('tmp/scientist/model.pkl', 'rb') as f:
     model = pickle.load(f)
 """
 )
@@ -669,8 +669,8 @@ print(df.describe())
 SAVE LARGE OUTPUTS:
 ```python
 # Instead of printing
-df.to_csv('.omc/scientist/full_results.csv', index=False)
-print("[FINDING] Full results saved to .omc/scientist/full_results.csv")
+df.to_csv('tmp/scientist/full_results.csv', index=False)
+print("[FINDING] Full results saved to tmp/scientist/full_results.csv")
 ```
 </Output_Management>
 
@@ -758,13 +758,13 @@ Your findings must be:
    - Mention missing data, temporal scope, sample size issues
 
 5. REPRODUCIBLE: Save analysis code
-   - Write analysis to `.omc/scientist/analysis.py` for reference
+   - Write analysis to `tmp/scientist/analysis.py` for reference
    - Document non-obvious steps
 </Quality_Standards>
 
 <Work_Context>
 ## Notepad Location
-NOTEPAD PATH: .omc/notepads/{plan-name}/
+NOTEPAD PATH: docs/notepads/{plan-name}/
 - learnings.md: Record analysis patterns, data quirks found
 - issues.md: Record data quality issues, missing values
 - decisions.md: Record methodological choices
@@ -772,7 +772,7 @@ NOTEPAD PATH: .omc/notepads/{plan-name}/
 You SHOULD append findings to notepad files after completing analysis.
 
 ## Plan Location (READ ONLY)
-PLAN PATH: .omc/plans/{plan-name}.md
+PLAN PATH: docs/01-plan/{plan-name}.plan.md
 
 ⚠️⚠️⚠️ CRITICAL RULE: NEVER MODIFY THE PLAN FILE ⚠️⚠️⚠️
 
@@ -801,7 +801,7 @@ No todos on multi-step analysis = INCOMPLETE WORK.
 <Report_Generation>
 After completing analysis, ALWAYS generate a structured markdown report.
 
-LOCATION: Save reports to `.omc/scientist/reports/{timestamp}_report.md`
+LOCATION: Save reports to `tmp/scientist/reports/{timestamp}_report.md`
 
 PATTERN: Generate timestamped report
 ```
@@ -813,7 +813,7 @@ from datetime import datetime
 import os
 
 timestamp = datetime.now().strftime('%Y%m%d_%H%M%S')
-report_dir = '.omc/scientist/reports'
+report_dir = 'tmp/scientist/reports'
 os.makedirs(report_dir, exist_ok=True)
 
 report_path = f"{report_dir}/{timestamp}_report.md"
@@ -905,7 +905,7 @@ WHEN TO GENERATE:
 <Visualization_Patterns>
 Use matplotlib with Agg backend (non-interactive) for all visualizations.
 
-LOCATION: Save all figures to `.omc/scientist/figures/{timestamp}_{name}.png`
+LOCATION: Save all figures to `tmp/scientist/figures/{timestamp}_{name}.png`
 
 SETUP PATTERN:
 ```
@@ -921,7 +921,7 @@ from datetime import datetime
 import os
 
 # Create figures directory
-os.makedirs('.omc/scientist/figures', exist_ok=True)
+os.makedirs('tmp/scientist/figures', exist_ok=True)
 
 # Load data if needed (or df may already be loaded in this session)
 # df = pd.read_csv('data.csv')
@@ -947,9 +947,9 @@ ax.set_title('Average Values by Category')
 ax.set_xlabel('Category')
 ax.set_ylabel('Average Value')
 plt.tight_layout()
-plt.savefig(f'.omc/scientist/figures/{timestamp}_bar_chart.png', dpi=150)
+plt.savefig(f'tmp/scientist/figures/{timestamp}_bar_chart.png', dpi=150)
 plt.close()
-print(f"[FINDING] Bar chart saved to .omc/scientist/figures/{timestamp}_bar_chart.png")
+print(f"[FINDING] Bar chart saved to tmp/scientist/figures/{timestamp}_bar_chart.png")
 """
 )
 ```
@@ -967,7 +967,7 @@ ax.set_title('Trend Over Time')
 ax.set_xlabel('Date')
 ax.set_ylabel('Value')
 plt.tight_layout()
-plt.savefig(f'.omc/scientist/figures/{timestamp}_line_chart.png', dpi=150)
+plt.savefig(f'tmp/scientist/figures/{timestamp}_line_chart.png', dpi=150)
 plt.close()
 print(f"[FINDING] Line chart saved")
 """
@@ -987,7 +987,7 @@ ax.set_title('Correlation: X vs Y')
 ax.set_xlabel('X Variable')
 ax.set_ylabel('Y Variable')
 plt.tight_layout()
-plt.savefig(f'.omc/scientist/figures/{timestamp}_scatter.png', dpi=150)
+plt.savefig(f'tmp/scientist/figures/{timestamp}_scatter.png', dpi=150)
 plt.close()
 """
 )
@@ -1012,7 +1012,7 @@ ax.set_yticklabels(corr.columns)
 plt.colorbar(im, ax=ax)
 ax.set_title('Correlation Heatmap')
 plt.tight_layout()
-plt.savefig(f'.omc/scientist/figures/{timestamp}_heatmap.png', dpi=150)
+plt.savefig(f'tmp/scientist/figures/{timestamp}_heatmap.png', dpi=150)
 plt.close()
 """
 )
@@ -1031,7 +1031,7 @@ ax.set_title('Distribution of Values')
 ax.set_xlabel('Value')
 ax.set_ylabel('Frequency')
 plt.tight_layout()
-plt.savefig(f'.omc/scientist/figures/{timestamp}_histogram.png', dpi=150)
+plt.savefig(f'tmp/scientist/figures/{timestamp}_histogram.png', dpi=150)
 plt.close()
 """
 )

@@ -155,7 +155,7 @@ I'll perform [action] including:
 - Clear expertise boundaries
 - Specific use case examples
 - Appropriate tool selection
-- Model selection (sonnet/opus/haiku)
+- Model selection (sonnet/haiku)
 
 ### MCP Setup
 - Environment variables for secrets

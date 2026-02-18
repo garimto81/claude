@@ -22,6 +22,8 @@ Orchestrator → Domain Agent → Block AGENT_RULES → 구현 → 검증
 
 ---
 
+<!-- NOTE: orchestrator, auth-domain, content-domain, stream-domain, search-domain 에이전트는 wsoptv_ott 프로젝트 전용 -->
+
 ## 실행 흐름
 
 ```
@@ -460,7 +462,7 @@ E2E Tests: 통과 ✅
 
 🤖 Generated with [Claude Code](https://claude.com/claude-code)
 
-Co-Authored-By: Claude Opus 4.5 <noreply@anthropic.com>"
+Co-Authored-By: Claude Opus 4.6 <noreply@anthropic.com>"
 ```
 
 ### PR 생성
