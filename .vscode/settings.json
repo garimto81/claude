@@ -78,5 +78,6 @@
         "WSOPTV": true,
         "wsoptv_*": true,
         "youtuber*": true
-    }
+    },
+    "git.ignoreLimitWarning": true
 }
