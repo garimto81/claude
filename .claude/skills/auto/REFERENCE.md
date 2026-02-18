@@ -16,7 +16,38 @@
 
 1. **Phase 0**: `TeamCreate(team_name="pdca-{feature}")` — PDCA 시작 시 1회
 2. **Phase 1-4**: `Task(name="역할", team_name="pdca-{feature}")` → `SendMessage` → 완료 대기 → `shutdown_request`
-3. **Phase 5**: 보고서 생성 후 `TeamDelete()`
+3. **Phase 5**: 보고서 생성 후 Safe Cleanup (아래 절차)
+
+### Phase 5 Safe Cleanup 절차 (v22.2)
+
+**정상 종료 (5단계):**
+1. writer teammate 완료 확인 (Mailbox 수신)
+2. 모든 활성 teammate에 `SendMessage(type="shutdown_request")` 순차 전송
+3. 각 teammate 응답 대기 (최대 5초). 무응답 시 다음 단계로 진행 (**차단 금지**)
+4. `TeamDelete()` 실행
+5. TeamDelete 실패 시 수동 fallback:
+   ```bash
+   # 팀 디렉토리 + task 디렉토리 수동 삭제
+   rm -rf ~/.claude/teams/pdca-{feature} ~/.claude/tasks/pdca-{feature}
+   ```
+
+**세션 비정상 종료 후 복구:**
+- 고아 팀 감지: `ls ~/.claude/teams/` — `pdca-*` 디렉토리가 남아있으면 고아 팀
+- 복구 순서: `TeamDelete()` 시도 → 실패 시 수동 정리
+- 고아 task 정리 (UUID 형식만 삭제, `pdca-*` 보존):
+  ```bash
+  ls ~/.claude/tasks/ | grep -E '^[0-9a-f-]{36}$' | xargs -I{} rm -rf ~/.claude/tasks/{}
+  ```
+- stale todo 정리: `find ~/.claude/todos/ -name "*.json" -mtime +1 -delete`
+
+**Context Compaction 후 팀 소실 시:**
+- 증상: `TeamDelete()` 호출 시 "team not found" 에러
+- 처리: 에러 무시하고 수동 정리 실행
+- 원인: Issue #23620 — compaction 후 `~/.claude/teams/{name}/config.json` 미재주입
+
+**VS Code 환경 (isTTY=false) 무한 대기 방지:**
+- `settings.json`의 `env.CLAUDE_CODE_EXPERIMENTAL_AGENT_TEAMS=1` 확인 (in-process 모드)
+- teammate 무응답 시 5초 후 강제 진행 (shutdown_request 응답 불필요)
 
 ### Teammate 운영 규칙
 

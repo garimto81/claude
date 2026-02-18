@@ -265,14 +265,21 @@ SendMessage(type="message", recipient="verifier", content="검증 시작.")
 > **Phase 4↔5 루프 가드**: Phase 5→Phase 4 재진입 누적 최대 3회. 초과 시 미해결 이슈 보고 후 종료.
 
 ```
-# gap >= 90% + APPROVE → 보고서 생성 후 팀 정리
+# gap >= 90% + APPROVE → 보고서 생성 후 Safe Cleanup
 Task(subagent_type="writer", name="reporter", team_name="pdca-{feature}",
      model="haiku", prompt="PDCA 완료 보고서 생성. 출력: docs/04-report/{feature}.report.md")
 SendMessage(type="message", recipient="reporter", content="보고서 생성 요청.")
-# 완료 대기 → shutdown_request → TeamDelete()
+# 완료 대기 → Safe Cleanup (아래 절차)
 ```
 
-**팀 정리 (MANDATORY):** `TeamDelete()`
+**팀 정리 (MANDATORY — Safe Cleanup):**
+1. 모든 활성 teammate에 `SendMessage(type="shutdown_request")` 순차 전송
+2. 각 teammate 응답 대기 (최대 5초). 무응답 시 다음 단계로 진행 (차단 금지)
+3. `TeamDelete()` 실행
+4. TeamDelete 실패 시 수동 fallback: `rm -rf ~/.claude/teams/{팀명} ~/.claude/tasks/{팀명}`
+5. 실패 원인 로그 출력 (사용자 알림)
+
+> **세션 crash recovery**: `/auto resume` 시 `ls ~/.claude/teams/`로 고아 팀 감지 → 수동 정리 후 재시작. 상세: `REFERENCE.md`
 
 ---
 
