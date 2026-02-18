@@ -43,10 +43,6 @@
           {
             "type": "command",
             "command": "python3 .claude/hooks/session_init.py"
-          },
-          {
-            "type": "command",
-            "command": "python3 .claude/hooks/omc_update_detector.py"
           }
         ]
       }

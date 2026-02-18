@@ -1,0 +1,481 @@
+<!DOCTYPE html>
+<html lang="ko">
+<head>
+<meta charset="UTF-8">
+<meta name="viewport" content="width=device-width, initial-scale=1.0">
+<title>Workflow Review v23.0 — /auto + OMC + BKIT + Vercel BP 통합 분석</title>
+<style>
+  :root {
+    --bg: #0d1117; --card: #161b22; --border: #30363d;
+    --text: #c9d1d9; --heading: #f0f6fc; --accent: #58a6ff;
+    --green: #3fb950; --red: #f85149; --yellow: #d29922; --orange: #db6d28;
+    --purple: #bc8cff; --pink: #f778ba;
+  }
+  * { margin:0; padding:0; box-sizing:border-box; }
+  body { background:var(--bg); color:var(--text); font-family:'Segoe UI',system-ui,sans-serif; padding:2rem; line-height:1.6; }
+  h1 { color:var(--heading); font-size:1.8rem; margin-bottom:.5rem; }
+  h2 { color:var(--accent); font-size:1.3rem; margin:2rem 0 1rem; border-bottom:1px solid var(--border); padding-bottom:.5rem; }
+  h3 { color:var(--purple); font-size:1.1rem; margin:1.5rem 0 .5rem; }
+  .subtitle { color:var(--text); opacity:.7; margin-bottom:2rem; }
+  .grid { display:grid; gap:1rem; }
+  .grid-2 { grid-template-columns: 1fr 1fr; }
+  .grid-3 { grid-template-columns: 1fr 1fr 1fr; }
+  .grid-4 { grid-template-columns: 1fr 1fr 1fr 1fr; }
+  .card { background:var(--card); border:1px solid var(--border); border-radius:8px; padding:1rem; }
+  .card-header { font-weight:600; color:var(--heading); margin-bottom:.5rem; display:flex; align-items:center; gap:.5rem; }
+  .badge { display:inline-block; padding:2px 8px; border-radius:12px; font-size:.75rem; font-weight:600; }
+  .badge-green { background:rgba(63,185,80,.15); color:var(--green); border:1px solid rgba(63,185,80,.3); }
+  .badge-red { background:rgba(248,81,73,.15); color:var(--red); border:1px solid rgba(248,81,73,.3); }
+  .badge-yellow { background:rgba(210,153,34,.15); color:var(--yellow); border:1px solid rgba(210,153,34,.3); }
+  .badge-blue { background:rgba(88,166,255,.15); color:var(--accent); border:1px solid rgba(88,166,255,.3); }
+  .badge-purple { background:rgba(188,140,255,.15); color:var(--purple); border:1px solid rgba(188,140,255,.3); }
+  table { width:100%; border-collapse:collapse; margin:.5rem 0; font-size:.85rem; }
+  th,td { padding:6px 10px; text-align:left; border-bottom:1px solid var(--border); }
+  th { color:var(--accent); font-weight:600; }
+  .flow-diagram { background:var(--card); border:1px solid var(--border); border-radius:8px; padding:1.5rem; margin:1rem 0; overflow-x:auto; }
+  .flow-diagram pre { color:var(--text); font-family:'Cascadia Code','Fira Code',monospace; font-size:.8rem; line-height:1.5; white-space:pre; }
+  .highlight-green { color:var(--green); }
+  .highlight-red { color:var(--red); }
+  .highlight-yellow { color:var(--yellow); }
+  .highlight-blue { color:var(--accent); }
+  .highlight-purple { color:var(--purple); }
+  .section { margin-bottom:2rem; }
+  .stat-box { text-align:center; padding:1rem; }
+  .stat-number { font-size:2rem; font-weight:700; }
+  .stat-label { font-size:.8rem; opacity:.7; }
+  .issue-item { padding:.5rem; margin:.3rem 0; border-left:3px solid; border-radius:0 4px 4px 0; background:rgba(255,255,255,.02); }
+  .issue-critical { border-color:var(--red); }
+  .issue-warning { border-color:var(--yellow); }
+  .issue-info { border-color:var(--accent); }
+  .evolution-arrow { color:var(--green); font-weight:bold; }
+  @media(max-width:900px) { .grid-2,.grid-3,.grid-4 { grid-template-columns:1fr; } }
+</style>
+</head>
+<body>
+
+<h1>Workflow Review v23.0</h1>
+<p class="subtitle">/auto + OMC + BKIT + Vercel BP 통합 분석 | Agent Teams 이관 현황 | 2026-02-18</p>
+
+<!-- Summary Stats -->
+<div class="grid grid-4" style="margin-bottom:2rem">
+  <div class="card stat-box">
+    <div class="stat-number highlight-green">8/8</div>
+    <div class="stat-label">Agent Teams 이관 완료 스킬</div>
+  </div>
+  <div class="card stat-box">
+    <div class="stat-number highlight-green">0</div>
+    <div class="stat-label">oh-my-claudecode: prefix 잔여</div>
+  </div>
+  <div class="card stat-box">
+    <div class="stat-number highlight-red">5</div>
+    <div class="stat-label">model="opus" 위반 (v23.0)</div>
+  </div>
+  <div class="card stat-box">
+    <div class="stat-number highlight-yellow">3</div>
+    <div class="stat-label">Deprecated 참조 잔여</div>
+  </div>
+</div>
+
+<!-- Section 1: Evolution Timeline -->
+<div class="section">
+<h2>1. 워크플로우 진화 타임라인</h2>
+<div class="flow-diagram">
+<pre>
+<span class="highlight-purple">v19.0</span>  /work → /auto 통합 ─────────────────────────────────────────────────────────>
+       │
+<span class="highlight-purple">v20.1</span>  Agent Teams 마이그레이션 (Lead 직접 호출 → TeamCreate/Task/SendMessage/TeamDelete)
+       │  ├─ 구 subagent: Task(run_in_background=true) ─── <span class="highlight-red">제거</span>
+       │  └─ 신 Agent Teams: Task(team_name="pdca-{feature}") ─── <span class="highlight-green">도입</span>
+       │
+<span class="highlight-purple">v21.0</span>  OMC Skill() 호출 완전 제거 (ralplan/ralph/ultraqa → Agent Teams 단일 패턴)
+       │  ├─ Skill("ralplan") → Planner-Critic Loop (max 5 iter)
+       │  ├─ Skill("ralph")   → impl-manager 5조건 자체 루프
+       │  ├─ Skill("ultraqa") → QA Runner + Architect 진단
+       │  └─ State 파일 의존 0개 (Stop Hook 충돌 자연 해소)
+       │
+<span class="highlight-purple">v22.0</span>  본질 복원 (이식률 29% → 100%)
+       │  ├─ Phase 1: Graduated Plan Review (LIGHT/STANDARD/HEAVY)
+       │  ├─ Phase 3: Architect Verification Gate + Domain-Smart Fix
+       │  └─ Phase 4: QA Runner teammate + 4종 Exit Conditions
+       │
+<span class="highlight-purple">v22.1</span>  22건 불일치 수정 + BKIT 의존 제거
+       │  ├─ BKIT gap-detector    → architect (gap-checker)
+       │  ├─ BKIT code-analyzer   → code-reviewer (quality-checker)
+       │  ├─ BKIT pdca-iterator   → executor (iterator)
+       │  ├─ BKIT report-generator → writer (reporter)
+       │  └─ Phase 4↔5 루프 가드 (max 3 reentry, cumulative 5)
+       │
+<span class="highlight-purple">v23.0</span>  Sonnet 4.6 통합 (현재)
+       │  ├─ 모든 복잡도 모드: model="sonnet" 기본 (Opus-level @ 1/5 cost)
+       │  ├─ --opus 플래그: HEAVY 핵심 에이전트만 opus 에스컬레이션
+       │  ├─ 1M context window (compact 빈도 대폭 감소)
+       │  └─ HEAVY 비용 ~78% 절감
+       │
+<span class="highlight-yellow">현재</span>   <span class="highlight-red">5건 model="opus" 위반 + 3건 deprecated 참조 잔여</span>
+</pre>
+</div>
+</div>
+
+<!-- Section 2: /auto PDCA Workflow -->
+<div class="section">
+<h2>2. /auto v23.0 PDCA 워크플로우 (Agent Teams 단일 패턴)</h2>
+<div class="flow-diagram">
+<pre>
+<span class="highlight-blue">Phase 0: SETUP</span>
+  TeamCreate(team_name="pdca-{feature}")
+  옵션 파싱: --eco, --opus, --worktree, --skip-analysis, --no-issue, --strict, --dry-run
+  복잡도 판단: 5점 → LIGHT(0-1) / STANDARD(2-3) / HEAVY(4-5)
+       │
+       ▼
+<span class="highlight-blue">Phase 1: PLAN</span>
+  ┌─────────────────────────────────────────────────────────────────────────────┐
+  │ Step 1.0: 병렬 Explore (haiku x2) — doc-analyst + issue-analyst           │
+  │ Step 1.1: 복잡도 판단 (5점 척도)                                           │
+  │ Step 1.2: 계획 수립                                                        │
+  │   LIGHT:    Planner(haiku) + Lead Quality Gate                             │
+  │   STANDARD: Planner(sonnet) + Critic-Lite(sonnet) 단일 검토                │
+  │   HEAVY:    Planner-Critic Loop (sonnet, max 5 iter, QG1-QG4)             │
+  │ Step 1.3: GitHub Issue 연동                                                │
+  │ 산출물: docs/01-plan/{feature}.plan.md                                     │
+  └─────────────────────────────────────────────────────────────────────────────┘
+       │ Plan→Design Gate (4개 필수 섹션)
+       ▼
+<span class="highlight-blue">Phase 2: DESIGN</span>
+  ┌─────────────────────────────────────────────────────────────────────────────┐
+  │ LIGHT:    <span class="highlight-yellow">스킵</span> (Phase 3 직행)                                              │
+  │ STANDARD: executor(sonnet) → design-writer                                 │
+  │ HEAVY:    executor-high(sonnet, --opus=opus) → design-writer               │
+  │ 산출물: docs/02-design/{feature}.design.md                                 │
+  │ <span class="highlight-purple">NOTE: architect는 READ-ONLY → 파일 생성에 executor 계열 사용</span>                  │
+  └─────────────────────────────────────────────────────────────────────────────┘
+       │ Design→Do Gate
+       ▼
+<span class="highlight-blue">Phase 3: DO</span>
+  ┌─────────────────────────────────────────────────────────────────────────────┐
+  │ Step 3.0: 옵션 처리 (--gdocs, --mockup, --slack, --gmail, --daily 등)      │
+  │ Step 3.1: 구현                                                             │
+  │   LIGHT:    executor(sonnet) — 단일 실행                                   │
+  │   STANDARD: impl-manager(sonnet) — 5조건 자체 루프 (max 10회)              │
+  │   HEAVY:    impl-manager(sonnet, --opus=opus) — 5조건 + 병렬 가능          │
+  │ Step 3.2: Architect Verification Gate (STANDARD/HEAVY만)                   │
+  │   APPROVE → Phase 4 / REJECT+DOMAIN → Step 3.3                            │
+  │ Step 3.3: Domain-Smart Fix (designer/build-fixer/security-reviewer/exec)   │
+  └─────────────────────────────────────────────────────────────────────────────┘
+       │ impl-manager COMPLETED/FAILED
+       ▼
+<span class="highlight-blue">Phase 4: CHECK</span>
+  ┌─────────────────────────────────────────────────────────────────────────────┐
+  │ Step 4.1: QA 사이클                                                        │
+  │   LIGHT:         QA 1회 (보고만) ───────────────────────────────────┐       │
+  │   STANDARD/HEAVY: QA Runner → Architect 진단 → Domain Fix (반복)   │       │
+  │     ├─ Exit 1: Environment Error → 즉시 중단                       │       │
+  │     ├─ Exit 2: Same Failure 3x → 조기 종료                         │       │
+  │     ├─ Exit 3: Max Cycles (S:3/H:5) → 미해결 보고                  │       │
+  │     └─ Exit 4: Goal Met → Step 4.2                                 │       │
+  │                                                                     │       │
+  │ Step 4.2: 이중 검증 (순차 teammate)                                 │       │
+  │   LIGHT:    architect(sonnet) — APPROVE/REJECT만 ◄──────────────────┘       │
+  │   STD/HEAVY: architect → gap-checker → quality-checker(+Vercel BP)         │
+  │                                                                             │
+  │ Step 4.3: E2E (Playwright 존재 시)                                         │
+  │ Step 4.4: TDD 커버리지 (80%+ 필수)                                         │
+  └─────────────────────────────────────────────────────────────────────────────┘
+       │ APPROVE + gap≥90% / REJECT / gap<90%
+       ▼
+<span class="highlight-blue">Phase 5: ACT</span>
+  ┌─────────────────────────────────────────────────────────────────────────────┐
+  │ gap < 90%:        executor(sonnet) 갭 개선 (max 5회) → Phase 4 재실행      │
+  │ Architect REJECT: executor(sonnet) 수정 → Phase 4 재실행                   │
+  │ gap ≥ 90% + APPROVE: writer(haiku) → docs/04-report/{feature}.report.md   │
+  │                                                                             │
+  │ 루프 가드: Phase 4 재진입 max 3회 / 누적 iteration max 5회                  │
+  │ TeamDelete() ← <span class="highlight-red">MANDATORY</span>                                                  │
+  └─────────────────────────────────────────────────────────────────────────────┘
+</pre>
+</div>
+</div>
+
+<!-- Section 3: Integration Map -->
+<div class="section">
+<h2>3. /auto + OMC + BKIT + Vercel BP 통합 조화 맵</h2>
+
+<div class="grid grid-2">
+<div class="card">
+  <div class="card-header"><span class="badge badge-green">COMPLETED</span> OMC → /auto 이관</div>
+  <table>
+    <tr><th>OMC 원본</th><th>v23.0 대체</th><th>상태</th></tr>
+    <tr><td>Skill("ralplan")</td><td>Planner-Critic Loop (Phase 1 HEAVY)</td><td class="highlight-green">완료</td></tr>
+    <tr><td>Skill("ralph")</td><td>impl-manager 5조건 루프 (Phase 3)</td><td class="highlight-green">완료</td></tr>
+    <tr><td>Skill("ultraqa")</td><td>QA Runner + Architect 진단 (Phase 4)</td><td class="highlight-green">완료</td></tr>
+    <tr><td>Skill("ultrawork")</td><td>/parallel Agent Teams (Phase 3 HEAVY)</td><td class="highlight-green">완료</td></tr>
+    <tr><td>Skill("autopilot")</td><td>/auto Phase 0-5 자동 진행</td><td class="highlight-green">완료</td></tr>
+    <tr><td>oh-my-claudecode: prefix</td><td>로컬 에이전트 직접 참조</td><td class="highlight-green">0건 잔여</td></tr>
+    <tr><td>OMC State 파일</td><td>Agent Teams lifecycle</td><td class="highlight-green">0 의존</td></tr>
+    <tr><td>Iron Law / Zero Tolerance</td><td>impl-manager prompt 내 통합</td><td class="highlight-green">완료</td></tr>
+    <tr><td>Red Flags 자체 감지</td><td>impl-manager prompt 내 통합</td><td class="highlight-green">완료</td></tr>
+    <tr><td>Completion Promise</td><td>impl-manager + Architect Gate</td><td class="highlight-green">완료</td></tr>
+  </table>
+</div>
+
+<div class="card">
+  <div class="card-header"><span class="badge badge-green">COMPLETED</span> BKIT → /auto 이관</div>
+  <table>
+    <tr><th>BKIT 원본</th><th>v23.0 대체</th><th>상태</th></tr>
+    <tr><td>bkit:gap-detector</td><td>architect (gap-checker, Phase 4.2)</td><td class="highlight-green">완료</td></tr>
+    <tr><td>bkit:code-analyzer</td><td>code-reviewer (quality-checker, Phase 4.2)</td><td class="highlight-green">완료</td></tr>
+    <tr><td>bkit:pdca-iterator</td><td>executor (iterator, Phase 5)</td><td class="highlight-green">완료</td></tr>
+    <tr><td>bkit:report-generator</td><td>writer (reporter, Phase 5)</td><td class="highlight-green">완료</td></tr>
+    <tr><td>bkit:design-validator</td><td>Phase 1→2 Gate (4개 필수 섹션)</td><td class="highlight-green">완료</td></tr>
+    <tr><td colspan="3" style="color:var(--yellow)">BKIT plugin은 SessionStart hook으로 활성화 유지 중 (context 비용 발생)</td></tr>
+  </table>
+</div>
+</div>
+
+<div class="card" style="margin-top:1rem">
+  <div class="card-header"><span class="badge badge-green">INTEGRATED</span> Vercel BP 통합 현황</div>
+  <table>
+    <tr><th>통합 위치</th><th>메커니즘</th><th>상태</th></tr>
+    <tr><td>Phase 4 Step 4.2 quality-checker</td><td>Lead가 next.config.*/package.json 감지 → Vercel BP 규칙 동적 주입</td><td class="highlight-green">완료</td></tr>
+    <tr><td>REFERENCE.md "Vercel BP 검증 규칙" 섹션</td><td>React 성능, Next.js 패턴, 접근성, 보안, 성능 5개 카테고리</td><td class="highlight-green">완료</td></tr>
+    <tr><td>vercel-react-best-practices 스킬</td><td>독립 스킬로 별도 존재 (47개 규칙)</td><td class="highlight-green">유지</td></tr>
+    <tr><td>frontend-dev 에이전트</td><td>Vercel BP 규칙 참조 내장</td><td class="highlight-green">유지</td></tr>
+    <tr><td>code-quality-checker 스킬</td><td>Vercel BP 참조</td><td class="highlight-green">유지</td></tr>
+  </table>
+</div>
+</div>
+
+<!-- Section 4: Agent Teams Migration -->
+<div class="section">
+<h2>4. Subagent → Agent Teams 이관 심층 분석</h2>
+
+<div class="card" style="margin-bottom:1rem">
+  <div class="card-header">Task() 호출 패턴 분석 (전체 스킬 43개)</div>
+  <table>
+    <tr><th>스킬</th><th>TeamCreate</th><th>team_name</th><th>SendMessage</th><th>TeamDelete</th><th>판정</th></tr>
+    <tr><td><strong>/auto</strong> (SKILL.md + REFERENCE.md)</td><td class="highlight-green">O</td><td class="highlight-green">O</td><td class="highlight-green">O</td><td class="highlight-green">O</td><td><span class="badge badge-green">PASS</span></td></tr>
+    <tr><td><strong>/debug</strong></td><td class="highlight-green">O</td><td class="highlight-green">O</td><td class="highlight-green">O</td><td class="highlight-green">O</td><td><span class="badge badge-yellow">WARN</span> model=opus</td></tr>
+    <tr><td><strong>/parallel</strong></td><td class="highlight-green">O</td><td class="highlight-green">O</td><td class="highlight-green">O</td><td class="highlight-green">O</td><td><span class="badge badge-yellow">WARN</span> opus 참조</td></tr>
+    <tr><td><strong>/research</strong></td><td class="highlight-green">O</td><td class="highlight-green">O</td><td class="highlight-green">O</td><td class="highlight-green">O</td><td><span class="badge badge-yellow">WARN</span> /work 참조</td></tr>
+    <tr><td><strong>/tdd</strong></td><td class="highlight-green">O</td><td class="highlight-green">O</td><td class="highlight-green">O</td><td class="highlight-green">O</td><td><span class="badge badge-green">PASS</span></td></tr>
+    <tr><td><strong>/pr-review-agent</strong></td><td class="highlight-green">O</td><td class="highlight-green">O</td><td class="highlight-green">O</td><td class="highlight-green">O</td><td><span class="badge badge-green">PASS</span></td></tr>
+    <tr><td><strong>/final-check-automation</strong></td><td class="highlight-green">O</td><td class="highlight-green">O</td><td class="highlight-green">O</td><td class="highlight-green">O</td><td><span class="badge badge-green">PASS</span></td></tr>
+    <tr><td><strong>/agent-teamworks</strong></td><td class="highlight-green">O</td><td class="highlight-green">O</td><td class="highlight-green">O</td><td class="highlight-green">O</td><td><span class="badge badge-green">PASS</span></td></tr>
+    <tr><td colspan="5" style="opacity:.6">나머지 35개 스킬: Task() 미사용 (직접 실행 또는 스크립트 기반)</td><td><span class="badge badge-blue">N/A</span></td></tr>
+  </table>
+</div>
+
+<div class="grid grid-2">
+<div class="card">
+  <div class="card-header">구 Subagent 패턴 (제거됨)</div>
+<pre style="font-size:.8rem;color:var(--red);text-decoration:line-through">
+Task(subagent_type="agent",
+     model="opus",
+     prompt="...",
+     run_in_background=True)  # team_name 없음
+</pre>
+  <p style="margin-top:.5rem;font-size:.85rem">
+    <span class="highlight-red">run_in_background=True</span>: .claude/ 내 0건<br>
+    <span class="highlight-red">oh-my-claudecode:</span> prefix: 0건<br>
+    <span class="highlight-red">Skill()</span> 호출: /auto 내 0건
+  </p>
+</div>
+
+<div class="card">
+  <div class="card-header">Agent Teams 패턴 (현행)</div>
+<pre style="font-size:.8rem;color:var(--green)">
+TeamCreate(team_name="pdca-{feature}")
+Task(subagent_type="executor",
+     name="impl-manager",
+     team_name="pdca-{feature}",
+     model="sonnet",
+     prompt="...")
+SendMessage(type="message",
+     recipient="impl-manager",
+     content="구현 시작.")
+# 완료 대기 → shutdown_request
+TeamDelete()
+</pre>
+</div>
+</div>
+</div>
+
+<!-- Section 5: Model Routing -->
+<div class="section">
+<h2>5. v23.0 Model Routing 현황</h2>
+
+<div class="card" style="margin-bottom:1rem">
+  <div class="card-header">Smart Model Routing (v23.0 규칙)</div>
+  <table>
+    <tr><th>Tier</th><th>Model</th><th>용도</th><th>비용</th></tr>
+    <tr><td>SCOUT</td><td>haiku</td><td>Simple lookup, 탐색, 보고서</td><td>$0.25/$1.25</td></tr>
+    <tr><td><strong>WORK</strong></td><td><strong>sonnet (4.6)</strong></td><td><strong>모든 실행/검증/디버깅/아키텍처 (기본)</strong></td><td><strong>$3/$15</strong></td></tr>
+    <tr><td>APEX</td><td>opus</td><td>--opus 플래그 시에만 (on-demand)</td><td>$15/$75</td></tr>
+  </table>
+</div>
+
+<div class="card">
+  <div class="card-header"><span class="badge badge-red">VIOLATIONS</span> model="opus" 위반 5건</div>
+  <div class="issue-item issue-critical">
+    <strong>/debug</strong> SKILL.md:19 — <code>model="opus"</code> → <code>model="sonnet"</code>으로 변경 필요
+  </div>
+  <div class="issue-item issue-critical">
+    <strong>/parallel</strong> SKILL.md:35 — architect <code>model: opus</code> 참조 테이블 → <code>sonnet</code>
+  </div>
+  <div class="issue-item issue-critical">
+    <strong>/ultimate-debate</strong> SKILL.md:30 — <code>model_preference: opus</code> → <code>sonnet</code>
+  </div>
+  <div class="issue-item issue-critical">
+    <strong>/shorts-generator</strong> SKILL.md:32 — <code>model_preference: opus</code> → <code>sonnet</code>
+  </div>
+  <div class="issue-item issue-critical">
+    <strong>/drive</strong> SKILL.md:40 — <code>model_preference: opus</code> → <code>sonnet</code>
+  </div>
+</div>
+</div>
+
+<!-- Section 6: Remaining Issues -->
+<div class="section">
+<h2>6. 미해결 이슈 및 남아있는 워크플로우</h2>
+
+<div class="grid grid-2">
+<div class="card">
+  <div class="card-header"><span class="badge badge-red">CRITICAL</span> 즉시 수정 필요 (5건)</div>
+  <div class="issue-item issue-critical">
+    <strong>C1</strong>: /debug model="opus" → model="sonnet" (v23.0 위반)
+  </div>
+  <div class="issue-item issue-critical">
+    <strong>C2</strong>: /parallel architect model: opus → sonnet (v23.0 위반)
+  </div>
+  <div class="issue-item issue-critical">
+    <strong>C3</strong>: /ultimate-debate model_preference: opus → sonnet
+  </div>
+  <div class="issue-item issue-critical">
+    <strong>C4</strong>: /shorts-generator model_preference: opus → sonnet
+  </div>
+  <div class="issue-item issue-critical">
+    <strong>C5</strong>: /drive model_preference: opus → sonnet
+  </div>
+</div>
+
+<div class="card">
+  <div class="card-header"><span class="badge badge-yellow">WARNING</span> 정리 필요 (3건)</div>
+  <div class="issue-item issue-warning">
+    <strong>W1</strong>: /research SKILL.md:42 — "/work Phase 1" 참조 → "/auto Phase 1"로 업데이트
+  </div>
+  <div class="issue-item issue-warning">
+    <strong>W2</strong>: /chunk command:47 — "run_in_background: true" 참조 (레거시 패턴 문서)
+  </div>
+  <div class="issue-item issue-warning">
+    <strong>W3</strong>: BKIT plugin SessionStart hook — 모든 세션에 ~500t context 추가 (비용)
+  </div>
+</div>
+</div>
+
+<div class="card" style="margin-top:1rem">
+  <div class="card-header"><span class="badge badge-blue">INFO</span> 남아있는 독립 워크플로우 (정상 유지)</div>
+  <table>
+    <tr><th>워크플로우</th><th>/auto 연동</th><th>독립 실행</th><th>Agent Teams</th></tr>
+    <tr><td>/commit</td><td>Phase 5 후 수동</td><td>O (직접 실행)</td><td>불필요 (단순)</td></tr>
+    <tr><td>/check</td><td>Phase 4 내부</td><td>O (직접 실행)</td><td>불필요 (단순)</td></tr>
+    <tr><td>/issue</td><td>Phase 1.3</td><td>O (gh 명령)</td><td>불필요 (단순)</td></tr>
+    <tr><td>/gmail</td><td>--gmail 옵션</td><td>O (lib.gmail)</td><td>analyst teammate</td></tr>
+    <tr><td>/slack</td><td>--slack 옵션</td><td>O (lib.slack)</td><td>analyst teammate</td></tr>
+    <tr><td>/daily</td><td>--daily 옵션</td><td>O (독립)</td><td>불필요</td></tr>
+    <tr><td>/mockup-hybrid</td><td>--mockup 옵션</td><td>O (독립)</td><td>불필요</td></tr>
+    <tr><td>/verify</td><td>수동 호출</td><td>O (Cross-AI)</td><td>불필요</td></tr>
+    <tr><td>/deploy</td><td>수동 호출</td><td>O (직접 실행)</td><td>불필요</td></tr>
+  </table>
+</div>
+</div>
+
+<!-- Section 7: Architecture Layers -->
+<div class="section">
+<h2>7. 5계층 아키텍처 최종 상태</h2>
+<div class="flow-diagram">
+<pre>
+┌─────────────────────────────────────────────────────────────────────────┐
+│ <span class="highlight-blue">Layer 5: User Interface</span>                                               │
+│   /auto "작업"  |  /debug  |  /commit  |  /check  |  /parallel       │
+│   /research     |  /tdd    |  /issue   |  /pr     |  /verify          │
+└──────────────────────────────┬──────────────────────────────────────────┘
+                               │
+┌──────────────────────────────▼──────────────────────────────────────────┐
+│ <span class="highlight-blue">Layer 4: Skill Router</span> (.claude/skills/)                                │
+│   SKILL.md: 실행 지시 (코드 블록)                                       │
+│   REFERENCE.md: 확장 패턴, Gate 조건, Prompt 전문                       │
+│   Frontmatter: triggers, agents, model_preference                      │
+└──────────────────────────────┬──────────────────────────────────────────┘
+                               │
+┌──────────────────────────────▼──────────────────────────────────────────┐
+│ <span class="highlight-blue">Layer 3: Agent Teams Engine</span>                                            │
+│   TeamCreate → Task(name, team_name, model) → SendMessage → TeamDelete │
+│   ┌────────────────────────────────────────────────────────────────┐    │
+│   │ <span class="highlight-green">핵심 에이전트 (11개)</span>                                          │    │
+│   │ planner | critic | architect | executor | executor-high       │    │
+│   │ qa-tester | build-fixer | security-reviewer | designer        │    │
+│   │ code-reviewer | writer                                        │    │
+│   └────────────────────────────────────────────────────────────────┘    │
+│   ┌────────────────────────────────────────────────────────────────┐    │
+│   │ <span class="highlight-purple">보조 에이전트 (30개)</span>                                          │    │
+│   │ explore* | researcher* | scientist* | analyst | tdd-guide*    │    │
+│   │ vision | frontend-dev | ... (각 -low/-medium/-high 변형)      │    │
+│   └────────────────────────────────────────────────────────────────┘    │
+└──────────────────────────────┬──────────────────────────────────────────┘
+                               │
+┌──────────────────────────────▼──────────────────────────────────────────┐
+│ <span class="highlight-blue">Layer 2: Agent Definitions</span> (.claude/agents/*.md)                       │
+│   41개 로컬 에이전트 (OMC 32개 마이그레이션 + 커스텀 9개)                │
+│   v23.0: 전체 model="sonnet" (Sonnet 4.6)                              │
+│   <span class="highlight-yellow">주의: scientist/scientist-low에 .omc/ 경로 잔여 (비-/auto, 우선순위 낮음)</span>│
+└──────────────────────────────┬──────────────────────────────────────────┘
+                               │
+┌──────────────────────────────▼──────────────────────────────────────────┐
+│ <span class="highlight-blue">Layer 1: Configuration</span>                                                │
+│   ~/.claude/CLAUDE.md: Global 규칙 (Delegation-First, Model Routing)   │
+│   CLAUDE.md: Project 규칙 (빌드, TDD, 경로, API키 금지)                │
+│   .claude/rules/: 04-tdd, 08-skill-routing, 10-image-analysis         │
+│   Hooks: session_init, tool_validator, branch_guard, post_edit_check   │
+│   <span class="highlight-yellow">BKIT SessionStart hook: 활성 (context ~500t 추가)</span>                    │
+│   <span class="highlight-yellow">OMC update detector hook: 활성 (v3.6.2 스냅샷)</span>                      │
+└─────────────────────────────────────────────────────────────────────────┘
+</pre>
+</div>
+</div>
+
+<!-- Section 8: Cost Impact -->
+<div class="section">
+<h2>8. v23.0 비용 영향 분석</h2>
+<div class="grid grid-3">
+  <div class="card stat-box">
+    <div class="stat-number" style="color:var(--red)">v22.1</div>
+    <div class="stat-label">HEAVY 1회: ~$15-25 (opus 다수)</div>
+  </div>
+  <div class="card stat-box">
+    <div class="stat-number" style="font-size:1.5rem">→</div>
+    <div class="stat-label">~78% 절감</div>
+  </div>
+  <div class="card stat-box">
+    <div class="stat-number highlight-green">v23.0</div>
+    <div class="stat-label">HEAVY 1회: ~$3-6 (sonnet 기본)</div>
+  </div>
+</div>
+
+<div class="card" style="margin-top:1rem">
+  <table>
+    <tr><th>Phase</th><th>v22.1 (opus)</th><th>v23.0 (sonnet)</th><th>절감</th></tr>
+    <tr><td>Phase 1 HEAVY (Planner-Critic x5)</td><td>opus x15 calls</td><td>sonnet x15 calls</td><td>80%</td></tr>
+    <tr><td>Phase 2 (design-writer)</td><td>opus x1</td><td>sonnet x1</td><td>80%</td></tr>
+    <tr><td>Phase 3 (impl-manager)</td><td>opus x10</td><td>sonnet x10</td><td>80%</td></tr>
+    <tr><td>Phase 4 (architect+QA)</td><td>opus x5</td><td>sonnet x5</td><td>80%</td></tr>
+    <tr><td>Phase 5 (writer)</td><td>sonnet x1</td><td>haiku x1</td><td>90%</td></tr>
+    <tr style="font-weight:bold"><td>총계</td><td>~$15-25</td><td>~$3-6</td><td style="color:var(--green)">~78%</td></tr>
+  </table>
+</div>
+</div>
+
+<footer style="margin-top:3rem;padding-top:1rem;border-top:1px solid var(--border);opacity:.5;font-size:.8rem">
+  Generated: 2026-02-18 | /auto v23.0 Workflow Review | Claude Code
+</footer>
+
+</body>
+</html>
