@@ -241,7 +241,7 @@ QA Runner 6종 goal, Architect 진단 prompt, Domain routing 상세: `REFERENCE.
 | HEAVY | architect (sonnet) → code-reviewer (sonnet) 순차 |
 
 ```
-# LIGHT: architect만 / STANDARD/HEAVY: architect → gap-detector → code-analyzer 순차
+# LIGHT: architect만 / STANDARD/HEAVY: architect → code-reviewer 순차
 Task(subagent_type="architect", name="verifier", team_name="pdca-{feature}",
      model="sonnet", prompt="구현이 Plan/Design 요구사항과 일치하는지 검증. APPROVE/REJECT 판정.")
 SendMessage(type="message", recipient="verifier", content="검증 시작.")

@@ -356,8 +356,8 @@ else:
 | Phase 3.1 | Executor teammate (sonnet) 단일 실행 |
 | Phase 3.2 | — (Architect Gate 없음) |
 | Phase 4.1 | QA Runner 1회 |
-| Phase 4.2 | Architect 검증 (gap-detector, E2E 스킵) |
-| Phase 5 | haiku 보고서 (APPROVE 기반, gap-detector 없음) |
+| Phase 4.2 | Architect 검증 (code-reviewer, E2E 스킵) |
+| Phase 5 | haiku 보고서 (APPROVE 기반, code-reviewer 없음) |
 
 ### STANDARD 모드 (2-3점)
 
@@ -368,8 +368,8 @@ else:
 | Phase 3.1 | impl-manager teammate (sonnet) — 5조건 자체 루프 |
 | Phase 3.2 | Architect Gate (외부 검증, max 2회 rejection) |
 | Phase 4.1 | QA Runner 3회 + Architect 진단 + Domain-Smart Fix |
-| Phase 4.2 | Architect + gap-detector + code-analyzer (순차) |
-| Phase 5 | gap < 90% → pdca-iterator teammate (최대 5회) |
+| Phase 4.2 | Architect + code-reviewer (순차) |
+| Phase 5 | gap < 90% → executor teammate (최대 5회) |
 
 ### HEAVY 모드 (4-5점)
 
@@ -380,8 +380,8 @@ else:
 | Phase 3.1 | impl-manager teammate (sonnet) — 5조건 자체 루프 + 병렬 가능 |
 | Phase 3.2 | Architect Gate (외부 검증, max 2회 rejection) |
 | Phase 4.1 | QA Runner 5회 + Architect 진단 + Domain-Smart Fix |
-| Phase 4.2 | Architect + gap-detector + code-analyzer (sonnet, 순차) |
-| Phase 5 | gap < 90% → pdca-iterator teammate (최대 5회) |
+| Phase 4.2 | Architect + code-reviewer (sonnet, 순차) |
+| Phase 5 | gap < 90% → executor teammate (최대 5회) |
 
 ### 자동 승격 규칙 (Phase 중 복잡도 상향 조정)
 
@@ -390,7 +390,7 @@ else:
 | 빌드 실패 2회 이상 | LIGHT → STANDARD |
 | QA 3사이클 초과 (STANDARD→HEAVY만) | STANDARD → HEAVY |
 | 영향 파일 5개 이상 | LIGHT/STANDARD → HEAVY |
-| Architect REJECT 2회 | 현재 모드 유지, pdca-iterator 최대 회수 +2 |
+| Architect REJECT 2회 | 현재 모드 유지, Phase 4 진입 허용 (사용자 알림) |
 
 ---
 
@@ -851,7 +851,7 @@ while cycle < max_cycles:
 
 ### Step 4.2: 이중 검증 (순차 teammate - context 분리)
 
-**LIGHT 모드: Architect teammate만 (gap-detector 스킵)**
+**LIGHT 모드: Architect teammate만 (code-reviewer 스킵)**
 ```
 Task(subagent_type="architect", name="verifier", team_name="pdca-{feature}",
      model="sonnet",
@@ -860,7 +860,7 @@ SendMessage(type="message", recipient="verifier", content="검증 시작. APPROV
 # verifier 완료 대기 → shutdown_request
 ```
 
-**STANDARD/HEAVY 모드: Architect → gap-detector → code-analyzer (순차 teammate)**
+**STANDARD/HEAVY 모드: Architect → code-reviewer (순차 teammate)**
 ```
 # 1. Architect teammate 먼저 실행
 Task(subagent_type="architect", name="verifier", team_name="pdca-{feature}",
@@ -869,14 +869,14 @@ Task(subagent_type="architect", name="verifier", team_name="pdca-{feature}",
 SendMessage(type="message", recipient="verifier", content="검증 시작. APPROVE/REJECT 판정 후 TaskUpdate 처리.")
 # verifier 완료 대기 → shutdown_request
 
-# 2. gap-detector teammate (verifier 완료 후 spawn)
+# 2. gap-checker teammate (verifier 완료 후 spawn) — code-reviewer 역할
 Task(subagent_type="architect", name="gap-checker", team_name="pdca-{feature}",
      model="sonnet",
      prompt="[Gap Analysis] docs/02-design/{feature}.design.md와 실제 구현 코드 간 일치도 분석. 설계 문서의 각 항목을 코드에서 검증하고 일치율(0-100%)을 산출하세요. 90% 기준.")
 SendMessage(type="message", recipient="gap-checker", content="갭 분석 시작. 완료 후 TaskUpdate 처리.")
 # gap-checker 완료 대기 → shutdown_request
 
-# 3. code-analyzer teammate (gap-checker 완료 후 spawn)
+# 3. quality-checker teammate (gap-checker 완료 후 spawn) — code-reviewer 역할
 # Lead가 직접 프로젝트 유형 감지 후 Vercel BP 규칙 동적 주입
 #
 # === Vercel BP 동적 주입 메커니즘 (Lead 직접 실행) ===
@@ -897,7 +897,7 @@ SendMessage(type="message", recipient="quality-checker", content="코드 품질 
 
 **HEAVY 모드: 동일 구조 (순차 teammate, sonnet)**
 
-HEAVY 모드에서는 Architect, gap-detector, code-analyzer 모두 `model="sonnet"` 사용:
+HEAVY 모드에서는 Architect, code-reviewer 모두 `model="sonnet"` 사용:
 ```
 Task(subagent_type="architect", name="verifier", ..., model="sonnet", ...)
 Task(subagent_type="code-reviewer", name="gap-checker", ..., model="sonnet", ...)
@@ -944,7 +944,7 @@ jest --coverage
 
 ## Vercel BP 검증 규칙
 
-Phase 4 Step 4.2에서 code-analyzer teammate prompt에 동적 주입하는 규칙:
+Phase 4 Step 4.2에서 code-reviewer teammate prompt에 동적 주입하는 규칙:
 
 ```
 === Vercel Best Practices 검증 규칙 ===
@@ -1006,7 +1006,7 @@ if phase4_reentry_count >= MAX_PHASE4_REENTRY:
 cumulative_iteration_count = 0  # Phase 4-5 전체 누적
 MAX_CUMULATIVE_ITERATIONS = 5
 
-# pdca-iterator 또는 executor 수정 실행 시
+# executor 수정 실행 시
 cumulative_iteration_count += 1
 if cumulative_iteration_count >= MAX_CUMULATIVE_ITERATIONS:
     → "[Phase 5] 누적 {MAX_CUMULATIVE_ITERATIONS}회 개선 시도 초과. 최종 결과 보고." 출력
@@ -1015,8 +1015,8 @@ if cumulative_iteration_count >= MAX_CUMULATIVE_ITERATIONS:
 
 | Check 결과 | 자동 실행 | 다음 |
 |-----------|----------|------|
-| gap < 90% | pdca-iterator teammate (최대 5회 반복) | Phase 4 재실행 |
-| gap >= 90% + Architect APPROVE | report-generator teammate | TeamDelete → 완료 |
+| gap < 90% | executor teammate (최대 5회 반복) | Phase 4 재실행 |
+| gap >= 90% + Architect APPROVE | writer teammate | TeamDelete → 완료 |
 | Architect REJECT | executor teammate (수정) | Phase 4 재실행 |
 
 **Case 1: gap < 90%**
@@ -1183,7 +1183,7 @@ SendMessage(type="message", recipient="gmail-analyst", content="Gmail 분석 요
 - Context 분리로 compact 실패 문제 근본 해결
 - TeamCreate/TeamDelete 라이프사이클 추가
 - Phase 2 DESIGN: architect(READ-ONLY) → executor/executor-high(Write 가능)로 교체
-- LIGHT Phase 4: Architect 검증 추가 (gap-detector는 스킵)
+- LIGHT Phase 4: Architect 검증 추가 (code-reviewer는 스킵)
 - 토큰 사용량 약 1.5-2배 증가 (독립 context 비용)
 
 **v22.1 변경:**
@@ -1202,8 +1202,8 @@ SendMessage(type="message", recipient="gmail-analyst", content="Gmail 분석 요
 - `/auto` 내부 Skill() 호출 완전 제거 (ralplan, ralph, ultraqa → Agent Teams 단일 패턴)
 - Phase 1 HEAVY: Skill(ralplan) → Planner-Critic Loop (max 5 iter)
 - Phase 3 STD/HEAVY: Skill(ralph) → impl-manager 5조건 자체 루프 (max 10 iter)
-- Phase 4 Step 4.1: Skill(ultraqa) → Lead 직접 QA + Executor 수정 위임
-- Phase 4 Step 4.2: code-analyzer에 Vercel BP 규칙 동적 주입
+- Phase 4 Step 4.1: Lead 직접 QA + Executor 수정 위임
+- Phase 4 Step 4.2: code-reviewer에 Vercel BP 규칙 동적 주입
 - State 파일 의존 0개 (Agent Teams lifecycle으로 대체)
 - Stop Hook 충돌 자연 해소 (state 파일 미생성)
 - `pdca-status.json`: `ralphIteration` → `implManagerIteration` 필드 변경
