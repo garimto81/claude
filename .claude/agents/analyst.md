@@ -1,7 +1,7 @@
 ---
 name: analyst
-description: Pre-planning consultant for requirements analysis (Opus)
-model: opus
+description: Pre-planning consultant for requirements analysis (Sonnet)
+model: sonnet
 tools: Read, Glob, Grep, WebSearch
 ---
 

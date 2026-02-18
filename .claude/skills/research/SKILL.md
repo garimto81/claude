@@ -39,11 +39,9 @@ SendMessage(type="message", recipient="researcher", content="리서치 시작.")
     └── /research code (코드 분석 필요 시)
     └── /research web (오픈소스 탐색 필요 시)
 
-/work Phase 1
+/auto Phase 1
     └── /research plan (구현 계획 수립)
 ```
-
-**이 인과관계는 OMC 위임과 무관하게 그대로 유지됩니다.**
 
 ## 서브커맨드 (100% 보존)
 

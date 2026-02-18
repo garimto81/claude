@@ -16,7 +16,7 @@ triggers:
 ```
 TeamCreate(team_name="debug-session")
 Task(subagent_type="architect", name="debugger",
-     team_name="debug-session", model="opus",
+     team_name="debug-session", model="sonnet",
      prompt="문제 원인 분석: [에러 내용]")
 SendMessage(type="message", recipient="debugger", content="디버깅 시작.")
 # 완료 대기 → shutdown_request → TeamDelete()

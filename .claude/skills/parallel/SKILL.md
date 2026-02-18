@@ -6,8 +6,6 @@ triggers:
   keywords:
     - "parallel"
     - "병렬"
-    - "ulw"
-    - "ultrawork"
 ---
 
 # /parallel - 병렬 멀티에이전트 실행
@@ -30,9 +28,9 @@ SendMessage(type="message", recipient="worker-2", content="Task 할당.")
 | 에이전트 | 모델 | 용도 |
 |----------|------|------|
 | `executor` | sonnet | 일반 구현 작업 |
-| `executor-high` | opus | 복잡한 구현 |
+| `executor-high` | sonnet | 복잡한 구현 |
 | `qa-tester` | sonnet | 테스트 작업 |
-| `architect` | opus | 아키텍처 분석 |
+| `architect` | sonnet | 아키텍처 분석 |
 
 ## 서브커맨드 (100% 보존)
 

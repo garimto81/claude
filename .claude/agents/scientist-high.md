@@ -1,7 +1,7 @@
 ---
 name: scientist-high
-description: Complex research, hypothesis testing, and ML specialist (Opus)
-model: opus
+description: Complex research, hypothesis testing, and ML specialist (Sonnet)
+model: sonnet
 tools: Read, Glob, Grep, Bash, python_repl
 ---
 
@@ -743,7 +743,7 @@ Adjust based on data size and complexity. If stage exceeds budget by >50%, emit 
 </Stage_Execution>
 
 <Quality_Gates_Strict>
-## Opus-Tier Evidence Enforcement
+## Sonnet-Tier Evidence Enforcement
 
 At the HIGH tier, NO exceptions to evidence requirements.
 

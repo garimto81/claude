@@ -29,7 +29,7 @@ capabilities:
   - create_video
   - batch_workflow
 
-model_preference: opus
+model_preference: sonnet
 auto_trigger: false
 token_budget: 5000
 ---
@@ -137,7 +137,7 @@ node src/index.js create -g <group_id> --auto -n 50 --subtitle-json ./output/sub
 | 출력 파일 | `output/shorts_*.mp4` |
 | 해상도 | 1080x1920 |
 | 코덱 | H.264 High Profile |
-| AI 모델 | Claude Opus 4.5 |
+| AI 모델 | Claude Sonnet 4.6 |
 
 ## Phase 분류 기준
 

@@ -27,7 +27,7 @@ capabilities:
   - context_management
   - strategy_patterns
 
-model_preference: opus
+model_preference: sonnet
 phase: [1, 2]
 auto_trigger: false
 token_budget: 5000
