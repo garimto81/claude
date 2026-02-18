@@ -6,11 +6,15 @@ Premium Dark Text 스타일 시스템 연동.
 """
 
 import re
+import subprocess
+import tempfile
+from pathlib import Path as _Path
 from typing import Any, Optional
 
 from googleapiclient.discovery import build
 
 from .auth import get_credentials, DEFAULT_FOLDER_ID
+from .project_registry import get_project_folder_id
 from .models import TextSegment, InlineParseResult
 from .table_renderer import NativeTableRenderer
 from .notion_style import NotionStyle
@@ -87,6 +91,9 @@ class MarkdownToDocsConverter:
         # 이미지 정보 저장소 (2단계 삽입용)
         # 각 항목: {'index': 삽입위치, 'url': 이미지URL, 'alt': alt텍스트}
         self._pending_images: list[dict[str, Any]] = []
+
+        # Mermaid 렌더링 임시 파일 추적 (cleanup용)
+        self._mermaid_temp_files: list[str] = []
 
         # YAML frontmatter 제거 및 참조 링크 파싱
         self._preprocess_content()
@@ -994,6 +1001,23 @@ class MarkdownToDocsConverter:
             else:
                 self._add_text(line_text)
 
+    def _render_mermaid_to_png(self, code: str) -> str | None:
+        """
+        Mermaid 다이어그램을 PNG 파일로 렌더링 (하이브리드 3단계 폴백)
+
+        우선순위: Mermaid.ink API → mmdc CLI → Playwright
+        실패 시 None을 반환하여 코드 블록으로 폴백합니다.
+
+        Returns:
+            str | None: 생성된 PNG 파일 절대 경로, 실패 시 None
+        """
+        from .mermaid_renderer import render_mermaid
+
+        result = render_mermaid(code)
+        if result:
+            self._mermaid_temp_files.append(result)
+        return result
+
     def _add_code_block(self, code: str, lang: str = ""):
         """
         코드 블록 추가 (테이블 기반 박스 스타일)
@@ -1002,7 +1026,16 @@ class MarkdownToDocsConverter:
         1x1 테이블 + 배경색 + 고정폭 폰트로 시각적 코드 박스를 구현합니다.
 
         v2.8.0: 테이블 기반 코드 박스로 업그레이드
+        v2.9.0: Mermaid 다이어그램 → PNG 이미지 자동 렌더링
         """
+        # Mermaid 다이어그램 → PNG 이미지로 렌더링
+        if lang.lower() == "mermaid":
+            png_path = self._render_mermaid_to_png(code)
+            if png_path:
+                self._add_image_block(png_path, "Mermaid Diagram")
+                return
+            # 렌더링 실패 시 코드 블록으로 폴백
+
         # 2단계 테이블 처리 (docs_service가 있는 경우)
         if self.docs_service and self.doc_id:
             self._add_code_block_as_table(code, lang)
@@ -1902,7 +1935,10 @@ def create_google_doc(
     print(f"     ID: {doc_id}")
 
     # 2. 폴더로 이동
-    target_folder = folder_id or DEFAULT_FOLDER_ID
+    try:
+        target_folder = folder_id or get_project_folder_id(subfolder="documents")
+    except Exception:
+        target_folder = folder_id or DEFAULT_FOLDER_ID
     try:
         file = drive_service.files().get(fileId=doc_id, fields="parents").execute()
         previous_parents = ",".join(file.get("parents", []))
@@ -2140,7 +2176,14 @@ def create_google_doc(
         except Exception as e:
             print(f"     줄간격 적용 실패: {e}")
 
-    # 7. 문서 URL 반환
+    # 8. Mermaid 임시 파일 정리
+    for tmp_file in converter._mermaid_temp_files:
+        try:
+            _Path(tmp_file).unlink(missing_ok=True)
+        except Exception:
+            pass
+
+    # 9. 문서 URL 반환
     doc_url = f"https://docs.google.com/document/d/{doc_id}/edit"
     return doc_url
 
@@ -2306,9 +2349,13 @@ def update_google_doc(
                     try:
                         local_path = Path(img_info["url"])
                         if local_path.exists():
+                            try:
+                                image_folder = get_project_folder_id(subfolder="images")
+                            except Exception:
+                                image_folder = folder_id or DEFAULT_FOLDER_ID
                             file_id, public_url = image_inserter.upload_to_drive(
                                 local_path,
-                                folder_id=DEFAULT_FOLDER_ID,
+                                folder_id=image_folder,
                                 make_public=True,
                             )
                             img_info["url"] = public_url

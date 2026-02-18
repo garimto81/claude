@@ -226,6 +226,8 @@ class SlackClient:
         self,
         channel: str,
         limit: int = 100,
+        oldest: Optional[str] = None,
+        latest: Optional[str] = None,
     ) -> list[SlackMessage]:
         """
         Get channel message history.
@@ -233,6 +235,8 @@ class SlackClient:
         Args:
             channel: Channel ID
             limit: Max messages to return (default 100)
+            oldest: Only messages after this Unix timestamp (inclusive)
+            latest: Only messages before this Unix timestamp (exclusive)
 
         Returns:
             List of SlackMessage objects
@@ -240,10 +244,16 @@ class SlackClient:
         self._rate_limiter.wait_if_needed("conversations.history")
 
         try:
-            response = self._client.conversations_history(
-                channel=channel,
-                limit=limit,
-            )
+            params = {
+                "channel": channel,
+                "limit": limit,
+            }
+            if oldest is not None:
+                params["oldest"] = oldest
+            if latest is not None:
+                params["latest"] = latest
+
+            response = self._client.conversations_history(**params)
 
             messages = []
             for msg in response.data.get("messages", []):

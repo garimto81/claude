@@ -27,9 +27,15 @@ if sys.platform == "win32":
 _SCRIPT_DIR = Path(__file__).resolve().parent
 sys.path.insert(0, str(_SCRIPT_DIR))
 sys.path.insert(0, str(_SCRIPT_DIR / "vimeo"))
+sys.path.insert(0, str(_SCRIPT_DIR.parent))
 
 from auth import get_client
 from vhx.collection_manager import CollectionManager
+from config.season_ids import SEASON_IDS
+
+# Retry configuration
+MAX_UPLOAD_RETRIES = 3
+RETRY_DELAY_SECONDS = 30
 
 # Project paths
 PROJECT_ROOT = Path(__file__).parent.parent
@@ -44,24 +50,6 @@ UPLOAD_LOG_FILE = LOGS_DIR / "upload_log.jsonl"
 # Ensure dirs exist
 DATA_DIR.mkdir(exist_ok=True)
 LOGS_DIR.mkdir(exist_ok=True)
-
-# VHX Season IDs (rebuilt 2026-02-06, previous IDs were 404)
-SEASON_IDS = {
-    # WSOP Classic (Series ID: 1486193)
-    "wsop-classic/1973": "1486195", "wsop-classic/1978": "1486196",
-    "wsop-classic/1979": "1486197", "wsop-classic/1981": "1486198",
-    "wsop-classic/1983": "1486199", "wsop-classic/1988": "1486200",
-    "wsop-classic/1989": "1486201", "wsop-classic/1990": "1486202",
-    "wsop-classic/1991": "1486203", "wsop-classic/1992": "1486204",
-    "wsop-classic/1993": "1486205", "wsop-classic/1994": "1486206",
-    "wsop-classic/1995": "1486207", "wsop-classic/1997": "1486208",
-    "wsop-classic/1998": "1486209", "wsop-classic/1999": "1486210",
-    "wsop-classic/2000": "1486211", "wsop-classic/2001": "1486212",
-    # WSOP 2025 (Series ID: 1486194)
-    "wsop-modern/2025": "1486213",
-    "wsop-modern/2025-paradise": "1486214",
-    "wsop-modern/2025-cyprus": "1486215",
-}
 
 
 def clear_screen():
@@ -230,6 +218,41 @@ def print_upload_start(idx: int, total: int, file_info: dict):
 """)
 
 
+def upload_with_retry(client, file_path: str, data: dict, max_retries: int = MAX_UPLOAD_RETRIES) -> str:
+    """
+    Upload to Vimeo with retry on transient failures.
+
+    Args:
+        client: Vimeo client instance
+        file_path: Path to video file
+        data: Video metadata dict
+        max_retries: Maximum number of retry attempts
+
+    Returns:
+        Video URI string
+
+    Raises:
+        Exception: If all retry attempts fail
+    """
+    import requests.exceptions
+
+    for attempt in range(1, max_retries + 1):
+        try:
+            uri = client.upload(file_path, data=data)
+            return uri
+        except (requests.exceptions.Timeout,
+                requests.exceptions.ConnectionError,
+                requests.exceptions.ReadTimeout) as e:
+            if attempt == max_retries:
+                raise
+            wait = RETRY_DELAY_SECONDS * attempt
+            print(f"  ⚠️  Upload attempt {attempt}/{max_retries} failed: {str(e)[:60]}")
+            print(f"  ⏳  Retrying in {wait}s...")
+            time.sleep(wait)
+
+    raise RuntimeError("Upload failed after all retries")
+
+
 def upload_single(client, vhx_manager, file_info: dict, state: dict) -> tuple[bool, str | None, float]:
     """
     Upload a single file.
@@ -261,7 +284,7 @@ def upload_single(client, vhx_manager, file_info: dict, state: dict) -> tuple[bo
             "privacy": {"view": vimeo_meta.get("privacy", "unlisted")},
         }
 
-        video_uri = client.upload(source_path, data=data)
+        video_uri = upload_with_retry(client, source_path, data=data)
         duration = time.time() - start_time
 
         if video_uri:

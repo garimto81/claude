@@ -69,6 +69,62 @@ class GmailClient:
         except GmailError:
             return False
 
+    def list_history(
+        self,
+        start_history_id: str,
+        history_types: Optional[List[str]] = None,
+        label_id: Optional[str] = None,
+        max_results: int = 100,
+    ) -> dict:
+        """
+        List history of changes since a given historyId.
+
+        Args:
+            start_history_id: Start historyId (from get_profile())
+            history_types: Filter types (e.g., ["messageAdded", "labelAdded"])
+            label_id: Filter by label ID
+            max_results: Maximum history records
+
+        Returns:
+            Dict with 'history' list and 'historyId' (latest)
+        """
+        try:
+            params = {
+                "userId": "me",
+                "startHistoryId": start_history_id,
+                "maxResults": max_results,
+            }
+            if history_types:
+                params["historyTypes"] = history_types
+            if label_id:
+                params["labelId"] = label_id
+
+            return self.service.users().history().list(**params).execute()
+        except HttpError as e:
+            if e.resp.status == 404:
+                return {"history": [], "historyId": start_history_id}
+            self._handle_error(e)
+
+    def get_message_metadata(self, message_id: str) -> dict:
+        """
+        Get message metadata only (no body, faster).
+
+        Args:
+            message_id: Message ID
+
+        Returns:
+            Dict with id, threadId, labelIds, snippet, historyId
+        """
+        try:
+            return self.service.users().messages().get(
+                userId="me",
+                id=message_id,
+                format="metadata",
+                metadataHeaders=["From", "To", "Subject", "Date"],
+            ).execute()
+        except HttpError as e:
+            self._handle_error(e)
+
     def list_emails(
         self,
         query: str = "",
@@ -332,6 +388,27 @@ class GmailClient:
     def mark_as_unread(self, email_id: str) -> GmailMessage:
         """Mark email as unread."""
         return self.modify_labels(email_id, add_labels=["UNREAD"])
+
+    def download_attachment(self, message_id: str, attachment_id: str) -> bytes:
+        """Download attachment binary data.
+
+        Args:
+            message_id: Gmail message ID
+            attachment_id: Attachment ID (from GmailAttachment.id)
+
+        Returns:
+            bytes: Decoded binary data
+
+        Raises:
+            GmailAPIError: API call failure
+        """
+        try:
+            result = self.service.users().messages().attachments().get(
+                userId="me", messageId=message_id, id=attachment_id
+            ).execute()
+            return base64.urlsafe_b64decode(result["data"])
+        except HttpError as e:
+            self._handle_error(e)
 
     def archive(self, email_id: str) -> GmailMessage:
         """Archive email (remove from inbox)."""

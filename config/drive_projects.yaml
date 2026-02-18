@@ -1,0 +1,120 @@
+# Google Drive Project Registry
+# 프로젝트별 폴더 ID 매핑 및 자동 라우팅 설정
+#
+# 구조: 프로젝트 최상위 폴더 > documents/ + images/
+# 해석 우선순위: --project 옵션 > CWD 패턴 > 파일 키워드 > default_project
+
+version: "2.0"
+default_project: "WSOPTV"
+
+projects:
+  WSOPTV:
+    folder_id: "19Sbq1_K-fJOEN2LnMEaMTE9fYjAEFoou"
+    subfolders:
+      documents: "1o-1hkN30YmeSQWEEcMztQedJfAIhk_fV"
+      images: "1sN6P1tSpTLp2F_zq8qbrskr19vGxPyfc"
+    aliases:
+      - "wsoptv"
+      - "wsop"
+      - "poker"
+    cwd_patterns:
+      - "**/wsoptv/**"
+      - "**/automation_hub/**"
+    file_keywords:
+      - "PRD-"
+      - "WSOP"
+      - "poker"
+      - "broadcast"
+
+  EBS:
+    folder_id: "1GlDqSgEDs9z8j5VY6iX3QndTLb6_8-PF"
+    subfolders:
+      documents: "1obaXdmQ5qkQDGHflrfg2vSDYWupj6i_3"
+      images: "1vjPNqRooUZH4wNnh_MVeFfSwk6VH0Ph7"
+    aliases:
+      - "ebs"
+    cwd_patterns:
+      - "**/ebs/**"
+    file_keywords:
+      - "EBS"
+
+  지지프로덕션:
+    folder_id: "1UP3JjsbqMQbkPs9gTWD6_BZ0k9B33R23"
+    subfolders:
+      documents: "1oI1wLY7h8PUQxp-0kSw4Q4DIBNrPfvul"
+      images: "1REyhxVJ3_xmO9koxXwlk-Dt6fuueCSwy"
+    aliases:
+      - "지지"
+      - "gigi"
+      - "gigi-production"
+    cwd_patterns:
+      - "**/gigi/**"
+      - "**/지지/**"
+    file_keywords:
+      - "지지"
+      - "gigi"
+
+  브로드스튜디오:
+    folder_id: "1mr2XZwehPUk_m-td8J1FH-_XLWddsUFZ"
+    subfolders:
+      documents: "19Ck_zLcICi6uXmX89bBbDpseq6f6dooW"
+      images: "1v2np7Pmdl9l959hCr8hRrCvZ4OV9PXXh"
+    aliases:
+      - "브로드"
+      - "broad"
+      - "broad-studio"
+    cwd_patterns:
+      - "**/broad/**"
+      - "**/브로드/**"
+    file_keywords:
+      - "브로드"
+      - "broad"
+
+# 특수 폴더 (프로젝트가 아닌 용도별)
+special_folders:
+  _개인:
+    folder_id: "18NR_IM0IYXXwbP9GFUJ63e_K3FvC-Jed"
+    subfolders:
+      증명서: "1osTphyjge45VDuKopzgCx9gfgP-C9t4r"
+      "Meet Recordings": "1m0gxF2moDaRzPfppRNEXjsxY6lpJ33pc"
+
+  _아카이브:
+    folder_id: "1ikIc2TOjA15rkeiCxEd4MlOw-Vp2EzrG"
+
+# 구조 거버넌스 정책
+governance:
+  # 루트 폴더 정책: 허용된 폴더만 존재 가능
+  root_policy:
+    allowed_folders:
+      - "WSOPTV"
+      - "EBS"
+      - "지지프로덕션"
+      - "브로드스튜디오"
+      - "_개인"
+      - "_아카이브"
+    files_allowed: false  # 루트에 파일 존재 금지
+
+  # 프로젝트 필수 하위 폴더
+  required_subfolders:
+    - "documents"
+    - "images"
+
+  # 미분류 파일 처리 정책
+  orphan_policy:
+    auto_classify: true           # 키워드 기반 자동 분류 시도
+    fallback_folder: "_아카이브"  # 분류 실패 시 이동 대상
+    notify_on_orphan: true        # 미분류 파일 발견 시 알림
+
+  # 파일 유형별 라우팅 (MIME type → subfolder)
+  type_routing:
+    "application/vnd.google-apps.document": "documents"
+    "application/vnd.google-apps.spreadsheet": "documents"
+    "application/vnd.google-apps.presentation": "documents"
+    "application/pdf": "documents"
+    "image/*": "images"
+
+# Legacy (이전 버전 호환)
+legacy:
+  google_ai_studio:
+    folder_id: "1JwdlUe_v4Ug-yQ0veXTldFl6C24GH8hW"
+    note: "기존 DEFAULT_FOLDER_ID - 마이그레이션 후 deprecated"

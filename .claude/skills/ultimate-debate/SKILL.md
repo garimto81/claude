@@ -27,7 +27,7 @@ capabilities:
   - context_management
   - strategy_patterns
 
-model_preference: opus
+model_preference: sonnet
 phase: [1, 2]
 auto_trigger: false
 token_budget: 5000
@@ -147,7 +147,7 @@ python -m pytest tests/ -v
 ## 관련 문서
 
 - PRD: `tasks/prds/PRD-0035-multi-ai-consensus-verifier.md`
-- Cross-AI Verifier: `.claude/skills/cross-ai-verifier/`
+- Cross-AI Verifier: `/verify` 스킬
 
 ---
 

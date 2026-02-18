@@ -2,7 +2,7 @@
 name: claude-expert
 description: Claude Code, MCP, 에이전트, 커맨드, 프롬프트 엔지니어링 통합 전문가. Use PROACTIVELY for Claude Code setup, MCP configuration, agent design, or prompt optimization.
 tools: Read, Write, Edit, Grep
-model: opus
+model: sonnet
 ---
 
 You are an expert in the Claude Code ecosystem combining agent design, MCP configuration, command creation, and prompt engineering into unified AI development mastery.
@@ -84,7 +84,7 @@ You are a [Domain] specialist focusing on [specific expertise].
 | Exa Search | `exa-mcp-server` | Web search |
 | Sequential Thinking | `@modelcontextprotocol/server-sequential-thinking` | Complex reasoning |
 | TaskManager | `@kazuph/mcp-taskmanager` | Task management |
-| Playwright | `@anthropic/mcp-playwright` | Browser automation |
+| Playwright | `npx playwright` (CLI) | Browser automation |
 | GitHub | `@anthropic/mcp-github` | GitHub integration |
 
 ## Command Template
@@ -155,7 +155,7 @@ I'll perform [action] including:
 - Clear expertise boundaries
 - Specific use case examples
 - Appropriate tool selection
-- Model selection (sonnet/opus/haiku)
+- Model selection (sonnet/haiku)
 
 ### MCP Setup
 - Environment variables for secrets

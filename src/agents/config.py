@@ -88,6 +88,63 @@ DEFAULT_AGENTS = {
 }
 
 
+# Team Workflow Configuration
+TEAM_MODEL_TIERS = {
+    "team_lead": "claude-sonnet-4-20250514",
+    "specialist": "claude-sonnet-4-20250514",
+    "assistant": "claude-haiku-3-20240307",
+    "coordinator": "claude-sonnet-4-20250514",
+}
+
+TEAM_CONFIGS = {
+    "dev": {
+        "agents": ["architect", "frontend", "backend", "tester", "docs"],
+        "model_tier": "specialist",
+        "description": "개발팀 - 설계, 구현, 테스트, 문서화",
+    },
+    "quality": {
+        "agents": ["planner", "reviewer", "analyzer", "gap_detector", "security_checker", "reporter"],
+        "model_tier": "specialist",
+        "description": "품질팀 - PDCA 사이클 기반 품질 검증",
+    },
+    "ops": {
+        "agents": ["ci_cd", "infra", "monitor", "security"],
+        "model_tier": "specialist",
+        "description": "운영팀 - CI/CD, 인프라, 모니터링, 보안",
+    },
+    "research": {
+        "agents": ["code_analyst", "web_researcher", "data_scientist", "doc_searcher"],
+        "model_tier": "specialist",
+        "description": "리서치팀 - 코드 분석, 웹 조사, 데이터 분석",
+    },
+}
+
+# 복잡도 점수 → 팀 배치 매핑
+COMPLEXITY_TEAM_MAP = {
+    (0, 3): [],                                    # 기존 경로
+    (4, 5): ["dev"],                               # Dev 단독
+    (6, 7): ["dev", "quality"],                    # Dev + Quality
+    (8, 9): ["dev", "quality", "research"],        # Dev + Quality + Research
+    (10, 10): ["dev", "quality", "ops", "research"],  # 4팀 전체
+}
+
+
+def get_team_models(team_name: str) -> dict[str, str]:
+    """팀별 에이전트 모델 매핑 반환"""
+    config = TEAM_CONFIGS.get(team_name, {})
+    tier = config.get("model_tier", "specialist")
+    model = TEAM_MODEL_TIERS.get(tier, TEAM_MODEL_TIERS["specialist"])
+    return {agent: model for agent in config.get("agents", [])}
+
+
+def get_teams_for_complexity(score: int) -> list[str]:
+    """복잡도 점수에 따른 투입 팀 목록 반환"""
+    for (low, high), teams in COMPLEXITY_TEAM_MAP.items():
+        if low <= score <= high:
+            return teams
+    return []
+
+
 def get_api_key() -> str:
     """Anthropic API 키 가져오기"""
     api_key = os.environ.get("ANTHROPIC_API_KEY")

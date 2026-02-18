@@ -8,6 +8,7 @@ SessionEnd 이벤트에서 실행됩니다.
 import json
 import os
 import glob
+import shutil
 from datetime import datetime
 from pathlib import Path
 
@@ -20,8 +21,7 @@ TEMP_PATTERNS = [
     "*.tmp",
     "*.bak",
     "tmpclaude-*",
-    "ralph-counter.txt",
-    "ralph-test-*.md",
+    # v21.0: ralph/ultrawork state 파일은 Agent Teams lifecycle으로 대체됨
 ]
 
 
@@ -68,6 +68,51 @@ def cleanup_temp_files(files: list) -> int:
     return cleaned
 
 
+def cleanup_stale_agent_teams(ttl_hours: int = 24) -> dict:
+    """Agent Teams/Tasks 디렉토리 중 TTL 초과한 항목 삭제"""
+    home = Path.home()
+    teams_dir = home / ".claude" / "teams"
+    tasks_dir = home / ".claude" / "tasks"
+    result = {"teams_deleted": 0, "tasks_deleted": 0, "errors": []}
+
+    # Teams 정리 (config.json의 createdAt 기준)
+    if teams_dir.exists():
+        for entry in teams_dir.iterdir():
+            if not entry.is_dir():
+                continue
+            try:
+                config_file = entry / "config.json"
+                if config_file.exists():
+                    with open(config_file, "r", encoding="utf-8") as f:
+                        config = json.load(f)
+                    created = config.get("createdAt", "")
+                    if created:
+                        created_dt = datetime.fromisoformat(created.replace("Z", "+00:00"))
+                        age_hours = (datetime.now(created_dt.tzinfo) - created_dt).total_seconds() / 3600
+                        if age_hours < ttl_hours:
+                            continue
+                shutil.rmtree(entry)
+                result["teams_deleted"] += 1
+            except Exception as e:
+                result["errors"].append(f"team/{entry.name}: {e}")
+
+    # Tasks 정리 (mtime 기준)
+    if tasks_dir.exists():
+        for entry in tasks_dir.iterdir():
+            if not entry.is_dir():
+                continue
+            try:
+                mtime = entry.stat().st_mtime
+                age_hours = (datetime.now().timestamp() - mtime) / 3600
+                if age_hours >= ttl_hours:
+                    shutil.rmtree(entry)
+                    result["tasks_deleted"] += 1
+            except Exception as e:
+                result["errors"].append(f"task/{entry.name}: {e}")
+
+    return result
+
+
 def main():
     try:
         # 현재 세션 상태 로드
@@ -87,6 +132,13 @@ def main():
             session_info.append(f"📋 미완료 작업: {len(pending_tasks)}개")
             for task in pending_tasks[:3]:
                 session_info.append(f"   - {task}")
+
+        # Agent Teams/Tasks stale 리소스 정리
+        teams_result = cleanup_stale_agent_teams(ttl_hours=24)
+        if teams_result["teams_deleted"] or teams_result["tasks_deleted"]:
+            session_info.append(
+                f"🧹 Teams: {teams_result['teams_deleted']}개, Tasks: {teams_result['tasks_deleted']}개 정리"
+            )
 
         # 임시 파일 찾기 및 즉시 삭제
         temp_files = find_temp_files()

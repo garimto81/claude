@@ -2,7 +2,7 @@
 
 **목적**: 에이전트 분류 및 활용법
 
-**버전**: 7.0.0 | **업데이트**: 2026-02-05 | **PRD**: PRD-0031
+**버전**: 8.0.0 | **업데이트**: 2026-02-15 | **PRD**: PRD-0031
 
 ---
 
@@ -11,8 +11,8 @@
 | 계층 | 위치 | 개수 | 역할 |
 |------|------|------|------|
 | **내장** | Claude Code | 4개 | 기본 subagent |
-| **커스텀** | `.claude/agents/` | 19개 | 전문 에이전트 |
-| **스킬** | `.claude/skills/` | 47개 | 자동/수동 트리거 |
+| **커스텀** | `.claude/agents/` | 8개 | 전문 에이전트 |
+| **스킬** | `.claude/skills/` | 48개 | 자동/수동 트리거 |
 | **MCP** | `.claude.json` | 1개 | 외부 도구 연동 |
 
 ---
@@ -28,38 +28,17 @@
 
 ---
 
-## 2. 커스텀 에이전트 (19개)
+## 2. 커스텀 에이전트 (8개)
 
-### Tier 1: CORE (6개) - 필수
-
-| Agent | 용도 | 모델 |
-|-------|------|------|
-| `code-reviewer` | 코드 리뷰, 품질 검사 | haiku |
-| `architect` | 설계, 아키텍처 결정 | opus |
-| `debugger` | 버그 분석, 트러블슈팅 | sonnet |
-| `test-engineer` | 테스트 (TDD, E2E, 단위) | sonnet |
-| `security-auditor` | 보안 취약점 분석 | sonnet |
-| `docs-writer` | API/시스템 문서화 | haiku |
-
-### Tier 2: DOMAIN (8개) - 도메인별 전문
+### Tier 2: DOMAIN (5개) - 도메인별 전문
 
 | Agent | 용도 | 모델 |
 |-------|------|------|
-| `frontend-dev` | 프론트엔드, UI/UX | sonnet |
-| `backend-dev` | 백엔드, API 개발 | sonnet |
-| `fullstack-dev` | 풀스택 개발 | opus |
 | `devops-engineer` | CI/CD, 인프라, K8s | sonnet |
 | `cloud-architect` | 클라우드, 네트워크 | sonnet |
 | `database-specialist` | DB 설계, 최적화 | sonnet |
 | `data-specialist` | 데이터, ML 파이프라인 | sonnet |
 | `ai-engineer` | LLM, RAG 시스템 | sonnet |
-
-### Tier 3: LANGUAGE (2개) - 언어 전문
-
-| Agent | 용도 | 모델 |
-|-------|------|------|
-| `typescript-dev` | TypeScript 고급 패턴 | sonnet |
-| `python-dev` | Python 고급 패턴 | sonnet |
 
 ### Tier 4: TOOLING (3개) - 도구 전문
 
@@ -68,6 +47,8 @@
 | `github-engineer` | GitHub 워크플로우 | haiku |
 | `claude-expert` | Claude Code, MCP, 에이전트 | opus |
 | `catalog-engineer` | WSOPTV 카탈로그/제목 생성 (Block F/G) | sonnet |
+
+**OMC 대체 에이전트**: 삭제된 11개 로컬 에이전트의 기능은 OMC 에이전트로 대체됩니다: architect, code-reviewer, qa-tester, security-reviewer, designer, writer, executor (TypeScript/Python/Frontend/Backend/Fullstack 포함)
 
 ---
 
@@ -126,22 +107,22 @@ claude mcp remove <name>
 
 | 상황 | 추천 에이전트 |
 |------|--------------|
-| 코드 작성 후 리뷰 | `code-reviewer` |
-| 설계 결정 필요 | `architect` |
-| 버그 분석 | `debugger` |
-| 테스트 작성 | `test-engineer` |
-| 보안 점검 | `security-auditor` |
-| 문서 작성 | `docs-writer` |
-| React/UI 개발 | `frontend-dev` |
-| API 개발 | `backend-dev` |
-| 전체 기능 개발 | `fullstack-dev` |
+| 코드 작성 후 리뷰 | code-reviewer |
+| 설계 결정 필요 | architect |
+| 버그 분석 | debugger |
+| 테스트 작성 | qa-tester |
+| 보안 점검 | security-reviewer |
+| 문서 작성 | writer |
+| React/UI 개발 | designer |
+| API 개발 | executor |
+| 전체 기능 개발 | executor-high |
 | CI/CD, K8s | `devops-engineer` |
 | AWS/Azure/GCP | `cloud-architect` |
 | DB 설계/최적화 | `database-specialist` |
 | 데이터/ML | `data-specialist` |
 | LLM/RAG | `ai-engineer` |
-| TS 고급 타입 | `typescript-dev` |
-| Python 고급 | `python-dev` |
+| TS 고급 타입 | executor |
+| Python 고급 | executor |
 | GitHub 워크플로우 | `github-engineer` |
 | Claude Code 설정 | `claude-expert` |
 | WSOPTV 카탈로그 | `catalog-engineer` |
@@ -185,6 +166,9 @@ claude mcp remove <name>
 
 | 버전 | 날짜 | 변경 |
 |------|------|------|
+| 8.1.0 | 2026-02-18 | /auto v21.0: 내부 Skill() 호출 제거 (ralplan/ralph/ultraqa → Agent Teams 단일 패턴) |
+| 8.0.0 | 2026-02-15 | OMC 중복 제거 (19개 → 8개: 11개 에이전트를 OMC 플러그인으로 대체) |
+| 7.1.0 | 2026-02-13 | 스킬 개수 동기화 (47개 → 48개: daily 스킬 추가 반영) |
 | 7.0.0 | 2026-02-05 | 모델 정보 동기화 (code-reviewer/docs-writer/github-engineer: sonnet→haiku), 스킬 개수 47개 반영 |
 | 6.8.0 | 2026-01-03 | 스킬 개수 정정 (16개 → 18개: 실제 파일 개수와 동기화) |
 | 6.7.0 | 2025-12-20 | ACE-FCA 스킬 제거 시도 (context-compaction, research-validation) - 실제 미삭제 |

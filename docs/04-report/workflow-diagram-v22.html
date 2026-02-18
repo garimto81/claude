@@ -1,0 +1,1534 @@
+<!DOCTYPE html>
+<html lang="ko">
+<head>
+<meta charset="UTF-8">
+<meta name="viewport" content="width=device-width, initial-scale=1.0">
+<title>/auto v22.1 PDCA 워크플로우 다이어그램</title>
+<style>
+  :root {
+    --bg: #0d1117;
+    --card: #161b22;
+    --card2: #1c2128;
+    --border: #30363d;
+    --text: #c9d1d9;
+    --heading: #f0f6fc;
+    --accent: #58a6ff;
+    --green: #3fb950;
+    --red: #f85149;
+    --yellow: #d29922;
+    --orange: #db6d28;
+    --purple: #bc8cff;
+    --pink: #f778ba;
+    --teal: #39d353;
+    --light-green: #56d364;
+  }
+  * { margin: 0; padding: 0; box-sizing: border-box; }
+  body {
+    background: var(--bg);
+    color: var(--text);
+    font-family: 'Segoe UI', system-ui, -apple-system, sans-serif;
+    padding: 2rem;
+    line-height: 1.6;
+    font-size: 14px;
+  }
+  h1 { color: var(--heading); font-size: 2rem; margin-bottom: .4rem; }
+  h2 {
+    color: var(--accent);
+    font-size: 1.25rem;
+    margin: 2.5rem 0 1rem;
+    border-bottom: 1px solid var(--border);
+    padding-bottom: .5rem;
+  }
+  h3 { color: var(--purple); font-size: 1rem; margin: 1rem 0 .5rem; }
+  .subtitle { color: var(--text); opacity: .65; margin-bottom: 2rem; font-size: .9rem; }
+  .card {
+    background: var(--card);
+    border: 1px solid var(--border);
+    border-radius: 8px;
+    padding: 1rem 1.25rem;
+  }
+  .card2 {
+    background: var(--card2);
+    border: 1px solid var(--border);
+    border-radius: 6px;
+    padding: .75rem 1rem;
+  }
+  .grid { display: grid; gap: 1rem; }
+  .grid-2 { grid-template-columns: 1fr 1fr; }
+  .grid-3 { grid-template-columns: 1fr 1fr 1fr; }
+  .grid-4 { grid-template-columns: repeat(4, 1fr); }
+  table { width: 100%; border-collapse: collapse; margin: .5rem 0; font-size: .82rem; }
+  th, td { padding: 6px 10px; text-align: left; border-bottom: 1px solid var(--border); vertical-align: top; }
+  th { color: var(--accent); font-weight: 600; background: rgba(88,166,255,.06); }
+  tr:last-child td { border-bottom: none; }
+  .badge {
+    display: inline-block;
+    padding: 2px 8px;
+    border-radius: 12px;
+    font-size: .72rem;
+    font-weight: 700;
+    letter-spacing: .02em;
+  }
+  .badge-green { background: rgba(63,185,80,.15); color: var(--green); border: 1px solid rgba(63,185,80,.3); }
+  .badge-blue  { background: rgba(88,166,255,.15); color: var(--accent); border: 1px solid rgba(88,166,255,.3); }
+  .badge-purple{ background: rgba(188,140,255,.15); color: var(--purple); border: 1px solid rgba(188,140,255,.3); }
+  .badge-yellow{ background: rgba(210,153,34,.15); color: var(--yellow); border: 1px solid rgba(210,153,34,.3); }
+  .badge-red   { background: rgba(248,81,73,.15); color: var(--red); border: 1px solid rgba(248,81,73,.3); }
+  .badge-orange{ background: rgba(219,109,40,.15); color: var(--orange); border: 1px solid rgba(219,109,40,.3); }
+  .badge-teal  { background: rgba(57,211,83,.15); color: var(--teal); border: 1px solid rgba(57,211,83,.3); }
+  .section { margin-bottom: 3rem; }
+
+  /* ===== 1. 전체 Phase 흐름도 ===== */
+  .phase-flow {
+    display: flex;
+    align-items: stretch;
+    gap: 0;
+    overflow-x: auto;
+    padding: 1.5rem 0;
+  }
+  .phase-node {
+    flex: 1;
+    min-width: 130px;
+    background: var(--card);
+    border: 2px solid var(--border);
+    border-radius: 8px;
+    padding: 1rem .75rem;
+    text-align: center;
+    position: relative;
+    cursor: pointer;
+    transition: border-color .2s, box-shadow .2s;
+  }
+  .phase-node:hover { border-color: var(--accent); box-shadow: 0 0 0 2px rgba(88,166,255,.2); }
+  .phase-node.phase-0 { border-color: var(--purple); }
+  .phase-node.phase-1 { border-color: var(--accent); }
+  .phase-node.phase-2 { border-color: var(--teal); }
+  .phase-node.phase-3 { border-color: var(--orange); }
+  .phase-node.phase-4 { border-color: var(--yellow); }
+  .phase-node.phase-5 { border-color: var(--green); }
+  .phase-num { font-size: 1.5rem; font-weight: 800; margin-bottom: .25rem; }
+  .phase-0 .phase-num { color: var(--purple); }
+  .phase-1 .phase-num { color: var(--accent); }
+  .phase-2 .phase-num { color: var(--teal); }
+  .phase-3 .phase-num { color: var(--orange); }
+  .phase-4 .phase-num { color: var(--yellow); }
+  .phase-5 .phase-num { color: var(--green); }
+  .phase-name { font-weight: 700; font-size: .85rem; color: var(--heading); margin-bottom: .25rem; }
+  .phase-desc { font-size: .72rem; color: var(--text); opacity: .75; }
+  .phase-arrow {
+    display: flex;
+    align-items: center;
+    padding: 0 4px;
+    color: var(--border);
+    font-size: 1.5rem;
+    flex-shrink: 0;
+  }
+  .gate-label {
+    font-size: .65rem;
+    color: var(--yellow);
+    font-weight: 600;
+    display: block;
+    margin-top: .4rem;
+    border-top: 1px dashed rgba(210,153,34,.4);
+    padding-top: .3rem;
+  }
+  .loop-guard {
+    text-align: center;
+    margin-top: 1rem;
+    padding: .6rem 1rem;
+    background: rgba(248,81,73,.07);
+    border: 1px dashed var(--red);
+    border-radius: 6px;
+    font-size: .8rem;
+    color: var(--red);
+  }
+  .loop-arrow-row {
+    display: flex;
+    justify-content: flex-end;
+    padding-right: 60px;
+    margin-top: .5rem;
+  }
+  .loop-arrow-box {
+    display: flex;
+    align-items: center;
+    gap: .5rem;
+    font-size: .75rem;
+    color: var(--red);
+    border: 1px dashed var(--red);
+    border-radius: 4px;
+    padding: .3rem .7rem;
+    background: rgba(248,81,73,.05);
+  }
+
+  /* Phase details (collapsible) */
+  details { margin-top: .5rem; }
+  details summary {
+    cursor: pointer;
+    font-size: .75rem;
+    color: var(--accent);
+    list-style: none;
+    text-align: center;
+  }
+  details summary::-webkit-details-marker { display: none; }
+  details summary::after { content: ' ▼'; }
+  details[open] summary::after { content: ' ▲'; }
+  .phase-detail {
+    background: var(--card2);
+    border-top: 1px solid var(--border);
+    margin-top: .5rem;
+    padding: .5rem;
+    border-radius: 4px;
+    font-size: .72rem;
+    text-align: left;
+    line-height: 1.6;
+  }
+  .phase-detail li { margin-left: 1rem; }
+  .phase-detail code {
+    background: rgba(88,166,255,.12);
+    padding: 0 4px;
+    border-radius: 3px;
+    color: var(--accent);
+    font-family: monospace;
+    font-size: .78em;
+  }
+
+  /* ===== 2. 복잡도 매트릭스 ===== */
+  .tier-header { font-weight: 700; font-size: 1.1rem; }
+  .tier-light  { color: var(--green); }
+  .tier-std    { color: var(--accent); }
+  .tier-heavy  { color: var(--red); }
+  .promo-box {
+    background: rgba(210,153,34,.07);
+    border: 1px solid rgba(210,153,34,.3);
+    border-radius: 6px;
+    padding: .6rem 1rem;
+    font-size: .8rem;
+    margin-top: .75rem;
+  }
+  .promo-box .promo-title { color: var(--yellow); font-weight: 700; margin-bottom: .35rem; }
+
+  /* ===== Phase 흐름 단계 박스 ===== */
+  .step-flow { display: flex; flex-direction: column; gap: .5rem; }
+  .step-row { display: flex; align-items: flex-start; gap: .75rem; }
+  .step-icon {
+    width: 28px; height: 28px;
+    border-radius: 50%;
+    display: flex; align-items: center; justify-content: center;
+    font-size: .75rem; font-weight: 700;
+    flex-shrink: 0;
+    margin-top: 2px;
+  }
+  .step-icon-blue  { background: rgba(88,166,255,.2); color: var(--accent); border: 1px solid rgba(88,166,255,.4); }
+  .step-icon-green { background: rgba(63,185,80,.2); color: var(--green); border: 1px solid rgba(63,185,80,.4); }
+  .step-icon-orange{ background: rgba(219,109,40,.2); color: var(--orange); border: 1px solid rgba(219,109,40,.4); }
+  .step-icon-yellow{ background: rgba(210,153,34,.2); color: var(--yellow); border: 1px solid rgba(210,153,34,.4); }
+  .step-icon-purple{ background: rgba(188,140,255,.2); color: var(--purple); border: 1px solid rgba(188,140,255,.4); }
+  .step-icon-red   { background: rgba(248,81,73,.2); color: var(--red); border: 1px solid rgba(248,81,73,.4); }
+  .step-content { flex: 1; }
+  .step-title { font-weight: 600; color: var(--heading); font-size: .85rem; }
+  .step-sub { font-size: .78rem; color: var(--text); opacity: .8; }
+  .step-connector {
+    width: 1px;
+    height: 16px;
+    background: var(--border);
+    margin-left: 13px;
+  }
+  .verdict-box {
+    display: flex;
+    gap: .5rem;
+    margin-top: .5rem;
+  }
+  .verdict-approve {
+    flex: 1; padding: .4rem .6rem; border-radius: 4px;
+    background: rgba(63,185,80,.08);
+    border: 1px solid rgba(63,185,80,.3);
+    font-size: .75rem; color: var(--green); text-align: center;
+  }
+  .verdict-reject {
+    flex: 1; padding: .4rem .6rem; border-radius: 4px;
+    background: rgba(248,81,73,.08);
+    border: 1px solid rgba(248,81,73,.3);
+    font-size: .75rem; color: var(--red); text-align: center;
+  }
+  .domain-grid {
+    display: grid;
+    grid-template-columns: repeat(5, 1fr);
+    gap: .4rem;
+    margin-top: .5rem;
+  }
+  .domain-cell {
+    text-align: center;
+    padding: .5rem .3rem;
+    border-radius: 5px;
+    background: var(--card2);
+    border: 1px solid var(--border);
+    font-size: .72rem;
+  }
+  .domain-cell .domain-name { font-weight: 700; margin-bottom: .2rem; }
+  .domain-cell .domain-agent { color: var(--accent); }
+
+  /* Agent Teams 라이프사이클 */
+  .lifecycle-row {
+    display: flex;
+    align-items: center;
+    gap: 0;
+    overflow-x: auto;
+    padding: 1rem 0;
+  }
+  .lc-node {
+    padding: .6rem 1rem;
+    border-radius: 6px;
+    font-size: .8rem;
+    font-weight: 600;
+    text-align: center;
+    white-space: nowrap;
+    flex-shrink: 0;
+  }
+  .lc-arrow {
+    flex-shrink: 0;
+    padding: 0 6px;
+    color: var(--accent);
+    font-size: 1.2rem;
+  }
+  .lc-create  { background: rgba(188,140,255,.15); color: var(--purple); border: 1px solid rgba(188,140,255,.3); }
+  .lc-task    { background: rgba(88,166,255,.15); color: var(--accent); border: 1px solid rgba(88,166,255,.3); }
+  .lc-msg     { background: rgba(63,185,80,.15); color: var(--green); border: 1px solid rgba(63,185,80,.3); }
+  .lc-wait    { background: rgba(210,153,34,.15); color: var(--yellow); border: 1px solid rgba(210,153,34,.3); }
+  .lc-shutdown{ background: rgba(219,109,40,.15); color: var(--orange); border: 1px solid rgba(219,109,40,.3); }
+  .lc-delete  { background: rgba(248,81,73,.15); color: var(--red); border: 1px solid rgba(248,81,73,.3); }
+  .compare-table td:first-child { color: var(--red); }
+  .compare-table td:last-child { color: var(--green); }
+
+  /* Model Routing */
+  .model-tier {
+    display: grid;
+    grid-template-columns: repeat(3, 1fr);
+    gap: 1rem;
+    margin-bottom: 1rem;
+  }
+  .model-card {
+    border-radius: 8px;
+    padding: 1rem;
+    text-align: center;
+    border: 2px solid;
+  }
+  .model-scout { background: rgba(63,185,80,.08); border-color: rgba(63,185,80,.4); }
+  .model-work  { background: rgba(88,166,255,.08); border-color: rgba(88,166,255,.4); }
+  .model-apex  { background: rgba(248,81,73,.08); border-color: rgba(248,81,73,.4); }
+  .model-tier-name { font-size: 1.1rem; font-weight: 800; margin-bottom: .25rem; }
+  .model-scout .model-tier-name { color: var(--green); }
+  .model-work .model-tier-name  { color: var(--accent); }
+  .model-apex .model-tier-name  { color: var(--red); }
+  .model-id { font-family: monospace; font-size: .8rem; color: var(--text); opacity: .8; }
+  .model-use { font-size: .75rem; margin-top: .4rem; }
+
+  /* QA Exit Conditions */
+  .exit-conditions {
+    display: grid;
+    grid-template-columns: repeat(4, 1fr);
+    gap: .75rem;
+    margin-top: .75rem;
+  }
+  .exit-card {
+    border-radius: 6px;
+    padding: .75rem;
+    text-align: center;
+    border: 1px solid;
+  }
+  .exit-1 { background: rgba(248,81,73,.08); border-color: rgba(248,81,73,.3); }
+  .exit-2 { background: rgba(210,153,34,.08); border-color: rgba(210,153,34,.3); }
+  .exit-3 { background: rgba(88,166,255,.08); border-color: rgba(88,166,255,.3); }
+  .exit-4 { background: rgba(63,185,80,.08); border-color: rgba(63,185,80,.3); }
+  .exit-num { font-size: 1.2rem; font-weight: 800; margin-bottom: .25rem; }
+  .exit-1 .exit-num { color: var(--red); }
+  .exit-2 .exit-num { color: var(--yellow); }
+  .exit-3 .exit-num { color: var(--accent); }
+  .exit-4 .exit-num { color: var(--green); }
+  .exit-name { font-size: .75rem; font-weight: 700; color: var(--heading); margin-bottom: .3rem; }
+  .exit-desc { font-size: .7rem; color: var(--text); opacity: .8; }
+
+  /* 옵션 맵 */
+  .option-grid {
+    display: grid;
+    grid-template-columns: repeat(4, 1fr);
+    gap: .6rem;
+  }
+  .option-card {
+    background: var(--card2);
+    border: 1px solid var(--border);
+    border-radius: 6px;
+    padding: .6rem .75rem;
+  }
+  .option-name {
+    font-family: monospace;
+    font-size: .82rem;
+    font-weight: 700;
+    color: var(--accent);
+    margin-bottom: .3rem;
+  }
+  .option-phase { font-size: .7rem; margin-bottom: .2rem; }
+  .option-phase-label { color: var(--purple); font-weight: 600; }
+  .option-desc { font-size: .7rem; color: var(--text); opacity: .75; }
+
+  /* impl-manager 루프 */
+  .loop-diagram {
+    border: 1px solid var(--border);
+    border-radius: 8px;
+    padding: 1rem;
+    position: relative;
+  }
+  .loop-title {
+    font-size: .8rem;
+    font-weight: 700;
+    color: var(--orange);
+    margin-bottom: .75rem;
+  }
+  .cond-list {
+    list-style: none;
+    display: flex;
+    flex-direction: column;
+    gap: .4rem;
+  }
+  .cond-item {
+    display: flex;
+    align-items: center;
+    gap: .5rem;
+    padding: .4rem .6rem;
+    background: var(--card2);
+    border-radius: 4px;
+    font-size: .78rem;
+    border-left: 3px solid;
+  }
+  .cond-1 { border-color: var(--accent); }
+  .cond-2 { border-color: var(--green); }
+  .cond-3 { border-color: var(--teal); }
+  .cond-4 { border-color: var(--purple); }
+  .cond-5 { border-color: var(--orange); }
+  .cond-num { font-weight: 800; font-size: .85rem; }
+  .cond-1 .cond-num { color: var(--accent); }
+  .cond-2 .cond-num { color: var(--green); }
+  .cond-3 .cond-num { color: var(--teal); }
+  .cond-4 .cond-num { color: var(--purple); }
+  .cond-5 .cond-num { color: var(--orange); }
+  .loop-footer {
+    display: flex;
+    align-items: center;
+    justify-content: space-between;
+    margin-top: .75rem;
+    padding-top: .5rem;
+    border-top: 1px dashed var(--border);
+    font-size: .75rem;
+  }
+  .loop-ok { color: var(--green); font-weight: 700; }
+  .loop-fail { color: var(--red); font-weight: 700; }
+
+  /* QG gates */
+  .qg-grid {
+    display: grid;
+    grid-template-columns: repeat(4, 1fr);
+    gap: .5rem;
+    margin: .5rem 0;
+  }
+  .qg-card {
+    border-radius: 5px;
+    padding: .5rem .6rem;
+    border: 1px solid rgba(88,166,255,.3);
+    background: rgba(88,166,255,.06);
+  }
+  .qg-id { font-weight: 800; color: var(--accent); font-size: .82rem; }
+  .qg-name { font-size: .72rem; color: var(--heading); font-weight: 600; margin: .1rem 0; }
+  .qg-desc { font-size: .68rem; color: var(--text); opacity: .75; }
+
+  /* Planner-Critic Loop */
+  .pcl-row {
+    display: flex;
+    align-items: flex-start;
+    gap: 1rem;
+    padding: .6rem 0;
+    border-bottom: 1px dashed rgba(255,255,255,.06);
+  }
+  .pcl-row:last-child { border-bottom: none; }
+  .pcl-agent {
+    padding: .3rem .7rem;
+    border-radius: 4px;
+    font-size: .78rem;
+    font-weight: 700;
+    white-space: nowrap;
+  }
+  .pcl-planner  { background: rgba(188,140,255,.15); color: var(--purple); }
+  .pcl-architect{ background: rgba(63,185,80,.15); color: var(--green); }
+  .pcl-critic   { background: rgba(248,81,73,.15); color: var(--red); }
+  .pcl-lead     { background: rgba(88,166,255,.15); color: var(--accent); }
+  .pcl-desc { font-size: .78rem; color: var(--text); flex: 1; margin-top: 2px; }
+
+  /* Phase 5 flowchart */
+  .act-flow {
+    display: flex;
+    flex-direction: column;
+    gap: .5rem;
+    align-items: center;
+  }
+  .act-node {
+    padding: .5rem 1.5rem;
+    border-radius: 5px;
+    font-size: .82rem;
+    text-align: center;
+    width: 100%;
+    max-width: 400px;
+  }
+  .act-check-result {
+    background: rgba(210,153,34,.1);
+    border: 1px solid rgba(210,153,34,.3);
+    color: var(--yellow);
+    font-weight: 700;
+  }
+  .act-gap-low  { background: rgba(248,81,73,.08); border: 1px solid rgba(248,81,73,.25); color: var(--red); }
+  .act-gap-high { background: rgba(63,185,80,.08); border: 1px solid rgba(63,185,80,.25); color: var(--green); }
+  .act-reject   { background: rgba(219,109,40,.08); border: 1px solid rgba(219,109,40,.25); color: var(--orange); }
+  .act-arrow-down { color: var(--border); font-size: 1.2rem; }
+
+  /* responsive */
+  @media (max-width: 900px) {
+    .grid-2, .grid-3, .grid-4 { grid-template-columns: 1fr; }
+    .model-tier { grid-template-columns: 1fr; }
+    .exit-conditions { grid-template-columns: 1fr 1fr; }
+    .option-grid { grid-template-columns: 1fr 1fr; }
+    .domain-grid { grid-template-columns: 1fr 1fr 1fr; }
+    .qg-grid { grid-template-columns: 1fr 1fr; }
+    .lifecycle-row { flex-wrap: wrap; }
+  }
+  @media (max-width: 600px) {
+    body { padding: 1rem; }
+    .phase-flow { gap: 2px; }
+    .option-grid { grid-template-columns: 1fr; }
+  }
+  code {
+    background: rgba(88,166,255,.1);
+    padding: 1px 5px;
+    border-radius: 3px;
+    color: var(--accent);
+    font-family: 'Cascadia Code', 'Fira Code', monospace;
+    font-size: .85em;
+  }
+  .text-green { color: var(--green); }
+  .text-red   { color: var(--red); }
+  .text-yellow{ color: var(--yellow); }
+  .text-blue  { color: var(--accent); }
+  .text-purple{ color: var(--purple); }
+  .text-orange{ color: var(--orange); }
+  .section-note {
+    font-size: .78rem;
+    color: var(--text);
+    opacity: .6;
+    font-style: italic;
+    margin-bottom: .75rem;
+  }
+  .divider { border: none; border-top: 1px solid var(--border); margin: 2rem 0; }
+</style>
+</head>
+<body>
+
+<h1>/auto v22.1 PDCA 워크플로우 다이어그램</h1>
+<p class="subtitle">Agent Teams 단일 패턴 | Skill() 호출 0개 | State 파일 의존 0개 | 2026-02-18</p>
+
+<!-- ================ SECTION 1: 전체 Phase 흐름도 ================ -->
+<div class="section">
+<h2>1. 전체 Phase 흐름도 (Overview)</h2>
+<p class="section-note">각 Phase 카드를 클릭하면 상세 내용이 펼쳐집니다.</p>
+
+<div class="phase-flow">
+
+  <div class="phase-node phase-0">
+    <div class="phase-num">0</div>
+    <div class="phase-name">SETUP</div>
+    <div class="phase-desc">옵션 파싱<br>모드 결정<br>팀 생성</div>
+    <span class="gate-label">TeamCreate()</span>
+    <details>
+      <summary>상세</summary>
+      <div class="phase-detail">
+        <ul>
+          <li>옵션 파싱 (<code>--eco</code>, <code>--worktree</code>, <code>--strict</code> 등)</li>
+          <li><code>TeamCreate(team_name="pdca-{feature}")</code></li>
+          <li><code>--worktree</code> 시 worktree 생성 + junction 링크</li>
+        </ul>
+      </div>
+    </details>
+  </div>
+
+  <div class="phase-arrow">→</div>
+
+  <div class="phase-node phase-1">
+    <div class="phase-num">1</div>
+    <div class="phase-name">PLAN</div>
+    <div class="phase-desc">사전 분석<br>복잡도 판단<br>계획 수립</div>
+    <span class="gate-label">Plan→Design Gate</span>
+    <details>
+      <summary>상세</summary>
+      <div class="phase-detail">
+        <ul>
+          <li><strong>1.0</strong> 병렬 explore (haiku×2)</li>
+          <li><strong>1.1</strong> 복잡도 5점 판단</li>
+          <li><strong>1.2</strong> Graduated Plan Review</li>
+          <li><strong>1.3</strong> GitHub 이슈 연동</li>
+        </ul>
+      </div>
+    </details>
+  </div>
+
+  <div class="phase-arrow">→</div>
+
+  <div class="phase-node phase-2">
+    <div class="phase-num">2</div>
+    <div class="phase-name">DESIGN</div>
+    <div class="phase-desc">설계 문서<br>생성<br>(LIGHT: 스킵)</div>
+    <span class="gate-label">Design→DO Gate</span>
+    <details>
+      <summary>상세</summary>
+      <div class="phase-detail">
+        <ul>
+          <li>LIGHT: <code>스킵</code> (Phase 3 직행)</li>
+          <li>STANDARD: executor (sonnet)</li>
+          <li>HEAVY: executor-high (opus)</li>
+          <li>산출물: <code>docs/02-design/</code></li>
+        </ul>
+      </div>
+    </details>
+  </div>
+
+  <div class="phase-arrow">→</div>
+
+  <div class="phase-node phase-3">
+    <div class="phase-num">3</div>
+    <div class="phase-name">DO</div>
+    <div class="phase-desc">옵션 처리<br>구현 실행<br>Architect Gate</div>
+    <span class="gate-label">Architect APPROVE</span>
+    <details>
+      <summary>상세</summary>
+      <div class="phase-detail">
+        <ul>
+          <li><strong>3.0</strong> 옵션 라우팅</li>
+          <li><strong>3.1</strong> impl-manager 5조건</li>
+          <li><strong>3.2</strong> Architect Gate (STD/HEAVY)</li>
+          <li><strong>3.3</strong> Domain-Smart Fix</li>
+        </ul>
+      </div>
+    </details>
+  </div>
+
+  <div class="phase-arrow">→</div>
+
+  <div class="phase-node phase-4">
+    <div class="phase-num">4</div>
+    <div class="phase-name">CHECK</div>
+    <div class="phase-desc">QA 사이클<br>이중 검증<br>E2E + TDD</div>
+    <span class="gate-label">gap ≥ 90% + APPROVE</span>
+    <details>
+      <summary>상세</summary>
+      <div class="phase-detail">
+        <ul>
+          <li><strong>4.1</strong> QA Runner + Architect 진단</li>
+          <li><strong>4.2</strong> 이중 검증 (순차 teammate)</li>
+          <li><strong>4.3</strong> E2E Playwright (있을 때)</li>
+          <li><strong>4.4</strong> TDD 커버리지 80%+</li>
+        </ul>
+      </div>
+    </details>
+  </div>
+
+  <div class="phase-arrow">→</div>
+
+  <div class="phase-node phase-5">
+    <div class="phase-num">5</div>
+    <div class="phase-name">ACT</div>
+    <div class="phase-desc">결과 기반<br>자동 실행<br>팀 정리</div>
+    <span class="gate-label">TeamDelete()</span>
+    <details>
+      <summary>상세</summary>
+      <div class="phase-detail">
+        <ul>
+          <li>gap &lt; 90% → 갭 개선 → Phase 4 재실행</li>
+          <li>gap ≥ 90% + APPROVE → 보고서 생성</li>
+          <li>REJECT → 수정 → Phase 4 재실행</li>
+          <li><code>TeamDelete()</code> 필수</li>
+        </ul>
+      </div>
+    </details>
+  </div>
+
+</div>
+
+<!-- Phase 4↔5 루프 가드 -->
+<div class="loop-guard">
+  <strong>Phase 4 ↔ Phase 5 루프 가드</strong><br>
+  Phase 5 → Phase 4 재진입 누적 최대 <strong>3회</strong> (phase4_reentry_count) &nbsp;|&nbsp;
+  전체 누적 iteration 최대 <strong>5회</strong> (cumulative_iteration_count)<br>
+  초과 시: 미해결 이슈 보고 후 <code>TeamDelete()</code> 강제 종료
+</div>
+<div class="loop-arrow-row">
+  <div class="loop-arrow-box">
+    ↺ &nbsp; Phase 5 → Phase 4 재진입 (max 3회, cumulative max 5회)
+  </div>
+</div>
+</div>
+
+<!-- ================ SECTION 2: 복잡도 매트릭스 ================ -->
+<div class="section">
+<h2>2. 3-Tier 복잡도 분기 매트릭스</h2>
+
+<div class="grid grid-3">
+  <div class="card">
+    <div class="tier-header tier-light">LIGHT &nbsp;<span class="badge badge-green">0–1점</span></div>
+    <p style="font-size:.8rem;margin:.4rem 0 .75rem;opacity:.75;">단순 변경, 단일 파일</p>
+    <table>
+      <tr><th>Phase</th><th>에이전트 (모델)</th></tr>
+      <tr><td>1 PLAN</td><td>planner <code>haiku</code> + Lead QG</td></tr>
+      <tr><td>2 DESIGN</td><td colspan="1" class="text-yellow">스킵</td></tr>
+      <tr><td>3 DO</td><td>executor <code>sonnet</code> 단일</td></tr>
+      <tr><td>3.2 Gate</td><td class="text-yellow">없음</td></tr>
+      <tr><td>4.1 QA</td><td>qa-tester <code>sonnet</code> 1회</td></tr>
+      <tr><td>4.2 검증</td><td>architect <code>sonnet</code></td></tr>
+      <tr><td>5 ACT</td><td>writer <code>haiku</code></td></tr>
+    </table>
+  </div>
+  <div class="card">
+    <div class="tier-header tier-std">STANDARD &nbsp;<span class="badge badge-blue">2–3점</span></div>
+    <p style="font-size:.8rem;margin:.4rem 0 .75rem;opacity:.75;">보통 복잡도, 다중 파일</p>
+    <table>
+      <tr><th>Phase</th><th>에이전트 (모델)</th></tr>
+      <tr><td>1 PLAN</td><td>planner <code>sonnet</code> + Critic-Lite</td></tr>
+      <tr><td>2 DESIGN</td><td>executor <code>sonnet</code></td></tr>
+      <tr><td>3 DO</td><td>impl-manager <code>sonnet</code> 5조건</td></tr>
+      <tr><td>3.2 Gate</td><td>architect <code>sonnet</code></td></tr>
+      <tr><td>4.1 QA</td><td>qa-tester <code>sonnet</code> 3회</td></tr>
+      <tr><td>4.2 검증</td><td>architect → code-reviewer <code>sonnet</code></td></tr>
+      <tr><td>5 ACT</td><td>writer <code>sonnet</code></td></tr>
+    </table>
+  </div>
+  <div class="card">
+    <div class="tier-header tier-heavy">HEAVY &nbsp;<span class="badge badge-red">4–5점</span></div>
+    <p style="font-size:.8rem;margin:.4rem 0 .75rem;opacity:.75;">복잡 구조, 신규 아키텍처</p>
+    <table>
+      <tr><th>Phase</th><th>에이전트 (모델)</th></tr>
+      <tr><td>1 PLAN</td><td>Planner-Critic Loop (max 5)</td></tr>
+      <tr><td>2 DESIGN</td><td>executor-high <code>opus</code></td></tr>
+      <tr><td>3 DO</td><td>impl-manager <code>opus</code> + 병렬</td></tr>
+      <tr><td>3.2 Gate</td><td>architect <code>sonnet</code></td></tr>
+      <tr><td>4.1 QA</td><td>qa-tester <code>sonnet</code> 5회</td></tr>
+      <tr><td>4.2 검증</td><td>architect → code-reviewer <code>opus</code></td></tr>
+      <tr><td>5 ACT</td><td>writer <code>sonnet</code></td></tr>
+    </table>
+  </div>
+</div>
+
+<div class="promo-box">
+  <div class="promo-title">자동 승격 조건</div>
+  <div class="grid grid-3" style="gap:.5rem">
+    <div style="font-size:.8rem">
+      <span class="badge badge-green">LIGHT → STANDARD</span><br>
+      <span style="font-size:.75rem;opacity:.8;">빌드 실패 2회 이상<br>영향 파일 5개 이상</span>
+    </div>
+    <div style="font-size:.8rem">
+      <span class="badge badge-blue">STANDARD → HEAVY</span><br>
+      <span style="font-size:.75rem;opacity:.8;">QA 3사이클 초과<br>영향 파일 5개 이상</span>
+    </div>
+    <div style="font-size:.8rem">
+      <span class="badge badge-yellow">Architect REJECT 2회</span><br>
+      <span style="font-size:.75rem;opacity:.8;">현재 모드 유지<br>pdca-iterator 한도 +2</span>
+    </div>
+  </div>
+</div>
+
+<div class="card" style="margin-top:1rem">
+  <h3 style="margin-top:0">복잡도 판단 기준 (5점 만점)</h3>
+  <table>
+    <tr><th>#</th><th>조건</th><th>1점 기준</th><th>0점 기준</th></tr>
+    <tr><td>1</td><td>파일 범위</td><td>3개 이상 파일 수정 예상</td><td>1-2개 파일</td></tr>
+    <tr><td>2</td><td>아키텍처</td><td>새 패턴/구조 도입</td><td>기존 패턴 내 수정</td></tr>
+    <tr><td>3</td><td>의존성</td><td>새 라이브러리/서비스 추가</td><td>기존 의존성만 사용</td></tr>
+    <tr><td>4</td><td>모듈 영향</td><td>2개 이상 모듈/패키지 영향</td><td>단일 모듈 내 변경</td></tr>
+    <tr><td>5</td><td>사용자 명시</td><td><code>ralplan</code> 키워드 포함</td><td>키워드 없음</td></tr>
+  </table>
+</div>
+</div>
+
+<!-- ================ SECTION 3: Phase 1 PLAN 상세 ================ -->
+<div class="section">
+<h2>3. Phase 1 PLAN 상세</h2>
+
+<div class="grid grid-2">
+  <div class="card">
+    <h3 style="margin-top:0">단계 흐름</h3>
+    <div class="step-flow">
+
+      <div class="step-row">
+        <div class="step-icon step-icon-blue">1.0</div>
+        <div class="step-content">
+          <div class="step-title">병렬 사전 분석</div>
+          <div class="step-sub">
+            explore (haiku) × 2 동시 실행<br>
+            <strong>doc-analyst</strong>: docs/, .claude/ 문서 탐색<br>
+            <strong>issue-analyst</strong>: GitHub 이슈 탐색
+          </div>
+        </div>
+      </div>
+      <div class="step-connector"></div>
+
+      <div class="step-row">
+        <div class="step-icon step-icon-purple">1.1</div>
+        <div class="step-content">
+          <div class="step-title">복잡도 판단 (5점 만점)</div>
+          <div class="step-sub">
+            5개 기준 자동 채점<br>
+            0–1 → LIGHT | 2–3 → STANDARD | 4–5 → HEAVY
+          </div>
+        </div>
+      </div>
+      <div class="step-connector"></div>
+
+      <div class="step-row">
+        <div class="step-icon step-icon-orange">1.2</div>
+        <div class="step-content">
+          <div class="step-title">Graduated Plan Review</div>
+          <div class="step-sub">복잡도별 차별화된 계획 수립 및 검토</div>
+        </div>
+      </div>
+      <div class="step-connector"></div>
+
+      <div class="step-row">
+        <div class="step-icon step-icon-green">1.3</div>
+        <div class="step-content">
+          <div class="step-title">GitHub 이슈 연동</div>
+          <div class="step-sub">
+            연관 이슈 코멘트 또는 신규 이슈 생성<br>
+            <code>--no-issue</code>로 스킵 가능
+          </div>
+        </div>
+      </div>
+
+    </div>
+  </div>
+
+  <div class="card">
+    <h3 style="margin-top:0">Graduated Plan Review</h3>
+
+    <div class="card2" style="margin-bottom:.6rem;border-left:3px solid var(--green)">
+      <div style="font-weight:700;color:var(--green);font-size:.82rem">LIGHT — Lead Quality Gate</div>
+      <div style="font-size:.75rem;margin-top:.3rem">
+        planner (haiku) → 계획 작성<br>
+        Lead: (1) plan 파일 존재+50자↑, (2) 파일 경로 1개+<br>
+        미충족 시 1회 재요청 → 2회 실패 시 그대로 진행
+      </div>
+    </div>
+
+    <div class="card2" style="margin-bottom:.6rem;border-left:3px solid var(--accent)">
+      <div style="font-weight:700;color:var(--accent);font-size:.82rem">STANDARD — Critic-Lite 단일 검토</div>
+      <div style="font-size:.75rem;margin-top:.3rem">
+        planner (sonnet) → 계획 작성<br>
+        critic-lite (sonnet) → QG1-QG4 검토 → APPROVE/REVISE<br>
+        REVISE 시 1회 수정 → 수정본 수용 (추가 검토 없음)
+      </div>
+    </div>
+
+    <div class="card2" style="border-left:3px solid var(--red)">
+      <div style="font-weight:700;color:var(--red);font-size:.82rem">HEAVY — Planner-Critic Loop (max 5회)</div>
+      <div style="font-size:.75rem;margin-top:.3rem">
+        Planner → Architect → Critic 순차 실행<br>
+        APPROVE → 종료 | REVISE → critic_feedback 업데이트 → 다음 iter<br>
+        5회 초과 → 강제 APPROVE (경고 주석 포함)
+      </div>
+    </div>
+  </div>
+</div>
+
+<!-- QG1-QG4 -->
+<div class="card" style="margin-top:1rem">
+  <h3 style="margin-top:0">Quality Gates 4 (QG1–QG4)</h3>
+  <div class="qg-grid">
+    <div class="qg-card">
+      <div class="qg-id">QG1</div>
+      <div class="qg-name">파일 참조 유효</div>
+      <div class="qg-desc">Plan 내 모든 파일 경로가 실제 존재하는지 Glob으로 검증</div>
+    </div>
+    <div class="qg-card">
+      <div class="qg-id">QG2</div>
+      <div class="qg-name">Acceptance Criteria 구체적</div>
+      <div class="qg-desc">완료 기준이 구체적이고 측정 가능한지 확인 (모호 기준 거부)</div>
+    </div>
+    <div class="qg-card">
+      <div class="qg-id">QG3</div>
+      <div class="qg-name">모호어 0건</div>
+      <div class="qg-desc">'적절히', '필요 시', '가능하면', '등' 등 모호 표현 0건 확인</div>
+    </div>
+    <div class="qg-card">
+      <div class="qg-id">QG4</div>
+      <div class="qg-name">Edge Case 2건+</div>
+      <div class="qg-desc">명시적 예외 상황이 2건 이상 포함되었는지 확인</div>
+    </div>
+  </div>
+</div>
+
+<!-- HEAVY Planner-Critic Loop 상세 -->
+<div class="card" style="margin-top:1rem">
+  <h3 style="margin-top:0">HEAVY: Planner-Critic Loop 내부 (max 5 iterations)</h3>
+  <div class="pcl-row">
+    <div class="pcl-agent pcl-planner">Planner</div>
+    <div class="pcl-desc">계획 문서 작성 (이전 Critic 피드백 반영) → <code>docs/01-plan/{feature}.plan.md</code></div>
+  </div>
+  <div class="pcl-row">
+    <div class="pcl-agent pcl-architect">Architect</div>
+    <div class="pcl-desc">기술적 타당성 검증 (파일 존재, 의존성 충돌, 아키텍처 일관성, 보안) → 5줄 소견</div>
+  </div>
+  <div class="pcl-row">
+    <div class="pcl-agent pcl-critic">Critic</div>
+    <div class="pcl-desc">QG1–QG4 검증 → VERDICT: APPROVE / REVISE<br>
+      피드백 1,500t 초과 시: 최신 2회분 전문 + 이전 1줄 압축 유지</div>
+  </div>
+  <div class="pcl-row">
+    <div class="pcl-agent pcl-lead">Lead</div>
+    <div class="pcl-desc">
+      첫 줄 파싱 → APPROVE: Loop 종료 → Phase 2<br>
+      REVISE: critic_feedback 업데이트 → 다음 iteration<br>
+      5회 초과: 강제 APPROVE + "WARNING: Critic 5회 반복으로 강제 승인" 주석
+    </div>
+  </div>
+</div>
+</div>
+
+<!-- ================ SECTION 4: Phase 3 DO 상세 ================ -->
+<div class="section">
+<h2>4. Phase 3 DO 상세</h2>
+
+<div class="grid grid-2">
+  <!-- Step 3.0 옵션 처리 -->
+  <div class="card">
+    <h3 style="margin-top:0">Step 3.0 — 옵션 라우팅</h3>
+    <table>
+      <tr><th>옵션</th><th>처리</th></tr>
+      <tr><td><code>--gdocs</code></td><td>prd-sync 스킬 실행</td></tr>
+      <tr><td><code>--mockup [파일]</code></td><td>mockup-hybrid 스킬</td></tr>
+      <tr><td><code>--slack &lt;채널&gt;</code></td><td>Slack 채널 분석 → 컨텍스트 생성</td></tr>
+      <tr><td><code>--gmail</code></td><td>Gmail 분석 → 컨텍스트 생성</td></tr>
+      <tr><td><code>--debate</code></td><td>ultimate-debate 스킬</td></tr>
+      <tr><td><code>--research</code></td><td>research 스킬</td></tr>
+      <tr><td><code>--daily</code></td><td>daily 스킬</td></tr>
+      <tr><td><code>--interactive</code></td><td>Phase별 사용자 승인 요청</td></tr>
+    </table>
+    <div style="font-size:.73rem;color:var(--red);margin-top:.5rem">
+      옵션 실패 시 에러 출력 후 중단. 조용한 스킵 절대 금지.
+    </div>
+  </div>
+
+  <!-- Step 3.1 구현 -->
+  <div class="card">
+    <h3 style="margin-top:0">Step 3.1 — 구현 실행</h3>
+
+    <div class="card2" style="margin-bottom:.5rem;border-left:3px solid var(--green)">
+      <div style="font-size:.8rem;font-weight:700;color:var(--green)">LIGHT: executor (sonnet) 단일 실행</div>
+      <div style="font-size:.75rem;margin-top:.2rem">
+        Plan 기반 직접 구현. TDD 필수.<br>
+        빌드 실패 2회 → STANDARD 자동 승격
+      </div>
+    </div>
+
+    <div class="card2" style="margin-bottom:.5rem;border-left:3px solid var(--accent)">
+      <div style="font-size:.8rem;font-weight:700;color:var(--accent)">STANDARD: impl-manager (sonnet)</div>
+      <div style="font-size:.75rem;margin-top:.2rem">
+        5조건 자체 루프 (max 10회)<br>
+        완료 시 IMPLEMENTATION_COMPLETED 전송
+      </div>
+    </div>
+
+    <div class="card2" style="border-left:3px solid var(--red)">
+      <div style="font-size:.8rem;font-weight:700;color:var(--red)">HEAVY: impl-manager (opus) + 병렬</div>
+      <div style="font-size:.75rem;margin-top:.2rem">
+        독립 작업 분할 시 병렬 spawn 가능<br>
+        impl-api / impl-ui 등 담당 범위 격리
+      </div>
+    </div>
+  </div>
+</div>
+
+<!-- impl-manager 5조건 루프 -->
+<div class="card" style="margin-top:1rem">
+  <h3 style="margin-top:0">impl-manager 5조건 자체 루프 (max 10회)</h3>
+  <div class="grid grid-2">
+    <div class="loop-diagram">
+      <div class="loop-title">5가지 완료 조건 (ALL 충족 필수)</div>
+      <ul class="cond-list">
+        <li class="cond-item cond-1">
+          <span class="cond-num">1</span>
+          <div><strong>TODO == 0</strong> — 설계 문서의 모든 구현 항목 완료</div>
+        </li>
+        <li class="cond-item cond-2">
+          <span class="cond-num">2</span>
+          <div><strong>빌드 성공</strong> — ruff check / npm run build 에러 0</div>
+        </li>
+        <li class="cond-item cond-3">
+          <span class="cond-num">3</span>
+          <div><strong>테스트 통과</strong> — pytest / jest 모두 green</div>
+        </li>
+        <li class="cond-item cond-4">
+          <span class="cond-num">4</span>
+          <div><strong>에러 == 0</strong> — lint, type check (ruff/mypy/tsc) 에러 0</div>
+        </li>
+        <li class="cond-item cond-5">
+          <span class="cond-num">5</span>
+          <div><strong>자체 코드 리뷰</strong> — 아키텍처 일관성, OWASP, 복잡도 확인</div>
+        </li>
+      </ul>
+      <div class="loop-footer">
+        <span class="loop-ok">ALL 충족 → IMPLEMENTATION_COMPLETED</span>
+        <span class="loop-fail">10회 초과 → IMPLEMENTATION_FAILED</span>
+      </div>
+    </div>
+    <div>
+      <div class="card2" style="margin-bottom:.6rem">
+        <div style="font-size:.8rem;font-weight:700;color:var(--yellow)">Iron Law Evidence Chain</div>
+        <div style="font-size:.74rem;margin-top:.3rem">
+          COMPLETED 전송 전 5단계 증거 필수:<br>
+          (1) 테스트 통과 결과 캡처<br>
+          (2) 빌드 성공 결과 캡처<br>
+          (3) Lint/Type 에러 0 결과 캡처<br>
+          (4) 자체 코드 리뷰 완료 내용<br>
+          (5) 위 4개 결과를 메시지에 포함
+        </div>
+      </div>
+      <div class="card2">
+        <div style="font-size:.8rem;font-weight:700;color:var(--red)">Zero Tolerance 규칙</div>
+        <div style="font-size:.74rem;margin-top:.3rem">
+          범위 축소 금지 / 부분 완료 금지<br>
+          테스트 삭제 금지 / 조기 중단 금지<br>
+          불확실 언어 금지 ("should work" 등)<br>
+          → 해당 항목 구체적 검증 추가 실행
+        </div>
+      </div>
+    </div>
+  </div>
+</div>
+
+<!-- Step 3.2 Architect Gate + Step 3.3 Domain Routing -->
+<div class="grid grid-2" style="margin-top:1rem">
+  <div class="card">
+    <h3 style="margin-top:0">Step 3.2 — Architect Verification Gate</h3>
+    <p style="font-size:.78rem;opacity:.75;margin-bottom:.6rem">STANDARD/HEAVY 필수 | LIGHT 스킵</p>
+    <div class="step-flow">
+      <div class="step-row">
+        <div class="step-icon step-icon-green">①</div>
+        <div class="step-content">
+          <div class="step-title">Architect 외부 검증</div>
+          <div class="step-sub">Plan/Design 요구사항 충족 여부, TDD, 빌드/lint, 보안 (OWASP Top 10)</div>
+        </div>
+      </div>
+    </div>
+    <div class="verdict-box" style="margin-top:.75rem">
+      <div class="verdict-approve">VERDICT: APPROVE<br><small>→ Phase 4 진입</small></div>
+      <div class="verdict-reject">VERDICT: REJECT<br><small>→ Domain 추출 → Step 3.3</small></div>
+    </div>
+    <div style="font-size:.74rem;margin-top:.6rem;color:var(--text);opacity:.75">
+      2회 REJECT 시: 사용자 알림 후 Phase 4 진입 허용<br>
+      architect는 READ-ONLY — 파일 생성 금지
+    </div>
+  </div>
+
+  <div class="card">
+    <h3 style="margin-top:0">Step 3.3 — Domain-Smart Fix Routing</h3>
+    <p style="font-size:.78rem;opacity:.75;margin-bottom:.6rem">Architect REJECT 시 DOMAIN 기반 전문 에이전트 라우팅</p>
+    <div class="domain-grid">
+      <div class="domain-cell">
+        <div class="domain-name text-pink">UI</div>
+        <div style="font-size:.65rem;opacity:.75">component<br>style</div>
+        <div class="domain-agent">designer</div>
+      </div>
+      <div class="domain-cell">
+        <div class="domain-name text-yellow">빌드</div>
+        <div style="font-size:.65rem;opacity:.75">compile<br>type</div>
+        <div class="domain-agent">build-fixer</div>
+      </div>
+      <div class="domain-cell">
+        <div class="domain-name text-teal">테스트</div>
+        <div style="font-size:.65rem;opacity:.75">coverage</div>
+        <div class="domain-agent">executor</div>
+      </div>
+      <div class="domain-cell">
+        <div class="domain-name text-red">보안</div>
+        <div style="font-size:.65rem;opacity:.75">OWASP<br>취약점</div>
+        <div class="domain-agent">security-reviewer</div>
+      </div>
+      <div class="domain-cell">
+        <div class="domain-name text-blue">기타</div>
+        <div style="font-size:.65rem;opacity:.75">logic<br>other</div>
+        <div class="domain-agent">executor</div>
+      </div>
+    </div>
+    <div style="font-size:.74rem;margin-top:.6rem;color:var(--text);opacity:.75">
+      수정 완료 → Step 3.2 Architect 재검증 (최대 2회)
+    </div>
+  </div>
+</div>
+</div>
+
+<!-- ================ SECTION 5: Phase 4 CHECK 상세 ================ -->
+<div class="section">
+<h2>5. Phase 4 CHECK 상세</h2>
+
+<!-- QA 사이클 -->
+<div class="card">
+  <h3 style="margin-top:0">Step 4.1 — QA 사이클</h3>
+
+  <div class="grid grid-2" style="margin-bottom:.75rem">
+    <div class="card2" style="border-left:3px solid var(--green)">
+      <div style="font-size:.8rem;font-weight:700;color:var(--green)">LIGHT: 1회 실행</div>
+      <div style="font-size:.74rem;margin-top:.2rem">
+        qa-tester (sonnet) 단일 실행<br>
+        QA_PASSED → Step 4.2<br>
+        QA_FAILED → 실패 보고 + STANDARD 승격 조건 확인<br>
+        Architect 진단 사이클 없음
+      </div>
+    </div>
+    <div class="card2" style="border-left:3px solid var(--red)">
+      <div style="font-size:.8rem;font-weight:700;color:var(--red)">STANDARD(3회) / HEAVY(5회): 반복 사이클</div>
+      <div style="font-size:.74rem;margin-top:.2rem">
+        QA Runner → Architect 진단 → Domain Fix → 재실행<br>
+        4종 Exit Condition으로 루프 제어<br>
+        failure_history 추적으로 Same Failure 감지
+      </div>
+    </div>
+  </div>
+
+  <div style="font-size:.8rem;font-weight:700;color:var(--heading);margin-bottom:.5rem">QA Runner 6종 Goal</div>
+  <table>
+    <tr><th>#</th><th>Goal</th><th>Python</th><th>Node.js/TS</th><th>조건</th></tr>
+    <tr><td>1</td><td><strong>lint</strong></td><td><code>ruff check src/ --fix</code></td><td><code>eslint</code></td><td>항상</td></tr>
+    <tr><td>2</td><td><strong>test</strong></td><td><code>pytest tests/ -v</code></td><td><code>jest/vitest</code></td><td>항상</td></tr>
+    <tr><td>3</td><td><strong>build</strong></td><td><code>pip install -e .</code></td><td><code>npm run build</code></td><td>해당 시</td></tr>
+    <tr><td>4</td><td><strong>typecheck</strong></td><td><code>mypy</code></td><td><code>tsc --noEmit</code></td><td>설정 시</td></tr>
+    <tr><td>5</td><td><strong>custom</strong></td><td colspan="2">사용자 정의 패턴</td><td><code>--custom</code> 시</td></tr>
+    <tr><td>6</td><td><strong>interactive</strong></td><td colspan="2">tmux 테스트</td><td><code>--interactive</code> 시</td></tr>
+  </table>
+</div>
+
+<!-- 4종 Exit Conditions -->
+<div class="card" style="margin-top:1rem">
+  <h3 style="margin-top:0">4종 Exit Conditions</h3>
+  <div class="exit-conditions">
+    <div class="exit-card exit-1">
+      <div class="exit-num">1</div>
+      <div class="exit-name">Environment Error</div>
+      <div class="exit-desc">"command not found", "PATH", "not installed" 패턴 감지 시 즉시 중단 + 환경 문제 보고</div>
+    </div>
+    <div class="exit-card exit-2">
+      <div class="exit-num">2</div>
+      <div class="exit-name">Same Failure 3x</div>
+      <div class="exit-desc">동일 failure.signature가 failure_history에 3회 누적 시 조기 종료 + root cause 보고</div>
+    </div>
+    <div class="exit-card exit-3">
+      <div class="exit-num">3</div>
+      <div class="exit-name">Max Cycles 도달</div>
+      <div class="exit-desc">STANDARD 3회 / HEAVY 5회 도달 시 미해결 이슈 목록 보고</div>
+    </div>
+    <div class="exit-card exit-4">
+      <div class="exit-num">4</div>
+      <div class="exit-name">Goal Met</div>
+      <div class="exit-desc">QA_PASSED 수신 시 Step 4.2 이중 검증으로 진입</div>
+    </div>
+  </div>
+</div>
+
+<!-- Step 4.2 이중 검증 -->
+<div class="card" style="margin-top:1rem">
+  <h3 style="margin-top:0">Step 4.2 — 이중 검증 (순차 teammate — context spike 방지)</h3>
+
+  <div class="grid grid-3">
+    <div class="card2" style="border-left:3px solid var(--green)">
+      <div style="font-size:.8rem;font-weight:700;color:var(--green)">LIGHT</div>
+      <div style="font-size:.74rem;margin-top:.3rem">
+        architect (sonnet) 만 실행<br>
+        APPROVE/REJECT 판정<br>
+        gap-detector 스킵
+      </div>
+    </div>
+    <div class="card2" style="border-left:3px solid var(--accent)">
+      <div style="font-size:.8rem;font-weight:700;color:var(--accent)">STANDARD (순차)</div>
+      <div style="font-size:.74rem;margin-top:.3rem">
+        ① architect (sonnet) — 기능 완성도<br>
+        ② gap-checker (sonnet) — 설계 일치율 90% 기준<br>
+        ③ quality-checker (sonnet) — 품질/보안/성능
+      </div>
+    </div>
+    <div class="card2" style="border-left:3px solid var(--red)">
+      <div style="font-size:.8rem;font-weight:700;color:var(--red)">HEAVY (순차 + opus)</div>
+      <div style="font-size:.74rem;margin-top:.3rem">
+        ① architect (opus)<br>
+        ② gap-checker (opus)<br>
+        ③ quality-checker (opus) + Vercel BP 규칙 주입 (React/Next.js 시)
+      </div>
+    </div>
+  </div>
+
+  <div class="card2" style="margin-top:.75rem;border-left:3px solid var(--yellow)">
+    <div style="font-size:.8rem;font-weight:700;color:var(--yellow)">Vercel BP 동적 주입 (React/Next.js 프로젝트)</div>
+    <div style="font-size:.74rem;margin-top:.3rem">
+      조건: <code>next.config.*</code> 존재 OR <code>package.json</code> 내 <code>"react"</code> dependency 존재<br>
+      주입 내용: React 성능, Next.js 패턴, 접근성, 보안, 성능 29개 규칙<br>
+      웹 프로젝트가 아닌 경우 생략
+    </div>
+  </div>
+</div>
+
+<!-- Step 4.3, 4.4 -->
+<div class="grid grid-2" style="margin-top:1rem">
+  <div class="card">
+    <h3 style="margin-top:0">Step 4.3 — E2E (Playwright)</h3>
+    <div style="font-size:.8rem">
+      실행 조건: <code>playwright.config.ts/js</code> 존재 시만<br>
+      <code>npx playwright test --reporter=list</code><br>
+      실패 시: <code>/debug</code> 스킬 실행 (D0-D4 Phase)<br>
+      <br>
+      스킵 조건: LIGHT 모드 | Playwright 없음 | <code>--skip-e2e</code>
+    </div>
+  </div>
+  <div class="card">
+    <h3 style="margin-top:0">Step 4.4 — TDD 커버리지</h3>
+    <div style="font-size:.8rem">
+      Python: <code>pytest --cov --cov-report=term-missing</code><br>
+      JS/TS: <code>jest --coverage</code><br>
+      <br>
+      기준: 신규 코드 80% 이상<br>
+      경고: 전체 커버리지 감소 시 경고
+    </div>
+  </div>
+</div>
+</div>
+
+<!-- ================ SECTION 6: Agent Teams 라이프사이클 ================ -->
+<div class="section">
+<h2>6. Agent Teams 라이프사이클</h2>
+
+<div class="card">
+  <h3 style="margin-top:0">팀 라이프사이클 (모든 Phase 필수 패턴)</h3>
+  <div class="lifecycle-row">
+    <div class="lc-node lc-create">TeamCreate<br><small>team_name=<br>"pdca-{feature}"</small></div>
+    <div class="lc-arrow">→</div>
+    <div class="lc-node lc-task">Task()<br><small>name, team_name<br>model, prompt</small></div>
+    <div class="lc-arrow">→</div>
+    <div class="lc-node lc-msg">SendMessage<br><small>type="message"<br>recipient="name"</small></div>
+    <div class="lc-arrow">→</div>
+    <div class="lc-node lc-wait">Mailbox<br>수신 대기<br><small>(자동 전달)</small></div>
+    <div class="lc-arrow">→</div>
+    <div class="lc-node lc-shutdown">shutdown_request<br><small>teammate 종료</small></div>
+    <div class="lc-arrow">→</div>
+    <div class="lc-node lc-task">다음 teammate<br>spawn<br><small>(필요 시)</small></div>
+    <div class="lc-arrow">→</div>
+    <div class="lc-node lc-delete">TeamDelete()<br><small>Phase 5 완료 후<br>필수 실행</small></div>
+  </div>
+
+  <div class="card2" style="margin-top:.75rem;background:rgba(248,81,73,.04);border-color:rgba(248,81,73,.2)">
+    <div style="font-size:.8rem;font-weight:700;color:var(--red)">절대 금지 패턴</div>
+    <div style="font-size:.74rem;margin-top:.2rem">
+      <code>Task(run_in_background=True)</code> — 구 패턴, 완전 폐기<br>
+      <code>Task()</code> without <code>team_name</code> — 필수 파라미터<br>
+      <code>Task()</code> without <code>name</code> — SendMessage recipient 불가<br>
+      <code>architect</code> 에이전트로 파일 생성 시도 — READ-ONLY
+    </div>
+  </div>
+</div>
+
+<div class="grid grid-2" style="margin-top:1rem">
+  <div class="card">
+    <h3 style="margin-top:0">Context 분리 장점</h3>
+    <table class="compare-table">
+      <tr><th>기존 단일 context</th><th>Agent Teams</th></tr>
+      <tr><td>결과가 Lead context에 합류 → overflow</td><td>Mailbox로 전달 → Lead context 보호</td></tr>
+      <tr><td>foreground 3개 상한 필요</td><td>제한 없음 (독립 context)</td></tr>
+      <tr><td>"5줄 요약" 강제 필요</td><td>불필요 (context 분리)</td></tr>
+      <tr><td>compact 실패 위험 있음</td><td>compact 실패 없음</td></tr>
+    </table>
+  </div>
+  <div class="card">
+    <h3 style="margin-top:0">병렬 vs 순차 실행 규칙</h3>
+    <table>
+      <tr><th>실행 방식</th><th>사용 조건</th><th>예시</th></tr>
+      <tr>
+        <td><span class="badge badge-green">병렬</span></td>
+        <td>독립 작업 (결과 비의존)</td>
+        <td>Phase 1.0: doc-analyst + issue-analyst 동시 spawn</td>
+      </tr>
+      <tr>
+        <td><span class="badge badge-blue">순차</span></td>
+        <td>이전 결과 의존</td>
+        <td>Phase 4.2: architect → gap-checker → quality-checker</td>
+      </tr>
+      <tr>
+        <td><span class="badge badge-red">HEAVY 병렬</span></td>
+        <td>독립 작업 영역 분할</td>
+        <td>Phase 3: impl-api + impl-ui 동시 spawn (경로 격리)</td>
+      </tr>
+    </table>
+  </div>
+</div>
+</div>
+
+<!-- ================ SECTION 7: Model Routing ================ -->
+<div class="section">
+<h2>7. Model Routing (Smart Model Routing v23.0)</h2>
+
+<div class="model-tier">
+  <div class="model-card model-scout">
+    <div class="model-tier-name">SCOUT</div>
+    <div class="model-id">claude-haiku-4-5</div>
+    <div class="model-use">
+      빠른 탐색, 보고서<br>
+      Phase 1.0 explore × 2<br>
+      Phase 5 writer (LIGHT)<br>
+      간단한 정보 조회
+    </div>
+  </div>
+  <div class="model-card model-work">
+    <div class="model-tier-name">WORK</div>
+    <div class="model-id">claude-sonnet-4-6</div>
+    <div class="model-use">
+      모든 실행/검증/디버깅<br>
+      Phase 1 planner (STANDARD)<br>
+      Phase 3 impl-manager (STANDARD)<br>
+      Phase 4 QA, architect, code-reviewer<br>
+      <strong>기본 모델 (비용 최적)</strong>
+    </div>
+  </div>
+  <div class="model-card model-apex">
+    <div class="model-tier-name">APEX</div>
+    <div class="model-id">claude-opus-4-6</div>
+    <div class="model-use">
+      <code>--opus</code> 플래그 시에만<br>
+      HEAVY Phase 2 design-writer<br>
+      HEAVY Phase 3 impl-manager<br>
+      HEAVY Phase 4.2 verifier<br>
+      <strong>on-demand only</strong>
+    </div>
+  </div>
+</div>
+
+<div class="card">
+  <h3 style="margin-top:0">Phase별 기본 모델 배치</h3>
+  <table>
+    <tr><th>Phase / 역할</th><th>LIGHT</th><th>STANDARD</th><th>HEAVY</th></tr>
+    <tr>
+      <td>Phase 1 — planner</td>
+      <td><span class="badge badge-green">haiku</span></td>
+      <td><span class="badge badge-blue">sonnet</span></td>
+      <td><span class="badge badge-blue">sonnet</span> (Loop)</td>
+    </tr>
+    <tr>
+      <td>Phase 1 — critic/architect</td>
+      <td>—</td>
+      <td><span class="badge badge-blue">sonnet</span></td>
+      <td><span class="badge badge-blue">sonnet</span></td>
+    </tr>
+    <tr>
+      <td>Phase 2 — design-writer</td>
+      <td>스킵</td>
+      <td><span class="badge badge-blue">sonnet</span></td>
+      <td><span class="badge badge-red">opus</span></td>
+    </tr>
+    <tr>
+      <td>Phase 3 — impl-manager</td>
+      <td><span class="badge badge-blue">sonnet</span></td>
+      <td><span class="badge badge-blue">sonnet</span></td>
+      <td><span class="badge badge-red">opus</span></td>
+    </tr>
+    <tr>
+      <td>Phase 4.1 — qa-tester</td>
+      <td><span class="badge badge-blue">sonnet</span></td>
+      <td><span class="badge badge-blue">sonnet</span></td>
+      <td><span class="badge badge-blue">sonnet</span></td>
+    </tr>
+    <tr>
+      <td>Phase 4.2 — architect/reviewer</td>
+      <td><span class="badge badge-blue">sonnet</span></td>
+      <td><span class="badge badge-blue">sonnet</span></td>
+      <td><span class="badge badge-red">opus</span></td>
+    </tr>
+    <tr>
+      <td>Phase 5 — writer</td>
+      <td><span class="badge badge-green">haiku</span></td>
+      <td><span class="badge badge-blue">sonnet</span></td>
+      <td><span class="badge badge-blue">sonnet</span></td>
+    </tr>
+  </table>
+  <div style="font-size:.75rem;color:var(--yellow);margin-top:.5rem">
+    모델 오버라이드: 에이전트 frontmatter의 model 필드(architect=opus 등)는 기본값.
+    호출 시 <code>model</code> 파라미터가 복잡도 모드에 따라 override됨.
+  </div>
+</div>
+
+<div class="card" style="margin-top:1rem">
+  <h3 style="margin-top:0"><code>--opus</code> 플래그 에스컬레이션 경로</h3>
+  <div style="font-size:.82rem">
+    <code>/auto --opus "작업"</code> 사용 시 HEAVY 핵심 에이전트를 Opus로 에스컬레이션:
+  </div>
+  <div class="grid grid-3" style="margin-top:.75rem">
+    <div class="card2" style="text-align:center">
+      <div style="color:var(--orange);font-weight:700;font-size:.85rem">Phase 2</div>
+      <div style="font-size:.75rem;margin-top:.25rem">design-writer<br>haiku → <strong class="text-red">opus</strong></div>
+    </div>
+    <div class="card2" style="text-align:center">
+      <div style="color:var(--orange);font-weight:700;font-size:.85rem">Phase 3</div>
+      <div style="font-size:.75rem;margin-top:.25rem">impl-manager<br>sonnet → <strong class="text-red">opus</strong></div>
+    </div>
+    <div class="card2" style="text-align:center">
+      <div style="color:var(--orange);font-weight:700;font-size:.85rem">Phase 4.2</div>
+      <div style="font-size:.75rem;margin-top:.25rem">architect + code-reviewer<br>sonnet → <strong class="text-red">opus</strong></div>
+    </div>
+  </div>
+</div>
+</div>
+
+<!-- ================ SECTION 8: 옵션 워크플로우 맵 ================ -->
+<div class="section">
+<h2>8. 옵션 워크플로우 맵</h2>
+<p class="section-note">각 옵션이 활성화되는 Phase를 시각화합니다.</p>
+
+<div class="option-grid">
+
+  <div class="option-card">
+    <div class="option-name">--eco</div>
+    <div class="option-phase"><span class="option-phase-label">Phase 0</span></div>
+    <div class="option-desc">LIGHT 모드 강제. -low 에이전트 우선 (haiku-first). 비용 최소화.</div>
+  </div>
+
+  <div class="option-card">
+    <div class="option-name">--worktree</div>
+    <div class="option-phase"><span class="option-phase-label">Phase 0 + Phase 5</span></div>
+    <div class="option-desc">feature 전용 worktree 생성 (Phase 0). 완료 시 자동 정리 (Phase 5).</div>
+  </div>
+
+  <div class="option-card">
+    <div class="option-name">--skip-analysis</div>
+    <div class="option-phase"><span class="option-phase-label">Phase 1.0</span></div>
+    <div class="option-desc">Step 1.0 병렬 explore 스킵. 복잡도 판단부터 직접 시작.</div>
+  </div>
+
+  <div class="option-card">
+    <div class="option-name">--no-issue</div>
+    <div class="option-phase"><span class="option-phase-label">Phase 1.3</span></div>
+    <div class="option-desc">GitHub 이슈 연동 스킵. 이슈 생성/코멘트 없이 진행.</div>
+  </div>
+
+  <div class="option-card">
+    <div class="option-name">--gdocs</div>
+    <div class="option-phase"><span class="option-phase-label">Phase 3.0</span></div>
+    <div class="option-desc">prd-sync 스킬 실행. Google Docs에서 PRD 동기화.</div>
+  </div>
+
+  <div class="option-card">
+    <div class="option-name">--mockup [파일]</div>
+    <div class="option-phase"><span class="option-phase-label">Phase 3.0</span></div>
+    <div class="option-desc">mockup-hybrid 스킬. HTML 와이어프레임 + Google Stitch 하이브리드 목업.</div>
+  </div>
+
+  <div class="option-card">
+    <div class="option-name">--slack &lt;채널&gt;</div>
+    <div class="option-phase"><span class="option-phase-label">Phase 3.0</span></div>
+    <div class="option-desc">Slack 채널 분석 → .omc/slack-context/ 생성 → Phase 1 컨텍스트로 활용.</div>
+  </div>
+
+  <div class="option-card">
+    <div class="option-name">--gmail</div>
+    <div class="option-phase"><span class="option-phase-label">Phase 3.0</span></div>
+    <div class="option-desc">Gmail 분석 → .omc/gmail-context/ 생성. 검색어 + 후속 작업 분기.</div>
+  </div>
+
+  <div class="option-card">
+    <div class="option-name">--debate</div>
+    <div class="option-phase"><span class="option-phase-label">Phase 3.0</span></div>
+    <div class="option-desc">ultimate-debate 스킬. 다중 관점 토론으로 설계 검토.</div>
+  </div>
+
+  <div class="option-card">
+    <div class="option-name">--research</div>
+    <div class="option-phase"><span class="option-phase-label">Phase 3.0</span></div>
+    <div class="option-desc">research 스킬. 웹/코드 리서치 후 구현 컨텍스트 강화.</div>
+  </div>
+
+  <div class="option-card">
+    <div class="option-name">--daily</div>
+    <div class="option-phase"><span class="option-phase-label">Phase 3.0</span></div>
+    <div class="option-desc">daily 스킬. 일일 작업 정리와 연동하여 구현.</div>
+  </div>
+
+  <div class="option-card">
+    <div class="option-name">--interactive</div>
+    <div class="option-phase"><span class="option-phase-label">Phase 1→2→3→4→5</span></div>
+    <div class="option-desc">매 Phase 전환 시 사용자 승인 요청. 진행/수정/건너뛰기 선택.</div>
+  </div>
+
+  <div class="option-card">
+    <div class="option-name">--strict</div>
+    <div class="option-phase"><span class="option-phase-label">Phase 4.3</span></div>
+    <div class="option-desc">E2E 테스트 1회 실패 즉시 중단. QA cycle과 무관하게 강제 적용.</div>
+  </div>
+
+  <div class="option-card">
+    <div class="option-name">--dry-run</div>
+    <div class="option-phase"><span class="option-phase-label">전 Phase</span></div>
+    <div class="option-desc">판단만 출력, 실제 실행 없음. 워크플로우 미리보기 용도.</div>
+  </div>
+
+  <div class="option-card">
+    <div class="option-name">--skip-e2e</div>
+    <div class="option-phase"><span class="option-phase-label">Phase 4.3</span></div>
+    <div class="option-desc">Playwright E2E 검증 명시적 스킵.</div>
+  </div>
+
+  <div class="option-card">
+    <div class="option-name">--opus</div>
+    <div class="option-phase"><span class="option-phase-label">Phase 2, 3, 4.2</span></div>
+    <div class="option-desc">HEAVY 핵심 에이전트 Opus 에스컬레이션. on-demand 프리미엄 모드.</div>
+  </div>
+
+</div>
+
+<!-- 세션 관리 -->
+<div class="card" style="margin-top:1.5rem">
+  <h3 style="margin-top:0">세션 관리 커맨드</h3>
+  <table>
+    <tr><th>커맨드</th><th>동작</th></tr>
+    <tr>
+      <td><code>/auto status</code></td>
+      <td>pdca-status.json 읽기 → 현재 Phase/상태 출력</td>
+    </tr>
+    <tr>
+      <td><code>/auto stop</code></td>
+      <td>현재 Phase 중단 + TeamDelete() 강제 실행</td>
+    </tr>
+    <tr>
+      <td><code>/auto resume</code></td>
+      <td>pdca-status.json 기반 중단 지점 복원 → TeamCreate() 새로 생성 → 해당 Phase 재개</td>
+    </tr>
+  </table>
+  <div style="font-size:.74rem;color:var(--yellow);margin-top:.5rem">
+    Context limit 발생 시: <code>claude --continue</code> 또는 <code>/clear</code> 후 <code>/auto resume</code>
+  </div>
+</div>
+
+<!-- 자율 발견 모드 -->
+<div class="card" style="margin-top:1rem">
+  <h3 style="margin-top:0">자율 발견 모드 (<code>/auto</code> 단독 실행 시)</h3>
+  <table>
+    <tr><th>Tier</th><th>이름</th><th>발견 대상</th><th>실행</th></tr>
+    <tr><td><span class="badge badge-red">0</span></td><td>CONTEXT</td><td>context limit 접근</td><td><code>/clear</code> + <code>/auto resume</code> 안내</td></tr>
+    <tr><td><span class="badge badge-orange">1</span></td><td>EXPLICIT</td><td>사용자 명시 지시</td><td>해당 작업 직접 실행</td></tr>
+    <tr><td><span class="badge badge-yellow">2</span></td><td>URGENT</td><td>빌드/테스트 실패</td><td><code>/debug</code> 실행 (D0-D4)</td></tr>
+    <tr><td><span class="badge badge-blue">3</span></td><td>WORK</td><td>pending TODO, 이슈</td><td>작업 처리 → PDCA</td></tr>
+    <tr><td><span class="badge badge-purple">4</span></td><td>SUPPORT</td><td>staged 파일, 린트 에러</td><td><code>/commit</code>, <code>/check</code></td></tr>
+    <tr><td><span class="badge badge-green">5</span></td><td>AUTONOMOUS</td><td>코드 품질 개선 기회</td><td>리팩토링 제안</td></tr>
+  </table>
+</div>
+</div>
+
+<hr class="divider">
+<p style="font-size:.75rem;opacity:.5;text-align:center">
+  /auto v22.1 PDCA Orchestrator | Agent Teams 단일 패턴 | Skill() 0개 | State 파일 의존 0개<br>
+  생성일: 2026-02-18 | 기반 문서: SKILL.md v22.1 + REFERENCE.md v22.1
+</p>
+
+</body>
+</html>

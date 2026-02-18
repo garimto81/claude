@@ -1,27 +1,20 @@
 {
-  "active": true,
+  "active": false,
   "mode": "ralplan",
-  "iteration": 3,
+  "iteration": 2,
   "max_iterations": 5,
-  "plan_path": "docs/01-plan/pcm-architecture-redesign.plan.md",
-  "current_phase": "planner_planning",
-  "started_at": "2026-02-05T14:00:00.000Z",
-  "completed_at": null,
-  "task_description": "PCM v2.1 - Critic Gate + Intelligent Orchestration 추가 (2-Way Active + 2-Way Passive 패턴)",
-  "plan_doc": "docs/01-plan/pcm-architecture-redesign.plan.md",
-  "critic_verdict": "PENDING",
-  "verdict_summary": "v2.0 승인 후 사용자 피드백 반영: Critic 누락 해결 + 단순병합→AI추론 재구성으로 개선",
-  "implementation_status": "PLANNING_v2.1",
-  "acceptance_criteria": {
-    "AC-1": "PENDING - Plan Phase (2 Active + 2 Passive) 구현",
-    "AC-2": "PENDING - Design Phase 구현",
-    "AC-3": "PENDING - Do Phase 구현",
-    "AC-4": "PENDING - Check Phase (Intelligent Orchestrator) 구현",
-    "AC-5": "PENDING - Act Phase (루프 판단) 구현",
-    "AC-6": "PENDING - Intelligent Orchestrator 역할 정의",
-    "AC-7": "PENDING - SKILL.md v17.1 업데이트",
-    "AC-8": "PENDING - BKIT fallback 문서 참조",
-    "AC-9": "PENDING - Critic Gate 4개 구현 (신규)",
-    "AC-10": "PENDING - Intelligent Orchestrator 구현 (신규)"
-  }
+  "plan_path": ".omc/plans/knowledge-layer.md",
+  "current_phase": "complete",
+  "started_at": "2026-02-13T09:00:00.000Z",
+  "completed_at": "2026-02-13T12:00:00.000Z",
+  "task_description": "Knowledge Layer redesign: daily v3.0 learning/indexing architecture supplement. Fix 5 critical gaps (35% vision fulfillment)",
+  "plan_doc": ".omc/plans/knowledge-layer.md",
+  "critic_verdict": "OKAY",
+  "verdict_summary": "Iteration 2 approved. All 10 issues (4 CRITICAL + 3 HIGH + 3 MINOR) resolved. Knowledge Layer architecture with Entity Registry, Event Log, Cross-Session Bridge, Eviction Policy, Notepad Wisdom integration.",
+  "implementation_status": "READY_FOR_IMPLEMENTATION",
+  "advisory_notes": [
+    "A1: Task 6에 TODO 6.6 추가 권장 - Tier 3 learned-context.json 참조 갱신",
+    "A2: SKILL.md 실제 줄 수 433 (434 아님, trivial)",
+    "A3: 한글 토큰 heuristic(chars*0.25)은 fallback 축소 메커니즘으로 안전"
+  ]
 }
