@@ -15,7 +15,7 @@ Usage:
 """
 
 from .models import TextSegment, TableData, TableCell, ConversionResult
-from .auth import get_credentials
+from .auth import get_credentials, get_sheets_credentials
 from .converter import MarkdownToDocsConverter, create_google_doc
 from .table_renderer import NativeTableRenderer
 from .notion_style import (
@@ -33,8 +33,11 @@ from .diagram_generator import DiagramGenerator, create_generator
 from .image_inserter import ImageInserter, create_inserter
 from .batch_processor import BatchConverter, ConvertResult as BatchConvertResult
 from .auto_trigger import AutoTriggerHandler
+from .project_registry import ProjectRegistry, get_project_folder_id, get_default_folder_id
+from .drive_guardian import DriveGuardian, AuditReport, FixPlan
+from .sheets import SheetsClient, parse_sheet_url
 
-__version__ = "1.3.0"
+__version__ = "1.4.0"
 __all__ = [
     # Models
     "TextSegment",
@@ -43,6 +46,7 @@ __all__ = [
     "ConversionResult",
     # Auth
     "get_credentials",
+    "get_sheets_credentials",
     # Converter
     "MarkdownToDocsConverter",
     "create_google_doc",
@@ -68,4 +72,15 @@ __all__ = [
     "BatchConvertResult",
     # Auto Trigger (Phase 1)
     "AutoTriggerHandler",
+    # Project Registry (Drive 프로젝트 매핑)
+    "ProjectRegistry",
+    "get_project_folder_id",
+    "get_default_folder_id",
+    # Drive Guardian (구조 감사)
+    "DriveGuardian",
+    "AuditReport",
+    "FixPlan",
+    # Sheets
+    "SheetsClient",
+    "parse_sheet_url",
 ]

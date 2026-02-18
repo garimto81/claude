@@ -186,17 +186,42 @@ def authenticate(force: bool = False) -> str:
 
 
 def get_client():
-    """Get authenticated Vimeo client."""
+    """Get authenticated Vimeo client with extended timeout."""
     import vimeo
 
     token = authenticate()
     credentials = load_credentials()
 
-    return vimeo.VimeoClient(
+    client = vimeo.VimeoClient(
         token=token,
         key=credentials["client_id"],
         secret=credentials["client_secret"],
     )
+
+    # Set extended timeout for large file uploads (10 minutes)
+    # PyVimeo uses requests internally, so we configure the timeout on the session
+    if hasattr(client, '_store') and hasattr(client._store, 'session'):
+        # Configure timeout via requests.Session adapter
+        from requests.adapters import HTTPAdapter
+        from requests.packages.urllib3.util.retry import Retry
+
+        # Create adapter with timeout settings
+        adapter = HTTPAdapter(
+            max_retries=Retry(total=0, connect=3, read=3, status=0)
+        )
+        client._store.session.mount('https://', adapter)
+
+        # Set default timeout to 600 seconds (10 minutes) for upload operations
+        original_request = client._store.session.request
+
+        def request_with_timeout(*args, **kwargs):
+            if 'timeout' not in kwargs:
+                kwargs['timeout'] = 600
+            return original_request(*args, **kwargs)
+
+        client._store.session.request = request_with_timeout
+
+    return client
 
 
 if __name__ == "__main__":

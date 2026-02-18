@@ -2155,7 +2155,7 @@
         {
           "name": "design-review",
           "path": ".claude/plugins/workflow-reviews/agents/design-review.md",
-          "description": "Elite design review specialist using Playwright MCP for live environment testing (7 phases: Interaction, Responsiveness, Visual Polish, Accessibility, Robustness, Code Health, Console)",
+          "description": "Elite design review specialist using Playwright CLI for live environment testing (7 phases: Interaction, Responsiveness, Visual Polish, Accessibility, Robustness, Code Health, Console)",
           "model": "sonnet"
         }
       ],
@@ -2178,7 +2178,7 @@
       ],
       "features": [
         "Dual-loop architecture (slash commands + GitHub Actions)",
-        "Live environment testing with Playwright MCP",
+        "Live environment testing with Playwright CLI",
         "OWASP Top 10 security scanning",
         "WCAG 2.1 AA accessibility compliance",
         "Hierarchical review framework (7 tiers)",

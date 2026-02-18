@@ -24,7 +24,7 @@
        ▼
 ┌─────────────────────────────┐
 │  OMC Plugin                 │
-│  oh-my-claudecode:autopilot │
+│  autopilot │
 │  (32개 에이전트 활용)        │
 └─────────────────────────────┘
        │
@@ -123,7 +123,7 @@
 4. **빌드 확인**: `ruff check`, `tsc`, `npm run build`
 5. **Architect 호출**:
    ```
-   Task(subagent_type="oh-my-claudecode:architect",
+   Task(subagent_type="architect",
         model="opus",
         prompt="검증: [작업 설명]")
    ```
@@ -161,7 +161,7 @@ foreach ($proj in $subprojects) {
 
 1. **SKILL.md 확인**: `omc_delegate` 필드 존재 여부
 2. **심볼릭 링크 확인**: 서브프로젝트의 `.claude/skills` 연결 상태
-3. **OMC 플러그인 확인**: `/oh-my-claudecode:doctor` 실행
+3. **OMC 플러그인 확인**: `/doctor` 실행
 
 ### Ralph 루프가 종료되지 않음
 

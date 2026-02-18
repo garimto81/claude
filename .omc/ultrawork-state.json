@@ -1,0 +1,9 @@
+{
+  "active": false,
+  "started_at": "2026-02-15T02:59:34.449Z",
+  "original_prompt": "",
+  "reinforcement_count": 0,
+  "last_checked_at": "2026-02-15T02:59:34.450Z",
+  "deactivated_reason": "SessionStart cleanup (new session)",
+  "deactivated_at": "2026-02-15T03:07:01.531457+00:00"
+}

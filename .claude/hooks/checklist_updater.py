@@ -10,7 +10,10 @@ import sys
 from datetime import datetime
 from pathlib import Path
 
-import yaml
+try:
+    import yaml
+except ImportError:
+    yaml = None
 
 
 def find_checklist_yaml(start_path: Path) -> Path | None:
@@ -116,6 +119,11 @@ def main():
         "files_changed": [],  # PostToolUse에서는 파일 변경 추적 어려움
         "notes": "서브 에이전트 작업 완료",
     }
+
+    # yaml 미설치 시 스킵
+    if yaml is None:
+        print(json.dumps({"continue": True}))
+        return
 
     # 체크리스트 찾기 및 업데이트
     cwd = Path(hook_data.get("cwd", os.getcwd()))

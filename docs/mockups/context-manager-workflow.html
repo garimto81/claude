@@ -1,0 +1,367 @@
+<!DOCTYPE html>
+<html lang="ko">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=900, height=700">
+    <title>Context Manager Workflow</title>
+    <style>
+        * {
+            margin: 0;
+            padding: 0;
+            box-sizing: border-box;
+        }
+        body {
+            font-family: -apple-system, BlinkMacSystemFont, 'Segoe UI', Roboto, 'Noto Sans KR', sans-serif;
+            background: #ffffff;
+            padding: 20px;
+            min-height: 700px;
+        }
+        .container {
+            max-width: 860px;
+            margin: 0 auto;
+        }
+        .title {
+            font-size: 24px;
+            font-weight: bold;
+            text-align: center;
+            margin-bottom: 30px;
+            color: #333;
+        }
+        .subtitle {
+            font-size: 14px;
+            color: #666;
+            text-align: center;
+            margin-top: -20px;
+            margin-bottom: 30px;
+        }
+
+        /* Flow Layout */
+        .flow {
+            display: flex;
+            flex-direction: column;
+            gap: 16px;
+            align-items: center;
+        }
+        .flow-row {
+            display: flex;
+            gap: 24px;
+            align-items: center;
+            justify-content: center;
+            width: 100%;
+        }
+
+        /* Node Styles */
+        .node {
+            border: 2px solid #333;
+            border-radius: 8px;
+            padding: 12px 16px;
+            background: #fff;
+            text-align: center;
+            font-size: 14px;
+        }
+        .node-start {
+            width: 120px;
+            height: 40px;
+            border-radius: 20px;
+            display: flex;
+            align-items: center;
+            justify-content: center;
+            background: #333;
+            color: #fff;
+        }
+        .node-phase {
+            width: 200px;
+            min-height: 80px;
+            background: #f5f5f5;
+        }
+        .node-phase .phase-title {
+            font-weight: bold;
+            font-size: 12px;
+            color: #666;
+            margin-bottom: 8px;
+        }
+        .node-phase .phase-content {
+            font-size: 13px;
+            color: #333;
+        }
+        .node-action {
+            width: 180px;
+            min-height: 60px;
+            font-size: 12px;
+            background: #e3f2fd;
+            border-color: #1976d2;
+        }
+        .node-context {
+            width: 220px;
+            min-height: 70px;
+            background: #fff3e0;
+            border-color: #f57c00;
+        }
+        .node-context .ctx-title {
+            font-weight: bold;
+            font-size: 11px;
+            color: #e65100;
+            margin-bottom: 6px;
+        }
+        .node-context .ctx-items {
+            font-size: 11px;
+            color: #333;
+            text-align: left;
+            padding-left: 8px;
+        }
+        .node-storage {
+            width: 200px;
+            min-height: 50px;
+            background: #e8f5e9;
+            border-color: #388e3c;
+            font-size: 12px;
+        }
+        .node-end {
+            width: 140px;
+            height: 40px;
+            border-radius: 20px;
+            display: flex;
+            align-items: center;
+            justify-content: center;
+            background: #2e7d32;
+            color: #fff;
+        }
+
+        /* Arrows */
+        .arrow {
+            display: flex;
+            flex-direction: column;
+            align-items: center;
+            color: #333;
+        }
+        .arrow-down {
+            font-size: 24px;
+            line-height: 1;
+        }
+        .arrow-label {
+            font-size: 11px;
+            color: #666;
+            margin-top: 2px;
+        }
+        .arrow-right {
+            font-size: 20px;
+        }
+
+        /* Parallel Container */
+        .parallel {
+            display: flex;
+            gap: 20px;
+            border: 2px dashed #999;
+            padding: 16px;
+            border-radius: 8px;
+            background: #fafafa;
+        }
+        .parallel-label {
+            position: absolute;
+            top: -10px;
+            left: 10px;
+            background: #fff;
+            padding: 0 8px;
+            font-size: 11px;
+            color: #666;
+        }
+
+        /* Legend */
+        .legend {
+            display: flex;
+            gap: 24px;
+            justify-content: center;
+            margin-top: 24px;
+            padding-top: 16px;
+            border-top: 1px solid #ddd;
+        }
+        .legend-item {
+            display: flex;
+            align-items: center;
+            gap: 8px;
+            font-size: 12px;
+        }
+        .legend-box {
+            width: 16px;
+            height: 16px;
+            border: 2px solid #333;
+            border-radius: 4px;
+        }
+        .legend-box.context { background: #fff3e0; border-color: #f57c00; }
+        .legend-box.action { background: #e3f2fd; border-color: #1976d2; }
+        .legend-box.storage { background: #e8f5e9; border-color: #388e3c; }
+        .legend-box.phase { background: #f5f5f5; }
+
+        /* Importance Badge */
+        .badge {
+            display: inline-block;
+            padding: 2px 6px;
+            border-radius: 4px;
+            font-size: 10px;
+            font-weight: bold;
+        }
+        .badge-high { background: #c62828; color: #fff; }
+        .badge-medium { background: #f57c00; color: #fff; }
+        .badge-low { background: #757575; color: #fff; }
+    </style>
+</head>
+<body>
+    <div class="container">
+        <h1 class="title">Context Manager Workflow</h1>
+        <p class="subtitle">인과관계 기반 컨텍스트 관리 + Compaction 보호</p>
+
+        <div class="flow">
+            <!-- Start -->
+            <div class="node node-start">/auto "작업"</div>
+
+            <div class="arrow">
+                <span class="arrow-down">↓</span>
+            </div>
+
+            <!-- Phase 0: Init -->
+            <div class="flow-row">
+                <div class="node node-phase">
+                    <div class="phase-title">PHASE 0: 초기화</div>
+                    <div class="phase-content">Context Manager 생성<br>세션 ID 할당</div>
+                </div>
+                <span class="arrow-right">→</span>
+                <div class="node node-context">
+                    <div class="ctx-title">📝 기록</div>
+                    <div class="ctx-items">
+                        <span class="badge badge-high">HIGH</span> record_request()
+                    </div>
+                </div>
+            </div>
+
+            <div class="arrow">
+                <span class="arrow-down">↓</span>
+            </div>
+
+            <!-- Phase 1: Analysis -->
+            <div class="flow-row">
+                <div class="node node-phase">
+                    <div class="phase-title">PHASE 1: 분석</div>
+                    <div class="phase-content">작업 복잡도 평가<br>영향 범위 추정</div>
+                </div>
+                <span class="arrow-right">→</span>
+                <div class="node node-context">
+                    <div class="ctx-title">📝 기록</div>
+                    <div class="ctx-items">
+                        <span class="badge badge-medium">MED</span> record_analysis()<br>
+                        <span class="badge badge-high">HIGH</span> record_decision()
+                    </div>
+                </div>
+            </div>
+
+            <div class="arrow">
+                <span class="arrow-down">↓</span>
+            </div>
+
+            <!-- Phase 2: Execute -->
+            <div class="flow-row">
+                <div class="node node-phase">
+                    <div class="phase-title">PHASE 2: 실행</div>
+                    <div class="phase-content">Ralph 루프<br>에이전트 위임</div>
+                </div>
+                <span class="arrow-right">→</span>
+                <div class="node node-context">
+                    <div class="ctx-title">📝 기록</div>
+                    <div class="ctx-items">
+                        <span class="badge badge-medium">MED</span> record_file_change()<br>
+                        <span class="badge badge-high">HIGH</span> record_error()<br>
+                        <span class="badge badge-high">HIGH</span> record_solution()
+                    </div>
+                </div>
+            </div>
+
+            <div class="arrow">
+                <span class="arrow-down">↓</span>
+            </div>
+
+            <!-- Phase 3: Verify -->
+            <div class="flow-row">
+                <div class="node node-phase">
+                    <div class="phase-title">PHASE 3: 검증</div>
+                    <div class="phase-content">Architect 검증<br>미해결 에러 확인</div>
+                </div>
+                <span class="arrow-right">→</span>
+                <div class="node node-action">
+                    <strong>Context 참조</strong><br>
+                    get_unresolved_errors()<br>
+                    get_related_nodes()
+                </div>
+            </div>
+
+            <div class="arrow">
+                <span class="arrow-down">↓</span>
+            </div>
+
+            <!-- Phase 4: Compaction -->
+            <div class="flow-row">
+                <div class="node node-action">
+                    <strong>Compaction 보호</strong><br>
+                    generate_compact_summary()<br>
+                    HIGH importance 우선 보존
+                </div>
+                <span class="arrow-right">→</span>
+                <div class="node node-storage">
+                    <strong>📁 저장</strong><br>
+                    .omc/context/<br>
+                    context_graph.json<br>
+                    compact_summary.md
+                </div>
+            </div>
+
+            <div class="arrow">
+                <span class="arrow-down">↓</span>
+            </div>
+
+            <!-- Phase 5: Complete -->
+            <div class="flow-row">
+                <div class="node node-phase">
+                    <div class="phase-title">PHASE 5: 완료</div>
+                    <div class="phase-content">학습 내용 정리</div>
+                </div>
+                <span class="arrow-right">→</span>
+                <div class="node node-context">
+                    <div class="ctx-title">📝 기록</div>
+                    <div class="ctx-items">
+                        <span class="badge badge-high">HIGH</span> record_learning()
+                    </div>
+                </div>
+            </div>
+
+            <div class="arrow">
+                <span class="arrow-down">↓</span>
+            </div>
+
+            <!-- End -->
+            <div class="node node-end">TASK_COMPLETE</div>
+        </div>
+
+        <!-- Legend -->
+        <div class="legend">
+            <div class="legend-item">
+                <div class="legend-box phase"></div>
+                <span>Phase</span>
+            </div>
+            <div class="legend-item">
+                <div class="legend-box context"></div>
+                <span>Context 기록</span>
+            </div>
+            <div class="legend-item">
+                <div class="legend-box action"></div>
+                <span>Action</span>
+            </div>
+            <div class="legend-item">
+                <div class="legend-box storage"></div>
+                <span>Storage</span>
+            </div>
+            <div class="legend-item">
+                <span class="badge badge-high">HIGH</span>
+                <span>Compaction 보존</span>
+            </div>
+        </div>
+    </div>
+</body>
+</html>

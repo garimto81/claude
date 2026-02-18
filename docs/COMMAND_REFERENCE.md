@@ -1,6 +1,6 @@
 # Command Reference
 
-**Version**: 1.3.0 | **Updated**: 2026-01-03
+**Version**: 1.4.0 | **Updated**: 2026-02-06
 
 이 문서는 모든 슬래시 커맨드의 사용법을 정리합니다.
 
@@ -10,8 +10,7 @@
 
 | 카테고리 | 커맨드 | 설명 |
 |----------|--------|------|
-| **핵심** | `/work` | 통합 작업 실행 (지시 기반 + 자율 판단) |
-| | `/auto` | → `/work --loop` alias (자율 판단 모드) |
+| **핵심** | `/auto` | 통합 PDCA 워크플로우 (v20.1 - Agent Teams + PDCA) |
 | | `/orchestrate` | 메인-서브 에이전트 오케스트레이션 |
 | | `/commit` | Conventional Commit 생성 |
 | | `/check` | 코드 품질/보안 검사 |
@@ -27,123 +26,40 @@
 | | `/session` | 세션 관리 |
 | | `/deploy` | 버전/Docker 배포 |
 | | `/audit` | 설정 점검 및 개선 |
+| **도구** | `/ai-login` | AI 서비스 인증 (GPT, Gemini) |
+| | `/ai-subtitle` | Claude Vision AI 자막 생성 |
+| | `/chunk` | PDF 청킹 (토큰/페이지 기반) |
+| | `/ccs` | CCS CLI 위임 실행 |
+| | `/gmail` | Gmail 메일 관리 |
+| | `/mockup` | 하이브리드 목업 생성 |
+| | `/shorts` | 쇼츠 영상 생성 |
 
 ---
 
-## 1. /work - 통합 작업 실행
+## 1. /work (v19.0 - /auto로 통합됨)
 
-작업 지시를 받아 **분석 → 이슈 → 구현 → 테스트 → PR**까지 자동 수행합니다.
-`--loop` 모드에서는 **자율 판단 기반 반복 실행**을 지원합니다.
-
-### 사용법
+> **`/work`는 `/auto`로 통합되었습니다.** 모든 작업에 `/auto`를 사용하세요.
 
 ```bash
-# 기본: 지시 기반 실행
-/work "작업 지시 내용"
-/work "API 성능 개선"
-
-# 자동: 중간 확인 없이 실행
-/work --auto "완전 자동화"
-
-# 루프: 자율 판단 반복 실행 (기존 /auto)
+# 이전
+/work "작업 내용"
+/work --auto "작업"
 /work --loop
-/work --loop --max 5              # 최대 5개 작업
-/work --loop resume [session_id]  # 세션 재개
-/work --loop status               # 현재 상태
 
-# 기타 옵션
-/work --skip-analysis "빠른 수정"
-/work --no-issue "이슈 없이 작업"
-/work --strict "엄격 모드 (E2E 1회 실패 시 중단)"
+# 이후 (v19.0)
+/auto "작업 내용"
+/auto "작업"
+/auto
 ```
 
-### 모드 비교
-
-| 모드 | 입력 | 실행 방식 | Context 관리 |
-|------|------|-----------|--------------|
-| **기본** | 작업 지시 필수 | 5단계 워크플로우 | - |
-| **--auto** | 작업 지시 필수 | 5단계 자동 실행 | - |
-| **--loop** | 없음 (자율 판단) | 우선순위 기반 루프 | 90% 임계값 |
-
-### 실행 흐름 (기본/--auto 모드)
-
-```
-Phase 1: 병렬 분석
-  ├─ 문서 분석 (PRD, docs/)
-  └─ 이슈 분석 (gh issue list)
-     ↓
-Phase 2: 이슈 생성 + 문서 업데이트
-     ↓
-Phase 3: Todo 작성
-     ↓
-Phase 4: E2E 검증 (실패 시 자동 수정 2회)
-     ↓
-Phase 5: TDD 검증 + 최종 보고서
-```
-
-### 실행 흐름 (--loop 모드) - Ralph Wiggum 통합
-
-> **핵심**: "할 일 없음 → 종료"가 아닌 "할 일 없음 → 스스로 발견"
-
-```
-[1] 세션 초기화 → 로그 폴더 생성, 종료 조건 설정
-     ↓
-[2] 상태 분석 (Git, 이슈, 테스트, Todo)
-     ↓
-[3] 작업 판단 (2계층 우선순위)
-     │
-     ├─ Tier 1 (명시적 작업)
-     │   1. 테스트 실패 → 수정
-     │   2. PR CI 실패 → 수정
-     │   3. 커밋 안 됨 → /commit
-     │   4. 열린 이슈 → /issue fix
-     │   5. Todo 미완료 → 작업
-     │
-     └─ Tier 2 (자율 발견) ← Tier 1 없을 때
-         6. 린트 경고 → 수정
-         7. 커버리지 미달 → 테스트 추가
-         8. 문서 누락 → 문서화
-         9. 리팩토링 → 개선
-        10. 의존성/성능/a11y → 개선
-     ↓
-[4] 작업 실행 (로그 기록, Context 모니터링)
-     ↓
-[5] 반복 (종료 조건 확인)
-     - 종료 조건 미충족 → [2]로
-     - --max 도달 → 종료
-     - --promise 충족 → 종료
-     - Context 90% → /commit → 세션 종료
-```
-
-### 종료 조건 (명시적으로만)
-
-| 조건 | 설명 |
-|------|------|
-| `--max N` | N회 반복 후 종료 |
-| `--promise TEXT` | `<promise>TEXT</promise>` 출력 시 종료 |
-| `pause`/`abort` | 사용자 명시적 중단 |
-| Context 90% | 체크포인트 저장 후 종료 |
-
-**⚠️ "할 일 없음"은 종료 조건이 아님**
-
-### 예시
-
-```bash
-$ /work API 응답 캐싱 추가
-
-🔍 Phase 1: 병렬 분석 중...
-📝 Phase 2: 이슈 #67에 코멘트 추가
-✅ Phase 3: Todo 작성 완료 (7개 항목)
-🧪 Phase 4: E2E 검증 15/15 통과
-📊 Phase 5: 커버리지 85%
-📋 최종 보고서 출력...
-```
+상세 내용은 `/auto` 섹션을 참조하세요.
 
 ---
 
-## 2. /auto - 통합 자율 완성 모드 (v10.0)
+## 2. /auto - PDCA Orchestrator (v20.1 - Agent Teams)
 
-> **슈퍼모드**: Ralph + Ultrawork + Ralplan이 자동 통합됩니다.
+> **Agent Teams**: 모든 에이전트가 독립 context window에서 실행됩니다 (Lead context 오염 없음).
+> **v20.1**: Agent Teams 전면 마이그레이션 + Phase 2 READ-ONLY 버그 수정
 
 별도 키워드 없이 `/auto "작업"` 하나로 모든 고급 기능이 활성화됩니다.
 
@@ -151,9 +67,9 @@ $ /work API 응답 캐싱 추가
 
 | 기능 | 자동 적용 조건 |
 |------|----------------|
-| **Ultrawork** | 항상 (병렬 에이전트 오케스트레이션) |
-| **Ralph** | 항상 (완료까지 루프 + Architect 검증) |
-| **Ralplan** | 복잡한 작업 시 (Planner→Architect→Critic 합의) |
+| **Agent Teams** | 항상 (TeamCreate → Task(name, team_name) → SendMessage → TeamDelete) |
+| **Ralph** | STANDARD/HEAVY (완료까지 루프 + Architect 검증) |
+| **Ralplan** | HEAVY (Planner→Architect→Critic 합의) |
 
 ### 사용법
 
@@ -165,31 +81,37 @@ $ /work API 응답 캐싱 추가
 # 지시 없이 실행 (자율 판단)
 /auto
 
-# 옵션
-/auto --max 10 "버그 수정"    # 최대 반복 횟수
-/auto --eco "간단한 수정"     # 토큰 절약 모드
-/auto status                  # 현재 상태
-/auto stop                    # 중지
-/auto resume                  # 재개
+# 옵션 (v19.0 - /work 옵션 통합)
+/auto --skip-analysis "빠른 수정"    # 사전 분석 스킵
+/auto --no-issue "이슈 없이 작업"    # GitHub 이슈 생성 스킵
+/auto --strict "엄격 모드"           # E2E 1회 실패 시 중단
+/auto --dry-run "작업 계획"          # 계획만 출력, 실행 안 함
+/auto --eco "간단한 수정"            # 토큰 절약 모드
+/auto status                         # 현재 상태
+/auto stop                           # 중지
+/auto resume                         # 재개
 ```
 
-### 자동 실행 흐름
+### 자동 실행 흐름 (v20.1 PDCA Phase 0-5 + Agent Teams)
 
 ```
 /auto "작업"
     │
-    ├─[1] 작업 분석 → 복잡도, 범위 판단
-    ├─[2] 계획 필요 시 → Ralplan (Planner→Architect→Critic)
-    ├─[3] Ultrawork 활성화 → 병렬 에이전트 스폰
-    ├─[4] Ralph 루프 → 완료까지 반복
-    ├─[5] Architect 검증 → 필수 (거부 시 재작업)
-    └─[6] 완료: <promise>TASK_COMPLETE</promise>
+    ├─[Phase 0] 옵션 파싱 + 모드 결정 + TeamCreate
+    ├─[Phase 1] PLAN: explore x2 → 복잡도 판단 → planner/ralplan → 이슈 연동
+    ├─[Phase 2] DESIGN: executor/executor-high (STANDARD/HEAVY만, 문서 생성)
+    ├─[Phase 3] DO: executor/ralph (복잡도별 분기)
+    ├─[Phase 4] CHECK: ultraqa → Architect 검증 → gap-detector → E2E → TDD
+    └─[Phase 5] ACT: gap < 90% → 재실행 / gap >= 90% → 완료 → TeamDelete
 ```
 
 ### 레거시 키워드 지원
 
 | 기존 키워드 | 동작 |
 |-------------|------|
+| `/work "작업"` | → `/auto "작업"` (v19.0) |
+| `/work --auto` | → `/auto "작업"` |
+| `/work --loop` | → `/auto` |
 | `ralph: 작업` | → `/auto "작업"` |
 | `ulw: 작업` | → `/auto "작업"` |
 | `ultrawork: 작업` | → `/auto "작업"` |
@@ -197,7 +119,7 @@ $ /work API 응답 캐싱 추가
 
 ### 상세 문서
 
-→ `.claude/commands/auto.md` (v10.0)
+→ `.claude/commands/auto.md` (v20.1)
 
 ---
 
@@ -479,7 +401,7 @@ git commit -m "refactor: Use User.authenticate method ♻️"
 
 ### 통합 워크플로우
 
-- `/work` E2E 실패 시 자동 트리거
+- `/auto` E2E 실패 시 자동 트리거
 - `/issue fix` confidence < 80% 시 자동 트리거
 - 3회 가설 기각 시 `/issue failed` 호출
 
@@ -1126,6 +1048,143 @@ CLAUDE.md, 커맨드, 에이전트, 스킬의 일관성을 점검합니다.
 
 ---
 
+## 18. /ai-login - AI 서비스 인증
+
+AI 검증용 서비스(OpenAI, Google) 인증을 관리합니다. Browser OAuth와 CLI 토큰 재사용을 지원합니다.
+
+### 사용법
+
+```bash
+/ai-login openai                    # OpenAI OAuth 인증
+/ai-login google                    # Google OAuth 인증
+/ai-login google --api-key          # Google API Key 방식
+/ai-login status                    # 전체 인증 상태
+/ai-login logout                    # 모든 세션 로그아웃
+```
+
+### 인증 우선순위
+
+| Provider | 1순위 | 2순위 | 3순위 |
+|----------|-------|-------|-------|
+| OpenAI | 저장된 토큰 | Codex CLI 토큰 | Browser OAuth |
+| Google | 저장된 토큰 | Gemini CLI 토큰 | Browser OAuth |
+
+---
+
+## 19. /ai-subtitle - Claude Vision AI 자막 생성
+
+Claude의 Read 도구로 이미지를 직접 분석하여 휠 복원 마케팅 자막을 생성합니다.
+
+### 사용법
+
+```bash
+/ai-subtitle                           # temp/ 폴더 이미지 분석
+/ai-subtitle -g <group_id>             # 그룹 이미지 다운로드 후 분석
+/ai-subtitle -g <group_id> -n 10       # 최대 N개 이미지
+/ai-subtitle --output subtitles.json   # JSON 파일로 저장
+```
+
+---
+
+## 20. /chunk - PDF 청킹
+
+PDF를 LLM 입력용 청크로 분할합니다. 토큰 기반과 페이지 기반 두 가지 모드를 지원합니다.
+
+### 사용법
+
+```bash
+/chunk <pdf_path>                    # 기본 청킹 (4000토큰, 200 오버랩)
+/chunk <pdf_path> --tokens 2000      # 토큰 수 지정
+/chunk <pdf_path> --page             # 페이지 기반 (레이아웃 보존)
+/chunk <pdf_path> --info             # PDF 정보만 확인
+/chunk <pdf_path> --preview 3        # 처음 3개 청크 미리보기
+```
+
+### 모드 비교
+
+| 모드 | 옵션 | 특징 | 용도 |
+|------|------|------|------|
+| **토큰** (기본) | - | 텍스트만 추출 | 순수 텍스트 분석 |
+| **페이지** | `--page` | 레이아웃 100% 보존 | 이미지/표 포함 |
+
+---
+
+## 21. /ccs - CCS CLI 위임
+
+CCS CLI를 통해 다른 AI에게 작업을 위임합니다. 프로필 자동 선택 기능이 포함됩니다.
+
+### 사용법
+
+```bash
+/ccs "refactor auth.js to use async/await"    # 단순 작업
+/ccs "analyze entire architecture"            # 장문 분석
+/ccs --glm "add tests for UserService"        # 특정 프로필 강제
+/ccs "/cook create landing page"              # 중첩 커맨드
+```
+
+---
+
+## 22. /gmail - Gmail 관리
+
+Gmail 메일 읽기, 검색, 전송, 관리를 위한 통합 커맨드입니다.
+
+### 사용법
+
+```bash
+/gmail                      # 안 읽은 메일 확인
+/gmail inbox                # 받은편지함 보기
+/gmail search "from:boss"   # 메일 검색
+/gmail send "to" "제목" "본문"  # 메일 전송
+/gmail read <id>            # 메일 상세 보기
+/gmail labels               # 라벨 목록
+```
+
+### 서브커맨드
+
+| 서브커맨드 | 설명 |
+|-----------|------|
+| (없음) | 안 읽은 메일 확인 |
+| `inbox` | 받은편지함 |
+| `unread` | 안 읽은 메일 |
+| `search` | 메일 검색 |
+| `read` | 메일 상세 |
+| `send` | 메일 전송 |
+| `labels` | 라벨 목록 |
+
+---
+
+## 23. /mockup - 하이브리드 목업 생성
+
+HTML 와이어프레임과 Google Stitch를 자동 선택하여 최적의 목업을 생성합니다.
+
+### 사용법
+
+```bash
+/mockup [name]              # 기본 (B&W 와이어프레임)
+/mockup [name] --force-html # 강제 HTML
+/mockup [name] --force-hifi # 강제 Stitch API (고품질)
+/mockup [name] --screens=3  # 3개 화면 생성
+/mockup [name] --prd=PRD-0001  # PRD 연결
+/mockup [name] --flow       # 전체 흐름 다이어그램
+```
+
+---
+
+## 24. /shorts - 쇼츠 영상 생성
+
+PocketBase에서 사진을 가져와 마케팅용 쇼츠 영상을 생성합니다.
+
+### 사용법
+
+```bash
+/shorts list                          # 그룹 목록 조회
+/shorts list -g <group_id>            # 그룹별 사진 조회
+/shorts create -g <group_id> --auto   # 영상 생성
+/shorts batch -g <group_id>           # 전체 워크플로우 (권장)
+```
+
+---
+
 ## Quick Reference
 
 ### 일상 워크플로우
@@ -1151,8 +1210,8 @@ CLAUDE.md, 커맨드, 에이전트, 스킬의 일관성을 점검합니다.
 ### 전체 자동화
 
 ```bash
-/work --auto "기능 구현"      # 분석~PR까지 완전 자동화
-/work --loop                  # 자율 판단 반복 실행 (= /auto)
+/auto "기능 구현"             # PDCA Phase 0-5 완전 자동화
+/auto                         # 자율 판단 반복 실행
 ```
 
 ### 병렬 작업

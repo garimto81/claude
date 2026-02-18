@@ -1,16 +1,50 @@
 # Mockup Hybrid 자동 선택 규칙
 # 우선순위: 강제 옵션 > 키워드 > 컨텍스트 > 환경 > 기본값
 
-version: "1.0.0"
+version: "2.0.0"
 
 rules:
   # 1순위: 강제 옵션 (사용자 명시)
   force_options:
     --force-html: html
     --force-hifi: stitch
+    --force-mermaid: mermaid
 
   # 2순위: 키워드 감지
   keywords:
+    # Mermaid 트리거 키워드 (다이어그램/플로우 필요) — 최우선
+    mermaid_triggers:
+      - "흐름"
+      - "플로우"
+      - "flow"
+      - "시퀀스"
+      - "sequence"
+      - "API 호출"
+      - "api call"
+      - "DB"
+      - "database"
+      - "데이터베이스"
+      - "스키마"
+      - "schema"
+      - "ER"
+      - "er diagram"
+      - "클래스"
+      - "class diagram"
+      - "아키텍처"
+      - "architecture"
+      - "파이프라인"
+      - "pipeline"
+      - "상태 머신"
+      - "state machine"
+      - "워크플로우"
+      - "workflow"
+      - "의존성"
+      - "dependency"
+      - "통신"
+      - "communication"
+      - "인증 흐름"
+      - "auth flow"
+
     # Stitch API 트리거 키워드 (고품질 필요)
     stitch_triggers:
       - "프레젠테이션"
@@ -79,6 +113,13 @@ rules:
 
 # 백엔드별 설정
 backends:
+  mermaid:
+    name: "Mermaid Diagram"
+    emoji: "📊"
+    description: "텍스트 기반 다이어그램 생성"
+    avg_time_seconds: 2
+    suffix: ".mermaid"
+
   html:
     name: "HTML Generator"
     emoji: "📝"

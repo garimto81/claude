@@ -1,0 +1,211 @@
+{
+  "timestamp": "2026-02-15T23:37:53.939Z",
+  "reason": "compaction",
+  "status": {
+    "version": "2.0",
+    "lastUpdated": "2026-02-16T14:10:00.000Z",
+    "activeFeatures": [
+      "mockup_hybrid"
+    ],
+    "primaryFeature": "mockup_hybrid",
+    "features": {
+      "auto-work-unification": {
+        "phase": "completed",
+        "phaseNumber": 6,
+        "matchRate": 95,
+        "iterationCount": 0,
+        "requirements": [
+          "FR-01: /work→/auto 통합",
+          "FR-02: 3-tier 복잡도 분기",
+          "FR-03: 인과관계 그래프 보존",
+          "FR-04: 잔여 참조 제거"
+        ],
+        "documents": {
+          "plan": "docs/01-plan/auto-work-unification.plan.md",
+          "design": "docs/02-design/auto-work-unification.design.md",
+          "report": "docs/04-report/auto-work-unification.report.md"
+        },
+        "timestamps": {
+          "started": "2026-02-16T08:00:00.000Z",
+          "lastUpdated": "2026-02-16T10:00:00.000Z"
+        },
+        "lastFile": "C:\\claude\\.claude\\skills\\auto\\SKILL.md"
+      },
+      "daily-integration": {
+        "phase": "completed",
+        "phaseNumber": 6,
+        "matchRate": 97,
+        "iterationCount": 0,
+        "requirements": [
+          "FR-01",
+          "FR-02",
+          "FR-03",
+          "FR-04",
+          "FR-05"
+        ],
+        "documents": {
+          "plan": "docs/01-plan/daily-integration.plan.md",
+          "design": "docs/02-design/daily-integration.design.md",
+          "analysis": "docs/03-analysis/daily-integration.analysis.md",
+          "report": "docs/04-report/daily-integration.report.md"
+        },
+        "timestamps": {
+          "started": "2026-02-05T11:00:00.000Z",
+          "lastUpdated": "2026-02-05T16:00:00.000Z",
+          "completedAt": "2026-02-05T16:00:00.000Z"
+        },
+        "ralplan": {
+          "iterations": 1,
+          "criticVerdict": "OKAY",
+          "completedAt": "2026-02-05T11:45:00.000Z"
+        }
+      },
+      "scripts": {
+        "phase": "completed",
+        "phaseNumber": 6,
+        "matchRate": 100,
+        "iterationCount": 0,
+        "requirements": [],
+        "documents": {},
+        "timestamps": {
+          "started": "2026-02-02T03:17:36.948Z",
+          "lastUpdated": "2026-02-15T22:42:01.491Z",
+          "completedAt": "2026-02-15T03:09:53.926Z"
+        }
+      },
+      "google_docs": {
+        "phase": "completed",
+        "phaseNumber": 6,
+        "matchRate": 100,
+        "iterationCount": 0,
+        "requirements": [],
+        "documents": {},
+        "timestamps": {
+          "started": "2026-02-03T06:01:57.034Z",
+          "lastUpdated": "2026-02-15T19:05:27.425Z",
+          "completedAt": "2026-02-15T00:00:00.000Z"
+        }
+      },
+      ".claude": {
+        "phase": "completed",
+        "phaseNumber": 6,
+        "matchRate": 100,
+        "iterationCount": 0,
+        "requirements": [],
+        "documents": {},
+        "timestamps": {
+          "started": "2026-02-06T05:14:03.765Z",
+          "lastUpdated": "2026-02-15T21:40:48.732Z",
+          "completedAt": "2026-02-15T00:00:00.000Z"
+        }
+      },
+      "pdf_utils": {
+        "phase": "completed",
+        "phaseNumber": 6,
+        "matchRate": 100,
+        "iterationCount": 0,
+        "requirements": [],
+        "documents": {},
+        "timestamps": {
+          "started": "2026-02-06T09:22:40.448Z",
+          "lastUpdated": "2026-02-06T09:33:12.725Z",
+          "completedAt": "2026-02-15T00:00:00.000Z"
+        }
+      },
+      "slack": {
+        "phase": "completed",
+        "phaseNumber": 6,
+        "matchRate": 100,
+        "iterationCount": 0,
+        "requirements": [],
+        "documents": {},
+        "successor_plan": "daily-redesign",
+        "timestamps": {
+          "started": "2026-02-02T05:42:47.909Z",
+          "lastUpdated": "2026-02-05T07:24:52.949Z",
+          "completedAt": "2026-02-15T00:00:00.000Z"
+        }
+      },
+      "gmail": {
+        "phase": "completed",
+        "phaseNumber": 6,
+        "matchRate": 100,
+        "iterationCount": 0,
+        "requirements": [],
+        "documents": {},
+        "successor_plan": "daily-redesign",
+        "timestamps": {
+          "started": "2026-02-12T11:18:28.270Z",
+          "lastUpdated": "2026-02-12T11:18:28.270Z",
+          "completedAt": "2026-02-15T00:00:00.000Z"
+        }
+      },
+      "mockup_hybrid": {
+        "phase": "do",
+        "phaseNumber": 3,
+        "matchRate": null,
+        "iterationCount": 0,
+        "requirements": [],
+        "documents": {},
+        "timestamps": {
+          "started": "2026-02-15T18:10:00.221Z",
+          "lastUpdated": "2026-02-15T20:19:06.711Z"
+        },
+        "lastFile": "C:\\claude\\lib\\mockup_hybrid\\export_utils.py"
+      }
+    },
+    "pipeline": {
+      "currentPhase": 2,
+      "level": "Dynamic",
+      "phaseHistory": [
+        {
+          "phase": 1,
+          "feature": "daily-integration",
+          "completedAt": "2026-02-05T11:15:00.000Z"
+        }
+      ]
+    },
+    "session": {
+      "startedAt": "2026-02-16T14:10:00.000Z",
+      "onboardingCompleted": true,
+      "lastActivity": "2026-02-16T14:10:00.000Z"
+    },
+    "history": [
+      {
+        "timestamp": "2026-02-05T11:45:00.000Z",
+        "feature": "daily-integration",
+        "phase": "design",
+        "action": "ralplan_complete",
+        "details": "Critic OKAY - 1 iteration"
+      },
+      {
+        "timestamp": "2026-02-05T16:00:00.000Z",
+        "feature": "daily-integration",
+        "phase": "completed",
+        "action": "completed",
+        "details": "matchRate 97%"
+      },
+      {
+        "timestamp": "2026-02-15T00:00:00.000Z",
+        "feature": "scripts,google_docs,.claude,pdf_utils,slack,gmail,tests,bkit-marketplace,claude,scratchpad,tmux-install,agents,teams",
+        "phase": "completed",
+        "action": "bulk_complete",
+        "details": "Lean Workflow v1 정리 - 13개 피처 일괄 완료"
+      },
+      {
+        "timestamp": "2026-02-16T10:00:00.000Z",
+        "feature": "auto-work-unification",
+        "phase": "completed",
+        "action": "completed",
+        "details": "matchRate 95% - /work→/auto 통합, 3-tier 복잡도, 인과관계 보존"
+      },
+      {
+        "timestamp": "2026-02-16T14:10:00.000Z",
+        "feature": "workflow-review",
+        "phase": "do",
+        "action": "started",
+        "details": "OMC BKIT Vercel BP 워크플로우 전면 재검토 - adapters/core/tests 완료 통합"
+      }
+    ]
+  }
+}

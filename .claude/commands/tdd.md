@@ -132,8 +132,8 @@ Follow TDD best practices with Red-Green-Refactor workflow and git integration.
 
 ## Integration with Agents
 
-- **test-engineer**: Generate test suggestions
-- **debugger**: Fix failing tests
+- **qa-tester**: Generate test suggestions
+- **architect**: Fix failing tests
 - **code-reviewer**: Review refactoring
 
 ## Related

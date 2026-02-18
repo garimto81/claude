@@ -28,7 +28,7 @@ from pathlib import Path
 from typing import Optional
 
 
-__version__ = "1.0.0"
+__version__ = "2.0.0"
 __all__ = [
     "MockupBackend",
     "MockupResult",
@@ -41,6 +41,7 @@ class MockupBackend(Enum):
     """목업 생성 백엔드"""
     HTML = "html"
     STITCH = "stitch"
+    MERMAID = "mermaid"
 
 
 class SelectionReason(Enum):
@@ -53,6 +54,8 @@ class SelectionReason(Enum):
     MULTI_SCREEN = "다중 화면 (빠른 생성)"
     API_UNAVAILABLE = "Stitch API 불가"
     RATE_LIMITED = "Rate Limit 초과"
+    FORCE_MERMAID = "강제 Mermaid 옵션"
+    MERMAID_KEYWORD = "다이어그램 키워드 감지"
     DEFAULT = "기본값 (HTML)"
     FALLBACK = "Stitch 실패 → HTML 폴백"
 
@@ -63,6 +66,7 @@ class MockupOptions:
     bnw: bool = True
     force_html: bool = False
     force_hifi: bool = False
+    force_mermaid: bool = False
     screens: int = 1
     prd: Optional[str] = None
     flow: bool = False
@@ -74,15 +78,22 @@ class MockupResult:
     """목업 생성 결과"""
     backend: MockupBackend
     reason: SelectionReason
-    html_path: Path
-    image_path: Path
+    html_path: Optional[Path]
+    image_path: Optional[Path]
     success: bool
     message: str
     fallback_used: bool = False
+    mermaid_code: Optional[str] = None
 
     def __str__(self) -> str:
         status = "✅" if self.success else "❌"
-        backend_emoji = "🤖" if self.backend == MockupBackend.STITCH else "📝"
+
+        if self.backend == MockupBackend.MERMAID:
+            backend_emoji = "📊"
+        elif self.backend == MockupBackend.STITCH:
+            backend_emoji = "🤖"
+        else:
+            backend_emoji = "📝"
 
         lines = [
             f"{backend_emoji} 선택: {self.backend.value.upper()} (이유: {self.reason.value})",
@@ -91,10 +102,16 @@ class MockupResult:
         if self.fallback_used:
             lines.insert(0, "⚠️ Stitch API 실패 → HTML로 폴백")
 
-        lines.extend([
-            f"{status} 생성: {self.html_path}",
-            f"📸 캡처: {self.image_path}",
-        ])
+        lines.append(f"{status} 생성: {self.html_path}")
+
+        if self.image_path:
+            lines.append(f"📸 캡처: {self.image_path}")
+
+        if self.mermaid_code:
+            lines.append("")
+            lines.append("```mermaid")
+            lines.append(self.mermaid_code)
+            lines.append("```")
 
         return "\n".join(lines)
 

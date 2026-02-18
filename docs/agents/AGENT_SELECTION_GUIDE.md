@@ -92,7 +92,7 @@ Task("code-reviewer", "Full code review")
 |-------|------|
 | code-reviewer | 코드 품질 리뷰 |
 | security-auditor | 보안 취약점 스캔 |
-| design-review | UI/UX 리뷰 (Playwright MCP) |
+| design-review | UI/UX 리뷰 (Playwright CLI) |
 
 ### Phase 5: E2E & Security
 
