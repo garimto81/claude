@@ -134,7 +134,7 @@ def main():
                 session_info.append(f"   - {task}")
 
         # Agent Teams/Tasks stale 리소스 정리
-        teams_result = cleanup_stale_agent_teams(ttl_hours=24)
+        teams_result = cleanup_stale_agent_teams(ttl_hours=2)
         if teams_result["teams_deleted"] or teams_result["tasks_deleted"]:
             session_info.append(
                 f"🧹 Teams: {teams_result['teams_deleted']}개, Tasks: {teams_result['tasks_deleted']}개 정리"

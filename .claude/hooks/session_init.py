@@ -8,6 +8,7 @@ SessionStart 이벤트에서 실행됩니다.
 import json
 import subprocess
 import os
+import shutil
 from datetime import datetime, timezone, timedelta
 from pathlib import Path
 
@@ -242,6 +243,39 @@ def cleanup_stale_omc_states(ttl_hours: int = 2) -> list[str]:
     return messages
 
 
+def cleanup_orphan_agent_teams() -> list[str]:
+    """세션 시작 시 고아 Agent Teams 즉시 정리 (TTL 없이 모두 제거)"""
+    messages = []
+    home = Path.home()
+    teams_dir = home / ".claude" / "teams"
+    tasks_dir = home / ".claude" / "tasks"
+
+    # Teams 정리
+    deleted_teams = []
+    if teams_dir.exists():
+        for entry in teams_dir.iterdir():
+            if entry.is_dir():
+                try:
+                    shutil.rmtree(entry)
+                    deleted_teams.append(entry.name)
+                except Exception as e:
+                    messages.append(f"⚠️ 팀 정리 실패: {entry.name} ({e})")
+
+    # Tasks 정리 (teams와 같은 이름만)
+    if tasks_dir.exists():
+        for entry in tasks_dir.iterdir():
+            if entry.is_dir() and entry.name in deleted_teams:
+                try:
+                    shutil.rmtree(entry)
+                except Exception:
+                    pass
+
+    if deleted_teams:
+        messages.append(f"🧹 고아 팀 {len(deleted_teams)}개 정리: {', '.join(deleted_teams[:3])}{'...' if len(deleted_teams) > 3 else ''}")
+
+    return messages
+
+
 def cleanup_stale_global_todos(ttl_hours: int = 2) -> list[str]:
     """~/.claude/todos/ 내 이전 세션의 stale TODO 파일 정리
 
@@ -343,6 +377,7 @@ def main():
         # Stale 상태 정리 (Stop hook 차단 방지)
         stale_messages = cleanup_stale_omc_states(ttl_hours=2)
         stale_messages.extend(cleanup_stale_global_todos(ttl_hours=2))
+        stale_messages.extend(cleanup_orphan_agent_teams())
 
         # Junction 설정
         junction_created, junction_message = setup_commands_junction()
