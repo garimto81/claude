@@ -14,6 +14,12 @@
 | `/research` | Agent Teams (researcher) | code, web, plan, review |
 | `/commit`, `/issue`, `/pr`, `/verify`, `/mockup-hybrid` | 직접 실행 | 각 고유 서브커맨드 |
 
+## 외부 플러그인 연동
+
+| 플러그인 | 역할 | 대체 범위 |
+|---------|------|----------|
+| `frontend-design` | 프론트엔드 미학 가이드라인 (Typography, Color, Motion, Spatial, Anti-Patterns) | `designer` agent의 Aesthetic Guidelines 섹션 대체. agent는 실행에 집중. |
+
 ## Deprecated 스킬
 
 | Deprecated | 리다이렉트 |
