@@ -8,12 +8,13 @@ description: PDF 청킹 - 토큰 기반(텍스트) 또는 페이지 기반(레�
 PDF를 LLM 입력용 청크로 분할합니다.
 **백그라운드 실행**으로 Claude Code 멈춤 현상을 방지합니다.
 
-## 두 가지 모드
+## 세 가지 모드
 
 | 모드 | 옵션 | 특징 | 용도 |
 |------|------|------|------|
 | **토큰** (기본) | - | 텍스트만 추출 | 순수 텍스트 분석 |
 | **페이지** | `--page` | **레이아웃 100% 보존** | 이미지/표 포함, 멀티모달 LLM |
+| **PRD** | `--prd` | 계층형 청킹, 섹션 메타데이터 | PRD/기획서 MD/PDF |
 
 ## Usage
 
@@ -25,6 +26,17 @@ PDF를 LLM 입력용 청크로 분할합니다.
 /chunk <pdf_path> --overlap 100      # 오버랩 지정
 /chunk <pdf_path> --info             # PDF 정보만 확인 (빠름)
 /chunk <pdf_path> --preview 3        # 처음 3개 청크 미리보기
+```
+
+### PRD 모드 (`--prd` 옵션) — MD 및 PDF 지원
+
+```
+/chunk <path>                    # 기본 (PDF 토큰 기반)
+/chunk <path>.md --prd           # PRD 계층형 청킹 (Hierarchical)
+/chunk <path>.md --prd --strategy semantic  # 표/목록 집중 PRD
+/chunk <path>.md --prd --strategy fixed     # 고정 크기 + PRD 메타데이터
+/chunk <path>.md --info          # 토큰 추정 + 추천 전략 출력
+/chunk <path>.pdf --prd          # PDF도 PRD 모드 적용
 ```
 
 ### 페이지 기반 (`--page` 옵션)
@@ -220,6 +232,45 @@ pip install pymupdf tiktoken
       "end_page": 6,
       "char_start": 0,
       "char_end": 15000
+    }
+  ]
+}
+```
+
+### PRD 모드 출력
+
+```json
+{
+  "source_file": "C:\\claude\\docs\\prd.md",
+  "total_pages": 0,
+  "total_chars": 45000,
+  "total_tokens": 15000,
+  "chunk_count": 8,
+  "max_tokens_per_chunk": 8000,
+  "overlap_tokens": 400,
+  "encoding": "cl100k_base",
+  "prd_mode": true,
+  "strategy": "hierarchical",
+  "section_tree": [
+    {"title": "PRD 제목", "level": 1},
+    {"title": "1. 개요", "level": 2},
+    {"title": "2. 요구사항", "level": 2}
+  ],
+  "chunks": [
+    {
+      "chunk_id": 0,
+      "text": "# 1. 개요\n\n내용...",
+      "token_count": 1200,
+      "section_path": ["PRD 제목", "1. 개요"],
+      "level": 2,
+      "parent_summary": "PRD 제목",
+      "prev_chunk_id": null,
+      "next_chunk_id": 1,
+      "has_table": false,
+      "has_code": false,
+      "is_atomic": false,
+      "start_char": 0,
+      "end_char": 3600
     }
   ]
 }
