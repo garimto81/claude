@@ -270,6 +270,53 @@ class SlackClient:
         except SlackApiError as e:
             self._handle_error(e)
 
+    def get_history_with_cursor(
+        self,
+        channel: str,
+        limit: int = 100,
+        oldest: Optional[str] = None,
+        cursor: Optional[str] = None,
+    ) -> tuple[list, Optional[str]]:
+        """cursor 기반 채널 히스토리 페이지네이션.
+
+        Args:
+            channel: Channel ID
+            limit: Max messages per page (default 100)
+            oldest: Only messages after this Unix timestamp
+            cursor: Pagination cursor from previous response
+
+        Returns:
+            (messages, next_cursor) — next_cursor is None if no more pages
+        """
+        self._rate_limiter.wait_if_needed("conversations.history")
+
+        try:
+            params: dict = {"channel": channel, "limit": limit}
+            if oldest is not None:
+                params["oldest"] = oldest
+            if cursor is not None:
+                params["cursor"] = cursor
+
+            response = self._client.conversations_history(**params)
+
+            messages = []
+            for msg in response.data.get("messages", []):
+                messages.append(SlackMessage(
+                    ts=msg["ts"],
+                    text=msg.get("text", ""),
+                    channel=channel,
+                    user=msg.get("user"),
+                    thread_ts=msg.get("thread_ts"),
+                    timestamp=datetime.fromtimestamp(float(msg["ts"])) if msg.get("ts") else None,
+                    files=msg.get("files", []),
+                ))
+
+            next_cursor = response.data.get("response_metadata", {}).get("next_cursor") or None
+            return messages, next_cursor
+        except SlackApiError as e:
+            self._handle_error(e)
+            return [], None
+
     def list_channels(
         self,
         include_private: bool = False,

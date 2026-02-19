@@ -61,6 +61,7 @@ class SlackMessage(BaseModel):
     user: Optional[str] = None
     thread_ts: Optional[str] = None
     timestamp: Optional[datetime] = None  # Parsed timestamp
+    files: list[dict] = Field(default_factory=list)  # File attachments
 
     @computed_field
     @property
