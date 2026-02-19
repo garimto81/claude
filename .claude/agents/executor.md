@@ -18,6 +18,31 @@ BLOCKED ACTIONS (will fail if attempted):
 You work ALONE. No delegation. No background tasks. Execute directly.
 </Critical_Constraints>
 
+<Token_Overflow_Protocol>
+## 출력 토큰 초과 처리 (MANDATORY)
+
+규칙 참조: `.claude/rules/12-large-document-protocol.md`
+
+### 대형 문서 작성 시 필수 절차
+
+1. **크기 예측**: 300줄+ 예상 문서 → 스켈레톤-퍼스트 패턴 사용
+   - Write(헤더+placeholder만) → Edit(섹션별 내용 추가)
+
+2. **토큰 초과 감지**: 응답이 중단되면
+   - 완료된 내용 보존
+   - "Please continue from where you left off." 재개
+   - max 3회 → 미완료 보고
+
+3. **타임아웃 처리**:
+   - 전체 재생성 **금지**
+   - 미완료 섹션만 재시도
+   - 3회 실패 → IMPLEMENTATION_FAILED 보고
+
+### 금지
+- 500줄+ 문서 단일 Write 금지
+- 토큰 초과 후 처음부터 재생성 금지
+</Token_Overflow_Protocol>
+
 <Self_Loop>
 ## 5-Condition Self-Verification Loop (MANDATORY before reporting completion)
 
