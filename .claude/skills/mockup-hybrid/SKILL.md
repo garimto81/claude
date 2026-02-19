@@ -185,25 +185,37 @@ STITCH_API_BASE_URL=https://api.stitch.withgoogle.com/v1
 
 ## --bnw 모드 (frontend-design 기반 모노크롬)
 
-`--bnw` 옵션 사용 시 `designer` 에이전트 + `frontend-design` 플러그인으로 세련된 B&W 목업을 생성한다.
+`--bnw`는 **B&W 스타일 제약**이며, HTML 강제 옵션이 아니다. 3-Tier 라우팅이 먼저 결정된다.
 
 ### 동작 방식
 
 ```
-/auto "화면명" --mockup --bnw
+/auto "요청" --mockup --bnw
       │
       ▼
-designer 에이전트 (frontend-design 플러그인 활성화)
+3-Tier 라우터 (키워드 기반 — 라우팅 우선)
       │
-      ├── B&W 제약 프롬프트 주입
-      │   - 팔레트: #000, #1a1a1a, #2d2d2d, #666, #999, #e5e5e5, #f8f8f8, #fff
-      │   - 아이콘 없음 (텍스트 레이블만, emoji/SVG/icon font 금지)
-      │   - Roboto/Inter/Arial 금지 → 독창적 타이포그래피
-      │   - 비대칭 레이아웃, 여백 리듬, 그리드 시스템 적용
-      │   - border, shadow, 배경 질감 허용 (색상 없이)
+      ├─ 다이어그램 키워드 → Mermaid 생성
+      │   (흐름, 시퀀스, API, DB, ER, 클래스, 상태, 아키텍처 등)
+      │   → --bnw 무시 (Mermaid는 기본 흑백 계열)
       │
-      └── 세련된 모노크롬 HTML 목업 생성
+      └─ UI/화면 키워드 → designer 에이전트 (B&W 제약 주입)
+              (화면, UI, 레이아웃, 페이지, 대시보드, 폼, 와이어프레임 등)
+              │
+              ├── 팔레트: #000, #1a1a1a, #2d2d2d, #666, #999, #e5e5e5, #f8f8f8, #fff
+              ├── 아이콘 없음 (텍스트 레이블만, emoji/SVG/icon font 금지)
+              ├── Roboto/Inter/Arial 금지 → 독창적 타이포그래피
+              ├── 비대칭 레이아웃, 여백 리듬, 그리드 시스템 적용
+              └── border, shadow, 배경 질감 허용 (색상 없이)
 ```
+
+### 크기 및 텍스트 규칙 (필수 적용)
+
+| 항목 | 규칙 |
+|------|------|
+| **최대 규격** | 너비 720px × 높이 1280px (`max-width: 720px; max-height: 1280px`) |
+| **폰트 크기** | body 14px, caption 12px, 제목 최대 22px |
+| **텍스트 우선** | 텍스트로 표현 가능한 요소는 이미지/SVG/아이콘 삽입 금지 — 레이블/텍스트로만 표현 |
 
 ### B&W 팔레트 규칙
 

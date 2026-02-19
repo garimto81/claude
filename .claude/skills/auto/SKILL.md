@@ -202,11 +202,21 @@ SendMessage(type="message", recipient="design-writer", content="설계 문서 �
 - 작업 키워드: "목업", "mockup", "화면 설계", "와이어프레임", "UI 목업"
 - 계획 출력 경로에 `docs/mockups/` 포함
 
-**--mockup --bnw 실행 경로** (executor 직접 생성 금지):
+**--mockup --bnw 실행 경로** (3-Tier 라우팅 먼저, B&W는 스타일 제약일 뿐):
 ```
-designer teammate (subagent_type="designer") → docs/mockups/{name}.html
+--bnw 플래그
+      │
+      ▼
+3-Tier 라우터 (키워드 기반 — 라우팅 우선)
+      │
+      ├─ 다이어그램 키워드 감지 → Mermaid 생성 (--bnw 무시, 흑백 계열로 자동 적용)
+      │   (흐름, 플로우, 시퀀스, API, DB, ER, 클래스, 상태, 아키텍처 등)
+      │
+      └─ UI/화면 키워드 감지 → designer teammate (B&W 제약 주입)
+              (화면, UI, 레이아웃, 페이지, 대시보드, 폼, 와이어프레임 등)
+              └─ docs/mockups/{name}.html
 ```
-executor 또는 executor-high가 `docs/mockups/*.html`을 직접 Write하는 것은 금지. 반드시 --mockup --bnw 라우트(→ designer 에이전트) 경유.
+executor 또는 executor-high가 `docs/mockups/*.html`을 직접 Write하는 것은 금지. UI/화면 라우팅 시 반드시 designer 에이전트 경유.
 
 **옵션 실패 시**: 에러 출력, **절대 조용히 스킵 금지**. 상세: `REFERENCE.md`
 

@@ -41,6 +41,17 @@ Mermaid/PNG/SVG 금지. 상세: `.claude/rules/11-ascii-diagram.md`
 
 ---
 
+# --bnw 모드 제약 (B&W 목업 전용)
+
+Task prompt에 `--bnw` 또는 B&W 목업 지시가 있을 때 반드시 적용:
+
+- **최대 규격**: 너비 720px, 높이 1280px 이내 (`max-width: 720px; max-height: 1280px;`)
+- **폰트 크기**: 규격에 맞게 조정 — body 14px, caption 12px, 제목 최대 22px
+- **텍스트 우선**: 텍스트로 표현 가능한 요소는 이미지/SVG/아이콘 삽입 금지 — 레이블/텍스트로만 표현
+- **색상**: 그레이스케일 전용 (#000 ~ #fff), emoji/SVG/icon font 금지
+
+---
+
 # Execution
 
 Match implementation complexity to aesthetic vision:
