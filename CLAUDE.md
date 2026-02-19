@@ -93,7 +93,7 @@ lib/
 
 ### 3. 커맨드 시스템 (`.claude/commands/`)
 
-23개 커맨드 (`/auto`, `/commit`, `/check` 등). 각 `.md` 파일이 슬래시 커맨드 정의.
+21개 커맨드 (`/auto`, `/commit`, `/check` 등). 각 `.md` 파일이 슬래시 커맨드 정의.
 
 ### 4. 에이전트 시스템 (`.claude/agents/`)
 

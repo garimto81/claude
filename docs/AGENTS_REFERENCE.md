@@ -1,182 +1,229 @@
 # Agent 참조 가이드
 
-**목적**: 에이전트 분류 및 활용법
+**버전**: 9.0.0 | **업데이트**: 2026-02-19
 
-**버전**: 8.0.0 | **업데이트**: 2026-02-15 | **PRD**: PRD-0031
-
----
-
-## 에이전트 구조
-
-| 계층 | 위치 | 개수 | 역할 |
-|------|------|------|------|
-| **내장** | Claude Code | 4개 | 기본 subagent |
-| **커스텀** | `.claude/agents/` | 8개 | 전문 에이전트 |
-| **스킬** | `.claude/skills/` | 48개 | 자동/수동 트리거 |
-| **MCP** | `.claude.json` | 1개 | 외부 도구 연동 |
+> **v9.0.0**: OMC 플러그인 완전 제거 (2026-02-18). 42개 로컬 에이전트로 전환 완료.
+> 모든 에이전트는 `.claude/agents/`에서 직접 로드됩니다.
 
 ---
 
-## 1. 내장 Subagent (4개)
+## 에이전트 구조 (42개)
 
-| Agent | 용도 | 호출 |
-|-------|------|------|
-| `general-purpose` | 복잡한 다단계 작업 | `Task(subagent_type="general-purpose")` |
-| `Explore` | 코드베이스 빠른 탐색 | `Task(subagent_type="Explore")` |
-| `Plan` | 구현 계획 설계 | 자동 (Plan Mode) |
-| `debugger` | 버그 분석/수정 | `Task(subagent_type="debugger")` |
+```
+  .claude/agents/ (42개 로컬 에이전트)
+  ├── 실행 계층 (3개)     executor, executor-high, executor-low
+  ├── 설계 계층 (5개)     architect, architect-medium, architect-low, planner, analyst, critic
+  ├── 탐색 계층 (5개)     explore, explore-medium, explore-high, researcher, researcher-low
+  ├── 품질 계층 (10개)    code-reviewer, qa-tester, security-reviewer, build-fixer, tdd-guide, gap-detector (+low/-high 변형)
+  ├── UI 계층 (4개)       designer, designer-high, designer-low, frontend-dev
+  ├── 도메인 계층 (10개)  ai-engineer, cloud-architect, database-specialist, data-specialist,
+  │                       devops-engineer, github-engineer, claude-expert, catalog-engineer,
+  │                       scientist, scientist-high, scientist-low
+  └── 특수 목적 (2개)     vision, writer
+```
 
----
-
-## 2. 커스텀 에이전트 (8개)
-
-### Tier 2: DOMAIN (5개) - 도메인별 전문
-
-| Agent | 용도 | 모델 |
-|-------|------|------|
-| `devops-engineer` | CI/CD, 인프라, K8s | sonnet |
-| `cloud-architect` | 클라우드, 네트워크 | sonnet |
-| `database-specialist` | DB 설계, 최적화 | sonnet |
-| `data-specialist` | 데이터, ML 파이프라인 | sonnet |
-| `ai-engineer` | LLM, RAG 시스템 | sonnet |
-
-### Tier 4: TOOLING (3개) - 도구 전문
-
-| Agent | 용도 | 모델 |
-|-------|------|------|
-| `github-engineer` | GitHub 워크플로우 | haiku |
-| `claude-expert` | Claude Code, MCP, 에이전트 | opus |
-| `catalog-engineer` | WSOPTV 카탈로그/제목 생성 (Block F/G) | sonnet |
-
-**OMC 대체 에이전트**: 삭제된 11개 로컬 에이전트의 기능은 OMC 에이전트로 대체됩니다: architect, code-reviewer, qa-tester, security-reviewer, designer, writer, executor (TypeScript/Python/Frontend/Backend/Fullstack 포함)
+**모델 티어**: sonnet = 표준/복잡, haiku = 빠른/단순
 
 ---
 
-## 3. MCP 서버 (1개)
+## 1. 실행 계층 (Executor Tier)
 
-### 설치된 MCP
+| 에이전트 | 모델 | 설명 | 사용 시점 |
+|---------|------|------|----------|
+| `executor` | sonnet | 구현 작업 실행 전문가 | 표준 코드 변경, /auto PDCA |
+| `executor-high` | sonnet | 복잡한 다중 파일 작업 | 4+ 파일 변경, 아키텍처 수준 구현 |
+| `executor-low` | haiku | 단순 단일 파일 작업 | 1-2줄 수정, 사소한 변경 |
 
-| MCP | 패키지 | 용도 |
-|-----|--------|------|
-| `code-reviewer` | `@vibesnipe/code-review-mcp` | AI 코드 리뷰 |
-
-### 내장 기능으로 대체됨
-
-| 기존 MCP | 대체 내장 기능 |
-|----------|---------------|
-| `context7` (기술 문서) | `WebSearch` + `WebFetch` |
-| `sequential-thinking` (추론) | `Extended Thinking` (Claude 4 내장) |
-| `taskmanager` (작업 관리) | `TodoWrite` / `TodoRead` |
-| `exa` (웹 검색) | `WebSearch` |
-
-### 추가 권장
-
-| MCP | 패키지 | 용도 |
-|-----|--------|------|
-| `github` | `@anthropic/mcp-server-github` | GitHub API 통합 |
-
-### 설치 방법
-
-```bash
-# 설치
-claude mcp add <name> -- npx -y <package>
-
-# 목록 확인
-claude mcp list
-
-# 제거
-claude mcp remove <name>
+**호출 예시:**
+```python
+Task(subagent_type="executor", model="sonnet", ...)
+Task(subagent_type="executor-high", model="sonnet", ...)
+Task(subagent_type="executor-low", model="haiku", ...)
 ```
 
 ---
 
-## 4. 에이전트 사용 가이드
+## 2. 설계 계층 (Architecture Tier)
 
-### 호출 방법
-
-```
-"Use the [agent-name] agent to [task]"
-
-예:
-- "Use the code-reviewer agent to review this PR"
-- "Use the architect agent to design the API"
-- "Use the test-engineer agent to write E2E tests"
-```
-
-### 선택 기준
-
-| 상황 | 추천 에이전트 |
-|------|--------------|
-| 코드 작성 후 리뷰 | code-reviewer |
-| 설계 결정 필요 | architect |
-| 버그 분석 | debugger |
-| 테스트 작성 | qa-tester |
-| 보안 점검 | security-reviewer |
-| 문서 작성 | writer |
-| React/UI 개발 | designer |
-| API 개발 | executor |
-| 전체 기능 개발 | executor-high |
-| CI/CD, K8s | `devops-engineer` |
-| AWS/Azure/GCP | `cloud-architect` |
-| DB 설계/최적화 | `database-specialist` |
-| 데이터/ML | `data-specialist` |
-| LLM/RAG | `ai-engineer` |
-| TS 고급 타입 | executor |
-| Python 고급 | executor |
-| GitHub 워크플로우 | `github-engineer` |
-| Claude Code 설정 | `claude-expert` |
-| WSOPTV 카탈로그 | `catalog-engineer` |
+| 에이전트 | 모델 | 설명 | 사용 시점 |
+|---------|------|------|----------|
+| `architect` | sonnet | 전략적 아키텍처 (READ-ONLY) | 완료 검증, 설계 리뷰 |
+| `architect-medium` | sonnet | 중간 복잡도 아키텍처 | 디버깅, 중간 설계 |
+| `architect-low` | haiku | 빠른 코드 조회 | 단순 함수 설명, 빠른 참조 |
+| `planner` | sonnet | 전략적 작업 계획 수립 | 복잡한 기능 계획 수립 |
+| `analyst` | sonnet | 요구사항 분석 컨설턴트 | 구현 전 요구사항 분석 |
+| `critic` | sonnet | 계획 검토 전문가 | 작업 계획 비판적 검토 |
 
 ---
 
-## 5. 통합 이력 (PRD-0031)
+## 3. 탐색 계층 (Explore Tier)
 
-### 삭제된 에이전트 (→ 내장 기능 대체)
-
-| 에이전트 | 대체 기능 |
-|---------|---------|
-| `context7-engineer` | `WebSearch` / `WebFetch` 내장 |
-| `exa-search-specialist` | `WebSearch` 내장 |
-| `seq-engineer` | `Extended Thinking` 내장 |
-| `taskmanager-planner` | `TodoWrite` 내장 |
-
-### 통합된 에이전트
-
-| 삭제 | 통합 대상 |
-|------|----------|
-| `typescript-pro`, `typescript-expert` | → `typescript-dev` |
-| `database-architect`, `database-optimizer`, `supabase-engineer` | → `database-specialist` |
-| `data-scientist`, `data-engineer`, `ml-engineer` | → `data-specialist` |
-| `deployment-engineer`, `devops-troubleshooter`, `kubernetes-architect`, `terraform-specialist` | → `devops-engineer` |
-| `frontend-developer`, `UI_UX-Designer`, `design-review` | → `frontend-dev` |
-| `backend-architect`, `architect-reviewer`, `graphql-architect` | → `architect` |
-| `test-automator`, `playwright-engineer`, `tdd-orchestrator` | → `test-engineer` |
-| `pragmatic-code-review` | → `code-reviewer` |
-| `api-documenter`, `docs-architect` | → `docs-writer` |
-| `cloud-architect`, `network-engineer` | → `cloud-architect` |
-| `agent-expert`, `command-expert`, `mcp-expert`, `prompt-engineer` | → `claude-expert` |
-
-### 백업 위치
-
-삭제된 에이전트: `.claude/agents.backup/`
+| 에이전트 | 모델 | 설명 | 사용 시점 |
+|---------|------|------|----------|
+| `explore` | haiku | 빠른 코드베이스 탐색 | 파일/패턴 검색, 3회 이하 쿼리 |
+| `explore-medium` | sonnet | 중간 탐색 (추론 포함) | 보통 탐색, 다중 위치 검색 |
+| `explore-high` | sonnet | 심층 아키텍처 탐색 | 시스템 전체 이해, 복잡한 분석 |
+| `researcher` | sonnet | 외부 문서/참조 조사 | 웹 검색, API 문서 조사 |
+| `researcher-low` | haiku | 빠른 문서 조회 | 단순 문서 참조 |
 
 ---
 
-## 버전 이력
+## 4. 품질 계층 (Quality Tier)
 
-| 버전 | 날짜 | 변경 |
-|------|------|------|
-| 8.1.0 | 2026-02-18 | /auto v21.0: 내부 Skill() 호출 제거 (ralplan/ralph/ultraqa → Agent Teams 단일 패턴) |
-| 8.0.0 | 2026-02-15 | OMC 중복 제거 (19개 → 8개: 11개 에이전트를 OMC 플러그인으로 대체) |
-| 7.1.0 | 2026-02-13 | 스킬 개수 동기화 (47개 → 48개: daily 스킬 추가 반영) |
-| 7.0.0 | 2026-02-05 | 모델 정보 동기화 (code-reviewer/docs-writer/github-engineer: sonnet→haiku), 스킬 개수 47개 반영 |
-| 6.8.0 | 2026-01-03 | 스킬 개수 정정 (16개 → 18개: 실제 파일 개수와 동기화) |
-| 6.7.0 | 2025-12-20 | ACE-FCA 스킬 제거 시도 (context-compaction, research-validation) - 실제 미삭제 |
-| 6.6.0 | 2025-12-20 | ACE-FCA 스킬 추가 (17개 → 19개: context-compaction, research-validation) |
-| 6.5.0 | 2025-12-20 | 스킬 개수 수정 (15개 → 17개: command-analytics, google-workspace 추가) |
-| 6.4.0 | 2025-12-17 | 스킬 개수 수정 (13개 → 15개: supabase-integration, vercel-deployment 추가) |
-| 6.3.0 | 2025-12-16 | MCP 정리 (5개 → 1개), 내장 기능 대체 문서화 |
-| 6.2.0 | 2025-12-16 | MCP 5개로 업데이트 (exa, code-reviewer 추가) |
-| 6.1.0 | 2025-12-12 | `catalog-engineer` 추가 (18 → 19개) |
-| 6.0.0 | 2025-12-11 | PRD-0031 적용: 50개 → 18개 통합, MCP 분리 |
-| 5.0.0 | 2025-12-11 | plugins/ → agents/ 이동, 구조 개편 |
+### 코드 리뷰
+
+| 에이전트 | 모델 | 설명 |
+|---------|------|------|
+| `code-reviewer` | sonnet | 품질/보안/유지보수성 코드 리뷰. 심각도 등급 제공 |
+| `code-reviewer-low` | haiku | 소규모 변경 빠른 리뷰 |
+
+### QA 테스트
+
+| 에이전트 | 모델 | 설명 |
+|---------|------|------|
+| `qa-tester` | sonnet | 6종 QA 실행 및 결과 보고 |
+| `qa-tester-high` | sonnet | 종합 프로덕션 수준 QA |
+
+### 보안 리뷰
+
+| 에이전트 | 모델 | 설명 |
+|---------|------|------|
+| `security-reviewer` | sonnet | OWASP Top 10, 시크릿 스캐닝. 사용자 입력/인증/API 코드에 PROACTIVE 사용 |
+| `security-reviewer-low` | haiku | 소규모 변경 빠른 보안 스캔 |
+
+### 빌드 수정
+
+| 에이전트 | 모델 | 설명 |
+|---------|------|------|
+| `build-fixer` | sonnet | 빌드/TypeScript 오류 수정. 최소 diff, 아키텍처 변경 없음 |
+| `build-fixer-low` | haiku | 단순 타입 오류, 단일 라인 수정 |
+
+### TDD & 분석
+
+| 에이전트 | 모델 | 설명 |
+|---------|------|------|
+| `tdd-guide` | sonnet | TDD 전문가. 테스트 먼저 작성 강제. 80%+ 커버리지 |
+| `tdd-guide-low` | haiku | 단순 테스트 케이스 제안 |
+| `gap-detector` | sonnet | 설계 문서와 구현 간 Gap 정량 분석. Match Rate(%) 계산 |
+
+---
+
+## 5. UI 계층 (Design Tier)
+
+| 에이전트 | 모델 | 설명 | 사용 시점 |
+|---------|------|------|----------|
+| `designer` | sonnet | UI/UX 개발 전문가 | 표준 컴포넌트, 인터페이스 |
+| `designer-high` | sonnet | 복잡한 UI 아키텍처 및 디자인 시스템 | 복잡한 UI 아키텍처 |
+| `designer-low` | haiku | 단순 스타일링, 마이너 UI 수정 | CSS 조정, 소규모 변경 |
+| `frontend-dev` | sonnet | 프론트엔드 개발. React/Next.js 성능 최적화 | 전체 프론트엔드 작업 |
+
+> **plugin 연동**: `frontend-design` 플러그인이 designer 에이전트의 Aesthetic Guidelines 제공
+
+---
+
+## 6. 도메인 계층 (Domain Tier)
+
+### 인프라 & 플랫폼
+
+| 에이전트 | 모델 | 전문 분야 |
+|---------|------|----------|
+| `devops-engineer` | sonnet | CI/CD, K8s, Terraform, 트러블슈팅 |
+| `cloud-architect` | sonnet | AWS/Azure/GCP, 네트워킹, 비용 최적화 |
+| `database-specialist` | sonnet | DB 설계, 쿼리 최적화, Supabase, RLS |
+| `github-engineer` | haiku | GitHub Actions, 브랜치 전략, PR 워크플로우 |
+
+### AI & 데이터
+
+| 에이전트 | 모델 | 전문 분야 |
+|---------|------|----------|
+| `ai-engineer` | sonnet | LLM 앱, RAG, 벡터 DB, 프롬프트 엔지니어링 |
+| `data-specialist` | sonnet | 데이터 분석, ETL, ML 파이프라인 |
+| `scientist` | sonnet | 데이터 분석 및 리서치 실행 (python_repl) |
+| `scientist-high` | sonnet | 복잡한 리서치, 가설 검증, ML (python_repl) |
+| `scientist-low` | haiku | 빠른 데이터 검사, 단순 통계 (python_repl) |
+
+### 특화 도구
+
+| 에이전트 | 모델 | 전문 분야 |
+|---------|------|----------|
+| `claude-expert` | sonnet | Claude Code, MCP, 에이전트, 프롬프트 최적화 |
+| `catalog-engineer` | sonnet | WSOPTV 카탈로그 생성, Block F/G 전담 |
+
+---
+
+## 7. 특수 목적 (Special Tier)
+
+| 에이전트 | 모델 | 설명 |
+|---------|------|------|
+| `vision` | sonnet | 이미지, PDF, 다이어그램 시각 분석 |
+| `writer` | haiku | 기술 문서 작성 (README, API docs, 주석) |
+
+---
+
+## 빠른 선택 가이드
+
+```
+  질문: 어떤 에이전트를 써야 하나?
+  │
+  ├─ 코드 작성/수정이 필요한가?
+  │   ├─ 단순 (1-2줄, 1파일) → executor-low (haiku)
+  │   ├─ 표준 (여러 줄, 1-3파일) → executor (sonnet)
+  │   └─ 복잡 (4+ 파일, 아키텍처) → executor-high (sonnet)
+  │
+  ├─ 코드를 탐색/검색해야 하나?
+  │   ├─ 빠른 패턴 검색 → explore (haiku)
+  │   ├─ 다중 위치 탐색 → explore-medium (sonnet)
+  │   └─ 시스템 전체 이해 → explore-high (sonnet)
+  │
+  ├─ 검토/검증이 필요한가?
+  │   ├─ 아키텍처 검증 → architect (sonnet)
+  │   ├─ 코드 품질 → code-reviewer (sonnet)
+  │   ├─ 보안 취약점 → security-reviewer (sonnet)
+  │   └─ QA 실행 → qa-tester (sonnet)
+  │
+  ├─ UI/프론트엔드 작업?
+  │   ├─ 단순 스타일 → designer-low (haiku)
+  │   ├─ 컴포넌트 → designer (sonnet)
+  │   └─ 전체 프론트엔드 → frontend-dev (sonnet)
+  │
+  └─ 특화 도메인?
+      ├─ 클라우드/DevOps → cloud-architect / devops-engineer
+      ├─ 데이터/AI → data-specialist / ai-engineer / scientist
+      ├─ DB → database-specialist
+      └─ 문서화 → writer (haiku)
+```
+
+---
+
+## 에이전트 티어 요약
+
+| 티어 | 에이전트 수 | 모델 분포 |
+|------|------------|----------|
+| 실행 | 3개 | 2 sonnet + 1 haiku |
+| 설계 | 6개 | 5 sonnet + 1 haiku |
+| 탐색 | 5개 | 3 sonnet + 2 haiku |
+| 품질 | 10개 | 7 sonnet + 3 haiku |
+| UI | 4개 | 3 sonnet + 1 haiku |
+| 도메인 | 11개 | 10 sonnet + 1 haiku |
+| 특수 | 3개 | 2 sonnet + 1 haiku |
+| **합계** | **42개** | **32 sonnet + 10 haiku** |
+
+---
+
+## MCP 서버
+
+| MCP | 용도 |
+|-----|------|
+| `sequential-thinking` | 복잡한 문제 단계별 추론 |
+
+설정 위치: `C:\Users\AidenKim\.claude.json`
+
+---
+
+## 변경 이력
+
+| 버전 | 날짜 | 변경 내용 |
+|------|------|----------|
+| 9.0.0 | 2026-02-19 | OMC 플러그인 제거 반영, 42개 로컬 에이전트 전면 재작성 |
+| 8.0.0 | 2026-02-15 | 모델 정보 동기화 |
+| 7.0.0 | 2026-02-05 | 스킬 개수 47개 반영 |
