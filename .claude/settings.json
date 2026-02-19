@@ -7,11 +7,11 @@
         "hooks": [
           {
             "type": "command",
-            "command": "python3 .claude/hooks/checklist_updater.py"
+            "command": "python3 C:/claude/.claude/hooks/checklist_updater.py"
           },
           {
             "type": "command",
-            "command": "python3 .claude/hooks/tmpclaude_cleanup.py"
+            "command": "python3 C:/claude/.claude/hooks/tmpclaude_cleanup.py"
           }
         ]
       }
@@ -22,7 +22,7 @@
         "hooks": [
           {
             "type": "command",
-            "command": "python3 .claude/hooks/branch_guard.py"
+            "command": "python3 C:/claude/.claude/hooks/branch_guard.py"
           }
         ]
       },
@@ -31,7 +31,7 @@
         "hooks": [
           {
             "type": "command",
-            "command": "python3 .claude/hooks/tool_validator.py"
+            "command": "python3 C:/claude/.claude/hooks/tool_validator.py"
           }
         ]
       }
@@ -42,7 +42,7 @@
         "hooks": [
           {
             "type": "command",
-            "command": "python3 .claude/hooks/session_init.py"
+            "command": "python3 C:/claude/.claude/hooks/session_init.py"
           }
         ]
       }
@@ -53,7 +53,7 @@
         "hooks": [
           {
             "type": "command",
-            "command": "node .claude/hooks/post_edit_check.js"
+            "command": "node C:/claude/.claude/hooks/post_edit_check.js"
           }
         ]
       }
@@ -64,7 +64,7 @@
         "hooks": [
           {
             "type": "command",
-            "command": "python3 .claude/hooks/session_cleanup.py"
+            "command": "python3 C:/claude/.claude/hooks/session_cleanup.py"
           }
         ]
       }
