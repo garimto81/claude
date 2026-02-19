@@ -13,7 +13,6 @@ import sys
 DANGEROUS_BASH_PATTERNS = [
     r"rm\s+-rf\s+/",  # rm -rf /
     r"rm\s+-rf\s+\*",  # rm -rf *
-    r"rm\s+-rf\s+~",  # rm -rf ~
     r"format\s+[a-zA-Z]:",  # format C:
     r"mkfs\.",  # mkfs.ext4
     r"dd\s+if=.*of=/dev",  # dd to device
@@ -74,6 +73,15 @@ def is_dangerous_bash(command: str) -> tuple[bool, str]:
 
     for cmd in commands:
         cmd_lower = cmd.lower()
+
+        # rm -rf ~ 계열은 safe path 예외 처리
+        if re.match(r"rm\s+-rf\s+~", cmd_lower):
+            # ~/.claude/teams/ 또는 ~/.claude/tasks/ 경로는 허용
+            if re.match(r"rm\s+-rf\s+~/\.claude/(teams|tasks)/", cmd_lower):
+                continue  # safe — agent teams cleanup
+            # 그 외 rm -rf ~/ 는 차단
+            return True, r"rm\s+-rf\s+~"
+
         for pattern in DANGEROUS_BASH_PATTERNS:
             # 패턴이 명령어 시작 부분에서 매칭되는지 확인
             if re.match(pattern, cmd_lower) or re.search(
