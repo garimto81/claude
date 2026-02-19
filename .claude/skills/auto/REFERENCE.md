@@ -7,6 +7,40 @@
 
 ---
 
+## 출력 토큰 초과 방지 프로토콜 (v22.4)
+
+> 상세 규칙: `.claude/rules/12-large-document-protocol.md`
+
+### PRD/Plan 문서 작성 시 청킹 강제 규칙
+
+**prd-writer, design-writer, reporter** 에이전트 호출 시 prompt에 반드시 포함:
+
+```
+대형 문서 작성 프로토콜 (MANDATORY):
+1. 문서 규모 예측 후 300줄+ → 스켈레톤-퍼스트 패턴 사용
+2. Write(헤더/목차만) → Edit(섹션별 순차 추가)
+3. 단일 Write로 전체 문서 생성 금지
+4. 토큰 초과 시 → Continuation Loop (max 3회, 중단점부터 재개)
+5. 타임아웃 발생 시 → 전체 재생성 금지, 미완료 섹션만 재시도
+```
+
+### 에이전트 타임아웃 처리 (Phase 0.5, 1.2, 2, 5)
+
+문서 생성 에이전트(prd-writer, design-writer, reporter)가 5분+ 무응답 시:
+
+```
+[금지] Lead가 직접 전체 문서 생성 시도 → 동일한 토큰 초과 유발
+[금지] 전체 문서 재생성 Fallback
+
+[올바른 처리]
+1. 완료된 파일 부분 확인 (Read 도구)
+2. 미완료 섹션 목록 파악
+3. 새 에이전트를 미완료 섹션만 담당하도록 spawn
+4. Circuit Breaker: 동일 실패 3회 → 사용자 알림 + 수동 판단 요청
+```
+
+---
+
 ## Agent Teams 운영 규칙 (v21.0)
 
 **모든 에이전트 호출은 Agent Teams in-process 방식을 사용합니다. Skill() 호출 0개.**
