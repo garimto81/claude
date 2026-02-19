@@ -183,14 +183,60 @@ STITCH_API_KEY=your-api-key
 STITCH_API_BASE_URL=https://api.stitch.withgoogle.com/v1
 ```
 
+## --bnw 모드 (frontend-design 기반 모노크롬)
+
+`--bnw` 옵션 사용 시 `designer` 에이전트 + `frontend-design` 플러그인으로 세련된 B&W 목업을 생성한다.
+
+### 동작 방식
+
+```
+/auto "화면명" --mockup --bnw
+      │
+      ▼
+designer 에이전트 (frontend-design 플러그인 활성화)
+      │
+      ├── B&W 제약 프롬프트 주입
+      │   - 팔레트: #000, #1a1a1a, #2d2d2d, #666, #999, #e5e5e5, #f8f8f8, #fff
+      │   - 아이콘 없음 (텍스트 레이블만, emoji/SVG/icon font 금지)
+      │   - Roboto/Inter/Arial 금지 → 독창적 타이포그래피
+      │   - 비대칭 레이아웃, 여백 리듬, 그리드 시스템 적용
+      │   - border, shadow, 배경 질감 허용 (색상 없이)
+      │
+      └── 세련된 모노크롬 HTML 목업 생성
+```
+
+### B&W 팔레트 규칙
+
+| 용도 | 색상 |
+|------|------|
+| 주요 텍스트 | `#000`, `#1a1a1a` |
+| 보조 텍스트 | `#2d2d2d`, `#666` |
+| 비활성/플레이스홀더 | `#999` |
+| 구분선/보더 | `#e5e5e5` |
+| 배경 (밝은) | `#f8f8f8`, `#fff` |
+
+### designer 에이전트 미사용 시 폴백
+
+`designer` 에이전트를 사용할 수 없는 경우 `html_adapter.py`의 개선된 기본 템플릿으로 폴백:
+- Google Fonts 독창적 선택 (`DM Serif Display` + `Space Mono`)
+- 8px 기반 공간 시스템
+- `box-shadow` + 세련된 보더
+
 ## 변경 로그
+
+### v2.1.0 (2026-02-19)
+
+**Features:**
+- `--bnw` 복원 (frontend-design 에이전트 기반 모노크롬 디자인)
+- B&W 팔레트 규칙 정의 (그레이스케일 #000~#fff만)
+- `html_adapter.py` 폴백 템플릿 품질 개선 (Roboto 제거, 독창적 타이포그래피)
 
 ### v2.0.0 (2026-02-16)
 
 **Features:**
 - 3-Tier 자동 선택 (Mermaid/HTML/Stitch)
 - Mermaid 다이어그램 어댑터 (6가지 다이어그램 타입)
-- `--mockup`만으로 자동 라우팅 (`--bnw` 불필요)
+- `--mockup`만으로 자동 라우팅
 - `--mockup mermaid/html/hifi` 강제 지정 옵션
 
 ### v1.0.0 (2026-01-23)

@@ -14,7 +14,20 @@
 | Phase 2 설계 문서 (`docs/02-design/`) | O |
 | 아키텍처 설명 (사용자 응답) | O |
 | 워크플로우/흐름도 | O |
-| UI 레이아웃/와이어프레임 | O |
+| UI 레이아웃/와이어프레임 (터미널 응답) | O |
+| PRD/문서의 UI 목업 | X (--mockup --bnw 사용) |
+
+## 적용 제외 대상 (--mockup --bnw 사용)
+
+아래 컨텍스트에서는 ASCII 대신 `--mockup --bnw`로 HTML 목업을 생성한다:
+
+| 대상 | 처리 방식 |
+|------|-----------|
+| PRD 내 UI 화면 목업 | `--mockup --bnw` (designer 에이전트 + frontend-design 플러그인) |
+| 최종 보고서/이해관계자 전달물의 시각화 | `--mockup --bnw` |
+| 화면 설계 목업 (docs/mockups/) | `--mockup --bnw` |
+
+**구분 원칙**: 터미널에서 즉시 확인하는 기술 다이어그램 → ASCII / 문서로 저장·전달되는 UI 목업 → `--mockup --bnw`
 
 ## ASCII 다이어그램 스타일 가이드
 
