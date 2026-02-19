@@ -47,6 +47,7 @@ agents:
 | `--dry-run` | 판단만 출력, 실행 안함 |
 | `--eco` | LIGHT 모드 강제 |
 | `--worktree` | feature 전용 worktree 생성 후 해당 경로에서 작업, 완료 시 자동 정리 |
+| `--mockup [파일]` | Phase 3.0에서 mockup-hybrid 실행. 하위 옵션: `--bnw` (B&W 모노크롬, designer+frontend-design), `--force-html`, `--prd=` |
 
 **팀 생성 (MANDATORY):** `TeamCreate(team_name="pdca-{feature}")`
 
@@ -193,9 +194,19 @@ SendMessage(type="message", recipient="design-writer", content="설계 문서 �
 | 옵션 | 스킬 | 옵션 | 스킬 |
 |------|------|------|------|
 | `--gdocs` | `prd-sync` | `--slack <채널>` | Slack 분석 |
-| `--mockup [파일]` | `mockup-hybrid` | `--gmail` | Gmail 분석 |
+| `--mockup [파일] [--bnw]` | `mockup-hybrid` | `--gmail` | Gmail 분석 |
 | `--debate` | `ultimate-debate` | `--daily` | `daily` |
 | `--research` | `research` | `--interactive` | Phase별 승인 |
+
+**--bnw 자동 트리거**: 명시적 `--bnw` 플래그 없이도 아래 조건 감지 시 자동 활성화:
+- 작업 키워드: "목업", "mockup", "화면 설계", "와이어프레임", "UI 목업"
+- 계획 출력 경로에 `docs/mockups/` 포함
+
+**--mockup --bnw 실행 경로** (executor 직접 생성 금지):
+```
+designer teammate (subagent_type="designer") → docs/mockups/{name}.html
+```
+executor 또는 executor-high가 `docs/mockups/*.html`을 직접 Write하는 것은 금지. 반드시 --mockup --bnw 라우트(→ designer 에이전트) 경유.
 
 **옵션 실패 시**: 에러 출력, **절대 조용히 스킵 금지**. 상세: `REFERENCE.md`
 
@@ -366,4 +377,4 @@ Tier 0 CONTEXT → 1 EXPLICIT → 2 URGENT → 3 WORK → 4 SUPPORT → 5 AUTONO
 
 ## 금지 사항
 
-옵션 실패 시 조용히 스킵 / Architect 검증 없이 완료 선언 / 증거 없이 "완료됨" 주장 / 테스트 삭제로 문제 해결 / **TeamDelete 없이 세션 종료** / **architect 에이전트로 파일 생성 시도** / **Skill() 호출 금지 (Agent Teams 단일 패턴)** / **코드 블록 상세, 옵션 워크플로우, impl-manager prompt, Vercel BP**: `REFERENCE.md`
+옵션 실패 시 조용히 스킵 / Architect 검증 없이 완료 선언 / 증거 없이 "완료됨" 주장 / 테스트 삭제로 문제 해결 / **TeamDelete 없이 세션 종료** / **architect 에이전트로 파일 생성 시도** / **Skill() 호출 금지 (Agent Teams 단일 패턴)** / **executor가 `docs/mockups/*.html` 직접 생성 금지** (반드시 designer 에이전트 + --mockup --bnw 라우트 경유) / **코드 블록 상세, 옵션 워크플로우, impl-manager prompt, Vercel BP**: `REFERENCE.md`
