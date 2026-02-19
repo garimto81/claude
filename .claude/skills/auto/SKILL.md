@@ -1,7 +1,7 @@
 ---
 name: auto
 description: PDCA Orchestrator - 통합 자율 워크플로우 (Agent Teams 단일 패턴)
-version: 22.1.0
+version: 22.3.0
 triggers:
   keywords:
     - "/auto"
@@ -24,9 +24,10 @@ agents:
   - writer
 ---
 
-# /auto - PDCA Orchestrator (v22.1)
+# /auto - PDCA Orchestrator (v22.3)
 
 > **핵심**: `/auto "작업"` = Phase 0-5 PDCA 자동 진행. `/auto` 단독 = 자율 발견 모드. `/work`는 `/auto`로 통합됨.
+> **PRD-First**: 요구사항 요청 시 반드시 PRD 문서를 먼저 생성/수정 → 사용자 승인 후 구현 진행 (v22.3).
 > **Agent Teams**: 모든 Phase에서 Agent Teams 단일 패턴 사용. Skill() 호출 0개. State 파일 의존 0개 (pdca-status.json은 진행 추적용, stop hook 비연동). 상세: `REFERENCE.md`
 
 ---
@@ -39,6 +40,7 @@ agents:
 
 | 옵션 | 효과 |
 |------|------|
+| `--skip-prd` | Phase 0.5 PRD 생성/수정 스킵 |
 | `--skip-analysis` | Step 1.0 사전 분석 스킵 |
 | `--no-issue` | Step 1.3 이슈 연동 스킵 |
 | `--strict` | E2E 테스트 1회 실패 즉시 중단 (QA cycle과 무관) |
@@ -47,6 +49,57 @@ agents:
 | `--worktree` | feature 전용 worktree 생성 후 해당 경로에서 작업, 완료 시 자동 정리 |
 
 **팀 생성 (MANDATORY):** `TeamCreate(team_name="pdca-{feature}")`
+
+### Phase 0.5: PRD (요구사항 문서화 — 구현 전 필수)
+
+> **CRITICAL**: 요구사항 요청 시 반드시 PRD 문서를 먼저 생성/수정한 후 구현을 진행합니다. `--skip-prd`로 스킵 가능.
+
+**Step 0.5.1**: 기존 PRD 탐색
+
+```
+# docs/00-prd/ 디렉토리에서 기존 PRD 탐색
+existing_prd = Glob("docs/00-prd/{feature}*.prd.md")
+# 관련 PRD가 없으면 docs/00-prd/ 전체 탐색하여 연관 문서 확인
+if not existing_prd:
+    all_prds = Glob("docs/00-prd/*.prd.md")
+```
+
+**Step 0.5.2**: PRD 생성 또는 수정 — executor teammate
+
+```
+# 기존 PRD 없음 → 신규 생성
+Task(subagent_type="executor", name="prd-writer", team_name="pdca-{feature}",
+     model="sonnet", prompt="[Phase 0.5 PRD] 사용자 요구사항을 PRD 문서로 작성.
+     사용자 요청: {user_request}
+     기존 관련 PRD: {existing_prds_summary}
+     출력: docs/00-prd/{feature}.prd.md
+     필수 섹션: 배경/목적, 요구사항 목록(번호 부여), 기능 범위, 비기능 요구사항, 제약사항, 우선순위.
+     상세 템플릿: REFERENCE.md")
+SendMessage(type="message", recipient="prd-writer", content="PRD 문서 작성 시작.")
+# 완료 대기 → shutdown_request
+
+# 기존 PRD 있음 → 수정
+Task(subagent_type="executor", name="prd-writer", team_name="pdca-{feature}",
+     model="sonnet", prompt="[Phase 0.5 PRD Update] 기존 PRD를 요구사항에 맞게 수정.
+     기존 PRD: docs/00-prd/{existing_prd_file}
+     추가/변경 요구사항: {user_request}
+     변경 이력을 ## Changelog 섹션에 기록.")
+SendMessage(type="message", recipient="prd-writer", content="PRD 수정 시작.")
+# 완료 대기 → shutdown_request
+```
+
+**Step 0.5.3**: 사용자 승인 (MANDATORY)
+
+```
+# PRD 내용을 사용자에게 제시
+prd_content = Read("docs/00-prd/{feature}.prd.md")
+# AskUserQuestion으로 승인 요청
+# 승인 → Phase 1 진입
+# 수정 요청 → Step 0.5.2 재실행 (수정 반영, max 3회)
+# 3회 초과 → 현재 PRD로 Phase 1 진입 (경고 포함)
+```
+
+**산출물**: `docs/00-prd/{feature}.prd.md`
 
 ### Phase 1: PLAN (사전 분석 → 복잡도 판단 → 계획 수립 → 이슈 연동)
 
@@ -76,6 +129,7 @@ Task(subagent_type="explore", name="issue-analyst", team_name="pdca-{feature}",
 ```
 Task(subagent_type="planner", name="planner", team_name="pdca-{feature}",
      model="haiku", prompt="(복잡도: LIGHT {score}/5). docs/01-plan/{feature}.plan.md 생성.
+     PRD 참조: docs/00-prd/{feature}.prd.md (있으면 반드시 기반으로 계획 수립).
      사용자 확인/인터뷰 단계 건너뛰고 바로 계획 문서를 작성하세요.")
 SendMessage(type="message", recipient="planner", content="계획 수립 시작.")
 # 완료 대기 → shutdown_request
@@ -87,6 +141,7 @@ SendMessage(type="message", recipient="planner", content="계획 수립 시작."
 ```
 Task(subagent_type="planner", name="planner", team_name="pdca-{feature}",
      model="sonnet", prompt="(복잡도: STANDARD {score}/5). docs/01-plan/{feature}.plan.md 생성.
+     PRD 참조: docs/00-prd/{feature}.prd.md (있으면 반드시 기반으로 계획 수립).
      사용자 확인/인터뷰 단계 건너뛰세요. Critic-Lite가 검토합니다.")
 SendMessage(type="message", recipient="planner", content="계획 수립 시작.")
 # 완료 대기 → shutdown_request
@@ -290,6 +345,7 @@ SendMessage(type="message", recipient="reporter", content="보고서 생성 요�
 | | LIGHT (0-1) | STANDARD (2-3) | HEAVY (4-5) |
 |------|:-----------:|:--------------:|:-----------:|
 | **Phase 0** | TeamCreate | TeamCreate | TeamCreate |
+| **Phase 0.5** | PRD 생성/수정 + 사용자 승인 | PRD 생성/수정 + 사용자 승인 | PRD 생성/수정 + 사용자 승인 |
 | **Phase 1** | haiku 계획 + Lead QG | sonnet 계획 + Critic-Lite | Planner-Critic Loop |
 | **Phase 2** | 스킵 | executor (sonnet) 설계 | executor-high (sonnet) 설계 |
 | **Phase 3.1** | executor (sonnet) | impl-manager (sonnet) | impl-manager (sonnet) + 병렬 |
