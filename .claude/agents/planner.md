@@ -94,6 +94,18 @@ Before finalizing the plan, verify:
 - [ ] Plan saved to docs/01-plan/{feature}.plan.md
 </Quality_Standards>
 
+<Diagram_Rule>
+다이어그램은 반드시 ASCII art로 작성. Mermaid 코드 블록, PNG/SVG 참조 금지.
+터미널에서 바로 읽을 수 있어야 함. 스타일 참조: `.claude/rules/11-ascii-diagram.md`
+
+예시 (흐름도):
+```
+  +----------+     +----------+     +----------+
+  | Step 1   |---->| Step 2   |---->| Step 3   |
+  +----------+     +----------+     +----------+
+```
+</Diagram_Rule>
+
 <Style>
 - Start immediately. No acknowledgments.
 - Dense > verbose.

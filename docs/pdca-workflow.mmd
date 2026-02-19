@@ -1,0 +1,68 @@
+flowchart TB
+    subgraph Phase0["Phase 0: INIT"]
+        A[사용자 요청] --> B[옵션 파싱]
+        B --> C[TeamCreate]
+    end
+
+    subgraph Phase05["Phase 0.5: PRD"]
+        D[기존 PRD 탐색] --> E{PRD 존재?}
+        E -->|No| F[신규 PRD 생성]
+        E -->|Yes| G[PRD 수정]
+        F --> H[사용자 승인]
+        G --> H
+    end
+
+    subgraph Phase1["Phase 1: PLAN"]
+        I[병렬 탐색] --> J[복잡도 판단]
+        J -->|0-1| K[LIGHT]
+        J -->|2-3| L[STANDARD]
+        J -->|4-5| M[HEAVY]
+        K --> N[Planner haiku]
+        L --> O[Planner + Critic-Lite]
+        M --> P[Planner-Critic Loop]
+    end
+
+    subgraph Phase2["Phase 2: DESIGN"]
+        Q{모드?}
+        Q -->|LIGHT| R[스킵]
+        Q -->|STANDARD| S[executor 설계]
+        Q -->|HEAVY| T[executor-high 설계]
+    end
+
+    subgraph Phase3["Phase 3: DO"]
+        U[구현 실행] --> V[Architect Gate]
+        V -->|APPROVE| W[Phase 4 진입]
+        V -->|REJECT| X[Domain-Smart Fix]
+        X --> V
+    end
+
+    subgraph Phase4["Phase 4: CHECK"]
+        Y[QA Runner 6종] --> Z{통과?}
+        Z -->|Yes| AA[Architect 검증]
+        Z -->|No| AB[Root Cause 진단]
+        AB --> AC[Domain Fix]
+        AC --> Y
+        AA --> AD{APPROVE?}
+    end
+
+    subgraph Phase5["Phase 5: ACT"]
+        AE[보고서 생성] --> AF[Safe Cleanup]
+        AF --> AG[TeamDelete]
+        AG --> AH[완료]
+    end
+
+    Phase0 --> Phase05
+    Phase05 --> Phase1
+    Phase1 --> Phase2
+    Phase2 --> Phase3
+    Phase3 --> Phase4
+    AD -->|Yes| Phase5
+    AD -->|No| Phase3
+
+    style Phase0 fill:#1a1a2e,stroke:#16213e,color:#e94560
+    style Phase05 fill:#1a1a2e,stroke:#16213e,color:#e94560
+    style Phase1 fill:#0f3460,stroke:#16213e,color:#e94560
+    style Phase2 fill:#0f3460,stroke:#16213e,color:#e94560
+    style Phase3 fill:#533483,stroke:#16213e,color:#e94560
+    style Phase4 fill:#533483,stroke:#16213e,color:#e94560
+    style Phase5 fill:#2b2d42,stroke:#16213e,color:#e94560
