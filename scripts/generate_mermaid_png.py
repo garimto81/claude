@@ -9,7 +9,7 @@ from pathlib import Path
 from playwright.async_api import async_playwright
 
 
-async def mermaid_to_png(mermaid_code: str, output_path: Path, width: int = 1200):
+async def mermaid_to_png(mermaid_code: str, output_path: Path, width: int = 720):
     """Mermaid 코드를 PNG로 변환"""
 
     html_content = f"""
@@ -62,7 +62,7 @@ async def mermaid_to_png(mermaid_code: str, output_path: Path, width: int = 1200
             browser = await p.chromium.launch()
             page = await browser.new_page()
 
-            await page.set_viewport_size({"width": width, "height": 800})
+            await page.set_viewport_size({"width": width, "height": 4000})
             await page.goto(f"file:///{html_path}")
 
             # Mermaid 렌더링 대기
