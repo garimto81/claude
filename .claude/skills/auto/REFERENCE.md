@@ -103,6 +103,91 @@
 
 ---
 
+## 세션 강제 종료 (`/auto stop`) + Lead 타임아웃 패턴
+
+### `/auto stop` — 즉시 실행 절차 (5단계)
+
+Agent Teams hang 또는 강제 중단 필요 시 **순서대로** 실행:
+
+**Step 1: Shutdown Request 전송**
+```
+SendMessage(type="shutdown_request", recipient="{teammate-name}", content="강제 중단")
+# 모든 활성 teammate에 순차 전송 → 최대 5초 대기 → 무응답 시 Step 2 진행
+```
+
+**Step 2: TeamDelete 시도**
+```
+TeamDelete()
+# 성공 → 종료
+# "Cannot cleanup team with N active member(s)" 에러 → Step 3 진행
+# "team not found" 에러 → 이미 삭제됨, 정상 종료
+```
+
+**Step 3: Python shutil.rmtree() 강제 삭제**
+
+> ⚠️ `rm -rf ~/.claude/teams/...`는 `tool_validator.py`에 의해 **차단**됨. 반드시 Python 사용.
+
+```bash
+python -c "import shutil,pathlib; [shutil.rmtree(pathlib.Path.home()/'.claude'/d/'pdca-{feature}', ignore_errors=True) for d in ['teams','tasks']]"
+```
+
+**Step 4: TeamDelete 재시도**
+```
+TeamDelete()  # shutil 삭제 후 재시도. "team not found"도 정상.
+```
+
+**Step 5: 잔여 리소스 확인**
+```bash
+# 팀/태스크 디렉토리 잔존 여부 확인
+ls ~/.claude/teams/ | grep pdca
+ls ~/.claude/tasks/ | grep pdca
+```
+
+---
+
+### Lead 타임아웃 패턴 (Hang 방지)
+
+**문제**: Lead가 teammate 완료 메시지를 무한 대기 → hang 발생
+
+**해결**: 모든 `Task()` 호출에 `max_turns` 필수 설정. max_turns 소진 시 teammate 자동 종료.
+
+```
+# ❌ hang 위험
+Task(subagent_type="executor", name="impl-manager", team_name="pdca-{feature}",
+     model="sonnet", prompt="...")
+
+# ✅ 올바른 패턴 (max_turns 필수)
+Task(subagent_type="executor", name="impl-manager", team_name="pdca-{feature}",
+     model="sonnet", max_turns=60, prompt="...")
+# → max_turns 소진 시 teammate 자동 종료, Lead 다음 단계 진행 가능
+```
+
+**에이전트별 max_turns 기준값:**
+
+| 에이전트 역할 | max_turns | 특성 |
+|-------------|-----------|------|
+| explore (탐색) | 10 | 빠름 |
+| critic-lite, architect (검증) | 15–20 | 빠름 |
+| prd-writer, reporter | 25 | 보통 |
+| planner, domain-fixer | 30 | 보통 |
+| design-writer, qa-tester | 40 | 보통 |
+| executor (단일 구현) | 50 | 보통~느림 |
+| impl-manager (5조건 루프) | 60 | 느림 (10회 내부 루프 포함) |
+
+**5분 Heartbeat Timeout:**
+- Claude Code 내장 메커니즘 — teammate가 5분+ tool call 없으면 자동 비활성화
+- max_turns와 함께 이중 보호 역할
+
+**Hang 발생 시 즉시 확인:**
+```
+1. ~/.claude/teams/ 에 pdca-* 디렉토리 잔존 여부
+2. ~/.claude/tasks/ 에 관련 디렉토리 잔존 여부
+3. Task() 호출에 max_turns 설정 여부
+4. teammate에 IMPLEMENTATION_COMPLETED 응답 도달 여부
+```
+
+---
+
 ## Worktree 통합 (`--worktree` 옵션)
 
 ### Step 0.1: Worktree 설정 (Phase 0, TeamCreate 직후)

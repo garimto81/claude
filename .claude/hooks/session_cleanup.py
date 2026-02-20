@@ -68,7 +68,7 @@ def cleanup_temp_files(files: list) -> int:
     return cleaned
 
 
-def cleanup_stale_agent_teams(ttl_hours: int = 24) -> dict:
+def cleanup_stale_agent_teams(ttl_hours: int = 2) -> dict:
     """Agent Teams/Tasks 디렉토리 중 TTL 초과한 항목 삭제"""
     home = Path.home()
     teams_dir = home / ".claude" / "teams"
