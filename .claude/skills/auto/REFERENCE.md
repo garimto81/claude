@@ -107,7 +107,62 @@
 
 ## 세션 강제 종료 (`/auto stop`) + Lead 타임아웃 패턴
 
+### 🚨 Nuclear Option — Ctrl+C도 안 될 때 (외부 터미널 긴급 종료)
+
+> **이 상황**: Claude Code 자체가 frozen. Ctrl+C 무효. `/auto stop` 입력 불가.
+> **원인**: Node.js 이벤트 루프가 teammate IPC await 상태에서 블락. SIGINT 큐에만 쌓이고 처리 불가.
+> **해결**: **별도** PowerShell/CMD 창에서 외부 스크립트 실행.
+
+```
+┌─────────────────────────────────────────────────────┐
+│  Claude Code가 frozen?                               │
+│                                                      │
+│  Step 1: 새 PowerShell 창 열기 (Win+X → Terminal)    │
+│                                                      │
+│  Step 2: 긴급 종료 스크립트 실행                       │
+│  > python C:\claude\.claude\scripts\emergency_stop.py│
+│                                                      │
+│  또는 즉시 전체 종료 (확인 없이):                      │
+│  > python C:\claude\.claude\scripts\emergency_stop.py│
+│    --force                                           │
+│                                                      │
+│  Step 3: Claude Code 재시작                           │
+│  > claude                                            │
+└─────────────────────────────────────────────────────┘
+```
+
+**emergency_stop.py 실행 순서:**
+1. `~/.claude/teams/` + `~/.claude/tasks/` 고아 항목 전체 삭제
+2. `~/.claude/todos/` stale TODO 초기화
+3. `node.exe` (Claude Code) PID 탐색 → `taskkill /F /PID` 강제 종료
+
+**왜 Ctrl+C가 무효인가?**
+- Claude Code(Node.js)는 teammate 완료 메시지를 `await`로 기다림
+- 이벤트 루프가 `await` 상태에서 IPC 소켓 read()를 OS 레벨로 대기
+- Windows CTRL_C_EVENT → Node.js SIGINT 핸들러 → 이벤트 루프가 처리해야 하는데
+  이벤트 루프 자체가 블락 → SIGINT 핸들러가 실행될 기회가 없음
+- 결과: Ctrl+C가 눌려도 프로세스 상태 변화 없음
+
+**수동 긴급 종료 (스크립트 없을 때):**
+```powershell
+# 새 PowerShell 창에서:
+
+# 1) Claude Code PID 확인
+wmic process where "name='node.exe'" get processid,commandline
+
+# 2) 해당 PID 강제 종료
+taskkill /F /PID <확인된_PID>
+
+# 3) 고아 팀 Python 정리
+python -c "import shutil,pathlib; home=pathlib.Path.home(); [shutil.rmtree(p,ignore_errors=True) for d in ['teams','tasks'] for p in (home/'.claude'/d).iterdir() if p.is_dir()]"
+```
+
+---
+
 ### `/auto stop` — 즉시 실행 절차 (5단계)
+
+> **전제**: Claude가 아직 명령을 받을 수 있는 상태일 때.
+> Claude 자체가 frozen이면 위의 **Nuclear Option** 사용.
 
 Agent Teams hang 또는 강제 중단 필요 시 **순서대로** 실행:
 
