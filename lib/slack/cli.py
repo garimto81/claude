@@ -197,6 +197,7 @@ def update(
 def history(
     channel: str = typer.Argument(..., help="Channel ID (C...) or name"),
     limit: int = typer.Option(10, "--limit", "-n", help="Number of messages to retrieve"),
+    cursor: Optional[str] = typer.Option(None, "--cursor", help="Pagination cursor from previous response"),
     json_output: bool = typer.Option(False, "--json", "-j", help="Output as JSON"),
 ):
     """
@@ -207,7 +208,7 @@ def history(
 
     try:
         client = SlackClient()
-        messages = client.get_history(channel, limit=limit)
+        messages, next_cursor = client.get_history_with_cursor(channel, limit=limit, cursor=cursor)
 
         if json_output:
             output = [{
@@ -217,7 +218,13 @@ def history(
                 "thread_ts": msg.thread_ts,
                 "timestamp": msg.timestamp.isoformat() if msg.timestamp else None,
             } for msg in messages]
-            print(json.dumps({"channel": channel, "count": len(messages), "messages": output}, ensure_ascii=False, indent=2))
+            result = {
+                "channel": channel,
+                "count": len(messages),
+                "messages": output,
+                "response_metadata": {"next_cursor": next_cursor or ""},
+            }
+            print(json.dumps(result, ensure_ascii=False, indent=2))
         else:
             if not messages:
                 console.print("[yellow]No messages found.[/yellow]")
@@ -234,6 +241,9 @@ def history(
                     console.print(f"  [dim]↳ {timestamp}[/dim] [cyan]{user_display}[/cyan]: {text_preview}")
                 else:
                     console.print(f"  [dim]{timestamp}[/dim] [cyan]{user_display}[/cyan]: {text_preview}")
+
+            if next_cursor:
+                console.print(f"\n[dim]더 많은 메시지가 있습니다. --cursor {next_cursor} 옵션으로 다음 페이지 조회[/dim]")
     except SlackError as e:
         if json_output:
             print(json.dumps({"error": str(e)}, ensure_ascii=False))
