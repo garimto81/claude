@@ -109,7 +109,7 @@ class MarkdownToDocsConverter:
         - 각주 추출
         - HTML Callout 박스 변환
         """
-        lines = self.content.split("\n")
+        lines = self.content.replace('\r\n', '\n').replace('\r', '\n').split("\n")
         processed_lines = []
         i = 0
 
@@ -266,7 +266,7 @@ class MarkdownToDocsConverter:
         Returns:
             list: batchUpdate에 전달할 요청 리스트
         """
-        lines = self.content.split("\n")
+        lines = self.content.replace('\r\n', '\n').replace('\r', '\n').split("\n")
         i = 0
 
         while i < len(lines):
@@ -1033,6 +1033,7 @@ class MarkdownToDocsConverter:
         """
         # Mermaid 다이어그램 → PNG 이미지로 렌더링
         if lang.lower() == "mermaid":
+            code = code.strip()
             png_path = self._render_mermaid_to_png(code)
             if png_path:
                 self._mermaid_counter += 1
