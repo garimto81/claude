@@ -88,7 +88,7 @@ if not existing_prd:
 ```
 # 기존 PRD 없음 → 신규 생성
 Task(subagent_type="executor", name="prd-writer", team_name="pdca-{feature}",
-     model="sonnet", prompt="[Phase 0.5 PRD] 사용자 요구사항을 PRD 문서로 작성.
+     model="sonnet", max_turns=25, prompt="[Phase 0.5 PRD] 사용자 요구사항을 PRD 문서로 작성.
      사용자 요청: {user_request}
      기존 관련 PRD: {existing_prds_summary}
      출력: docs/00-prd/{feature}.prd.md
@@ -99,7 +99,7 @@ SendMessage(type="message", recipient="prd-writer", content="PRD 문서 작성 �
 
 # 기존 PRD 있음 → 수정
 Task(subagent_type="executor", name="prd-writer", team_name="pdca-{feature}",
-     model="sonnet", prompt="[Phase 0.5 PRD Update] 기존 PRD를 요구사항에 맞게 수정.
+     model="sonnet", max_turns=25, prompt="[Phase 0.5 PRD Update] 기존 PRD를 요구사항에 맞게 수정.
      기존 PRD: docs/00-prd/{existing_prd_file}
      추가/변경 요구사항: {user_request}
      변경 이력을 ## Changelog 섹션에 기록.")
@@ -126,9 +126,9 @@ prd_content = Read("docs/00-prd/{feature}.prd.md")
 
 ```
 Task(subagent_type="explore", name="doc-analyst", team_name="pdca-{feature}",
-     model="haiku", prompt="docs/, .claude/ 내 관련 문서 탐색. 결과 5줄 이내 요약.")
+     model="haiku", max_turns=10, prompt="docs/, .claude/ 내 관련 문서 탐색. 결과 5줄 이내 요약.")
 Task(subagent_type="explore", name="issue-analyst", team_name="pdca-{feature}",
-     model="haiku", prompt="gh issue list로 유사 이슈 탐색. 결과 5줄 이내 요약.")
+     model="haiku", max_turns=10, prompt="gh issue list로 유사 이슈 탐색. 결과 5줄 이내 요약.")
 # 완료 대기 → 각각 SendMessage(type="shutdown_request", recipient="...")
 ```
 
@@ -147,7 +147,7 @@ Task(subagent_type="explore", name="issue-analyst", team_name="pdca-{feature}",
 **LIGHT (0-1점): Planner + Lead Quality Gate**
 ```
 Task(subagent_type="planner", name="planner", team_name="pdca-{feature}",
-     model="haiku", prompt="(복잡도: LIGHT {score}/5). docs/01-plan/{feature}.plan.md 생성.
+     model="haiku", max_turns=30, prompt="(복잡도: LIGHT {score}/5). docs/01-plan/{feature}.plan.md 생성.
      PRD 참조: docs/00-prd/{feature}.prd.md (있으면 반드시 기반으로 계획 수립).
      사용자 확인/인터뷰 단계 건너뛰고 바로 계획 문서를 작성하세요.")
 SendMessage(type="message", recipient="planner", content="계획 수립 시작.")
@@ -159,14 +159,14 @@ SendMessage(type="message", recipient="planner", content="계획 수립 시작."
 **STANDARD (2-3점): Planner + Critic-Lite 단일 검토**
 ```
 Task(subagent_type="planner", name="planner", team_name="pdca-{feature}",
-     model="sonnet", prompt="(복잡도: STANDARD {score}/5). docs/01-plan/{feature}.plan.md 생성.
+     model="sonnet", max_turns=30, prompt="(복잡도: STANDARD {score}/5). docs/01-plan/{feature}.plan.md 생성.
      PRD 참조: docs/00-prd/{feature}.prd.md (있으면 반드시 기반으로 계획 수립).
      사용자 확인/인터뷰 단계 건너뛰세요. Critic-Lite가 검토합니다.")
 SendMessage(type="message", recipient="planner", content="계획 수립 시작.")
 # 완료 대기 → shutdown_request
 # Critic-Lite: Quality Gates 4 검증 (QG1-QG4) — 상세 prompt: REFERENCE.md
 Task(subagent_type="critic", name="critic-lite", team_name="pdca-{feature}",
-     model="sonnet", prompt="[Critic-Lite] QG1-QG4 검증. VERDICT: APPROVE/REVISE.")
+     model="sonnet", max_turns=15, prompt="[Critic-Lite] QG1-QG4 검증. VERDICT: APPROVE/REVISE.")
 SendMessage(type="message", recipient="critic-lite", content="Plan 검토 시작.")
 # REVISE → Planner 1회 수정 → 수정본 수용 (추가 Critic 없음)
 ```
@@ -199,7 +199,7 @@ Loop (i=1..5):
 ```
 # STANDARD 예시 (HEAVY: executor-high + sonnet)
 Task(subagent_type="executor", name="design-writer", team_name="pdca-{feature}",
-     model="sonnet", prompt="docs/01-plan/{feature}.plan.md 참조. 설계 문서 작성. 출력: docs/02-design/{feature}.design.md")
+     model="sonnet", max_turns=40, prompt="docs/01-plan/{feature}.plan.md 참조. 설계 문서 작성. 출력: docs/02-design/{feature}.design.md")
 SendMessage(type="message", recipient="design-writer", content="설계 문서 생성 요청.")
 ```
 
@@ -249,12 +249,12 @@ executor 또는 executor-high가 `docs/mockups/*.html`을 직접 Write하는 것
 ```
 # LIGHT: executor teammate 단일 실행
 Task(subagent_type="executor", name="executor", team_name="pdca-{feature}",
-     model="sonnet", prompt="docs/01-plan/{feature}.plan.md 기반 구현. TDD 필수.")
+     model="sonnet", max_turns=50, prompt="docs/01-plan/{feature}.plan.md 기반 구현. TDD 필수.")
 SendMessage(type="message", recipient="executor", content="구현 시작.")
 
 # STANDARD/HEAVY: impl-manager teammate (5조건 자체 루프) — 상세 prompt: REFERENCE.md
 Task(subagent_type="executor[-high]", name="impl-manager",
-     team_name="pdca-{feature}", model="sonnet",
+     team_name="pdca-{feature}", model="sonnet", max_turns=60,
      prompt="설계 문서 기반 구현. 5조건 자체 루프 (max 10회). 상세 prompt: REFERENCE.md")
 SendMessage(type="message", recipient="impl-manager", content="5조건 구현 루프 시작.")
 # Lead는 IMPLEMENTATION_COMPLETED 또는 IMPLEMENTATION_FAILED 메시지만 수신
@@ -266,7 +266,7 @@ impl-manager 5조건: TODO==0, 빌드 성공, 테스트 통과, 에러==0, 자�
 ```
 # impl-manager IMPLEMENTATION_COMPLETED 수신 후 (STANDARD/HEAVY만)
 Task(subagent_type="architect", name="impl-verifier", team_name="pdca-{feature}",
-     model="sonnet", prompt="[Phase 3 Architect Gate] 구현 외부 검증. 상세: REFERENCE.md")
+     model="sonnet", max_turns=20, prompt="[Phase 3 Architect Gate] 구현 외부 검증. 상세: REFERENCE.md")
 SendMessage(type="message", recipient="impl-verifier", content="구현 검증 시작.")
 # VERDICT: APPROVE → 유의미 변경 커밋 → Phase 4 진입
 #   git status --short 확인 → 변경사항 있으면:
@@ -288,7 +288,7 @@ SendMessage(type="message", recipient="impl-verifier", content="구현 검증 �
 ```
 # Domain-Smart Fix → Architect 재검증 (max 2회)
 Task(subagent_type="{domain-agent}", name="domain-fixer", team_name="pdca-{feature}",
-     model="sonnet", prompt="Architect 거부 사유: {rejection}. DOMAIN: {domain}. 수정 실행.")
+     model="sonnet", max_turns=30, prompt="Architect 거부 사유: {rejection}. DOMAIN: {domain}. 수정 실행.")
 # 수정 완료 → Step 3.2 Architect 재검증
 ```
 
@@ -299,7 +299,7 @@ Task(subagent_type="{domain-agent}", name="domain-fixer", team_name="pdca-{featu
 ```
 # LIGHT: QA 1회 실행. 실패 시 보고만 (STANDARD 자동 승격 검토). 진단/수정 없음.
 Task(subagent_type="qa-tester", name="qa-runner", team_name="pdca-{feature}",
-     model="sonnet", prompt="6종 QA 실행. 상세: REFERENCE.md")
+     model="sonnet", max_turns=40, prompt="6종 QA 실행. 상세: REFERENCE.md")
 # QA_PASSED → Step 4.2 / QA_FAILED → 실패 보고 + STANDARD 승격 조건 확인
 
 # STANDARD/HEAVY: QA 사이클 (max STANDARD:3 / HEAVY:5)
@@ -307,14 +307,14 @@ failure_history = []
 Loop (max_cycles):
   # A. QA Runner teammate
   Task(subagent_type="qa-tester", name="qa-runner-{i}", team_name="pdca-{feature}",
-       model="sonnet", prompt="6종 QA 실행. 상세: REFERENCE.md")
+       model="sonnet", max_turns=40, prompt="6종 QA 실행. 상세: REFERENCE.md")
   # QA_PASSED → Step 4.2 / QA_FAILED → B
   # B. Architect Root Cause 진단 (MANDATORY)
   Task(subagent_type="architect", name="diagnostician-{i}", team_name="pdca-{feature}",
-       model="sonnet", prompt="QA 실패 root cause 진단. 출력: DIAGNOSIS + FIX_GUIDE + DOMAIN.")
+       model="sonnet", max_turns=20, prompt="QA 실패 root cause 진단. 출력: DIAGNOSIS + FIX_GUIDE + DOMAIN.")
   # C. Domain-Smart Fix
   Task(subagent_type="{domain-agent}", name="fixer-{i}", team_name="pdca-{feature}",
-       model="sonnet", prompt="진단 기반 수정: {DIAGNOSIS}. 지침: {FIX_GUIDE}.")
+       model="sonnet", max_turns=30, prompt="진단 기반 수정: {DIAGNOSIS}. 지침: {FIX_GUIDE}.")
 ```
 
 **4종 Exit Conditions:**
@@ -339,7 +339,7 @@ QA Runner 6종 goal, Architect 진단 prompt, Domain routing 상세: `REFERENCE.
 ```
 # LIGHT: architect만 / STANDARD/HEAVY: architect → code-reviewer 순차
 Task(subagent_type="architect", name="verifier", team_name="pdca-{feature}",
-     model="sonnet", prompt="구현이 Plan/Design 요구사항과 일치하는지 검증. APPROVE/REJECT 판정.")
+     model="sonnet", max_turns=20, prompt="구현이 Plan/Design 요구사항과 일치하는지 검증. APPROVE/REJECT 판정.")
 SendMessage(type="message", recipient="verifier", content="검증 시작.")
 # 완료 대기 → shutdown_request → (STANDARD/HEAVY: code-reviewer 순차 spawn)
 # code-reviewer prompt에 Vercel BP 규칙 동적 주입 (React/Next.js 프로젝트 시) — 상세: REFERENCE.md
@@ -368,7 +368,7 @@ SendMessage(type="message", recipient="verifier", content="검증 시작.")
 # 보고서 모델 분기: LIGHT=haiku, STANDARD/HEAVY=sonnet
 report_model = "haiku" if mode == "LIGHT" else "sonnet"
 Task(subagent_type="writer", name="reporter", team_name="pdca-{feature}",
-     model=report_model, prompt="PDCA 완료 보고서 생성. 출력: docs/04-report/{feature}.report.md")
+     model=report_model, max_turns=25, prompt="PDCA 완료 보고서 생성. 출력: docs/04-report/{feature}.report.md")
 SendMessage(type="message", recipient="reporter", content="보고서 생성 요청.")
 # 완료 대기 → shutdown_request
 # 유의미 변경 커밋: git add docs/04-report/ && git commit -m "docs(report): {feature} PDCA 완료 보고서"
