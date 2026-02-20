@@ -49,7 +49,14 @@ agents:
 | `--worktree` | feature 전용 worktree 생성 후 해당 경로에서 작업, 완료 시 자동 정리 |
 | `--mockup [파일]` | Phase 3.0에서 실행. **[파일] 지정 시**: 파일 내 ASCII 탐지 → `11-ascii-diagram.md` 기준 변환 (흐름/시퀀스/아키텍처 → Mermaid 코드 블록, UI 화면/컴포넌트 → HTML 목업 + PNG → Markdown 교체). **[파일] 미지정 시**: 화면명 인수 기반 신규 목업 생성. 하위 옵션: `--bnw` (HTML 목업에 B&W 스타일 제약만, 색상·폰트), `--force-html`, `--prd=` |
 
-**팀 생성 (MANDATORY):** `TeamCreate(team_name="pdca-{feature}")`
+**팀 생성 (MANDATORY):**
+```
+TeamCreate(team_name="pdca-{feature}")
+```
+**TeamCreate 실패 방어 (Orphaned State 복구):**
+- `Already leading team` 에러 발생 시 → `TeamDelete()` 즉시 호출 → `TeamCreate()` 재시도
+- `Team already exists` 에러 발생 시 → `TeamDelete()` 즉시 호출 → `TeamCreate()` 재시도
+- 재시도 1회 실패 시 → 사용자에게 에러 보고 후 중단 (무한 재시도 금지)
 
 ### 유의미 변경 커밋 원칙 (Commit Policy)
 
