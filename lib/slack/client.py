@@ -600,6 +600,61 @@ class SlackClient:
             self._handle_error(e)
 
 
+    def get_channel_info(self, channel_id: str) -> dict:
+        """
+        Get channel information.
+
+        Args:
+            channel_id: Channel ID (C...)
+
+        Returns:
+            Channel info dict
+        """
+        self._rate_limiter.wait_if_needed("conversations.info")
+
+        try:
+            response = self._client.conversations_info(channel=channel_id)
+            return response.data["channel"]
+        except SlackApiError as e:
+            self._handle_error(e)
+
+    def get_channel_members(self, channel_id: str) -> list[str]:
+        """
+        Get channel members.
+
+        Args:
+            channel_id: Channel ID (C...)
+
+        Returns:
+            List of member user IDs
+        """
+        self._rate_limiter.wait_if_needed("conversations.members")
+
+        try:
+            response = self._client.conversations_members(channel=channel_id)
+            return response.data["members"]
+        except SlackApiError as e:
+            self._handle_error(e)
+
+    def get_pins(self, channel_id: str) -> list[dict]:
+        """
+        Get pinned messages in a channel.
+
+        Args:
+            channel_id: Channel ID (C...)
+
+        Returns:
+            List of pinned item dicts
+        """
+        self._rate_limiter.wait_if_needed("pins.list")
+
+        try:
+            response = self._client.pins_list(channel=channel_id)
+            return response.data["items"]
+        except SlackApiError as e:
+            self._handle_error(e)
+
+
 class SlackUserClient(SlackClient):
     """
     Slack client using User Token for features not available to bots.

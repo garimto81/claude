@@ -338,6 +338,69 @@ def user(
         raise typer.Exit(1)
 
 
+@app.command()
+def info(
+    channel: str = typer.Argument(..., help="Channel ID (C...)"),
+    json_output: bool = typer.Option(False, "--json", "-j"),
+):
+    """Get channel information."""
+    from .client import SlackClient
+    from .errors import SlackError
+    try:
+        client = SlackClient()
+        data = client.get_channel_info(channel)
+        if json_output:
+            print(json.dumps({"channel": data}, ensure_ascii=False, indent=2))
+        else:
+            console.print(f"Channel: #{data.get('name')} ({channel})")
+    except SlackError as e:
+        if json_output:
+            print(json.dumps({"error": str(e)}, ensure_ascii=False))
+        raise typer.Exit(1)
+
+
+@app.command()
+def members(
+    channel: str = typer.Argument(..., help="Channel ID (C...)"),
+    json_output: bool = typer.Option(False, "--json", "-j"),
+):
+    """Get channel members."""
+    from .client import SlackClient
+    from .errors import SlackError
+    try:
+        client = SlackClient()
+        member_list = client.get_channel_members(channel)
+        if json_output:
+            print(json.dumps({"members": member_list, "count": len(member_list)}, ensure_ascii=False, indent=2))
+        else:
+            console.print(f"Members: {len(member_list)}")
+    except SlackError as e:
+        if json_output:
+            print(json.dumps({"error": str(e)}, ensure_ascii=False))
+        raise typer.Exit(1)
+
+
+@app.command()
+def pins(
+    channel: str = typer.Argument(..., help="Channel ID (C...)"),
+    json_output: bool = typer.Option(False, "--json", "-j"),
+):
+    """Get pinned messages."""
+    from .client import SlackClient
+    from .errors import SlackError
+    try:
+        client = SlackClient()
+        items = client.get_pins(channel)
+        if json_output:
+            print(json.dumps({"items": items, "count": len(items)}, ensure_ascii=False, indent=2))
+        else:
+            console.print(f"Pins: {len(items)}")
+    except SlackError as e:
+        if json_output:
+            print(json.dumps({"error": str(e)}, ensure_ascii=False))
+        raise typer.Exit(1)
+
+
 # Cache directory for list schemas
 from pathlib import Path
 LIST_SCHEMA_CACHE = Path("C:/claude/json/slack_list_schemas.json")
