@@ -95,6 +95,9 @@ class MarkdownToDocsConverter:
         # Mermaid 렌더링 임시 파일 추적 (cleanup용)
         self._mermaid_temp_files: list[str] = []
 
+        # Mermaid 다이어그램 고유 번호 (placeholder alt text 충돌 방지)
+        self._mermaid_counter: int = 0
+
         # YAML frontmatter 제거 및 참조 링크 파싱
         self._preprocess_content()
 
@@ -1032,7 +1035,8 @@ class MarkdownToDocsConverter:
         if lang.lower() == "mermaid":
             png_path = self._render_mermaid_to_png(code)
             if png_path:
-                self._add_image_block(png_path, "Mermaid Diagram")
+                self._mermaid_counter += 1
+                self._add_image_block(png_path, f"Mermaid Diagram {self._mermaid_counter}")
                 return
             # 렌더링 실패 시 코드 블록으로 폴백
 
