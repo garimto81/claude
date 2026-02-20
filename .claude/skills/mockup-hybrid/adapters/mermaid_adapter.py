@@ -198,3 +198,41 @@ gitGraph
     checkout main
     merge feature
     commit"""
+
+    def to_html_wrapper(self, mermaid_code: str, title: str = "Diagram") -> str:
+        """
+        Mermaid 코드를 CSS 제약이 적용된 HTML로 래핑
+
+        CSS 제약: width/height auto, max-width 720px, max-height 1280px
+        Mermaid.js CDN으로 렌더링
+        """
+        return f"""<!DOCTYPE html>
+<html lang="ko">
+<head>
+  <meta charset="UTF-8">
+  <meta name="viewport" content="width=720">
+  <title>{title}</title>
+  <style>
+    * {{ box-sizing: border-box; margin: 0; padding: 0; }}
+    body {{ background: #fff; padding: 16px; }}
+    .diagram-container {{
+      width: auto;
+      max-width: 720px;
+      height: auto;
+      max-height: 1280px;
+      overflow: hidden;
+    }}
+    .diagram-container svg {{
+      max-width: 100%;
+      height: auto;
+    }}
+  </style>
+</head>
+<body>
+  <div class="diagram-container">
+    <pre class="mermaid">{mermaid_code}</pre>
+  </div>
+  <script src="https://cdn.jsdelivr.net/npm/mermaid/dist/mermaid.min.js"></script>
+  <script>mermaid.initialize({{ startOnLoad: true, theme: 'neutral' }});</script>
+</body>
+</html>"""

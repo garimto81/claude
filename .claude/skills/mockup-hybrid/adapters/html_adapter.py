@@ -89,7 +89,7 @@ class HTMLAdapter:
 <html lang="ko">
 <head>
   <meta charset="UTF-8">
-  <meta name="viewport" content="width=800">
+  <meta name="viewport" content="width=720">
   <title>{{title}} - Wireframe</title>
   <link rel="preconnect" href="https://fonts.googleapis.com">
   <link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
@@ -101,10 +101,12 @@ class HTMLAdapter:
       background: #fff;
       padding: 0;
       margin: 0;
-      min-height: 600px;
     }
     .container {
-      max-width: 100%;
+      width: auto;
+      max-width: 720px;
+      height: auto;
+      max-height: 1280px;
       margin: 0;
       background: #fff;
       border: 1px solid #e5e5e5;

@@ -111,62 +111,30 @@ def _capture_with_auto_size(
 
         with sync_playwright() as p:
             browser = p.chromium.launch()
-            # 적절한 초기 viewport (목업에 적합한 너비, 높이는 충분히)
-            page = browser.new_page(viewport={"width": 720, "height": 2000})
+            # 충분히 큰 viewport로 로드 - CSS max-width/max-height가 실제 렌더링 크기를 제어함
+            page = browser.new_page(viewport={"width": 720, "height": 10000})
 
             # file:// URL로 변환
             file_url = html_path.resolve().as_uri()
             page.goto(file_url)
             page.wait_for_load_state("networkidle")
 
-            # 실제 콘텐츠 크기 감지 (getBoundingClientRect 사용)
-            # body의 실제 렌더링된 높이와 너비를 정확하게 측정
+            # 실제 렌더링 크기 측정 (CSS 제약 적용 후 값)
+            # CSS max-width: 720px / max-height: 1280px / overflow: hidden 이 이미 적용됨
             dimensions = page.evaluate("""
                 () => {
-                    const allElements = document.body.querySelectorAll('*');
-
-                    let minLeft = Infinity;
-                    let maxRight = 0;
-                    let maxBottom = 0;
-
-                    allElements.forEach(el => {
-                        const rect = el.getBoundingClientRect();
-                        const style = window.getComputedStyle(el);
-
-                        // 보이는 요소만 측정 (display:none, visibility:hidden 제외)
-                        if (rect.width > 0 && rect.height > 0 &&
-                            style.display !== 'none' && style.visibility !== 'hidden') {
-                            if (rect.left < minLeft) minLeft = rect.left;
-                            if (rect.right > maxRight) maxRight = rect.right;
-                            if (rect.bottom > maxBottom) maxBottom = rect.bottom;
-                        }
-                    });
-
-                    // scrollHeight와 offsetHeight 비교
+                    const scrollW = Math.max(
+                        document.documentElement.scrollWidth,
+                        document.body.scrollWidth
+                    );
                     const scrollH = Math.max(
                         document.documentElement.scrollHeight,
                         document.body.scrollHeight
                     );
-                    const offsetH = Math.max(
-                        document.documentElement.offsetHeight,
-                        document.body.offsetHeight
-                    );
-
-                    // 콘텐츠 실제 너비 (최대 720px, 노드 크기에 맞춤)
-                    let contentWidth = maxRight - Math.max(0, minLeft);
-                    contentWidth = Math.min(contentWidth, 720);
-
-                    // 높이: 가장 아래 요소의 bottom 사용 (더 정확)
-                    const height = Math.min(Math.max(maxBottom, offsetH), 1280);
-
+                    // 안전 상한선 (CSS가 이미 제어하지만 이중 방어)
                     return {
-                        width: contentWidth,
-                        height,
-                        scrollH,
-                        offsetH,
-                        maxBottom,
-                        minLeft,
-                        maxRight
+                        width: Math.min(scrollW, 720),
+                        height: Math.min(scrollH, 1280)
                     };
                 }
             """)
@@ -175,9 +143,7 @@ def _capture_with_auto_size(
             content_height = dimensions['height']
 
             logger.info(
-                f"콘텐츠 크기 감지: {content_width}x{content_height} "
-                f"(scrollH={dimensions['scrollH']}, offsetH={dimensions['offsetH']}, "
-                f"maxBottom={dimensions['maxBottom']})"
+                f"콘텐츠 크기 감지: {content_width}x{content_height}"
             )
 
             # 최소 크기 보장 (너무 작으면 잘못 감지된 것)
