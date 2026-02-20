@@ -256,14 +256,23 @@ STITCH_API_BASE_URL=https://api.stitch.withgoogle.com/v1  # 선택
 
 ---
 
-## ASCII 다이어그램 자동 교체 (--bnw 핵심 기능)
+## ASCII 다이어그램 자동 교체 (--mockup `<파일>` 핵심 기능)
 
-`--bnw` 옵션 사용 시 **기존 Markdown 파일의 ASCII 다이어그램을 이미지로 자동 교체**합니다.
+`--mockup <파일>` 지정 시 파일 내 ASCII 다이어그램을 **`11-ascii-diagram.md` 디자인 가이드 기준**으로 변환합니다.
+
+> **`--bnw`는 스타일 제약만 담당합니다** (HTML 목업의 색상·폰트를 B&W로 제한). ASCII 교체 워크플로우는 `--mockup <파일>`이 담당합니다.
+
+### 변환 기준 (`11-ascii-diagram.md`)
+
+| ASCII 타입 | 변환 형식 |
+|-----------|----------|
+| 흐름도 / 시퀀스 / 아키텍처 / 트리 | Mermaid 코드 블록 (저장 파일 기본) |
+| UI 화면 / 컴포넌트 목업 | HTML 와이어프레임 + PNG (`--bnw` 적용 시 B&W 스타일) |
 
 ### 워크플로우
 
 ```
-/mockup "화면" --bnw --target=docs/example.md
+/mockup <파일> --bnw --target=docs/example.md
       │
       ▼
 ┌─────────────────────────────────────────────────────┐
