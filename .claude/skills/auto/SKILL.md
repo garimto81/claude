@@ -410,6 +410,10 @@ Tier 0 CONTEXT → 1 EXPLICIT → 2 URGENT → 3 WORK → 4 SUPPORT → 5 AUTONO
 
 `/auto status` (상태 확인) / `/auto stop` (중지+TeamDelete) / `/auto resume` (재개+TeamCreate). 상세: `REFERENCE.md`
 
+> **🚨 Ctrl+C + /auto stop 모두 무효인 경우 (완전 frozen)**:
+> 별도 PowerShell 창에서 `python C:\claude\.claude\scripts\emergency_stop.py` 실행.
+> 원인·절차 상세: `REFERENCE.md` → Nuclear Option 섹션
+
 ## 금지 사항
 
 옵션 실패 시 조용히 스킵 / Architect 검증 없이 완료 선언 / 증거 없이 "완료됨" 주장 / 테스트 삭제로 문제 해결 / **TeamDelete 없이 세션 종료** / **architect 에이전트로 파일 생성 시도** / **Skill() 호출 금지 (Agent Teams 단일 패턴)** / **executor가 `docs/mockups/*.html` 직접 생성 금지** (반드시 designer 에이전트 + --mockup --bnw 라우트 경유) / **코드 블록 상세, 옵션 워크플로우, impl-manager prompt, Vercel BP**: `REFERENCE.md`
