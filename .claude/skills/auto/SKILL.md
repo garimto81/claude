@@ -1,7 +1,7 @@
 ---
 name: auto
 description: PDCA Orchestrator - 통합 자율 워크플로우 (Agent Teams 단일 패턴)
-version: 22.3.0
+version: 22.4.0
 triggers:
   keywords:
     - "/auto"
@@ -24,7 +24,7 @@ agents:
   - writer
 ---
 
-# /auto - PDCA Orchestrator (v22.3)
+# /auto - PDCA Orchestrator (v22.4)
 
 > **핵심**: `/auto "작업"` = Phase 0-5 PDCA 자동 진행. `/auto` 단독 = 자율 발견 모드. `/work`는 `/auto`로 통합됨.
 > **PRD-First**: 요구사항 요청 시 반드시 PRD 문서를 먼저 생성/수정 → 사용자 승인 후 구현 진행 (v22.3).
@@ -47,9 +47,27 @@ agents:
 | `--dry-run` | 판단만 출력, 실행 안함 |
 | `--eco` | LIGHT 모드 강제 |
 | `--worktree` | feature 전용 worktree 생성 후 해당 경로에서 작업, 완료 시 자동 정리 |
-| `--mockup [파일]` | Phase 3.0에서 mockup-hybrid 실행. 하위 옵션: `--bnw` (B&W 모노크롬, designer+frontend-design), `--force-html`, `--prd=` |
+| `--mockup [파일]` | Phase 3.0에서 실행. **[파일] 지정 시**: 파일 내 ASCII 탐지 → `11-ascii-diagram.md` 기준 변환 (흐름/시퀀스/아키텍처 → Mermaid 코드 블록, UI 화면/컴포넌트 → HTML 목업 + PNG → Markdown 교체). **[파일] 미지정 시**: 화면명 인수 기반 신규 목업 생성. 하위 옵션: `--bnw` (HTML 목업에 B&W 스타일 제약만, 색상·폰트), `--force-html`, `--prd=` |
 
 **팀 생성 (MANDATORY):** `TeamCreate(team_name="pdca-{feature}")`
+
+### 유의미 변경 커밋 원칙 (Commit Policy)
+
+**유의미 변경 기준**: Phase 완료 후 `git status --short` 결과가 비어있지 않은 경우
+- 코드 파일: `.py`, `.ts`, `.js`, `.tsx`, `.jsx`, `.go`, `.rs` 등
+- **문서 파일**: `.md` (PRD, Plan, Design, Report 등 모두 포함)
+- 설정 파일: `.json`, `.yaml`, `.toml`, `pyproject.toml` 등
+
+**커밋 트리거 포인트** (각 Phase 완료 직후):
+| 트리거 | 조건 | 커밋 메시지 패턴 |
+|--------|------|----------------|
+| Phase 2 설계 완료 | 설계 문서 생성 | `docs(design): {feature} 설계 문서 작성` |
+| Phase 3.2 Architect APPROVE | 구현 완료 + 검증 통과 | `feat({feature}): 구현 완료` |
+| Phase 4.2 Verification APPROVE | QA + 최종 검증 통과 | `fix({feature}): QA 수정사항 반영` |
+| Phase 5 보고서 생성 후 | 보고서 생성 완료 | `docs(report): {feature} PDCA 완료 보고서` |
+| 조기 종료 시 | max cycles 초과, 루프 가드 등 | `wip({feature}): 진행 중 변경사항 보존` |
+
+> **공통 규칙**: 커밋 전 `git status --short`로 변경사항 확인 필수. 변경사항이 없으면 커밋 스킵.
 
 ### Phase 0.5: PRD (요구사항 문서화 — 구현 전 필수)
 
@@ -186,6 +204,7 @@ SendMessage(type="message", recipient="design-writer", content="설계 문서 �
 ```
 
 **산출물**: `docs/02-design/{feature}.design.md` (STANDARD/HEAVY만)
+> **커밋 (유의미 변경 시)**: 설계 문서 생성 후 `git status --short` 확인 → 변경사항 있으면 `git add docs/ && git commit -m "docs(design): {feature} 설계 문서 작성"`
 
 ### Phase 3: DO (옵션 라우팅 + 구현)
 
@@ -194,29 +213,28 @@ SendMessage(type="message", recipient="design-writer", content="설계 문서 �
 | 옵션 | 스킬 | 옵션 | 스킬 |
 |------|------|------|------|
 | `--gdocs` | `prd-sync` | `--slack <채널>` | Slack 분석 |
-| `--mockup [파일] [--bnw]` | `mockup-hybrid` | `--gmail` | Gmail 분석 |
+| `--mockup [파일] [--bnw]` | ASCII→형식 변환 (`11-ascii-diagram.md` 기준) | `--gmail` | Gmail 분석 |
 | `--debate` | `ultimate-debate` | `--daily` | `daily` |
 | `--research` | `research` | `--interactive` | Phase별 승인 |
 
-**--bnw 자동 트리거**: 명시적 `--bnw` 플래그 없이도 아래 조건 감지 시 자동 활성화:
-- 작업 키워드: "목업", "mockup", "화면 설계", "와이어프레임", "UI 목업"
-- 계획 출력 경로에 `docs/mockups/` 포함
-
-**--mockup --bnw 실행 경로** (3-Tier 라우팅 먼저, B&W는 스타일 제약일 뿐):
+**--mockup 실행 경로** (`11-ascii-diagram.md` 기준 타입 판별):
 ```
---bnw 플래그
+--mockup <파일>
       │
       ▼
-3-Tier 라우터 (키워드 기반 — 라우팅 우선)
+파일 내 ASCII 다이어그램 탐지
       │
-      ├─ 다이어그램 키워드 감지 → Mermaid 생성 (--bnw 무시, 흑백 계열로 자동 적용)
-      │   (흐름, 플로우, 시퀀스, API, DB, ER, 클래스, 상태, 아키텍처 등)
+      ├─ 흐름/시퀀스/아키텍처/트리 → Mermaid 코드 블록으로 교체
       │
-      └─ UI/화면 키워드 감지 → designer teammate (B&W 제약 주입)
-              (화면, UI, 레이아웃, 페이지, 대시보드, 폼, 와이어프레임 등)
-              └─ docs/mockups/{name}.html
+      └─ UI 화면/컴포넌트 목업 → HTML 목업 + PNG 캡처 → Markdown 교체
+              └─ --bnw 적용 시: HTML 목업에 B&W 스타일 제약 (색상·폰트)
+
+--mockup "화면명" (파일 미지정)
+      └─ 신규 화면 목업 생성 → designer teammate → docs/mockups/{name}.html
+              └─ --bnw 적용 시: B&W 스타일 제약
 ```
-executor 또는 executor-high가 `docs/mockups/*.html`을 직접 Write하는 것은 금지. UI/화면 라우팅 시 반드시 designer 에이전트 경유.
+executor 또는 executor-high가 `docs/mockups/*.html`을 직접 Write하는 것은 금지. UI 목업 생성 시 반드시 designer 에이전트 경유.
+**--bnw**: HTML 목업의 스타일 제약만 (색상 없음). 자동 트리거 없음 — 명시적 플래그 필수.
 
 **옵션 실패 시**: 에러 출력, **절대 조용히 스킵 금지**. 상세: `REFERENCE.md`
 
@@ -250,7 +268,9 @@ impl-manager 5조건: TODO==0, 빌드 성공, 테스트 통과, 에러==0, 자�
 Task(subagent_type="architect", name="impl-verifier", team_name="pdca-{feature}",
      model="sonnet", prompt="[Phase 3 Architect Gate] 구현 외부 검증. 상세: REFERENCE.md")
 SendMessage(type="message", recipient="impl-verifier", content="구현 검증 시작.")
-# VERDICT: APPROVE → Phase 4 진입
+# VERDICT: APPROVE → 유의미 변경 커밋 → Phase 4 진입
+#   git status --short 확인 → 변경사항 있으면:
+#   git add -A && git commit -m "feat({feature}): 구현 완료 (Architect APPROVE)"
 # VERDICT: REJECT + DOMAIN → Step 3.3 Domain-Smart Fix
 # 2회 REJECT → 사용자 알림 후 Phase 4 진입 허용
 ```
@@ -323,6 +343,9 @@ Task(subagent_type="architect", name="verifier", team_name="pdca-{feature}",
 SendMessage(type="message", recipient="verifier", content="검증 시작.")
 # 완료 대기 → shutdown_request → (STANDARD/HEAVY: code-reviewer 순차 spawn)
 # code-reviewer prompt에 Vercel BP 규칙 동적 주입 (React/Next.js 프로젝트 시) — 상세: REFERENCE.md
+# code-reviewer APPROVE 후 → 유의미 변경 커밋:
+#   git status --short 확인 → 변경사항 있으면:
+#   git add -A && git commit -m "fix({feature}): QA 검증 수정사항 반영"
 ```
 
 > architect는 READ-ONLY이므로 **검증/판정에 적합**. 파일 생성에는 사용 금지.
@@ -338,7 +361,7 @@ SendMessage(type="message", recipient="verifier", content="검증 시작.")
 | gap >= 90% + APPROVE | writer teammate → `docs/04-report/` |
 | Architect REJECT | executor teammate (수정) → Phase 4 재실행 |
 
-> **Phase 4↔5 루프 가드**: Phase 5→Phase 4 재진입 누적 최대 3회. 초과 시 미해결 이슈 보고 후 종료.
+> **Phase 4↔5 루프 가드**: Phase 5→Phase 4 재진입 누적 최대 3회. 초과 시 유의미 변경 커밋 후 미해결 이슈 보고 + 종료.
 
 ```
 # gap >= 90% + APPROVE → 보고서 생성 후 Safe Cleanup
@@ -347,7 +370,9 @@ report_model = "haiku" if mode == "LIGHT" else "sonnet"
 Task(subagent_type="writer", name="reporter", team_name="pdca-{feature}",
      model=report_model, prompt="PDCA 완료 보고서 생성. 출력: docs/04-report/{feature}.report.md")
 SendMessage(type="message", recipient="reporter", content="보고서 생성 요청.")
-# 완료 대기 → Safe Cleanup (아래 절차)
+# 완료 대기 → shutdown_request
+# 유의미 변경 커밋: git add docs/04-report/ && git commit -m "docs(report): {feature} PDCA 완료 보고서"
+# → Safe Cleanup (아래 절차)
 ```
 
 **팀 정리 (MANDATORY — Safe Cleanup):**
@@ -373,7 +398,7 @@ SendMessage(type="message", recipient="reporter", content="보고서 생성 요�
 | **Phase 3.2** | — | Architect Gate | Architect Gate |
 | **Phase 4.1** | QA 1회 (보고만) | QA 3회 + 진단 | QA 5회 + 진단 |
 | **Phase 4.2** | Architect (sonnet) | Architect + code-reviewer (sonnet) | Architect + code-reviewer (sonnet) |
-| **Phase 5** | writer (haiku) + TeamDelete | writer (sonnet) + TeamDelete | writer (sonnet) + TeamDelete |
+| **Phase 5** | writer (haiku) + 커밋 + TeamDelete | writer (sonnet) + 커밋 + TeamDelete | writer (sonnet) + 커밋 + TeamDelete |
 
 **자동 승격**: LIGHT→STANDARD: 빌드 실패 2회 또는 영향 파일 5개+. STANDARD→HEAVY: QA 3사이클 초과 또는 영향 파일 5개+.
 

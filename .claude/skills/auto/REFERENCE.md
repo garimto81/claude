@@ -1226,7 +1226,9 @@ MAX_PHASE4_REENTRY = 3
 # Phase 5 → Phase 4 재진입 시
 phase4_reentry_count += 1
 if phase4_reentry_count >= MAX_PHASE4_REENTRY:
-    → "[Phase 5] Phase 4 재진입 {MAX_PHASE4_REENTRY}회 초과. 미해결 이슈 보고 후 종료." 출력
+    → "[Phase 5] Phase 4 재진입 {MAX_PHASE4_REENTRY}회 초과." 출력
+    → 유의미 변경 커밋: git status --short → 변경사항 있으면 git add -A && git commit -m "wip({feature}): 루프 한계 초과 - 진행 중 변경사항 보존"
+    → "미해결 이슈 보고 후 종료." 출력
     → TeamDelete()
 ```
 
@@ -1240,7 +1242,9 @@ MAX_CUMULATIVE_ITERATIONS = 5
 cumulative_iteration_count += 1
 if cumulative_iteration_count >= MAX_CUMULATIVE_ITERATIONS:
     → "[Phase 5] 누적 {MAX_CUMULATIVE_ITERATIONS}회 개선 시도 초과. 최종 결과 보고." 출력
-    → writer(reporter) → TeamDelete()
+    → writer(reporter)
+    → 유의미 변경 커밋: git status --short → 변경사항 있으면 git add -A && git commit -m "wip({feature}): 최대 개선 시도 후 현재 상태 보존"
+    → TeamDelete()
 ```
 
 | Check 결과 | 자동 실행 | 다음 |
@@ -1268,7 +1272,11 @@ Task(subagent_type="writer", name="reporter", team_name="pdca-{feature}",
      포함: Plan 요약, Design 요약, 구현 결과, Check 결과, 교훈
      출력: docs/04-report/{feature}.report.md")
 SendMessage(type="message", recipient="reporter", content="보고서 생성 요청.")
-# 완료 대기 → shutdown_request → TeamDelete()
+# 완료 대기 → shutdown_request
+# 유의미 변경 커밋 (MANDATORY):
+#   git status --short 확인
+#   변경사항 있으면: git add -A && git commit -m "docs(report): {feature} PDCA 완료 보고서"
+# → TeamDelete()
 ```
 
 **Case 3: Architect REJECT**
