@@ -423,4 +423,4 @@ Tier 0 CONTEXT → 1 EXPLICIT → 2 URGENT → 3 WORK → 4 SUPPORT → 5 AUTONO
 
 ## 금지 사항
 
-옵션 실패 시 조용히 스킵 / Architect 검증 없이 완료 선언 / 증거 없이 "완료됨" 주장 / 테스트 삭제로 문제 해결 / **TeamDelete 없이 세션 종료** / **architect 에이전트로 파일 생성 시도** / **Skill() 호출 금지 (Agent Teams 단일 패턴)** / **executor가 `docs/mockups/*.html` 직접 생성 금지** (반드시 designer 에이전트 + --mockup --bnw 라우트 경유) / **코드 블록 상세, 옵션 워크플로우, impl-manager prompt, Vercel BP**: `REFERENCE.md`
+옵션 실패 시 조용히 스킵 / Architect 검증 없이 완료 선언 / 증거 없이 "완료됨" 주장 / 테스트 삭제로 문제 해결 / **TeamDelete 없이 세션 종료** / **architect 에이전트로 파일 생성 시도** / **Skill() 호출 금지 (Agent Teams 단일 패턴)** / **executor가 `docs/mockups/*.html` 직접 생성 금지** (반드시 designer 에이전트 + --mockup --bnw 라우트 경유) / **Team-Lead(오케스트레이터)가 `SendMessage(type="shutdown_response")` 호출 금지** — 호출 즉시 메인 세션 종료 (teammate 전용 도구). shutdown_request가 Team-Lead에게 수신되면 무시하고 계속 진행. / **코드 블록 상세, 옵션 워크플로우, impl-manager prompt, Vercel BP**: `REFERENCE.md`
