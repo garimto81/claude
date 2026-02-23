@@ -5,8 +5,7 @@ F-02, F-03, F-04, F-05 요구사항 검증
 import pytest
 import json
 import sys
-import os
-from unittest.mock import patch, MagicMock, mock_open, call
+from unittest.mock import patch
 from pathlib import Path
 from io import StringIO
 
@@ -57,7 +56,7 @@ class TestZombieDetector:
             mock_path.home.return_value = tmp_path
 
             with patch("sys.stdin", StringIO(stdin_data)):
-                with patch("builtins.print") as mock_print:
+                with patch("builtins.print"):
                     try:
                         zd.main()
                     except SystemExit:

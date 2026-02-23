@@ -2,12 +2,7 @@
 session_cleanup.py createdAt 파싱 버그 수정 테스트
 F-01: createdAt int/str 양쪽 처리
 """
-import pytest
-from unittest.mock import patch, MagicMock, mock_open
 from datetime import datetime, timezone
-import json
-import sys
-import os
 
 # 테스트 대상 함수를 직접 import하기 어려우므로
 # cleanup_stale_agent_teams 함수의 createdAt 파싱 로직을 직접 테스트
