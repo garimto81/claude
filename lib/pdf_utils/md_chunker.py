@@ -10,7 +10,10 @@ from pathlib import Path
 from typing import List, Optional
 
 from .prd_models import PRDChunk, PRDChunkResult
-from .strategy import estimate_tokens, auto_select_strategy, detect_prd_structure, TIKTOKEN_AVAILABLE
+from .strategy import (
+    estimate_tokens, auto_select_strategy, detect_prd_structure, TIKTOKEN_AVAILABLE,
+    extract_req_ids, extract_priority, detect_doc_type, extract_keywords, enrich_chunk_metadata
+)
 
 
 # ──────────────────────────────────────────────
@@ -143,11 +146,16 @@ class MDChunker:
     def _tok(self, text: str) -> int:
         return estimate_tokens(text, self.encoding)
 
+    def _enrich_metadata(self, chunk: PRDChunk) -> None:
+        """청크에 메타데이터 주입 (req_ids, priority, doc_type, keywords)"""
+        enrich_chunk_metadata(chunk)
+
     def _link_chunks(self, chunks: List[PRDChunk]) -> List[PRDChunk]:
-        """prev_chunk_id / next_chunk_id 연결"""
+        """prev_chunk_id / next_chunk_id 연결 + 메타데이터 추출"""
         for i, chunk in enumerate(chunks):
             chunk.prev_chunk_id = chunks[i-1].chunk_id if i > 0 else None
             chunk.next_chunk_id = chunks[i+1].chunk_id if i < len(chunks)-1 else None
+            self._enrich_metadata(chunk)
         return chunks
 
     def chunk_fixed(self, blocks: List[Block]) -> List[PRDChunk]:

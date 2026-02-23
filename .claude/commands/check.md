@@ -20,6 +20,7 @@ Options:
   --api           API 엔드포인트 테스트 (api-test 흡수)
   --react         React/Next.js 성능 최적화 검사 (Vercel Best Practices)
   --all           모든 검사 수행 (security, e2e, perf, api, react 포함)
+  --review        PR diff 기반 4-병렬 코드 리뷰 (신뢰도 80+ 이슈만 출력)
 
 조합 사용:
   /check --e2e --fix    E2E + 자동 수정
@@ -27,6 +28,8 @@ Options:
   /check --api          REST/GraphQL API 테스트
   /check --react        React 성능 규칙 검사
   /check --react --fix  React 검사 + 제안 적용
+  /check --review           PR diff 기반 4-병렬 코드 리뷰
+  /check --review --fix     4-병렬 리뷰 + 자동 수정 시도
 ```
 
 ## Check Categories
@@ -129,13 +132,14 @@ npm run test:coverage
 | Performance | `--perf` | CPU/Memory 프로파일링 |
 | API Tests | `--api` | 엔드포인트 검증 |
 | React Best Practices | `--react` | Vercel 47개 규칙 검사 |
+| Code Review | `--review` | PR diff 4-병렬 분석 |
 
 ```bash
 # 전체 검사 실행
 /check --all
 
 # 위 명령은 아래와 동일:
-/check --security --e2e --perf --api --react
+/check --security --e2e --perf --api --react --review
 ```
 
 > **Note**: `--fix`는 `--all`에 포함되지 않습니다. 자동 수정이 필요하면 명시적으로 추가하세요:
@@ -258,6 +262,7 @@ Action: Fix npm vulnerabilities before deploy
 | `--e2e` | `qa-tester` | E2E 테스트 실행 |
 | `--perf` | `devops-engineer` | 성능 분석 |
 | `--react` | `designer` | React 성능 최적화 검사 |
+| `--review` | `code-reviewer` (4-병렬) | PR diff 4방향 분석, 신뢰도 집계 |
 
 ## Related
 
@@ -348,6 +353,55 @@ Action: Fix CRITICAL issues before deployment
 
 ---
 
+## --review 모드 (4-병렬 코드 리뷰)
+
+`/check --review`는 PR diff를 4개 전문 에이전트가 병렬 분석합니다.
+
+```bash
+/check --review              # 현재 브랜치 vs main diff 분석
+/check --review --fix        # 4-병렬 리뷰 + 자동 수정 시도
+```
+
+### 4-병렬 리뷰어 구성
+
+| 리뷰어 | 담당 영역 | 분석 기준 |
+|--------|-----------|-----------|
+| **reviewer-1** | CLAUDE.md 규칙 준수 | Conventional Commit, 경로 규칙, API 키 금지 |
+| **reviewer-2** | 버그/로직 취약점 | null 체크, 경계값, 예외 처리, SQL injection, XSS |
+| **reviewer-3** | git blame 변경 맥락 | 변경 의도 파악, 리팩토링 vs 버그픽스 구분 |
+| **reviewer-4** | 성능/보안 패턴 | N+1 쿼리, 불필요 루프, 하드코딩 시크릿 |
+
+### 신뢰도 스코어링
+
+각 리뷰어가 0-100 신뢰도를 부여합니다:
+- **80+ 이슈만 출력** (노이즈 제거)
+- 4개 리뷰어 공통 발견 이슈 → 최우선 처리
+- 단일 리뷰어만 발견 → 신뢰도 표시 후 참고
+
+### 출력 예시
+
+```
+🔍 4-Parallel Code Review (vs main)
+
+📊 Diff Stats: 3 files, +150 -42 lines
+
+━━━ 병렬 리뷰 완료 (4/4) ━━━━━━━━━━━━━━━━━━━━
+
+[CRITICAL | 신뢰도 95] 버그 감지 (reviewer-2,4 공통)
+File: src/api/client.py:42
+Issue: SQL 쿼리 문자열 직접 연결 - Injection 위험
+Fix: 파라미터화 쿼리 사용
+
+[HIGH | 신뢰도 88] 규칙 위반 (reviewer-1)
+File: .claude/agents/new-agent.md
+Issue: Frontmatter에 tools 필드 누락
+Fix: tools: Read, Grep 추가
+
+Summary: 1 CRITICAL, 1 HIGH | 권장: REQUEST CHANGES
+```
+
+---
+
 ## 통합 이력
 
 | 기존 커맨드 | 통합 위치 | 날짜 |
@@ -357,3 +411,4 @@ Action: Fix CRITICAL issues before deployment
 | `/api-test` | `/check --api` | 2025-12-15 |
 | (신규) | `/check --react` | 2026-01-19 |
 | (개선) | `--all`에 `--react` 포함 명시 | 2026-01-19 |
+| (신규) | `/check --review` | 2026-02-23 |

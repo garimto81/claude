@@ -339,6 +339,50 @@ def cleanup_stale_global_todos(ttl_hours: int = 2) -> list[str]:
     return messages
 
 
+def check_fatigue_signals(ttl_hours: int = 24) -> list[str]:
+    """피로도 신호 파일 분석 및 경고 생성"""
+    warnings = []
+    fatigue_log = ROOT_PROJECT_DIR / ".claude" / "logs" / "fatigue_signals.jsonl"
+
+    if not fatigue_log.exists():
+        return warnings
+
+    try:
+        import json
+        now = datetime.now(timezone.utc)
+        cutoff = now - timedelta(hours=ttl_hours)
+        cutoff_ts = cutoff.timestamp() * 1000  # ms
+
+        content = fatigue_log.read_text(encoding="utf-8")
+        lines = [l.strip() for l in content.strip().split("\n") if l.strip()]
+
+        burst_files = set()
+        burst_count = 0
+
+        for line in lines:
+            try:
+                entry = json.loads(line)
+                if entry.get("type") == "edit_burst" and entry.get("ts", 0) > cutoff_ts:
+                    burst_files.add(entry.get("file", ""))
+                    burst_count += 1
+            except Exception:
+                continue
+
+        if burst_count >= 3:
+            warnings.append(
+                f"⚠️ 피로도 경고: 최근 {ttl_hours}시간 내 집중 편집 패턴 {burst_count}회 감지 "
+                f"({len(burst_files)}개 파일). 잠시 휴식을 권장합니다."
+            )
+        elif burst_count >= 1:
+            warnings.append(
+                f"📊 편집 집중 패턴: {burst_count}회 (파일: {len(burst_files)}개)"
+            )
+    except Exception:
+        pass
+
+    return warnings
+
+
 def load_previous_session() -> dict:
     """이전 세션 상태 로드"""
     session_file = Path(PROJECT_DIR) / ".claude" / "session_state.json"
@@ -378,6 +422,7 @@ def main():
         stale_messages = cleanup_stale_omc_states(ttl_hours=2)
         stale_messages.extend(cleanup_stale_global_todos(ttl_hours=2))
         stale_messages.extend(cleanup_orphan_agent_teams())
+        stale_messages.extend(check_fatigue_signals(ttl_hours=24))
 
         # Junction 설정
         junction_created, junction_message = setup_commands_junction()

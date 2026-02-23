@@ -17,6 +17,10 @@ class PRDChunk:
     is_atomic: bool = False                             # 분리 불가 원자 블록 여부
     start_char: int = 0
     end_char: int = 0
+    req_ids: list = field(default_factory=list)         # regex R\d+, NR\d+, SC\d+ 추출 → ["R001", "R002"]
+    priority: str = ""                                  # "must"|"should"|"nice" MoSCoW 키워드 감지
+    doc_type: str = ""                                  # "functional"|"non-functional"|"constraint"|"glossary"
+    keywords: list = field(default_factory=list)        # 핵심 키워드 (중요한 명사/동사 추출)
 
     def to_dict(self) -> dict:
         """기존 Chunk.to_dict() 호환 필드 포함"""
@@ -34,6 +38,10 @@ class PRDChunk:
             "is_atomic": self.is_atomic,
             "start_char": self.start_char,
             "end_char": self.end_char,
+            "req_ids": self.req_ids,
+            "priority": self.priority,
+            "doc_type": self.doc_type,
+            "keywords": self.keywords,
         }
 
 

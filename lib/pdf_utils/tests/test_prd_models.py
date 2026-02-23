@@ -23,6 +23,7 @@ class TestPRDChunk:
             "chunk_id", "text", "token_count", "section_path", "level",
             "parent_summary", "prev_chunk_id", "next_chunk_id",
             "has_table", "has_code", "is_atomic", "start_char", "end_char",
+            "req_ids", "priority", "doc_type", "keywords",
         }
         assert expected_keys == set(d.keys())
 
