@@ -45,7 +45,11 @@
 
 **모든 에이전트 호출은 Agent Teams in-process 방식을 사용합니다. Skill() 호출 0개.**
 
-**모델 오버라이드**: 에이전트 정의의 model 필드(architect=sonnet, planner=sonnet 등)는 기본값이며, 호출 시 `model` 파라미터가 복잡도 모드에 따라 결정됩니다. LIGHT=haiku, STANDARD=sonnet, HEAVY=sonnet.
+**모델 오버라이드**: 에이전트 정의의 model 필드는 기본값이며, 호출 시 `model` 파라미터가 복잡도 모드 + 역할에 따라 결정됩니다.
+- LIGHT: 실행=sonnet, 계획=haiku
+- STANDARD: 실행=sonnet, 계획/검증=opus
+- HEAVY: 실행=sonnet, 계획/검증=opus
+- `--eco` 플래그: 전체 sonnet 강제 (opus 단계 포함)
 
 ### 팀 라이프사이클
 
@@ -547,10 +551,10 @@ SendMessage(type="message", recipient="planner", content="계획 수립 시작. 
 # 완료 대기 → shutdown_request
 ```
 
-**STANDARD (2-3점): Planner sonnet teammate**
+**STANDARD (2-3점): Planner opus teammate**
 ```
 Task(subagent_type="planner", name="planner", team_name="pdca-{feature}",
-     model="sonnet", prompt="... (복잡도: STANDARD {score}/5, 판단 근거 포함).
+     model="opus", prompt="... (복잡도: STANDARD {score}/5, 판단 근거 포함).
      PRD 참조: docs/00-prd/{feature}.prd.md (있으면 반드시 기반으로 계획 수립).
      PRD의 요구사항 번호(FR-xxx)를 Plan 항목에 매핑하세요.
      사용자 확인/인터뷰 단계를 건너뛰세요. 바로 계획 문서를 작성하세요.
@@ -570,7 +574,7 @@ Loop (max 5 iterations):
 
   # Step A: Planner Teammate
   Task(subagent_type="planner", name="planner-{iteration_count}",
-       team_name="pdca-{feature}", model="sonnet",
+       team_name="pdca-{feature}", model="opus",
        prompt="[Phase 1 HEAVY] 계획 수립 (Iteration {iteration_count}/5).
                작업: {user_request}
                이전 Critic 피드백: {critic_feedback}
@@ -584,7 +588,7 @@ Loop (max 5 iterations):
 
   # Step B: Architect Teammate
   Task(subagent_type="architect", name="arch-{iteration_count}",
-       team_name="pdca-{feature}", model="sonnet",
+       team_name="pdca-{feature}", model="opus",
        prompt="[Phase 1 HEAVY] 기술적 타당성 검증.
                Plan 파일: docs/01-plan/{feature}.plan.md
                검증 항목: 1. 파일 경로 존재 여부 2. 의존성 충돌 3. 아키텍처 일관성 4. 성능/보안 우려
@@ -594,7 +598,7 @@ Loop (max 5 iterations):
 
   # Step C: Critic Teammate
   Task(subagent_type="critic", name="critic-{iteration_count}",
-       team_name="pdca-{feature}", model="sonnet",
+       team_name="pdca-{feature}", model="opus",
        prompt="[Phase 1 HEAVY] 계획 완전성 검토 (Iteration {iteration_count}/5).
                Plan 파일: docs/01-plan/{feature}.plan.md
                Architect 소견: {architect_feedback}
@@ -880,7 +884,7 @@ rejection_count = 0  # Lead 메모리에서 관리
 
 # Architect 외부 검증
 Task(subagent_type="architect", name="impl-verifier", team_name="pdca-{feature}",
-     model="sonnet",
+     model="opus",
      prompt="[Phase 3 Architect Gate] 구현 외부 검증.
              Plan: docs/01-plan/{feature}.plan.md
              Design: docs/02-design/{feature}.design.md (있으면)
@@ -1150,7 +1154,7 @@ while cycle < max_cycles:
 
     # Step C: Architect Root Cause 진단 (MANDATORY — 맹목적 수정 금지)
     Task(subagent_type="architect", name="diagnostician-{cycle}",
-         team_name="pdca-{feature}", model="sonnet",
+         team_name="pdca-{feature}", model="opus",
          prompt="[Phase 4 Architect Diagnostician] QA 실패 Root Cause 분석.
                  실패 내역: {qa_failed_details}
                  이전 실패 이력: {failure_history 요약}
@@ -1236,7 +1240,7 @@ SendMessage(type="message", recipient="verifier", content="검증 시작. APPROV
 ```
 # 1. Architect teammate 먼저 실행
 Task(subagent_type="architect", name="verifier", team_name="pdca-{feature}",
-     model="sonnet",
+     model="opus",
      prompt="구현된 기능이 docs/02-design/{feature}.design.md와 일치하는지 검증.")
 SendMessage(type="message", recipient="verifier", content="검증 시작. APPROVE/REJECT 판정 후 TaskUpdate 처리.")
 # verifier 완료 대기 → shutdown_request
@@ -1267,11 +1271,11 @@ SendMessage(type="message", recipient="quality-checker", content="코드 품질 
 # quality-checker 완료 대기 → shutdown_request
 ```
 
-**HEAVY 모드: 동일 구조 (순차 teammate, sonnet)**
+**HEAVY 모드: 동일 구조 (순차 teammate, architect=opus/code-reviewer=sonnet)**
 
-HEAVY 모드에서는 Architect, code-reviewer 모두 `model="sonnet"` 사용:
+HEAVY 모드에서도 Architect는 `model="opus"`, code-reviewer는 `model="sonnet"` 사용:
 ```
-Task(subagent_type="architect", name="verifier", ..., model="sonnet", ...)
+Task(subagent_type="architect", name="verifier", ..., model="opus", ...)
 Task(subagent_type="code-reviewer", name="gap-checker", ..., model="sonnet", ...)
 Task(subagent_type="code-reviewer", name="quality-checker", ..., model="sonnet", ...)
 ```
