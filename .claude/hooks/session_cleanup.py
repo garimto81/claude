@@ -9,7 +9,8 @@ import json
 import os
 import glob
 import shutil
-from datetime import datetime
+import sys
+from datetime import datetime, timezone
 from pathlib import Path
 
 PROJECT_DIR = os.environ.get("CLAUDE_PROJECT_DIR", os.getcwd())
@@ -85,12 +86,25 @@ def cleanup_stale_agent_teams(ttl_hours: float = 10 / 60) -> dict:  # 기본값:
                 if config_file.exists():
                     with open(config_file, "r", encoding="utf-8") as f:
                         config = json.load(f)
-                    created = config.get("createdAt", "")
-                    if created:
-                        created_dt = datetime.fromisoformat(created.replace("Z", "+00:00"))
-                        age_hours = (datetime.now(created_dt.tzinfo) - created_dt).total_seconds() / 3600
-                        if age_hours < ttl_hours:
-                            continue
+                    created = config.get("createdAt")
+                    if created is not None and created != "":
+                        created_dt = None
+                        if isinstance(created, (int, float)) and created > 0:
+                            ts = created / 1000 if created >= 1e12 else float(created)
+                            created_dt = datetime.fromtimestamp(ts, tz=timezone.utc)
+                        elif isinstance(created, str) and created:
+                            created_dt = datetime.fromisoformat(created.replace("Z", "+00:00"))
+                        else:
+                            print(
+                                f"[session_cleanup] createdAt 타입 미지원: "
+                                f"{type(created).__name__}={created}",
+                                file=sys.stderr,
+                            )
+
+                        if created_dt is not None:
+                            age_hours = (datetime.now(timezone.utc) - created_dt).total_seconds() / 3600
+                            if age_hours < ttl_hours:
+                                continue
                 shutil.rmtree(entry)
                 result["teams_deleted"] += 1
             except Exception as e:
