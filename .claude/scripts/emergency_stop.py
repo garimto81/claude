@@ -14,6 +14,18 @@ Claude Code 긴급 강제 종료 스크립트 (Nuclear Option)
   또는 빠른 전체 강제 종료:
   python C:\\claude\\.claude\\scripts\\emergency_stop.py --force
 
+  활성 팀 목록 확인:
+  python C:\\claude\\.claude\\scripts\\emergency_stop.py --list
+
+  특정 팀만 선택 정리 (PID 종료 없음):
+  python C:\\claude\\.claude\\scripts\\emergency_stop.py --team pdca-my-feature
+
+  파일 정리만 실행 (PID 종료 없음):
+  python C:\\claude\\.claude\\scripts\\emergency_stop.py --soft
+
+  특정 팀 정리 + soft 조합:
+  python C:\\claude\\.claude\\scripts\\emergency_stop.py --team foo --soft
+
 왜 Ctrl+C가 안 되나?
   Claude Code(Node.js)가 teammate IPC 응답을 await 중이면
   이벤트 루프 자체가 블락됩니다. SIGINT(Ctrl+C)는 이벤트 루프가
@@ -170,17 +182,96 @@ def deactivate_state_files():
 
 
 # ──────────────────────────────────────────────
-# 3. 메인 실행
+# 3. 팀 목록 / 선택 정리
+# ──────────────────────────────────────────────
+
+def list_teams():
+    """~/.claude/teams/ 와 ~/.claude/tasks/ 에 존재하는 팀 목록 출력 후 종료"""
+    home = Path.home()
+    teams_dir = home / '.claude' / 'teams'
+    tasks_dir = home / '.claude' / 'tasks'
+
+    teams = set()
+    if teams_dir.exists():
+        teams.update(entry.name for entry in teams_dir.iterdir() if entry.is_dir())
+    tasks = set()
+    if tasks_dir.exists():
+        tasks.update(entry.name for entry in tasks_dir.iterdir() if entry.is_dir())
+
+    all_names = teams | tasks
+
+    print()
+    print("현재 활성 팀 목록:")
+    if not all_names:
+        print("  정리할 팀 없음 (비어 있음)")
+    else:
+        for name in sorted(all_names):
+            has_team = name in teams
+            has_task = name in tasks
+            if has_team and has_task:
+                print(f"  teams/{name} (tasks/{name})")
+            elif has_team:
+                print(f"  teams/{name}")
+            else:
+                print(f"  tasks/{name}")
+    print()
+
+
+def cleanup_specific_team(name: str):
+    """~/.claude/teams/{name} 과 ~/.claude/tasks/{name} 만 삭제 (PID 종료 없음)"""
+    home = Path.home()
+    print()
+    print(f"[팀 선택 정리] {name}")
+
+    for subdir in ['teams', 'tasks']:
+        target = home / '.claude' / subdir / name
+        if target.exists():
+            try:
+                shutil.rmtree(target)
+                print(f"  ✅  {subdir}/{name} 삭제")
+            except Exception as e:
+                print(f"  ❌  {subdir}/{name} 삭제 실패: {e}")
+        else:
+            print(f"  ⚠️  {subdir}/{name} 없음 (이미 정리됨)")
+    print()
+
+
+# ──────────────────────────────────────────────
+# 4. 메인 실행
 # ──────────────────────────────────────────────
 
 def main():
     force_mode = '--force' in sys.argv
+    soft_mode = '--soft' in sys.argv
+
+    # --list: 팀 목록 출력 후 종료
+    if '--list' in sys.argv:
+        list_teams()
+        return
+
+    # --team {name}: 특정 팀만 정리
+    if '--team' in sys.argv:
+        idx = sys.argv.index('--team')
+        if idx + 1 >= len(sys.argv):
+            print("  ❌  --team 옵션에 팀 이름을 지정하세요.")
+            print("      예: python emergency_stop.py --team pdca-my-feature")
+            sys.exit(1)
+        team_name = sys.argv[idx + 1]
+        cleanup_specific_team(team_name)
+        if not soft_mode:
+            print("  ℹ️   PID 종료 없이 종료합니다. (세션 유지)")
+            print("       PID도 종료하려면 --team 없이 메인 모드를 사용하세요.")
+        return
 
     print()
     print("=" * 62)
     print("  Claude Code 긴급 강제 종료 스크립트 (Nuclear Option)")
     print("=" * 62)
     print()
+
+    if soft_mode:
+        print("--soft 모드: 파일 정리만 실행 (PID 종료 없음)")
+        print()
 
     # ── Step 1: 고아 팀/태스크 정리 ──────────────────────────
     print("[Step 1/3] 고아 Agent Teams/Tasks 정리")
@@ -204,6 +295,16 @@ def main():
     print("  ✅  상태 파일 비활성화 완료")
 
     # ── Step 3: Claude Code 프로세스 종료 ───────────────────
+    if soft_mode:
+        print()
+        print("[Step 3/3] 건너뜀 (--soft 모드: PID 종료 없음)")
+        print()
+        print("=" * 62)
+        print("  완료. (세션 유지됨)")
+        print("=" * 62)
+        print()
+        return
+
     print()
     print("[Step 3/3] Claude Code 프로세스 강제 종료")
     pids = find_claude_pids()
