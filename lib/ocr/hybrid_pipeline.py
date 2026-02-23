@@ -106,7 +106,9 @@ class HybridPipeline:
             import tempfile
             import uuid
 
-            tmp_path = os.path.join(tempfile.gettempdir(), f"ocr_{uuid.uuid4().hex}.png")
+            tmp_path = os.path.join(
+                tempfile.gettempdir(), f"ocr_{uuid.uuid4().hex}.png"
+            )
             try:
                 image.save(tmp_path)
                 extractor = extractor_cls(tmp_path, lang=self.lang)

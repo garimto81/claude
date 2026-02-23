@@ -96,7 +96,8 @@ class SoMAnnotator:
                 "이 이미지에 빨간 번호 마커가 표시된 UI 요소들이 있습니다.\n"
                 "각 번호의 요소가 무엇인지 시맨틱 레이블을 부여하세요.\n"
                 "의미만 분류하세요.\n\n"
-                'JSON 형식으로만 응답하세요: {"1": "submit_button", "2": "search_input", ...}'
+                'JSON 형식으로만 응답하세요: '
+                '{"1": "submit_button", "2": "search_input", ...}'
             )
 
             client = anthropic.Anthropic()

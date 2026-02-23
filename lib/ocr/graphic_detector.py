@@ -33,8 +33,12 @@ class GraphicDetector:
     def detect(self, image: Image.Image) -> List[BBox]:
         """비텍스트 요소 BBox 리스트 반환."""
         img_cv = cv2.cvtColor(np.array(image.convert("RGB")), cv2.COLOR_RGB2GRAY)
-        _, binary = cv2.threshold(img_cv, 0, 255, cv2.THRESH_BINARY_INV + cv2.THRESH_OTSU)
-        contours, _ = cv2.findContours(binary, cv2.RETR_EXTERNAL, cv2.CHAIN_APPROX_SIMPLE)
+        _, binary = cv2.threshold(
+            img_cv, 0, 255, cv2.THRESH_BINARY_INV + cv2.THRESH_OTSU
+        )
+        contours, _ = cv2.findContours(
+            binary, cv2.RETR_EXTERNAL, cv2.CHAIN_APPROX_SIMPLE
+        )
         bboxes = []
         for cnt in contours:
             area = cv2.contourArea(cnt)
