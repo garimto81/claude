@@ -63,7 +63,7 @@ class TestZombieDetector:
                         pass
 
         if alerts_file.exists():
-            records = [json.loads(l) for l in alerts_file.read_text().strip().split("\n") if l]
+            records = [json.loads(line) for line in alerts_file.read_text().strip().splitlines() if line]
             assert any(r.get("type") == "normal" for r in records)
 
     def test_crash_exit_stderr_alert(self, mock_teams_dir, sample_config, tmp_path):
