@@ -26,6 +26,10 @@ from .errors import (
     PreprocessingError,
     TableDetectionError,
 )
+from .graphic_detector import GraphicDetector
+from .som_annotator import SoMAnnotator
+from .hybrid_pipeline import HybridPipeline
+from .models import UIElement, HybridAnalysisResult
 
 __version__ = "1.0.0"
 
@@ -47,6 +51,12 @@ __all__ = [
     "LanguagePackError",
     "PreprocessingError",
     "TableDetectionError",
+    # Hybrid Pipeline (신규)
+    "GraphicDetector",
+    "SoMAnnotator",
+    "HybridPipeline",
+    "UIElement",
+    "HybridAnalysisResult",
 ]
 
 
