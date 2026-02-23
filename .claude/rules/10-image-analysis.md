@@ -36,6 +36,9 @@ OCR 텍스트 추출 결과와 Vision 분석을 결합하여 제시:
 | "스크린샷" | `--preset screenshot` |
 | "손글씨" | `--preset handwriting` |
 | "영수증", "명함" | `--preset photo` |
+| "좌표 추출", "--coords" | `--mode coords` 옵션 추가 |
+| "UI 분석", "--ui", "하이브리드" | `--mode ui` 옵션 추가 |
+| "hybrid", "전체 분석" | `--mode full` 옵션 추가 |
 
 ## Tesseract 미설치 시
 
@@ -43,6 +46,14 @@ OCR 텍스트 추출 결과와 Vision 분석을 결합하여 제시:
 python -m lib.ocr check
 ```
 미설치면 설치 안내 출력 후 Claude Vision만으로 분석 진행 (fallback).
+
+## Hybrid Pipeline 모드 (신규)
+
+| 모드 | 설명 | Vision 호출 |
+|------|------|------------|
+| `--mode coords` | Layer1(그래픽) + Layer2(텍스트) BBox 좌표만 | 없음 |
+| `--mode ui` | coords + Layer3 SoM 시맨틱 분류 | 1회 |
+| `--mode full` | ui + 어노테이션 이미지 저장 | 1회 |
 
 ## 금지 사항
 - Read 도구만으로 이미지 분석하고 끝내기 금지 (OCR 반드시 병행)
