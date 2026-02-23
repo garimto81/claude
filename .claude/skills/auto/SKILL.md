@@ -45,7 +45,7 @@ agents:
 | `--no-issue` | Step 1.3 이슈 연동 스킵 |
 | `--strict` | E2E 테스트 1회 실패 즉시 중단 (QA cycle과 무관) |
 | `--dry-run` | 판단만 출력, 실행 안함 |
-| `--eco` | LIGHT 모드 강제 |
+| `--eco` | LIGHT 모드 강제 (모든 단계 sonnet, opus 비활성화 포함) |
 | `--worktree` | feature 전용 worktree 생성 후 해당 경로에서 작업, 완료 시 자동 정리 |
 | `--mockup [파일]` | Phase 3.0에서 실행. **[파일] 지정 시**: 파일 내 ASCII 탐지 → `11-ascii-diagram.md` 기준 변환 (흐름/시퀀스/아키텍처 → Mermaid 코드 블록, UI 화면/컴포넌트 → HTML 목업 + PNG → Markdown 교체). **[파일] 미지정 시**: 화면명 인수 기반 신규 목업 생성. 하위 옵션: `--bnw` (HTML 목업에 B&W 스타일 제약만, 색상·폰트), `--force-html`, `--prd=` |
 
@@ -166,14 +166,14 @@ SendMessage(type="message", recipient="planner", content="계획 수립 시작."
 **STANDARD (2-3점): Planner + Critic-Lite 단일 검토**
 ```
 Task(subagent_type="planner", name="planner", team_name="pdca-{feature}",
-     model="sonnet", max_turns=30, prompt="(복잡도: STANDARD {score}/5). docs/01-plan/{feature}.plan.md 생성.
+     model="opus", max_turns=30, prompt="(복잡도: STANDARD {score}/5). docs/01-plan/{feature}.plan.md 생성.
      PRD 참조: docs/00-prd/{feature}.prd.md (있으면 반드시 기반으로 계획 수립).
      사용자 확인/인터뷰 단계 건너뛰세요. Critic-Lite가 검토합니다.")
 SendMessage(type="message", recipient="planner", content="계획 수립 시작.")
 # 완료 대기 → shutdown_request
 # Critic-Lite: Quality Gates 4 검증 (QG1-QG4) — 상세 prompt: REFERENCE.md
 Task(subagent_type="critic", name="critic-lite", team_name="pdca-{feature}",
-     model="sonnet", max_turns=15, prompt="[Critic-Lite] QG1-QG4 검증. VERDICT: APPROVE/REVISE.")
+     model="opus", max_turns=15, prompt="[Critic-Lite] QG1-QG4 검증. VERDICT: APPROVE/REVISE.")
 SendMessage(type="message", recipient="critic-lite", content="Plan 검토 시작.")
 # REVISE → Planner 1회 수정 → 수정본 수용 (추가 Critic 없음)
 ```
@@ -182,9 +182,9 @@ SendMessage(type="message", recipient="critic-lite", content="Plan 검토 시작
 ```
 critic_feedback = ""
 Loop (i=1..5):
-  1. Planner teammate (sonnet) → 계획 수립 (critic_feedback 반영)
-  2. Architect teammate (sonnet) → 기술적 타당성 검증
-  3. Critic teammate (sonnet) → Quality Gates 4 (QG1-QG4) + VERDICT: APPROVE/REVISE
+  1. Planner teammate (opus) → 계획 수립 (critic_feedback 반영)
+  2. Architect teammate (opus) → 기술적 타당성 검증
+  3. Critic teammate (opus) → Quality Gates 4 (QG1-QG4) + VERDICT: APPROVE/REVISE
   APPROVE → Loop 종료 / REVISE → critic_feedback 업데이트 → 다음 iteration
   5회 초과 → 경고 포함 강제 승인
 ```
@@ -273,7 +273,7 @@ impl-manager 5조건: TODO==0, 빌드 성공, 테스트 통과, 에러==0, 자�
 ```
 # impl-manager IMPLEMENTATION_COMPLETED 수신 후 (STANDARD/HEAVY만)
 Task(subagent_type="architect", name="impl-verifier", team_name="pdca-{feature}",
-     model="sonnet", max_turns=20, prompt="[Phase 3 Architect Gate] 구현 외부 검증. 상세: REFERENCE.md")
+     model="opus", max_turns=20, prompt="[Phase 3 Architect Gate] 구현 외부 검증. 상세: REFERENCE.md")
 SendMessage(type="message", recipient="impl-verifier", content="구현 검증 시작.")
 # VERDICT: APPROVE → 유의미 변경 커밋 → Phase 4 진입
 #   git status --short 확인 → 변경사항 있으면:
@@ -318,7 +318,7 @@ Loop (max_cycles):
   # QA_PASSED → Step 4.2 / QA_FAILED → B
   # B. Architect Root Cause 진단 (MANDATORY)
   Task(subagent_type="architect", name="diagnostician-{i}", team_name="pdca-{feature}",
-       model="sonnet", max_turns=20, prompt="QA 실패 root cause 진단. 출력: DIAGNOSIS + FIX_GUIDE + DOMAIN.")
+       model="opus", max_turns=20, prompt="QA 실패 root cause 진단. 출력: DIAGNOSIS + FIX_GUIDE + DOMAIN.")
   # C. Domain-Smart Fix
   Task(subagent_type="{domain-agent}", name="fixer-{i}", team_name="pdca-{feature}",
        model="sonnet", max_turns=30, prompt="진단 기반 수정: {DIAGNOSIS}. 지침: {FIX_GUIDE}.")
@@ -340,13 +340,13 @@ QA Runner 6종 goal, Architect 진단 prompt, Domain routing 상세: `REFERENCE.
 | 모드 | 실행 |
 |------|------|
 | LIGHT | architect teammate (sonnet) — APPROVE/REJECT만 |
-| STANDARD | architect → code-reviewer (sonnet) 순차 |
-| HEAVY | architect (sonnet) → code-reviewer (sonnet) 순차 |
+| STANDARD | architect (opus) → code-reviewer (sonnet) 순차 |
+| HEAVY | architect (opus) → code-reviewer (sonnet) 순차 |
 
 ```
 # LIGHT: architect만 / STANDARD/HEAVY: architect → code-reviewer 순차
 Task(subagent_type="architect", name="verifier", team_name="pdca-{feature}",
-     model="sonnet", max_turns=20, prompt="구현이 Plan/Design 요구사항과 일치하는지 검증. APPROVE/REJECT 판정.")
+     model="opus", max_turns=20, prompt="구현이 Plan/Design 요구사항과 일치하는지 검증. APPROVE/REJECT 판정.")
 SendMessage(type="message", recipient="verifier", content="검증 시작.")
 # 완료 대기 → shutdown_request → (STANDARD/HEAVY: code-reviewer 순차 spawn)
 # code-reviewer prompt에 Vercel BP 규칙 동적 주입 (React/Next.js 프로젝트 시) — 상세: REFERENCE.md
@@ -404,7 +404,7 @@ SendMessage(type="message", recipient="reporter", content="보고서 생성 요�
 | **Phase 3.1** | executor (sonnet) | impl-manager (sonnet) | impl-manager (sonnet) + 병렬 |
 | **Phase 3.2** | — | Architect Gate | Architect Gate |
 | **Phase 4.1** | QA 1회 (보고만) | QA 3회 + 진단 | QA 5회 + 진단 |
-| **Phase 4.2** | Architect (sonnet) | Architect + code-reviewer (sonnet) | Architect + code-reviewer (sonnet) |
+| **Phase 4.2** | Architect (sonnet) | Architect (opus) + code-reviewer (sonnet) | Architect (opus) + code-reviewer (sonnet) |
 | **Phase 5** | writer (haiku) + 커밋 + TeamDelete | writer (sonnet) + 커밋 + TeamDelete | writer (sonnet) + 커밋 + TeamDelete |
 
 **자동 승격**: LIGHT→STANDARD: 빌드 실패 2회 또는 영향 파일 5개+. STANDARD→HEAVY: QA 3사이클 초과 또는 영향 파일 5개+.
