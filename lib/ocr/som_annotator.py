@@ -4,6 +4,8 @@ lib.ocr.som_annotator - Set-of-Mark (SoM) 이미지 어노테이션
 번호 마커를 이미지에 삽입하여 Vision LLM이 요소를 식별하도록 도움.
 좌표 직접 요청 없이 시맨틱 레이블만 획득 (SoM 원칙).
 """
+import logging
+import tempfile
 from pathlib import Path
 from typing import Dict, List, Optional, Tuple
 
@@ -12,6 +14,8 @@ import numpy as np
 from PIL import Image
 
 from .models import UIElement
+
+logger = logging.getLogger(__name__)
 
 
 class SoMAnnotator:
@@ -32,9 +36,11 @@ class SoMAnnotator:
         self,
         tmp_dir: Optional[str] = None,
         api_timeout: int = 20,
+        vision_client=None,
     ):
-        self.tmp_dir = Path(tmp_dir) if tmp_dir else Path(r"C:\claude\lib\ocr\tmp")
+        self.tmp_dir = Path(tmp_dir) if tmp_dir else Path(tempfile.gettempdir()) / "ocr_som"
         self.api_timeout = api_timeout
+        self._vision_client = vision_client
 
     def annotate(
         self,
@@ -85,9 +91,15 @@ class SoMAnnotator:
         Vision LLM에 SoM 프롬프트 전달 → 시맨틱 레이블 획득.
         API 실패 시 semantic_label='unknown' 처리.
         """
+        if self._vision_client is None:
+            raise ValueError(
+                "vision_client is required for SoM labeling. "
+                "Provide via lib/ai_auth/ or pass client directly."
+            )
+
         try:
-            import anthropic
             import base64
+            import json
 
             with open(annotated_image_path, "rb") as f:
                 image_data = base64.standard_b64encode(f.read()).decode("utf-8")
@@ -100,8 +112,7 @@ class SoMAnnotator:
                 '{"1": "submit_button", "2": "search_input", ...}'
             )
 
-            client = anthropic.Anthropic()
-            message = client.messages.create(
+            message = self._vision_client.messages.create(
                 model="claude-opus-4-6",
                 max_tokens=1024,
                 timeout=self.api_timeout,
@@ -123,8 +134,6 @@ class SoMAnnotator:
                 ],
             )
 
-            import json
-
             label_map = json.loads(message.content[0].text)
             for elem in elements:
                 label = label_map.get(str(elem.marker_id))
@@ -132,8 +141,8 @@ class SoMAnnotator:
                     elem.semantic_label = label
                     elem.layer = 3
 
-        except Exception:
-            pass
+        except Exception as e:
+            logger.warning("SoM vision labeling failed: %s", e)
 
         return elements
 
@@ -143,5 +152,5 @@ class SoMAnnotator:
             for f in self.tmp_dir.glob("annotated_*.png"):
                 try:
                     f.unlink()
-                except Exception:
-                    pass
+                except Exception as e:
+                    logger.warning("Failed to delete temp file %s: %s", f, e)

@@ -5,7 +5,9 @@ Layer 1: OpenCV findContours (비텍스트 그래픽 감지)
 Layer 2: Tesseract OCR (텍스트 요소 + BBox 좌표)
 Layer 3: Set-of-Mark + Vision LLM (시맨틱 분류, mode="ui"/"full"만)
 """
+import logging
 import os
+import tempfile
 import time
 from typing import List, Optional, Union
 
@@ -15,6 +17,8 @@ from .extractor import OCRExtractor
 from .graphic_detector import GraphicDetector
 from .models import BBox, HybridAnalysisResult, UIElement
 from .som_annotator import SoMAnnotator
+
+logger = logging.getLogger(__name__)
 
 
 class HybridPipeline:
@@ -42,16 +46,21 @@ class HybridPipeline:
         self.som_annotator = som_annotator or SoMAnnotator()
 
     def _get_ocr_extractor(self):
+        """OCRExtractor 클래스를 반환. 외부 주입 시 클래스/인스턴스 모두 지원."""
         if self._ocr_extractor is None:
-            self._ocr_extractor = OCRExtractor
-        return self._ocr_extractor
+            return OCRExtractor
+        if isinstance(self._ocr_extractor, type):
+            # 클래스가 직접 주입된 경우
+            return self._ocr_extractor
+        # 인스턴스가 주입된 경우: 같은 타입의 클래스 반환
+        return self._ocr_extractor.__class__
 
     def analyze(
         self,
         image: Union[str, Image.Image],
         mode: str = "coords",
         save_annotated: bool = False,
-        output_dir: str = "/tmp",
+        output_dir: Optional[str] = None,
     ) -> HybridAnalysisResult:
         """
         3-Layer 통합 분석 실행.
@@ -62,6 +71,9 @@ class HybridPipeline:
             save_annotated: SoM 어노테이션 이미지 저장 여부.
             output_dir: 어노테이션 이미지 저장 디렉토리.
         """
+        if output_dir is None:
+            output_dir = tempfile.gettempdir()
+
         start = time.time()
 
         if isinstance(image, str):
@@ -103,7 +115,6 @@ class HybridPipeline:
     def _layer2_extract_text(self, image: Image.Image) -> List[UIElement]:
         try:
             extractor_cls = self._get_ocr_extractor()
-            import tempfile
             import uuid
 
             tmp_path = os.path.join(
@@ -116,8 +127,8 @@ class HybridPipeline:
             finally:
                 try:
                     os.unlink(tmp_path)
-                except Exception:
-                    pass
+                except Exception as e:
+                    logger.warning("Failed to delete temp OCR file: %s", e)
 
             elements = []
             for block in ocr_result.layout_info.blocks:
@@ -137,7 +148,8 @@ class HybridPipeline:
                                     )
                                 )
             return elements
-        except Exception:
+        except Exception as e:
+            logger.warning("OCR extraction failed: %s", e)
             return []
 
     def _layer3_som_classify(
@@ -150,8 +162,8 @@ class HybridPipeline:
         try:
             for elem in elements:
                 elem.layer = 3
-        except Exception:
-            pass
+        except Exception as e:
+            logger.warning("SoM classification failed: %s", e)
         return elements
 
     def _merge_and_deduplicate(

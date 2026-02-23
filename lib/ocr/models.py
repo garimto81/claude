@@ -5,7 +5,7 @@ Tesseract OCR 추출 결과를 위한 dataclass 모델 정의.
 """
 
 from dataclasses import dataclass, field
-from typing import List
+from typing import List, Optional
 
 
 @dataclass
@@ -179,7 +179,6 @@ class AnalysisResult:
 
 
 # --- Hybrid Pipeline 신규 모델 (기존 코드 아래 append) ---
-from typing import Optional  # noqa: E402
 
 
 @dataclass
