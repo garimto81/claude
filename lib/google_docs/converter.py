@@ -2000,11 +2000,16 @@ def create_google_doc(
                 requests, actual_insert_index
             )
 
-            _execute_with_retry(
-                lambda: docs_service.documents().batchUpdate(
-                    documentId=doc_id, body={"requests": adjusted_requests}
-                ).execute()
-            )
+            MAX_BATCH_SIZE = 300
+            total_batches = -(-len(adjusted_requests) // MAX_BATCH_SIZE)
+            for i in range(0, len(adjusted_requests), MAX_BATCH_SIZE):
+                batch = adjusted_requests[i:i + MAX_BATCH_SIZE]
+                _execute_with_retry(
+                    lambda b=batch: docs_service.documents().batchUpdate(
+                        documentId=doc_id, body={"requests": b}
+                    ).execute()
+                )
+                print(f"     배치 {i//MAX_BATCH_SIZE + 1}/{total_batches} 완료 ({len(batch)} 요청)")
             print(f"     콘텐츠 추가됨: {len(requests)} 요청")
         except Exception as e:
             print(f"     콘텐츠 추가 실패: {e}")
@@ -2326,11 +2331,16 @@ def update_google_doc(
                 requests, actual_insert_index
             )
 
-            _execute_with_retry(
-                lambda: docs_service.documents().batchUpdate(
-                    documentId=doc_id, body={"requests": adjusted_requests}
-                ).execute()
-            )
+            MAX_BATCH_SIZE = 300
+            total_batches = -(-len(adjusted_requests) // MAX_BATCH_SIZE)
+            for i in range(0, len(adjusted_requests), MAX_BATCH_SIZE):
+                batch = adjusted_requests[i:i + MAX_BATCH_SIZE]
+                _execute_with_retry(
+                    lambda b=batch: docs_service.documents().batchUpdate(
+                        documentId=doc_id, body={"requests": b}
+                    ).execute()
+                )
+                print(f"       배치 {i//MAX_BATCH_SIZE + 1}/{total_batches} 완료 ({len(batch)} 요청)")
             print(f"       콘텐츠 추가됨: {len(requests)} 요청")
         except Exception as e:
             print(f"       콘텐츠 추가 실패: {e}")
