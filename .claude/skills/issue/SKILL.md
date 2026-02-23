@@ -4,6 +4,10 @@ description: GitHub issue lifecycle management (list, create, fix, failed)
 triggers:
   keywords:
     - "issue"
+    - "/issue"
+    - "이슈"
+    - "github issue"
+    - "버그 리포트"
 ---
 
 # /issue

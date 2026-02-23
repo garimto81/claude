@@ -2,6 +2,7 @@
 name: frontend-dev
 description: 프론트엔드 개발 및 UI/UX. React/Next.js 성능 최적화 필수 적용.
 model: sonnet
+tools: Read, Write, Edit, Bash, Glob, Grep, Task, TodoWrite
 ---
 
 # Frontend Developer Agent

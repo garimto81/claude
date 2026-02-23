@@ -4,6 +4,10 @@ description: PDF 청킹 - 토큰 기반(텍스트) 또는 페이지 기반(레�
 triggers:
   keywords:
     - "chunk"
+    - "/chunk"
+    - "청킹"
+    - "pdf 분할"
+    - "토큰 분할"
 ---
 
 # /chunk
