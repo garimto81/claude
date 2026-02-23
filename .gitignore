@@ -53,6 +53,8 @@
 .claude/settings.local.json
 .claude/session_state.json
 .claude/auto-logs/
+.claude/logs/
+.claude/worktrees/
 .claude/ralph-loop.local.md
 
 # 5) 공통 제외 패턴

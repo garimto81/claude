@@ -36,6 +36,17 @@
 
 **구분 원칙**: 터미널에서 즉시 확인하는 기술 다이어그램 → ASCII / 문서로 저장·전달되는 UI 목업 → `--mockup --bnw`
 
+## HTML 목업 사이즈 규약
+
+| 속성 | 값 |
+|------|-----|
+| width | auto |
+| height | auto |
+| max-width | 720px |
+| max-height | 1280px |
+
+> ASCII 다이어그램에는 사이즈 규약 없음.
+
 ## ASCII 다이어그램 스타일 가이드
 
 ### Flowchart (흐름도)
