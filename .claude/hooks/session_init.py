@@ -383,6 +383,73 @@ def check_fatigue_signals(ttl_hours: int = 24) -> list[str]:
     return warnings
 
 
+def check_prd_sync_status() -> list[str]:
+    """최근 구현 커밋에 대한 PRD 업데이트 여부 감지
+
+    feat/fix 커밋이 있지만 docs(prd) 커밋이 없으면 PRD 미업데이트로 판단.
+    """
+    warnings = []
+    try:
+        # 최근 10개 커밋 로그 추출
+        result = subprocess.run(
+            ["git", "log", "--oneline", "-10"],
+            capture_output=True,
+            text=True,
+            cwd=PROJECT_DIR,
+        )
+        if result.returncode != 0:
+            return warnings
+
+        commits = result.stdout.strip().split("\n")
+        if not commits or commits == [""]:
+            return warnings
+
+        # feat/fix 커밋과 docs(prd) 커밋 분리
+        has_impl_commits = any(
+            line and (
+                " feat(" in line or line.split(" ", 1)[-1].startswith("feat(") or
+                " fix(" in line or line.split(" ", 1)[-1].startswith("fix(") or
+                " feat!" in line or " fix!" in line
+            )
+            for line in commits
+        )
+        has_prd_commits = any(
+            line and (
+                "docs(prd)" in line.lower() or
+                "docs: prd" in line.lower() or
+                "prd:" in line.lower()
+            )
+            for line in commits
+        )
+
+        if has_impl_commits and not has_prd_commits:
+            # docs/00-prd/ 최근 수정일 확인
+            prd_dir = ROOT_PROJECT_DIR / "docs" / "00-prd"
+            if prd_dir.exists():
+                prd_files = list(prd_dir.glob("*.prd.md"))
+                if prd_files:
+                    # 가장 최근 수정된 PRD 파일 확인
+                    latest_prd = max(prd_files, key=lambda p: p.stat().st_mtime)
+                    prd_age_days = (
+                        datetime.now(timezone.utc) -
+                        datetime.fromtimestamp(latest_prd.stat().st_mtime, tz=timezone.utc)
+                    ).days
+                    if prd_age_days >= 1:
+                        warnings.append(
+                            "📋 PRD 동기화 권장: 최근 구현에 대한 PRD 업데이트가 감지되지 않았습니다. "
+                            "/prd-update 실행 권장"
+                        )
+                else:
+                    warnings.append(
+                        "📋 PRD 미작성 감지: docs/00-prd/ 에 PRD 파일이 없습니다. "
+                        "/prd-update --new 로 생성 권장"
+                    )
+    except Exception:
+        pass
+
+    return warnings
+
+
 def load_previous_session() -> dict:
     """이전 세션 상태 로드"""
     session_file = Path(PROJECT_DIR) / ".claude" / "session_state.json"
@@ -423,6 +490,7 @@ def main():
         stale_messages.extend(cleanup_stale_global_todos(ttl_hours=2))
         stale_messages.extend(cleanup_orphan_agent_teams())
         stale_messages.extend(check_fatigue_signals(ttl_hours=24))
+        stale_messages.extend(check_prd_sync_status())
 
         # Junction 설정
         junction_created, junction_message = setup_commands_junction()
