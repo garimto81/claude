@@ -39,7 +39,7 @@ class AgentConfig:
     role: str
     model: str = field(default_factory=lambda: AGENT_MODEL_TIERS["default"])
     system_prompt: Optional[str] = None
-    tools: list[str] = field(default_factory=list)
+    tools: list[str | dict] = field(default_factory=list)  # 문자열 또는 런타임 설정 dict
     max_retries: int = 3
     timeout_seconds: int = 120
     context_isolation: bool = True
@@ -121,11 +121,12 @@ TEAM_CONFIGS = {
 
 # 복잡도 점수 → 팀 배치 매핑
 COMPLEXITY_TEAM_MAP = {
-    (0, 3): [],                                    # 기존 경로
-    (4, 5): ["dev"],                               # Dev 단독
-    (6, 7): ["dev", "quality"],                    # Dev + Quality
-    (8, 9): ["dev", "quality", "research"],        # Dev + Quality + Research
-    (10, 10): ["dev", "quality", "ops", "research"],  # 4팀 전체
+    (0, 1): [],                                        # 자율 처리 (매우 낮은 복잡도)
+    (2, 3): [],                                        # 자율 처리 (낮은 복잡도)
+    (4, 5): ["dev"],                                   # Dev 단독
+    (6, 7): ["dev", "quality"],                        # Dev + Quality
+    (8, 9): ["dev", "quality", "research"],            # Dev + Quality + Research
+    (10, 10): ["dev", "quality", "ops", "research"],   # 4팀 전체
 }
 
 
