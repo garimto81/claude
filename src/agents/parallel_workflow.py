@@ -29,6 +29,7 @@ class WorkflowState(TypedDict):
     results: Annotated[list[dict], operator.add]  # 에이전트 결과 (Reducer)
     final_output: str  # 최종 출력
     error_count: int  # 에러 횟수
+    context_budget: int  # 컨텍스트 토큰 예산 추적
     metadata: dict  # 추가 메타데이터
 
 
@@ -304,6 +305,7 @@ def run_parallel_task(task: str, num_agents: int = 3) -> dict:
         "results": [],
         "final_output": "",
         "error_count": 0,
+        "context_budget": 100000,
         "metadata": {},
     }
 
@@ -330,6 +332,7 @@ async def run_parallel_task_async(task: str, num_agents: int = 3) -> dict:
         "results": [],
         "final_output": "",
         "error_count": 0,
+        "context_budget": 100000,
         "metadata": {},
     }
 
