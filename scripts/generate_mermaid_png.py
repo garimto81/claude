@@ -63,7 +63,7 @@ async def mermaid_to_png(mermaid_code: str, output_path: Path, width: int = 720)
             page = await browser.new_page()
 
             await page.set_viewport_size({"width": width, "height": 4000})
-            await page.goto(f"file:///{html_path}")
+            await page.goto(f"file:///{str(html_path).replace(chr(92), '/')}")
 
             # Mermaid 렌더링 대기
             await page.wait_for_selector(".mermaid svg", timeout=10000)
