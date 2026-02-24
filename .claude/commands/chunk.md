@@ -72,6 +72,32 @@ PDF를 LLM 입력용 청크로 분할합니다.
 4. 작업 상태 안내
 5. 완료 시 JSON 파일 경로 및 요약 출력
 
+### PRD 모드 (`--prd`) — v2.0.0
+
+1. 파일 경로 유효성 검사 (MD/PDF 확인)
+2. **분석 단계** (foreground, `--info` 동일 로직):
+   - 토큰 추정치 계산
+   - PRD 구조 감지 (heading 수, 요구사항 번호 패턴, 표 존재 여부)
+   - 추천 전략 결정 (auto_select_strategy)
+3. **사용자 확인 플로우** (R10 신규 — `--strategy` 미지정 시만):
+   - 분석 결과 출력:
+     ```
+     파일: document.md
+     토큰 추정: 85,000 (PRD 구조 감지: 예, 점수: 4/5)
+     추천 전략: hierarchical (섹션 계층 보존)
+     예상 청크: ~12개 (8,000 토큰/청크)
+     ```
+   - AskUserQuestion으로 선택 요청:
+     - option 1: "승인 — hierarchical 전략으로 진행"
+     - option 2: "전략 변경 — fixed / semantic 중 선택"
+     - option 3: "취소"
+   - `--yes` 또는 `--strategy` 명시 시 이 단계 스킵
+4. **청킹 실행** (백그라운드):
+   ```powershell
+   python C:\claude\ebs\tools\pdf_chunker.py <path> --prd --strategy <chosen>
+   ```
+5. 완료 시 JSON 파일 경로 및 청크 요약 출력
+
 ### 페이지 모드 (`--page`)
 
 1. PDF 경로 유효성 검사
@@ -141,6 +167,14 @@ PDF를 LLM 입력용 청크로 분할합니다.
 |------|------|--------|
 | `--pages N` | 청크당 페이지 수 | 10 |
 | `--inline` | Base64 JSON 출력 (API용) | file |
+
+### PRD 모드 전용 (`--prd`)
+
+| 옵션 | 설명 | 기본값 |
+|------|------|--------|
+| `--strategy` | 전략 강제 지정 (확인 단계 스킵) | auto |
+| `--threshold N` | 청킹 임계 토큰 수 | 60000 |
+| `--yes` | 확인 단계 스킵 (자동화용) | - |
 
 ## 스크립트 경로
 
