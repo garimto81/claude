@@ -94,13 +94,13 @@
 
 | 항목 | 상태 | 비고 |
 |------|------|------|
-| SKILL.md 프론트매터 표준화 (Phase A-1) | 예정 | agentskills.io 필수 필드 추가 |
-| deprecated plugin.json 마이그레이션 (Phase A-2) | 예정 | skills/ 디렉토리 구조로 전환 |
-| README 설치 명령 수정 (Phase A-3) | 예정 | 실제 작동하는 설치 방법으로 교체 |
-| 원칙 5 추가 (Phase B-4) | 예정 | Documents over Documentation |
-| 원칙 6 추가 (Phase B-5) | 예정 | Context Awareness |
-| CLAUDE.md 모듈화 (Phase B-6) | 예정 | core + extensions 분리 |
-| EXAMPLES.md 신규 작성 (Phase B-6) | 예정 | 원칙 5, 6 예시 포함 |
+| SKILL.md 프론트매터 표준화 (Phase A-1) | 완료 | license, compatibility, user-invocable, disable-model-invocation 추가 |
+| deprecated plugin.json 마이그레이션 (Phase A-2) | 완료 | skills/ 디렉토리 구조로 전환, plugin.json 참조 제거 |
+| README 설치 명령 수정 (Phase A-3) | 완료 | xcopy, 심볼릭 링크, macOS/Linux 3가지 실제 설치 방법 포함 |
+| 원칙 5 추가 (Phase B-4) | 완료 | Documents over Documentation — 단일 문서, 단일 진실 |
+| 원칙 6 추가 (Phase B-5) | 완료 | Context Awareness — 아는 것과 모르는 것 구분 |
+| CLAUDE.md 모듈화 (Phase B-6) | 완료 | 6개 원칙 정의 완료 (확장 예시는 EXAMPLES.md 분리) |
+| EXAMPLES.md 신규 작성 (Phase B-6) | 완료 | 6개 원칙 Bad/Good 대비 예시, 원칙 5/6 포함 |
 | 멀티 에이전트 Hooks 통합 (Phase C-7) | 예정 (중기) | 이번 범위 외 |
 | 언어별 확장 (Phase C-8) | 예정 (중기) | 이번 범위 외 |
 
@@ -110,4 +110,5 @@
 
 | 날짜 | 버전 | 변경 내용 | 결정 근거 |
 |------|------|-----------|----------|
+| 2026-02-25 | v1.1 | Phase A+B 구현 완료, 구현 상태 업데이트 | Architect APPROVE (6/6 PASS) |
 | 2026-02-25 | v1.0 | 최초 작성 | 외부 레포 정밀 분석 결과 6개 기술 갭 발견 |
