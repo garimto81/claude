@@ -70,14 +70,15 @@ LLM 에이전트가 Mermaid 다이어그램을 생성할 때 노드 레이블에
 
 | 항목 | 파일 | 상태 |
 |------|------|------|
-| 규칙 파일 업데이트 | `.claude/rules/11-ascii-diagram.md` | 예정 |
-| Hook 감지 추가 | `.claude/hooks/post_edit_check.js` | 예정 |
-| 배치 수정 스크립트 | `scripts/sanitize_mermaid.py` | 예정 |
-| 기존 파일 일괄 수정 | `docs/02-design/*.design.md` 외 | 예정 |
+| 규칙 파일 업데이트 | `.claude/rules/11-ascii-diagram.md` | **완료** |
+| Hook 감지 추가 | `.claude/hooks/post_edit_check.js` | **완료** |
+| 배치 수정 스크립트 | `scripts/sanitize_mermaid.py` | **완료** |
+| 기존 파일 일괄 수정 | `docs/02-design/ocr-hybrid-pipeline.design.md` | **완료** (19개 수정) |
 
 ## Changelog
 
 | 날짜 | 버전 | 변경 내용 | 결정 근거 |
 |------|------|-----------|----------|
+| 2026-02-26 | v1.2 | 4-layer 구조적 수정 완료 (규칙+Hook+스크립트+파일 수정) | feat/mermaid-newline-fix → main 머지 |
 | 2026-02-26 | v1.1 | `\n` 리터럴 버그 추가 (구조적 수정 필요) | 반복 발생 패턴 확인, 287개 리터럴 발견 |
 | 2026-02-24 | v1.0 | 최초 작성 | Windows 경로 버그 수정 |
