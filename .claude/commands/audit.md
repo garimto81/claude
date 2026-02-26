@@ -10,8 +10,9 @@ CLAUDE.md, 커맨드, 에이전트, 스킬의 일관성과 품질을 점검합�
 ## Usage
 
 ```bash
-/audit              # 통합 점검 (설정 + 트렌드 + 자동 적용)
+/audit              # 통합 점검 (설정 + 이슈 트래커 + 트렌드 + 자동 적용)
 /audit config       # 설정 점검만
+/audit issues       # GitHub 추적 이슈 상태 확인만
 /audit quick        # 빠른 점검 (버전/개수만)
 /audit deep         # 심층 점검 (내용 분석 포함)
 /audit fix          # 발견된 문제 자동 수정
@@ -34,12 +35,13 @@ CLAUDE.md, 커맨드, 에이전트, 스킬의 일관성과 품질을 점검합�
 ```
 /audit 실행
     │
-    ├─ [Phase 1] 설정 점검 (5개 영역)
-    │       ├─ [1/5] CLAUDE.md 점검
-    │       ├─ [2/5] 커맨드 점검
-    │       ├─ [3/5] 에이전트 점검
-    │       ├─ [4/5] 스킬 점검
-    │       └─ [5/5] 문서 동기화 점검
+    ├─ [Phase 1] 설정 점검 (6개 영역)
+    │       ├─ [1/6] CLAUDE.md 점검
+    │       ├─ [2/6] 커맨드 점검
+    │       ├─ [3/6] 에이전트 점검
+    │       ├─ [4/6] 스킬 점검
+    │       ├─ [5/6] 문서 동기화 점검
+    │       └─ [6/6] GitHub 추적 이슈 상태 확인
     │
     ├─ [Phase 2] 트렌드 분석 + 자동 적용
     │       ├─ [1/6] Gmail 인증 확인
@@ -78,6 +80,7 @@ CLAUDE.md, 커맨드, 에이전트, 스킬의 일관성과 품질을 점검합�
   ✅ 에이전트: 19개 검사 완료
   ✅ 스킬: 47개 검사 완료
   ⚠️ 문서 동기화: 1개 불일치
+  🔴 추적 이슈: 2개 OPEN (#28847, #28922)
 
 [Phase 2] 트렌드 분석
   📬 브리핑 메일: 3개 수집
@@ -135,30 +138,72 @@ CLAUDE.md, 커맨드, 에이전트, 스킬의 일관성과 품질을 점검합�
 | COMMAND_REFERENCE.md | 모든 커맨드 포함 |
 | AGENTS_REFERENCE.md | 모든 에이전트 포함 |
 
+### 6. GitHub 추적 이슈 검사
+
+`.claude/config/tracked-issues.json`에 등록된 GitHub 이슈의 상태를 확인합니다.
+
+| 항목 | 검사 내용 |
+|------|----------|
+| 설정 파일 | `tracked-issues.json` 존재 여부 |
+| 이슈 상태 | `gh issue view {number} -R {repo} --json state` 실행 |
+| 상태 표시 | 🔴 OPEN / 🟢 CLOSED |
+
+**실행 방법:**
+```bash
+# 각 이슈에 대해:
+gh issue view <number> -R <repo> --json state,title,assignees,labels
+```
+
+**tracked-issues.json 구조:**
+```json
+{
+  "issues": [
+    {
+      "repo": "anthropics/claude-code",
+      "number": 28847,
+      "label": ".claude.json race condition",
+      "added": "2026-02-27",
+      "reason": "v2.1.59 cascade amplification bug"
+    }
+  ]
+}
+```
+
+**이슈 관리 명령:**
+```bash
+/audit issues                    # 추적 이슈 상태 확인
+/audit issues add <repo>#<num> "<label>" "<reason>"   # 이슈 추가
+/audit issues remove <num>       # 이슈 제거
+```
+
 ## 점검 흐름
 
 ```
 /audit 실행
     │
-    ├─ [1/5] CLAUDE.md 점검
+    ├─ [1/6] CLAUDE.md 점검
     │       ├─ 버전 확인
     │       ├─ 커맨드 개수 일치
     │       ├─ 에이전트 개수 일치
     │       └─ 스킬 개수 일치
     │
-    ├─ [2/5] 커맨드 점검
+    ├─ [2/6] 커맨드 점검
     │       ├─ 파일별 frontmatter
     │       └─ 필수 섹션 확인
     │
-    ├─ [3/5] 에이전트 점검
+    ├─ [3/6] 에이전트 점검
     │       └─ 파일별 필수 섹션
     │
-    ├─ [4/5] 스킬 점검
+    ├─ [4/6] 스킬 점검
     │       └─ SKILL.md 존재 및 내용
     │
-    └─ [5/5] 문서 동기화 점검
-            ├─ COMMAND_REFERENCE.md
-            └─ AGENTS_REFERENCE.md
+    ├─ [5/6] 문서 동기화 점검
+    │       ├─ COMMAND_REFERENCE.md
+    │       └─ AGENTS_REFERENCE.md
+    │
+    └─ [6/6] GitHub 추적 이슈 점검
+            ├─ .claude/config/tracked-issues.json 읽기
+            └─ 각 이슈 gh issue view로 상태 확인
 ```
 
 ## 출력 형식
@@ -168,29 +213,33 @@ CLAUDE.md, 커맨드, 에이전트, 스킬의 일관성과 품질을 점검합�
 ```
 🔍 Configuration Audit - 2025-12-12
 
-[1/5] CLAUDE.md 점검...
+[1/6] CLAUDE.md 점검...
   ✅ 버전: 10.1.0
   ✅ 커맨드: 14개 일치
   ✅ 에이전트: 18개 일치
   ✅ 스킬: 13개 일치
 
-[2/5] 커맨드 점검...
+[2/6] 커맨드 점검...
   ✅ 14개 파일 검사 완료
 
-[3/5] 에이전트 점검...
+[3/6] 에이전트 점검...
   ✅ 18개 파일 검사 완료
 
-[4/5] 스킬 점검...
+[4/6] 스킬 점검...
   ✅ 13개 디렉토리 검사 완료
 
-[5/5] 문서 동기화 점검...
+[5/6] 문서 동기화 점검...
   ✅ COMMAND_REFERENCE.md 동기화됨
   ✅ AGENTS_REFERENCE.md 동기화됨
 
+[6/6] GitHub 추적 이슈 점검...
+  🔴 #28847 .claude.json race condition — OPEN (anthropics/claude-code)
+  🔴 #28922 .claude.json corruption meta-bug — OPEN (anthropics/claude-code)
+
 ━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━
 ✅ 모든 점검 통과
-   총 검사: 5개 영역
-   문제: 0개
+   총 검사: 6개 영역
+   문제: 0개 (추적 이슈 2개 OPEN)
 ━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━
 ```
 
@@ -199,27 +248,31 @@ CLAUDE.md, 커맨드, 에이전트, 스킬의 일관성과 품질을 점검합�
 ```
 🔍 Configuration Audit - 2025-12-12
 
-[1/5] CLAUDE.md 점검...
+[1/6] CLAUDE.md 점검...
   ✅ 버전: 10.1.0
   ⚠️ 커맨드 개수 불일치: 문서 13개, 실제 14개
   ✅ 에이전트: 18개 일치
   ✅ 스킬: 13개 일치
 
-[2/5] 커맨드 점검...
+[2/6] 커맨드 점검...
   ✅ 14개 파일 검사 완료
 
-[3/5] 에이전트 점검...
+[3/6] 에이전트 점검...
   ✅ 18개 파일 검사 완료
 
-[4/5] 스킬 점검...
+[4/6] 스킬 점검...
   ✅ 13개 디렉토리 검사 완료
 
-[5/5] 문서 동기화 점검...
+[5/6] 문서 동기화 점검...
   ⚠️ COMMAND_REFERENCE.md에 /audit 누락
   ✅ AGENTS_REFERENCE.md 동기화됨
 
+[6/6] GitHub 추적 이슈 점검...
+  🔴 #28847 .claude.json race condition — OPEN (anthropics/claude-code)
+  🔴 #28922 .claude.json corruption meta-bug — OPEN (anthropics/claude-code)
+
 ━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━
-⚠️ 2개 문제 발견
+⚠️ 2개 문제 발견 (추적 이슈 2개 OPEN)
 
 1. CLAUDE.md 커맨드 개수 업데이트 필요
    현재: 13개 → 수정: 14개
