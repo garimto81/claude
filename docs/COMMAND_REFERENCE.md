@@ -1,6 +1,6 @@
 # Command Reference
 
-**Version**: 1.4.0 | **Updated**: 2026-02-06
+**Version**: 1.5.0 | **Updated**: 2026-02-25
 
 이 문서는 모든 슬래시 커맨드의 사용법을 정리합니다.
 
@@ -11,7 +11,6 @@
 | 카테고리 | 커맨드 | 설명 |
 |----------|--------|------|
 | **핵심** | `/auto` | 통합 PDCA 워크플로우 (v20.1 - Agent Teams + PDCA) |
-| | `/orchestrate` | 메인-서브 에이전트 오케스트레이션 |
 | | `/commit` | Conventional Commit 생성 |
 | | `/check` | 코드 품질/보안 검사 |
 | | `/tdd` | TDD 워크플로우 |
@@ -19,6 +18,7 @@
 | **이슈/PR** | `/issue` | GitHub 이슈 관리 |
 | | `/pr` | PR 리뷰/머지 |
 | | `/create` | PRD/PR/문서 생성 |
+| | `/prd-update` | 로컬 PRD 업데이트 (브랜치 기반 자동 탐지) |
 | | `/prd-sync` | PRD 동기화 (Google Docs → 로컬) |
 | **분석** | `/research` | 코드베이스/웹 리서치 |
 | | `/parallel` | 병렬 멀티에이전트 실행 |
@@ -26,7 +26,7 @@
 | | `/session` | 세션 관리 |
 | | `/deploy` | 버전/Docker 배포 |
 | | `/audit` | 설정 점검 및 개선 |
-| **도구** | `/ai-login` | AI 서비스 인증 (GPT, Gemini) |
+| **도구** | `/auth` | AI 서비스 인증 (GPT, Gemini) |
 | | `/ai-subtitle` | Claude Vision AI 자막 생성 |
 | | `/chunk` | PDF 청킹 (토큰/페이지 기반) |
 | | `/ccs` | CCS CLI 위임 실행 |
@@ -123,7 +123,9 @@
 
 ---
 
-## 3. /orchestrate - 메인-서브 에이전트 오케스트레이션
+## 3. /orchestrate ~~(DEPRECATED)~~
+
+> ⚠️ **파일 없음**: `.claude/commands/orchestrate.md` 미존재. `/auto` 커맨드로 대체.
 
 YAML 기반으로 서브 에이전트를 백그라운드에서 격리 실행하고 결과를 수집합니다.
 
@@ -643,6 +645,32 @@ Google Docs (마스터) → prd_manager.py → Local Cache (읽기 전용)
 
 ---
 
+## 11.5. /prd-update - 로컬 PRD 업데이트
+
+브랜치 기반으로 `docs/00-prd/` 내 PRD 파일을 생성하거나 업데이트합니다. `/prd-sync`(Google Docs 동기화)와 역할이 다릅니다.
+
+### 사용법
+
+```bash
+/prd-update              # 현재 브랜치 기반 PRD 자동 탐지 + 업데이트
+/prd-update "feature"    # 특정 feature PRD 업데이트
+/prd-update --new        # PRD 없을 때 신규 생성
+/prd-update --diff       # 구현 내용 vs 현재 PRD 차이 분석
+/prd-update --list       # docs/00-prd/ 내 모든 PRD 목록
+```
+
+### 커밋 형식
+
+```bash
+docs(prd): {feature명} 요구사항 반영
+```
+
+### 관련 규칙
+
+- `.claude/rules/13-requirements-prd.md` — PRD-First 강제 규칙
+
+---
+
 ## 12. /research - 리서치
 
 코드베이스 분석, 웹 검색, 구현 계획을 수행합니다.
@@ -1048,18 +1076,18 @@ CLAUDE.md, 커맨드, 에이전트, 스킬의 일관성을 점검합니다.
 
 ---
 
-## 18. /ai-login - AI 서비스 인증
+## 18. /auth - AI 서비스 인증
 
 AI 검증용 서비스(OpenAI, Google) 인증을 관리합니다. Browser OAuth와 CLI 토큰 재사용을 지원합니다.
 
 ### 사용법
 
 ```bash
-/ai-login openai                    # OpenAI OAuth 인증
-/ai-login google                    # Google OAuth 인증
-/ai-login google --api-key          # Google API Key 방식
-/ai-login status                    # 전체 인증 상태
-/ai-login logout                    # 모든 세션 로그아웃
+/auth openai                    # OpenAI OAuth 인증
+/auth google                    # Google OAuth 인증
+/auth google --api-key          # Google API Key 방식
+/auth status                    # 전체 인증 상태
+/auth logout                    # 모든 세션 로그아웃
 ```
 
 ### 인증 우선순위
