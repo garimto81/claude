@@ -359,6 +359,18 @@ class MarkdownToDocsConverter:
                 i += 1
                 continue
 
+            # 링크된 이미지 라인 처리: [![alt](img)](link) 형태 (줄 전체)
+            # _apply_segment_style에 image_url 처리 없으므로 블록 레벨에서 잡아야 함
+            linked_img_match = re.match(
+                r"^\s*\[!\[([^\]]*)\]\(([^)]+)\)\]\([^)]*\)\s*$", line
+            )
+            if linked_img_match:
+                alt_text = linked_img_match.group(1)
+                image_url = linked_img_match.group(2)
+                self._add_image_block(image_url, alt_text)
+                i += 1
+                continue
+
             # 일반 텍스트 (인라인 스타일 적용)
             if line.strip():
                 self._add_paragraph_with_inline_styles(line)
