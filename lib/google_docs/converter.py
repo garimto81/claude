@@ -2409,6 +2409,7 @@ def update_google_doc(
     apply_page_style: bool = True,
     base_path: Optional[str] = None,
     incremental: bool = True,
+    folder_id: Optional[str] = None,
 ) -> str:
     """
     기존 Google Docs 문서를 업데이트.
