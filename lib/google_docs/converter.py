@@ -5,6 +5,8 @@ Markdown to Google Docs 변환기
 Premium Dark Text 스타일 시스템 연동.
 """
 
+import hashlib
+import json as _json
 import re
 import subprocess
 import tempfile
@@ -2226,6 +2228,179 @@ def _find_text_index(body_content: list[dict], search_text: str) -> int | None:
     return None
 
 
+# ──────────────────────────────────────────────────────────────
+# 증분 업데이트 헬퍼 함수
+# ──────────────────────────────────────────────────────────────
+
+def _compute_content_hash(content: str) -> str:
+    """마크다운 내용의 MD5 해시 계산"""
+    return hashlib.md5(content.encode("utf-8")).hexdigest()
+
+
+def _gdocs_hash_cache_path() -> _Path:
+    """해시 캐시 파일 경로"""
+    return _Path("C:/claude/json/.gdocs_hash_cache.json")
+
+
+def _load_gdocs_hash_cache() -> dict:
+    """해시 캐시 로드"""
+    p = _gdocs_hash_cache_path()
+    if p.exists():
+        try:
+            return _json.loads(p.read_text(encoding="utf-8"))
+        except Exception:
+            return {}
+    return {}
+
+
+def _save_gdocs_hash_cache(cache: dict) -> None:
+    """해시 캐시 저장"""
+    p = _gdocs_hash_cache_path()
+    try:
+        p.parent.mkdir(parents=True, exist_ok=True)
+        p.write_text(_json.dumps(cache, ensure_ascii=False, indent=2), encoding="utf-8")
+    except Exception as e:
+        print(f"       캐시 저장 실패 (무시됨): {e}")
+
+
+def _parse_md_sections(content: str) -> list[dict]:
+    """마크다운을 H1/H2 기준으로 섹션 분할
+
+    Returns:
+        list of {heading, level, content, has_table, has_image, content_hash}
+        heading "__preamble__" 은 첫 제목 이전 내용
+    """
+    sections: list[dict] = []
+    lines = content.split("\n")
+    cur_heading = "__preamble__"
+    cur_level = 0
+    cur_lines: list[str] = []
+
+    def flush(heading: str, level: int, lines_: list[str]) -> None:
+        text = "\n".join(lines_)
+        sections.append({
+            "heading": heading,
+            "level": level,
+            "content": text,
+            "has_table": bool(re.search(r"^\|.+\|", text, re.MULTILINE)),
+            "has_image": "![" in text,
+            "content_hash": _compute_content_hash(text),
+        })
+
+    for line in lines:
+        m = re.match(r"^(#{1,2}) (.+)", line)
+        if m:
+            flush(cur_heading, cur_level, cur_lines)
+            cur_heading = m.group(2).strip()
+            cur_level = len(m.group(1))
+            cur_lines = [line]
+        else:
+            cur_lines.append(line)
+
+    flush(cur_heading, cur_level, cur_lines)
+    return sections
+
+
+def _extract_doc_section_map(body_content: list[dict]) -> list[dict]:
+    """Google Docs 본문에서 섹션 맵 추출
+
+    Returns:
+        list of {heading, level, para_start, para_end, section_end, has_table}
+        - para_start: 헤딩 paragraph startIndex
+        - para_end: 헤딩 paragraph endIndex (본문 시작 위치)
+        - section_end: 이 섹션의 끝 인덱스 (다음 헤딩 startIndex 또는 문서 끝)
+        - has_table: 섹션 내 테이블 포함 여부
+    """
+    secs: list[dict] = []
+    cur: dict | None = None
+
+    for elem in body_content:
+        if "paragraph" in elem:
+            para = elem["paragraph"]
+            named_style = para.get("paragraphStyle", {}).get("namedStyleType", "")
+            text = "".join(
+                el.get("textRun", {}).get("content", "")
+                for el in para.get("elements", [])
+            )
+            if named_style in ("HEADING_1", "HEADING_2"):
+                if cur is not None:
+                    cur["section_end"] = elem.get("startIndex", 0)
+                    secs.append(cur)
+                level = 1 if named_style == "HEADING_1" else 2
+                cur = {
+                    "heading": text.strip(),
+                    "level": level,
+                    "para_start": elem.get("startIndex", 0),
+                    "para_end": elem.get("endIndex", 0),
+                    "section_end": None,
+                    "has_table": False,
+                }
+        elif "table" in elem:
+            if cur is not None:
+                cur["has_table"] = True
+
+    if cur is not None and body_content:
+        cur["section_end"] = body_content[-1].get("endIndex", 0) - 1
+        secs.append(cur)
+
+    return secs
+
+
+def _replace_doc_section(
+    doc_id: str,
+    docs_service: Any,
+    para_end: int,
+    section_end: int,
+    new_section_md: str,
+) -> None:
+    """섹션 본문만 교체 (헤딩 paragraph는 보존)
+
+    Args:
+        para_end: 헤딩 paragraph의 endIndex (본문이 시작되는 위치)
+        section_end: 이 섹션의 끝 인덱스 (다음 헤딩 직전)
+        new_section_md: 전체 섹션 마크다운 (헤딩 줄 포함)
+    """
+    # 1. 헤딩 이후 기존 본문 삭제
+    delete_end = section_end - 1
+    if delete_end > para_end:
+        _execute_with_retry(
+            lambda: docs_service.documents().batchUpdate(
+                documentId=doc_id,
+                body={"requests": [{"deleteContentRange": {"range": {
+                    "startIndex": para_end,
+                    "endIndex": delete_end,
+                }}}]},
+            ).execute()
+        )
+
+    # 2. 새 본문 (헤딩 줄 제외)을 Docs 요청으로 변환 후 삽입
+    body_lines = new_section_md.split("\n")[1:]  # 첫 줄(헤딩) 제외
+    body_md = "\n".join(body_lines).strip()
+    if not body_md:
+        return
+
+    converter = MarkdownToDocsConverter(
+        body_md + "\n\n",
+        include_toc=False,
+        use_native_tables=False,  # 테이블 포함 섹션은 전체 재작성으로 처리
+    )
+    requests = converter.parse()
+    if not requests:
+        return
+
+    # para_end 위치에 삽입 (삭제 후 인덱스가 para_end로 당겨짐)
+    adjusted = converter._adjust_request_indices(requests, para_end)
+
+    MAX_BATCH = 200
+    for i in range(0, len(adjusted), MAX_BATCH):
+        batch = adjusted[i : i + MAX_BATCH]
+        _execute_with_retry(
+            lambda b=batch: docs_service.documents().batchUpdate(
+                documentId=doc_id, body={"requests": b}
+            ).execute()
+        )
+
+
 def update_google_doc(
     doc_id: str,
     content: str,
@@ -2233,9 +2408,12 @@ def update_google_doc(
     use_native_tables: bool = True,
     apply_page_style: bool = True,
     base_path: Optional[str] = None,
+    incremental: bool = True,
 ) -> str:
     """
-    기존 Google Docs 문서 내용을 전부 삭제하고 새 내용으로 교체 (문서 ID 유지)
+    기존 Google Docs 문서를 업데이트.
+    incremental=True(기본값): 변경된 섹션만 추가·수정·삭제 (증분 업데이트).
+    incremental=False: 문서 전체 삭제 후 재작성 (기존 방식).
 
     Args:
         doc_id: 기존 Google Docs 문서 ID
@@ -2248,6 +2426,105 @@ def update_google_doc(
     Returns:
         str: 문서 URL
     """
+    doc_url = f"https://docs.google.com/document/d/{doc_id}/edit"
+
+    # ── 증분 업데이트: 해시 체크 및 섹션별 비교 ───────────────────────
+    if incremental:
+        new_hash = _compute_content_hash(content)
+        cache = _load_gdocs_hash_cache()
+
+        # 내용 동일 → 업데이트 완전 스킵
+        if cache.get(doc_id, {}).get("full_hash") == new_hash:
+            print("[SKIP] 내용 변경 없음, Google Docs 업데이트 스킵")
+            return doc_url
+
+        # 섹션 분석으로 증분 업데이트 시도
+        try:
+            creds = get_credentials()
+            docs_service_inc = build("docs", "v1", credentials=creds)
+
+            print("[0/5] 문서 구조 분석 중 (증분 업데이트)...")
+            doc = _execute_with_retry(
+                lambda: docs_service_inc.documents().get(documentId=doc_id).execute()
+            )
+            body_content = doc.get("body", {}).get("content", [])
+
+            old_secs = _extract_doc_section_map(body_content)
+            new_secs = _parse_md_sections(content)
+
+            old_headings = [s["heading"] for s in old_secs]
+            new_headings = [s["heading"] for s in new_secs if s["heading"] != "__preamble__"]
+
+            # 섹션 구조(추가·삭제·순서) 변경 시 전체 재작성으로 폴백
+            if old_headings != new_headings:
+                added = set(new_headings) - set(old_headings)
+                removed = set(old_headings) - set(new_headings)
+                reason_parts = []
+                if added:
+                    reason_parts.append(f"새 섹션: {', '.join(added)}")
+                if removed:
+                    reason_parts.append(f"삭제 섹션: {', '.join(removed)}")
+                if not reason_parts:
+                    reason_parts.append("섹션 순서 변경")
+                print(f"       구조 변경 감지 ({'; '.join(reason_parts)}) → 전체 재작성")
+            else:
+                # 캐시된 섹션 해시와 비교
+                new_secs_map = {s["heading"]: s for s in new_secs}
+                cached_section_hashes = cache.get(doc_id, {}).get("sections", {})
+                changed: list[dict] = []
+                force_full = False
+
+                for old_sec in old_secs:
+                    heading = old_sec["heading"]
+                    new_sec = new_secs_map.get(heading)
+                    if not new_sec:
+                        continue
+                    # 테이블·이미지 포함 섹션은 전체 재작성
+                    if old_sec["has_table"] or new_sec["has_table"] or new_sec["has_image"]:
+                        force_full = True
+                        print(f"       섹션 '{heading}': 테이블/이미지 포함 → 전체 재작성")
+                        break
+                    # 캐시된 해시와 새 해시 비교
+                    old_hash_sec = cached_section_hashes.get(heading, "")
+                    new_hash_sec = new_sec["content_hash"]
+                    if old_hash_sec != new_hash_sec:
+                        changed.append({
+                            "heading": heading,
+                            "old": old_sec,
+                            "new": new_sec,
+                        })
+
+                if not force_full:
+                    if not changed:
+                        print("       모든 섹션 동일 → 업데이트 스킵")
+                        section_hashes = {s["heading"]: s["content_hash"] for s in new_secs}
+                        cache[doc_id] = {"full_hash": new_hash, "sections": section_hashes}
+                        _save_gdocs_hash_cache(cache)
+                        return doc_url
+
+                    print(f"       변경 섹션 {len(changed)}개 → 증분 업데이트 시작")
+                    # 역순 처리 (인덱스 안정성 보장: 뒤에서 앞으로)
+                    for sec_info in reversed(changed):
+                        _replace_doc_section(
+                            doc_id=doc_id,
+                            docs_service=docs_service_inc,
+                            para_end=sec_info["old"]["para_end"],
+                            section_end=sec_info["old"]["section_end"],
+                            new_section_md=sec_info["new"]["content"],
+                        )
+                        print(f"       '{sec_info['heading']}' 섹션 업데이트 완료")
+
+                    section_hashes = {s["heading"]: s["content_hash"] for s in new_secs}
+                    cache[doc_id] = {"full_hash": new_hash, "sections": section_hashes}
+                    _save_gdocs_hash_cache(cache)
+                    print(f"[완료] 증분 업데이트 완료: {doc_url}")
+                    return doc_url
+
+        except Exception as e:
+            print(f"       증분 업데이트 실패 ({e}), 전체 재작성으로 폴백...")
+        # 증분 업데이트 불가 → 아래 전체 재작성 실행
+    # ─────────────────────────────────────────────────────────────────
+
     creds = get_credentials()
 
     # API 서비스 생성
@@ -2500,5 +2777,18 @@ def update_google_doc(
         except Exception as e:
             print(f"       줄간격 적용 실패: {e}")
 
-    doc_url = f"https://docs.google.com/document/d/{doc_id}/edit"
+    # 전체 재작성 완료 후 해시 캐시 갱신
+    if incremental:
+        try:
+            _inc_cache = _load_gdocs_hash_cache()
+            _new_secs = _parse_md_sections(content)
+            _section_hashes = {s["heading"]: s["content_hash"] for s in _new_secs}
+            _inc_cache[doc_id] = {
+                "full_hash": _compute_content_hash(content),
+                "sections": _section_hashes,
+            }
+            _save_gdocs_hash_cache(_inc_cache)
+        except Exception:
+            pass
+
     return doc_url
