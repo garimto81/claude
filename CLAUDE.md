@@ -106,7 +106,7 @@ lib/
 
 ### 5. 스킬 시스템 (`.claude/skills/`)
 
-37개 스킬 디렉토리. 각 디렉토리에 `SKILL.md` + 관련 파일. 자동/수동 트리거 지원.
+38개 스킬 디렉토리. 각 디렉토리에 `SKILL.md` + 관련 파일. 자동/수동 트리거 지원.
 
 ### 6. Hook 시스템 (`.claude/hooks/`)
 
@@ -156,7 +156,7 @@ lib/
 | `/debug` | 가설-검증 기반 디버깅 | 필요 시 |
 | `/issue` | GitHub 이슈 관리 | 필요 시 |
 
-**전체 21개**: `docs/COMMAND_REFERENCE.md`
+**전체 22개**: `docs/COMMAND_REFERENCE.md`
 
 ---
 

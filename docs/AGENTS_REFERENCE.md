@@ -1,6 +1,6 @@
 # Agent 참조 가이드
 
-**버전**: 9.0.0 | **업데이트**: 2026-02-19
+**버전**: 9.1.0 | **업데이트**: 2026-02-25
 
 > **v9.0.0**: OMC 플러그인 완전 제거 (2026-02-18). 42개 로컬 에이전트로 전환 완료.
 > 모든 에이전트는 `.claude/agents/`에서 직접 로드됩니다.
@@ -12,11 +12,11 @@
 ```
   .claude/agents/ (42개 로컬 에이전트)
   ├── 실행 계층 (3개)     executor, executor-high, executor-low
-  ├── 설계 계층 (5개)     architect, architect-medium, architect-low, planner, analyst, critic
+  ├── 설계 계층 (6개)     architect, architect-medium, architect-low, planner, analyst, critic
   ├── 탐색 계층 (5개)     explore, explore-medium, explore-high, researcher, researcher-low
-  ├── 품질 계층 (10개)    code-reviewer, qa-tester, security-reviewer, build-fixer, tdd-guide, gap-detector (+low/-high 변형)
+  ├── 품질 계층 (11개)    code-reviewer, qa-tester, security-reviewer, build-fixer, tdd-guide, gap-detector (+low/-high 변형)
   ├── UI 계층 (4개)       designer, designer-high, designer-low, frontend-dev
-  ├── 도메인 계층 (10개)  ai-engineer, cloud-architect, database-specialist, data-specialist,
+  ├── 도메인 계층 (11개)  ai-engineer, cloud-architect, database-specialist, data-specialist,
   │                       devops-engineer, github-engineer, claude-expert, catalog-engineer,
   │                       scientist, scientist-high, scientist-low
   └── 특수 목적 (2개)     vision, writer
