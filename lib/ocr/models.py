@@ -5,7 +5,7 @@ Tesseract OCR 추출 결과를 위한 dataclass 모델 정의.
 """
 
 from dataclasses import dataclass, field
-from typing import List
+from typing import List, Optional
 
 
 @dataclass
@@ -176,3 +176,28 @@ class AnalysisResult:
     confidence: float
     mode: str  # "vision", "ocr", "hybrid"
     metadata: dict = field(default_factory=dict)
+
+
+# --- Hybrid Pipeline 신규 모델 (기존 코드 아래 append) ---
+
+
+@dataclass
+class UIElement:
+    """UI 요소 (Layer 1 그래픽 / Layer 2 텍스트)"""
+    element_type: str       # "text" | "graphic"
+    bbox: BBox
+    semantic_label: str = ""
+    confidence: float = 1.0
+    layer: int = 1
+    marker_id: int = 0
+    text_content: str = ""
+
+
+@dataclass
+class HybridAnalysisResult:
+    """3-Layer Hybrid Pipeline 분석 결과"""
+    elements: List[UIElement]
+    annotated_image_path: Optional[str] = None
+    processing_time: float = 0.0
+    layer_stats: dict = field(default_factory=dict)
+    mode: str = "coords"

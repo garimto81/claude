@@ -13,6 +13,7 @@
 | `/parallel` | Agent Teams (병렬 executor) | dev, test, review, research, check |
 | `/research` | Agent Teams (researcher) | code, web, plan, review |
 | `/commit`, `/issue`, `/pr`, `/verify`, `/mockup-hybrid` | 직접 실행 | 각 고유 서브커맨드 |
+| `/overlay-fallback` | 직접 실행 (자동 트리거: T-1~T-5 조건) | — |
 
 ## 외부 플러그인 연동
 

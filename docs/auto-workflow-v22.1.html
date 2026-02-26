@@ -1,0 +1,907 @@
+<!DOCTYPE html>
+<html lang="ko">
+<head>
+<meta charset="UTF-8">
+<meta name="viewport" content="width=device-width, initial-scale=1.0">
+<title>/auto v22.1 워크플로우 다이어그램</title>
+<style>
+  * { box-sizing: border-box; margin: 0; padding: 0; }
+  body {
+    background: #0d1117;
+    color: #c9d1d9;
+    font-family: 'Segoe UI', system-ui, sans-serif;
+    font-size: 13px;
+    line-height: 1.5;
+    padding: 24px;
+  }
+  h1 { font-size: 22px; color: #e6edf3; margin-bottom: 6px; }
+  h2 { font-size: 15px; color: #e6edf3; margin-bottom: 12px; }
+  h3 { font-size: 13px; color: #8b949e; margin-bottom: 8px; font-weight: 600; }
+  .subtitle { color: #8b949e; font-size: 12px; margin-bottom: 28px; }
+
+  /* 섹션 */
+  .section { margin-bottom: 40px; }
+  .section-title {
+    font-size: 16px;
+    font-weight: 700;
+    color: #58a6ff;
+    border-bottom: 1px solid #21262d;
+    padding-bottom: 8px;
+    margin-bottom: 16px;
+  }
+
+  /* Phase 헤더 카드 */
+  .phase-card {
+    border-radius: 8px;
+    border: 1px solid #30363d;
+    overflow: hidden;
+    margin-bottom: 12px;
+  }
+  .phase-header {
+    background: #1e3a5f;
+    padding: 10px 16px;
+    display: flex;
+    align-items: center;
+    gap: 10px;
+  }
+  .phase-badge {
+    background: #2f81f7;
+    color: #fff;
+    border-radius: 4px;
+    padding: 2px 8px;
+    font-size: 11px;
+    font-weight: 700;
+    white-space: nowrap;
+  }
+  .phase-header h2 { margin: 0; font-size: 14px; color: #fff; }
+  .phase-body { padding: 14px 16px; background: #161b22; }
+
+  /* 복잡도 모드 박스 */
+  .mode-row { display: flex; gap: 10px; margin-bottom: 10px; }
+  .mode-box {
+    flex: 1;
+    border-radius: 6px;
+    padding: 10px 12px;
+    border: 1px solid;
+  }
+  .mode-light { background: #1b3a2d; border-color: #4caf50; }
+  .mode-standard { background: #0d2c4d; border-color: #2196f3; }
+  .mode-heavy { background: #2d1b4e; border-color: #9c27b0; }
+  .mode-label {
+    font-size: 10px;
+    font-weight: 700;
+    letter-spacing: 0.8px;
+    margin-bottom: 6px;
+  }
+  .label-light { color: #4caf50; }
+  .label-standard { color: #2196f3; }
+  .label-heavy { color: #9c27b0; }
+  .mode-skip { background: #1c2128; border-color: #30363d; }
+  .label-skip { color: #8b949e; }
+
+  /* 에이전트 칩 */
+  .chip-row { display: flex; flex-wrap: wrap; gap: 5px; margin-top: 5px; }
+  .chip {
+    background: #21262d;
+    border: 1px solid #30363d;
+    border-radius: 12px;
+    padding: 2px 8px;
+    font-size: 11px;
+    color: #c9d1d9;
+    white-space: nowrap;
+  }
+  .chip-model {
+    background: #161b22;
+    border-color: #58a6ff44;
+    color: #58a6ff;
+  }
+  .chip-output {
+    background: #161b22;
+    border-color: #3fb95044;
+    color: #3fb950;
+  }
+
+  /* 화살표 */
+  .arrow-down {
+    display: flex;
+    justify-content: center;
+    margin: 4px 0;
+    color: #8b949e;
+    font-size: 16px;
+  }
+  .arrow-right { color: #8b949e; margin: 0 4px; }
+
+  /* 조건 박스 */
+  .condition-box {
+    background: #21262d;
+    border: 1px solid #30363d;
+    border-radius: 6px;
+    padding: 8px 12px;
+    margin-top: 8px;
+    font-size: 12px;
+  }
+  .condition-box .label { color: #8b949e; font-size: 11px; margin-bottom: 4px; }
+
+  /* 개요 섹션 - 수평 Phase 카드 */
+  .overview-row {
+    display: flex;
+    gap: 6px;
+    overflow-x: auto;
+    padding-bottom: 8px;
+  }
+  .overview-card {
+    flex: 0 0 auto;
+    width: 130px;
+    background: #161b22;
+    border: 1px solid #30363d;
+    border-radius: 8px;
+    padding: 10px;
+    text-align: center;
+  }
+  .overview-card .phase-num {
+    font-size: 10px;
+    color: #8b949e;
+    margin-bottom: 4px;
+  }
+  .overview-card .phase-name {
+    font-size: 12px;
+    font-weight: 700;
+    color: #e6edf3;
+    margin-bottom: 6px;
+  }
+  .overview-card .phase-desc {
+    font-size: 10px;
+    color: #8b949e;
+    line-height: 1.4;
+  }
+  .overview-arrow {
+    display: flex;
+    align-items: center;
+    color: #30363d;
+    font-size: 20px;
+    flex: 0 0 auto;
+  }
+
+  /* 비교표 */
+  .compare-table {
+    width: 100%;
+    border-collapse: collapse;
+    font-size: 12px;
+  }
+  .compare-table th, .compare-table td {
+    border: 1px solid #21262d;
+    padding: 8px 10px;
+    text-align: left;
+    vertical-align: top;
+  }
+  .compare-table th {
+    background: #1e3a5f;
+    color: #e6edf3;
+    font-weight: 600;
+  }
+  .compare-table th.light { background: #1b3a2d; color: #4caf50; }
+  .compare-table th.standard { background: #0d2c4d; color: #2196f3; }
+  .compare-table th.heavy { background: #2d1b4e; color: #9c27b0; }
+  .compare-table td { color: #c9d1d9; background: #0d1117; }
+  .compare-table tr:hover td { background: #161b22; }
+
+  /* 에이전트 레지스트리 */
+  .agent-grid {
+    display: grid;
+    grid-template-columns: repeat(auto-fill, minmax(200px, 1fr));
+    gap: 8px;
+  }
+  .agent-card {
+    background: #161b22;
+    border: 1px solid #21262d;
+    border-radius: 6px;
+    padding: 10px 12px;
+  }
+  .agent-name {
+    font-weight: 700;
+    color: #e6edf3;
+    font-size: 12px;
+    margin-bottom: 4px;
+  }
+  .agent-model {
+    font-size: 10px;
+    color: #58a6ff;
+    margin-bottom: 4px;
+  }
+  .agent-role {
+    font-size: 11px;
+    color: #8b949e;
+  }
+
+  /* 루프 다이어그램 */
+  .loop-box {
+    border: 1px dashed #30363d;
+    border-radius: 8px;
+    padding: 10px 12px;
+    margin-top: 8px;
+    position: relative;
+  }
+  .loop-label {
+    position: absolute;
+    top: -9px;
+    left: 10px;
+    background: #161b22;
+    padding: 0 6px;
+    font-size: 10px;
+    color: #8b949e;
+  }
+
+  /* 게이트 박스 */
+  .gate-box {
+    background: #1c2128;
+    border: 1px solid #f0883e44;
+    border-radius: 6px;
+    padding: 8px 12px;
+    margin-top: 8px;
+  }
+  .gate-label {
+    color: #f0883e;
+    font-size: 10px;
+    font-weight: 700;
+    margin-bottom: 4px;
+  }
+
+  /* 도메인 라우팅 */
+  .domain-grid {
+    display: grid;
+    grid-template-columns: repeat(5, 1fr);
+    gap: 5px;
+    margin-top: 8px;
+  }
+  .domain-item {
+    background: #21262d;
+    border-radius: 5px;
+    padding: 5px 6px;
+    text-align: center;
+    font-size: 10px;
+  }
+  .domain-name { color: #c9d1d9; margin-bottom: 2px; }
+  .domain-agent { color: #58a6ff; font-weight: 600; }
+
+  /* 자동 승격 */
+  .promotion-box {
+    background: #2d2000;
+    border: 1px solid #f0883e;
+    border-radius: 6px;
+    padding: 8px 12px;
+    margin-top: 8px;
+  }
+  .promotion-label { color: #f0883e; font-size: 11px; font-weight: 700; margin-bottom: 4px; }
+
+  ul.plain { list-style: none; }
+  ul.plain li { padding: 1px 0; }
+  ul.plain li::before { content: "• "; color: #58a6ff; }
+
+  .tag-approve { color: #3fb950; font-weight: 700; }
+  .tag-reject { color: #f85149; font-weight: 700; }
+  .tag-revise { color: #f0883e; font-weight: 700; }
+
+  .inline-row { display: flex; align-items: center; gap: 6px; flex-wrap: wrap; }
+</style>
+</head>
+<body>
+
+<h1>/auto v22.1 워크플로우 다이어그램</h1>
+<p class="subtitle">PDCA 5-Phase 자율 완성 워크플로우 &nbsp;|&nbsp; 복잡도 3-tier 분기 (LIGHT / STANDARD / HEAVY) &nbsp;|&nbsp; Agent Teams 단일 패턴</p>
+
+<!-- ==============================
+     섹션 1: 전체 개요
+     ============================== -->
+<div class="section">
+  <div class="section-title">섹션 1. 전체 워크플로우 개요</div>
+  <div class="overview-row">
+    <div class="overview-card">
+      <div class="phase-num">Phase 0</div>
+      <div class="phase-name">팀 생성</div>
+      <div class="phase-desc">TeamCreate<br>옵션 파싱<br>복잡도 분석</div>
+    </div>
+    <div class="overview-arrow">›</div>
+    <div class="overview-card">
+      <div class="phase-num">Phase 1</div>
+      <div class="phase-name">PLAN</div>
+      <div class="phase-desc">Explore 분석<br>Planner 계획<br>Critic 검증</div>
+    </div>
+    <div class="overview-arrow">›</div>
+    <div class="overview-card">
+      <div class="phase-num">Phase 2</div>
+      <div class="phase-name">DESIGN</div>
+      <div class="phase-desc">설계 문서<br>인터페이스<br>데이터 흐름</div>
+    </div>
+    <div class="overview-arrow">›</div>
+    <div class="overview-card">
+      <div class="phase-num">Phase 3</div>
+      <div class="phase-name">DO</div>
+      <div class="phase-desc">구현 실행<br>Architect 검증<br>도메인 픽스</div>
+    </div>
+    <div class="overview-arrow">›</div>
+    <div class="overview-card">
+      <div class="phase-num">Phase 4</div>
+      <div class="phase-name">CHECK</div>
+      <div class="phase-desc">QA 사이클<br>이중 검증<br>E2E / TDD</div>
+    </div>
+    <div class="overview-arrow">›</div>
+    <div class="overview-card">
+      <div class="phase-num">Phase 5</div>
+      <div class="phase-name">ACT</div>
+      <div class="phase-desc">Gap 분석<br>보고서 작성<br>TeamDelete</div>
+    </div>
+  </div>
+
+  <!-- 자동 승격 -->
+  <div class="promotion-box" style="margin-top:12px;">
+    <div class="promotion-label">자동 복잡도 승격</div>
+    <div class="inline-row">
+      <span style="color:#4caf50; font-weight:700;">LIGHT</span>
+      <span style="color:#8b949e;">→</span>
+      <span style="color:#2196f3; font-weight:700;">STANDARD</span>
+      <span style="color:#8b949e;">: 빌드 실패 2회 연속 또는 영향 파일 5개 이상</span>
+    </div>
+    <div class="inline-row" style="margin-top:4px;">
+      <span style="color:#2196f3; font-weight:700;">STANDARD</span>
+      <span style="color:#8b949e;">→</span>
+      <span style="color:#9c27b0; font-weight:700;">HEAVY</span>
+      <span style="color:#8b949e;">: QA 3사이클 초과 또는 영향 파일 5개 이상</span>
+    </div>
+  </div>
+</div>
+
+<!-- ==============================
+     섹션 2: Phase별 상세
+     ============================== -->
+<div class="section">
+  <div class="section-title">섹션 2. Phase별 상세 플로우</div>
+
+  <!-- Phase 0 -->
+  <div class="phase-card">
+    <div class="phase-header">
+      <span class="phase-badge">Phase 0</span>
+      <h2>팀 생성 &amp; 옵션 파싱</h2>
+    </div>
+    <div class="phase-body">
+      <div class="condition-box">
+        <div class="label">실행</div>
+        <div><strong>TeamCreate</strong>(team_name="pdca-{feature}")</div>
+        <div style="margin-top:6px; color:#8b949e; font-size:11px;">복잡도 점수 계산 → 0-1: LIGHT &nbsp;|&nbsp; 2-3: STANDARD &nbsp;|&nbsp; 4-5: HEAVY</div>
+      </div>
+      <div class="condition-box" style="margin-top:8px;">
+        <div class="label">지원 옵션</div>
+        <div class="chip-row">
+          <span class="chip">--skip-analysis</span>
+          <span class="chip">--no-issue</span>
+          <span class="chip">--strict</span>
+          <span class="chip">--dry-run</span>
+          <span class="chip">--eco</span>
+          <span class="chip">--worktree</span>
+          <span class="chip">--interactive</span>
+          <span class="chip">--gdocs</span>
+          <span class="chip">--mockup</span>
+          <span class="chip">--debate</span>
+          <span class="chip">--slack</span>
+          <span class="chip">--gmail</span>
+          <span class="chip">--daily</span>
+          <span class="chip">--research</span>
+        </div>
+      </div>
+    </div>
+  </div>
+
+  <!-- Phase 1 -->
+  <div class="phase-card">
+    <div class="phase-header">
+      <span class="phase-badge">Phase 1</span>
+      <h2>PLAN — 계획 수립 &amp; 검증</h2>
+    </div>
+    <div class="phase-body">
+      <div class="mode-row">
+        <!-- LIGHT -->
+        <div class="mode-box mode-light">
+          <div class="mode-label label-light">LIGHT (0-1점)</div>
+          <div class="chip-row">
+            <span class="chip">Explore×2 병렬</span>
+            <span class="chip chip-model">haiku</span>
+          </div>
+          <div style="font-size:11px; color:#8b949e; margin-top:4px;">doc-analyst + issue-analyst</div>
+          <div class="arrow-down">↓</div>
+          <div class="chip-row">
+            <span class="chip">Planner</span>
+            <span class="chip chip-model">haiku</span>
+            <span class="chip chip-output">plan.md</span>
+          </div>
+          <div class="arrow-down">↓</div>
+          <div style="font-size:11px;">Lead Quality Gate<br><span style="color:#8b949e;">파일 존재 + 경로 언급</span></div>
+        </div>
+        <!-- STANDARD -->
+        <div class="mode-box mode-standard">
+          <div class="mode-label label-standard">STANDARD (2-3점)</div>
+          <div class="chip-row">
+            <span class="chip">Explore×2 병렬</span>
+            <span class="chip chip-model">haiku</span>
+          </div>
+          <div class="arrow-down">↓</div>
+          <div class="chip-row">
+            <span class="chip">Planner</span>
+            <span class="chip chip-model">sonnet</span>
+            <span class="chip chip-output">plan.md</span>
+          </div>
+          <div class="arrow-down">↓</div>
+          <div class="chip-row">
+            <span class="chip">Critic-Lite</span>
+            <span class="chip chip-model">sonnet</span>
+          </div>
+          <div style="font-size:11px; margin-top:4px;">QG1-QG4 검증<br><span class="tag-approve">APPROVE</span> → 종료<br><span class="tag-revise">REVISE</span> → Planner 1회 수정</div>
+        </div>
+        <!-- HEAVY -->
+        <div class="mode-box mode-heavy">
+          <div class="mode-label label-heavy">HEAVY (4-5점)</div>
+          <div class="chip-row">
+            <span class="chip">Explore×2 병렬</span>
+            <span class="chip chip-model">haiku</span>
+          </div>
+          <div class="arrow-down">↓</div>
+          <div class="loop-box">
+            <div class="loop-label">Planner-Critic Loop (max 5 iter)</div>
+            <div class="chip-row" style="margin-top:6px;">
+              <span class="chip">Planner</span>
+              <span class="chip chip-model">sonnet</span>
+            </div>
+            <div class="arrow-down">↓</div>
+            <div class="chip-row">
+              <span class="chip">Architect</span>
+              <span class="chip chip-model">sonnet</span>
+            </div>
+            <div class="arrow-down">↓</div>
+            <div class="chip-row">
+              <span class="chip">Critic</span>
+              <span class="chip chip-model">sonnet</span>
+            </div>
+          </div>
+          <div style="font-size:11px; margin-top:6px;">QG1: 파일참조, QG2: AC구체성<br>QG3: 모호어 0개, QG4: 엣지케이스 2+<br><span class="tag-approve">APPROVE</span> → 종료</div>
+        </div>
+      </div>
+
+      <div class="gate-box">
+        <div class="gate-label">Phase 1→2 전환 게이트 (STANDARD/HEAVY)</div>
+        <div class="chip-row">
+          <span class="chip">배경</span>
+          <span class="chip">구현 범위</span>
+          <span class="chip">영향 파일</span>
+          <span class="chip">위험 요소</span>
+        </div>
+        <div style="margin-top:5px; font-size:11px; color:#8b949e;">Step 1.3: GitHub Issue 연동 (--no-issue 아닐 때)</div>
+      </div>
+    </div>
+  </div>
+
+  <!-- Phase 2 -->
+  <div class="phase-card">
+    <div class="phase-header">
+      <span class="phase-badge">Phase 2</span>
+      <h2>DESIGN — 설계 문서 작성</h2>
+    </div>
+    <div class="phase-body">
+      <div class="mode-row">
+        <div class="mode-box mode-skip" style="flex:0 0 auto; width:130px;">
+          <div class="mode-label label-skip">LIGHT</div>
+          <div style="font-size:11px; color:#8b949e;">Phase 3 직행<br>(SKIP)</div>
+        </div>
+        <div class="mode-box mode-standard">
+          <div class="mode-label label-standard">STANDARD</div>
+          <div class="chip-row">
+            <span class="chip">executor</span>
+            <span class="chip chip-model">sonnet</span>
+            <span class="chip chip-output">design.md</span>
+          </div>
+        </div>
+        <div class="mode-box mode-heavy">
+          <div class="mode-label label-heavy">HEAVY</div>
+          <div class="chip-row">
+            <span class="chip">executor-high</span>
+            <span class="chip chip-model">sonnet</span>
+            <span class="chip chip-output">design.md</span>
+          </div>
+        </div>
+      </div>
+      <div class="gate-box">
+        <div class="gate-label">Phase 2→3 전환 게이트</div>
+        <div class="chip-row">
+          <span class="chip">구현 파일 목록</span>
+          <span class="chip">인터페이스 정의</span>
+          <span class="chip">테스트 전략</span>
+          <span class="chip">데이터 흐름</span>
+        </div>
+      </div>
+    </div>
+  </div>
+
+  <!-- Phase 3 -->
+  <div class="phase-card">
+    <div class="phase-header">
+      <span class="phase-badge">Phase 3</span>
+      <h2>DO — 구현 실행</h2>
+    </div>
+    <div class="phase-body">
+      <div class="condition-box" style="margin-bottom:10px;">
+        <div class="label">Step 3.0: 특수 옵션 처리</div>
+        <div class="chip-row">
+          <span class="chip">--gdocs</span>
+          <span class="chip">--mockup</span>
+          <span class="chip">--debate</span>
+          <span class="chip">--research</span>
+          <span class="chip">--slack</span>
+          <span class="chip">--gmail</span>
+          <span class="chip">--daily</span>
+        </div>
+      </div>
+
+      <div class="condition-box" style="margin-bottom:10px;">
+        <div class="label">Step 3.1: 구현 실행</div>
+        <div class="mode-row" style="margin-top:6px;">
+          <div class="mode-box mode-light" style="flex:1;">
+            <div class="mode-label label-light">LIGHT</div>
+            <div class="chip-row">
+              <span class="chip">executor</span>
+              <span class="chip chip-model">sonnet</span>
+            </div>
+            <div style="font-size:11px; color:#8b949e; margin-top:4px;">단일 실행</div>
+          </div>
+          <div class="mode-box mode-standard" style="flex:1;">
+            <div class="mode-label label-standard">STANDARD</div>
+            <div class="chip-row">
+              <span class="chip">impl-manager</span>
+              <span class="chip chip-model">sonnet</span>
+            </div>
+            <div style="font-size:11px; color:#8b949e; margin-top:4px;">5조건 루프 max 10회</div>
+          </div>
+          <div class="mode-box mode-heavy" style="flex:1;">
+            <div class="mode-label label-heavy">HEAVY</div>
+            <div class="chip-row">
+              <span class="chip">impl-manager</span>
+              <span class="chip">executor-high</span>
+              <span class="chip chip-model">sonnet</span>
+            </div>
+            <div style="font-size:11px; color:#8b949e; margin-top:4px;">5조건 루프 + 병렬 가능</div>
+          </div>
+        </div>
+        <div class="condition-box" style="margin-top:8px; background:#1c2128;">
+          <div class="label">5조건 자기검증 루프</div>
+          <div class="chip-row">
+            <span class="chip">TODO == 0</span>
+            <span class="chip">빌드 성공</span>
+            <span class="chip">테스트 통과</span>
+            <span class="chip">에러 == 0</span>
+            <span class="chip">자체 코드리뷰</span>
+          </div>
+        </div>
+      </div>
+
+      <div class="condition-box" style="margin-bottom:10px;">
+        <div class="label">Step 3.2: Architect Verification Gate (STANDARD/HEAVY만)</div>
+        <div class="inline-row" style="margin-top:6px;">
+          <span class="chip">Architect</span>
+          <span class="chip chip-model">sonnet</span>
+          <span class="arrow-right">→</span>
+          <span class="tag-approve">APPROVE</span>
+          <span style="color:#8b949e;">→ Phase 4</span>
+        </div>
+        <div class="inline-row" style="margin-top:4px;">
+          <span style="color:#8b949e; font-size:11px;">REJECT + DOMAIN → Step 3.3 &nbsp;|&nbsp; 2회 REJECT → 사용자 알림 후 Phase 4 허용</span>
+        </div>
+      </div>
+
+      <div class="condition-box">
+        <div class="label">Step 3.3: Domain-Smart Fix 라우팅</div>
+        <div class="domain-grid">
+          <div class="domain-item">
+            <div class="domain-name">UI/style</div>
+            <div class="domain-agent">designer</div>
+          </div>
+          <div class="domain-item">
+            <div class="domain-name">build/type</div>
+            <div class="domain-agent">build-fixer</div>
+          </div>
+          <div class="domain-item">
+            <div class="domain-name">test</div>
+            <div class="domain-agent">executor</div>
+          </div>
+          <div class="domain-item">
+            <div class="domain-name">security</div>
+            <div class="domain-agent">security-reviewer</div>
+          </div>
+          <div class="domain-item">
+            <div class="domain-name">logic/other</div>
+            <div class="domain-agent">executor</div>
+          </div>
+        </div>
+      </div>
+    </div>
+  </div>
+
+  <!-- Phase 4 -->
+  <div class="phase-card">
+    <div class="phase-header">
+      <span class="phase-badge">Phase 4</span>
+      <h2>CHECK — QA 검증</h2>
+    </div>
+    <div class="phase-body">
+      <div class="condition-box" style="margin-bottom:10px;">
+        <div class="label">Step 4.1: QA 사이클</div>
+        <div class="mode-row" style="margin-top:6px;">
+          <div class="mode-box mode-light" style="flex:0 0 auto; min-width:120px;">
+            <div class="mode-label label-light">LIGHT</div>
+            <div style="font-size:11px;">QA 1회<br>(보고만)</div>
+          </div>
+          <div class="mode-box mode-standard" style="flex:1;">
+            <div class="mode-label label-standard">STANDARD</div>
+            <div style="font-size:11px;">max 3 사이클</div>
+          </div>
+          <div class="mode-box mode-heavy" style="flex:1;">
+            <div class="mode-label label-heavy">HEAVY</div>
+            <div style="font-size:11px;">max 5 사이클</div>
+          </div>
+        </div>
+        <div style="margin-top:10px;">
+          <div style="font-size:11px; color:#8b949e; margin-bottom:6px;">사이클 순서:</div>
+          <div class="inline-row">
+            <div class="chip">A. QA Runner (sonnet)</div>
+            <span class="arrow-right">→</span>
+            <div class="chip">B. 4종 Exit 조건</div>
+            <span class="arrow-right">→</span>
+            <div class="chip">C. Architect 진단</div>
+            <span class="arrow-right">→</span>
+            <div class="chip">D. Domain Fix</div>
+          </div>
+        </div>
+        <div class="condition-box" style="margin-top:8px; background:#1c2128;">
+          <div class="label">QA Runner 검사 항목</div>
+          <div class="chip-row">
+            <span class="chip">lint</span>
+            <span class="chip">test</span>
+            <span class="chip">build</span>
+            <span class="chip">typecheck</span>
+            <span class="chip">custom</span>
+            <span class="chip">interactive</span>
+          </div>
+        </div>
+        <div class="condition-box" style="margin-top:8px; background:#1c2128;">
+          <div class="label">4종 Exit 조건 (우선순위)</div>
+          <ul class="plain">
+            <li>Environment Error — 환경 오류 즉시 종료</li>
+            <li>Same Failure 3x — 동일 실패 3회 연속</li>
+            <li>Max Cycles — 최대 사이클 도달</li>
+            <li>Goal Met — 모든 검사 통과</li>
+          </ul>
+        </div>
+      </div>
+
+      <div class="condition-box" style="margin-bottom:10px;">
+        <div class="label">Step 4.2: 이중 검증 (순차)</div>
+        <div class="mode-box mode-light" style="margin-top:6px; display:inline-block; min-width:200px;">
+          <div class="mode-label label-light">LIGHT</div>
+          <div class="chip-row">
+            <span class="chip">architect</span>
+          </div>
+        </div>
+        <div style="margin-top:6px;">
+          <div class="chip-row">
+            <span class="chip">architect</span>
+            <span class="arrow-right">→</span>
+            <span class="chip">gap-checker (architect)</span>
+            <span class="arrow-right">→</span>
+            <span class="chip">quality-checker (code-reviewer)</span>
+          </div>
+          <div style="font-size:11px; color:#8b949e; margin-top:4px;">STANDARD/HEAVY만. React/Next.js 프로젝트 시 Vercel BP 규칙 동적 주입</div>
+        </div>
+      </div>
+
+      <div class="condition-box" style="margin-bottom:10px;">
+        <div class="label">Step 4.3: E2E 테스트</div>
+        <div style="font-size:11px;">playwright.config.* 존재 시에만 실행</div>
+      </div>
+
+      <div class="condition-box">
+        <div class="label">Step 4.4: TDD 커버리지</div>
+        <div style="font-size:11px;">신규 코드 80% 이상 커버리지 요구</div>
+      </div>
+    </div>
+  </div>
+
+  <!-- Phase 5 -->
+  <div class="phase-card">
+    <div class="phase-header">
+      <span class="phase-badge">Phase 5</span>
+      <h2>ACT — 간극 해소 &amp; 보고서</h2>
+    </div>
+    <div class="phase-body">
+      <div class="loop-box">
+        <div class="loop-label">루프 가드: Phase4 재진입 max 3회 | 누적 max 5회</div>
+        <div style="margin-top:10px;">
+          <div class="condition-box" style="background:#0d1117; margin-bottom:8px;">
+            <div class="label">Gap &lt; 90%</div>
+            <div class="inline-row">
+              <span class="chip">executor iterator</span>
+              <span class="chip chip-model">sonnet</span>
+              <span style="color:#8b949e; font-size:11px;">(max 5회)</span>
+              <span class="arrow-right">→</span>
+              <span style="color:#8b949e; font-size:11px;">Phase 4 재실행</span>
+            </div>
+          </div>
+          <div class="condition-box" style="background:#0d1117; margin-bottom:8px;">
+            <div class="label">Architect REJECT</div>
+            <div class="inline-row">
+              <span class="chip">executor fixer</span>
+              <span class="arrow-right">→</span>
+              <span style="color:#8b949e; font-size:11px;">Phase 4 재실행</span>
+            </div>
+          </div>
+          <div class="condition-box" style="background:#1b3a2d; border-color:#4caf5066;">
+            <div class="label" style="color:#4caf50;">Gap ≥ 90% + APPROVE</div>
+            <div class="chip-row">
+              <span class="chip">writer reporter</span>
+              <span class="chip chip-output">docs/04-report/</span>
+            </div>
+            <div class="arrow-down">↓</div>
+            <div class="chip chip-output">TeamDelete()</div>
+          </div>
+        </div>
+      </div>
+    </div>
+  </div>
+</div>
+
+<!-- ==============================
+     섹션 3: 복잡도 비교표
+     ============================== -->
+<div class="section">
+  <div class="section-title">섹션 3. 복잡도 모드 비교표</div>
+  <table class="compare-table">
+    <thead>
+      <tr>
+        <th>항목</th>
+        <th class="light">LIGHT (0-1점)</th>
+        <th class="standard">STANDARD (2-3점)</th>
+        <th class="heavy">HEAVY (4-5점)</th>
+      </tr>
+    </thead>
+    <tbody>
+      <tr>
+        <td><strong>Phase 1 Plan</strong></td>
+        <td>Explore×2 + Planner(haiku) + Lead QG</td>
+        <td>Explore×2 + Planner(sonnet) + Critic-Lite</td>
+        <td>Explore×2 + Planner-Architect-Critic Loop (max 5)</td>
+      </tr>
+      <tr>
+        <td><strong>Phase 2 Design</strong></td>
+        <td>SKIP (Phase 3 직행)</td>
+        <td>executor(sonnet) → design.md</td>
+        <td>executor-high(sonnet) → design.md</td>
+      </tr>
+      <tr>
+        <td><strong>Phase 3 구현</strong></td>
+        <td>executor(sonnet) 단일</td>
+        <td>impl-manager executor(sonnet) ×10</td>
+        <td>impl-manager executor-high(sonnet) ×10 + 병렬</td>
+      </tr>
+      <tr>
+        <td><strong>Architect 검증</strong></td>
+        <td>없음</td>
+        <td>필수 (Phase 3 후)</td>
+        <td>필수 (Phase 3 후)</td>
+      </tr>
+      <tr>
+        <td><strong>Phase 4 QA 사이클</strong></td>
+        <td>1회 (보고만)</td>
+        <td>max 3 사이클</td>
+        <td>max 5 사이클</td>
+      </tr>
+      <tr>
+        <td><strong>이중 검증</strong></td>
+        <td>architect만</td>
+        <td>architect → gap-checker → quality-checker</td>
+        <td>architect → gap-checker → quality-checker</td>
+      </tr>
+      <tr>
+        <td><strong>에이전트 수</strong></td>
+        <td>~4개</td>
+        <td>~8개</td>
+        <td>~12개</td>
+      </tr>
+      <tr>
+        <td><strong>예상 소요</strong></td>
+        <td>빠름 (단순 작업)</td>
+        <td>보통 (기능 구현)</td>
+        <td>느림 (대규모/복잡)</td>
+      </tr>
+    </tbody>
+  </table>
+</div>
+
+<!-- ==============================
+     섹션 4: 에이전트 레지스트리
+     ============================== -->
+<div class="section">
+  <div class="section-title">섹션 4. 에이전트 레지스트리</div>
+  <div class="agent-grid">
+    <div class="agent-card">
+      <div class="agent-name">planner</div>
+      <div class="agent-model">model: sonnet (HEAVY) / haiku (LIGHT)</div>
+      <div class="agent-role">Phase 1 계획 수립, plan.md 생성</div>
+    </div>
+    <div class="agent-card">
+      <div class="agent-name">critic</div>
+      <div class="agent-model">model: sonnet</div>
+      <div class="agent-role">Phase 1 Planner-Critic Loop, QG1-QG4 검증</div>
+    </div>
+    <div class="agent-card">
+      <div class="agent-name">architect</div>
+      <div class="agent-model">model: sonnet</div>
+      <div class="agent-role">Phase 1 HEAVY 검증, Phase 3 Verification Gate, Phase 4 이중검증/진단</div>
+    </div>
+    <div class="agent-card">
+      <div class="agent-name">executor</div>
+      <div class="agent-model">model: sonnet</div>
+      <div class="agent-role">Phase 2/3 구현, Phase 5 iterator/fixer</div>
+    </div>
+    <div class="agent-card">
+      <div class="agent-name">executor-high</div>
+      <div class="agent-model">model: sonnet</div>
+      <div class="agent-role">Phase 2/3 HEAVY 구현 (복잡 파일)</div>
+    </div>
+    <div class="agent-card">
+      <div class="agent-name">impl-manager</div>
+      <div class="agent-model">model: sonnet</div>
+      <div class="agent-role">Phase 3 5조건 루프 관리 (STANDARD/HEAVY)</div>
+    </div>
+    <div class="agent-card">
+      <div class="agent-name">qa-tester</div>
+      <div class="agent-model">model: sonnet</div>
+      <div class="agent-role">Phase 4 QA Runner (lint/test/build)</div>
+    </div>
+    <div class="agent-card">
+      <div class="agent-name">code-reviewer</div>
+      <div class="agent-model">model: sonnet</div>
+      <div class="agent-role">Phase 4 quality-checker 역할</div>
+    </div>
+    <div class="agent-card">
+      <div class="agent-name">designer</div>
+      <div class="agent-model">model: sonnet</div>
+      <div class="agent-role">Phase 3/4 UI/style 도메인 픽스</div>
+    </div>
+    <div class="agent-card">
+      <div class="agent-name">build-fixer</div>
+      <div class="agent-model">model: sonnet</div>
+      <div class="agent-role">Phase 3/4 build/type 도메인 픽스</div>
+    </div>
+    <div class="agent-card">
+      <div class="agent-name">security-reviewer</div>
+      <div class="agent-model">model: sonnet</div>
+      <div class="agent-role">Phase 3/4 security 도메인 검증</div>
+    </div>
+    <div class="agent-card">
+      <div class="agent-name">writer</div>
+      <div class="agent-model">model: haiku</div>
+      <div class="agent-role">Phase 5 reporter — docs/04-report/ 보고서 작성</div>
+    </div>
+    <div class="agent-card">
+      <div class="agent-name">explore / explore-medium</div>
+      <div class="agent-model">model: haiku</div>
+      <div class="agent-role">Phase 1 doc-analyst + issue-analyst 병렬</div>
+    </div>
+    <div class="agent-card">
+      <div class="agent-name">analyst</div>
+      <div class="agent-model">model: sonnet</div>
+      <div class="agent-role">데이터 분석 및 복잡도 점수 계산</div>
+    </div>
+  </div>
+</div>
+
+<div style="margin-top:32px; padding-top:16px; border-top:1px solid #21262d; color:#8b949e; font-size:11px;">
+  /auto v22.1 &nbsp;|&nbsp; SKILL.md 308줄 &nbsp;|&nbsp; REFERENCE.md 1,265줄 &nbsp;|&nbsp; Agent Teams 단일 패턴 &nbsp;|&nbsp; Sonnet 4.6 기본 모델
+</div>
+
+</body>
+</html>

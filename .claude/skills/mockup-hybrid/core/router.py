@@ -218,27 +218,44 @@ class MockupRouter:
         final_reason = analysis.reason
 
         if backend == MockupBackend.MERMAID:
-            # Mermaid 코드 생성 (HTML/스크린샷 불필요)
+            # Mermaid 코드 생성
             mermaid_result = self.mermaid_adapter.generate_from_prompt(prompt)
 
             if mermaid_result.success:
-                # Mermaid는 .md 파일로 저장
+                screen_name = self._extract_name(prompt)
                 output_dir = html_path.parent if html_path else DEFAULT_MOCKUP_DIR
-                md_path = output_dir / f"{self._extract_name(prompt)}.mermaid.md"
+
+                # .mermaid.md 저장 (마크다운 원본 유지)
+                md_path = output_dir / f"{screen_name}.mermaid.md"
                 md_path.parent.mkdir(parents=True, exist_ok=True)
-                md_content = f"# {self._extract_name(prompt)}\n\n```mermaid\n{mermaid_result.mermaid_code}\n```\n"
+                md_content = f"# {screen_name}\n\n```mermaid\n{mermaid_result.mermaid_code}\n```\n"
                 md_path.write_text(md_content, encoding="utf-8")
+
+                # HTML 래퍼 저장 (width/height auto, max 720/1280 제약 적용)
+                html_wrapper = self.mermaid_adapter.to_html_wrapper(
+                    mermaid_result.mermaid_code,
+                    title=screen_name,
+                )
+                html_path.parent.mkdir(parents=True, exist_ok=True)
+                html_path.write_text(html_wrapper, encoding="utf-8")
+
+                # 스크린샷 캡처 (auto_size: 다이어그램 실제 크기에 맞춰 캡처)
+                captured_path = capture_screenshot(
+                    html_path=html_path,
+                    image_path=image_path,
+                    auto_size=True,
+                )
 
                 return MockupResult(
                     backend=MockupBackend.MERMAID,
                     reason=analysis.reason,
-                    html_path=md_path,
-                    image_path=None,
+                    html_path=html_path,
+                    image_path=captured_path,
                     success=True,
                     message=self._create_mermaid_message(
                         mermaid_result.mermaid_code,
                         mermaid_result.diagram_type,
-                        md_path,
+                        html_path,
                     ),
                     fallback_used=False,
                     mermaid_code=mermaid_result.mermaid_code,

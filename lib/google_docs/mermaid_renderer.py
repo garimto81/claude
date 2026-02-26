@@ -62,7 +62,7 @@ def _render_via_mermaid_ink(code: str) -> str | None:
     """
     try:
         encoded = base64.urlsafe_b64encode(code.encode("utf-8")).decode("ascii")
-        url = f"https://mermaid.ink/img/{encoded}?type=png&bgColor=white"
+        url = f"https://mermaid.ink/img/{encoded}?type=png&bgColor=white&width=720"
 
         # URL 길이 제한 검사 (Google Docs API URI 제한: 2KB)
         if len(url) > 2048:
@@ -137,7 +137,7 @@ def _render_via_mmdc(code: str) -> str | None:
             return None
 
         result = subprocess.run(
-            [mmdc_path, "-i", mmd_path, "-o", png_path, "-b", "white", "-s", "2"],
+            [mmdc_path, "-i", mmd_path, "-o", png_path, "-b", "white", "-s", "2", "-w", "720"],
             capture_output=True,
             text=True,
             timeout=60,
@@ -227,7 +227,7 @@ def _render_via_playwright(code: str) -> str | None:
 
         with sync_playwright() as p:
             browser = p.chromium.launch(headless=True)
-            page = browser.new_page(viewport={"width": 1200, "height": 800})
+            page = browser.new_page(viewport={"width": 720, "height": 4000})
 
             # file:// 프로토콜로 로컬 HTML 로드
             page.goto(f"file:///{html_path.replace(chr(92), '/')}")

@@ -95,6 +95,9 @@ class MarkdownToDocsConverter:
         # Mermaid 렌더링 임시 파일 추적 (cleanup용)
         self._mermaid_temp_files: list[str] = []
 
+        # Mermaid 다이어그램 고유 번호 (placeholder alt text 충돌 방지)
+        self._mermaid_counter: int = 0
+
         # YAML frontmatter 제거 및 참조 링크 파싱
         self._preprocess_content()
 
@@ -106,7 +109,7 @@ class MarkdownToDocsConverter:
         - 각주 추출
         - HTML Callout 박스 변환
         """
-        lines = self.content.split("\n")
+        lines = self.content.replace('\r\n', '\n').replace('\r', '\n').split("\n")
         processed_lines = []
         i = 0
 
@@ -263,7 +266,7 @@ class MarkdownToDocsConverter:
         Returns:
             list: batchUpdate에 전달할 요청 리스트
         """
-        lines = self.content.split("\n")
+        lines = self.content.replace('\r\n', '\n').replace('\r', '\n').split("\n")
         i = 0
 
         while i < len(lines):
@@ -1030,9 +1033,11 @@ class MarkdownToDocsConverter:
         """
         # Mermaid 다이어그램 → PNG 이미지로 렌더링
         if lang.lower() == "mermaid":
+            code = code.strip()
             png_path = self._render_mermaid_to_png(code)
             if png_path:
-                self._add_image_block(png_path, "Mermaid Diagram")
+                self._mermaid_counter += 1
+                self._add_image_block(png_path, f"Mermaid Diagram {self._mermaid_counter}")
                 return
             # 렌더링 실패 시 코드 블록으로 폴백
 
@@ -1995,11 +2000,16 @@ def create_google_doc(
                 requests, actual_insert_index
             )
 
-            _execute_with_retry(
-                lambda: docs_service.documents().batchUpdate(
-                    documentId=doc_id, body={"requests": adjusted_requests}
-                ).execute()
-            )
+            MAX_BATCH_SIZE = 300
+            total_batches = -(-len(adjusted_requests) // MAX_BATCH_SIZE)
+            for i in range(0, len(adjusted_requests), MAX_BATCH_SIZE):
+                batch = adjusted_requests[i:i + MAX_BATCH_SIZE]
+                _execute_with_retry(
+                    lambda b=batch: docs_service.documents().batchUpdate(
+                        documentId=doc_id, body={"requests": b}
+                    ).execute()
+                )
+                print(f"     배치 {i//MAX_BATCH_SIZE + 1}/{total_batches} 완료 ({len(batch)} 요청)")
             print(f"     콘텐츠 추가됨: {len(requests)} 요청")
         except Exception as e:
             print(f"     콘텐츠 추가 실패: {e}")
@@ -2321,11 +2331,16 @@ def update_google_doc(
                 requests, actual_insert_index
             )
 
-            _execute_with_retry(
-                lambda: docs_service.documents().batchUpdate(
-                    documentId=doc_id, body={"requests": adjusted_requests}
-                ).execute()
-            )
+            MAX_BATCH_SIZE = 300
+            total_batches = -(-len(adjusted_requests) // MAX_BATCH_SIZE)
+            for i in range(0, len(adjusted_requests), MAX_BATCH_SIZE):
+                batch = adjusted_requests[i:i + MAX_BATCH_SIZE]
+                _execute_with_retry(
+                    lambda b=batch: docs_service.documents().batchUpdate(
+                        documentId=doc_id, body={"requests": b}
+                    ).execute()
+                )
+                print(f"       배치 {i//MAX_BATCH_SIZE + 1}/{total_batches} 완료 ({len(batch)} 요청)")
             print(f"       콘텐츠 추가됨: {len(requests)} 요청")
         except Exception as e:
             print(f"       콘텐츠 추가 실패: {e}")

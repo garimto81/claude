@@ -36,6 +36,9 @@ OCR 텍스트 추출 결과와 Vision 분석을 결합하여 제시:
 | "스크린샷" | `--preset screenshot` |
 | "손글씨" | `--preset handwriting` |
 | "영수증", "명함" | `--preset photo` |
+| "좌표 추출", "--coords" | `--mode coords` 옵션 추가 |
+| "UI 분석", "--ui", "하이브리드" | `--mode ui` 옵션 추가 |
+| "hybrid", "전체 분석" | `--mode full` 옵션 추가 |
 
 ## Tesseract 미설치 시
 
@@ -43,6 +46,28 @@ OCR 텍스트 추출 결과와 Vision 분석을 결합하여 제시:
 python -m lib.ocr check
 ```
 미설치면 설치 안내 출력 후 Claude Vision만으로 분석 진행 (fallback).
+
+## Hybrid Pipeline 모드 (신규)
+
+| 모드 | 설명 | Vision 호출 |
+|------|------|------------|
+| `--mode coords` | Layer1(그래픽) + Layer2(텍스트) BBox 좌표만 | 없음 |
+| `--mode ui` | coords + Layer3 SoM 시맨틱 분류 | 1회 |
+| `--mode full` | ui + 어노테이션 이미지 저장 | 1회 |
+
+## 오버레이 분석 실패 시 Fallback (자동 트리거)
+
+분석 결과가 다음 조건 중 하나라도 충족되면 **반드시** `overlay-fallback` 스킬을 실행한다:
+
+| 조건 | 감지 방법 |
+|------|-----------|
+| T-1: OCR 신뢰도 < 30% 또는 추출 텍스트 0개 | OCR 출력 파싱 |
+| T-2: OpenCV 오버레이 자동 감지 결과 0개 | 스크립트 반환값 확인 |
+| T-3: 사용자 키워드 입력 | "수동 어노테이션", "coord picker", "좌표 직접", "요소 감지 실패" |
+| T-4: 분석 실패 출력 감지 | "요소를 찾을 수 없음", "감지 실패", "0개 요소" 패턴 |
+| T-5: Hybrid Pipeline Layer1 결과 0개 | --mode coords/ui/full 파이프라인 결과 |
+
+**Fallback 실행**: overlay-fallback 스킬 호출 → coord_picker.html 수동 어노테이션 안내
 
 ## 금지 사항
 - Read 도구만으로 이미지 분석하고 끝내기 금지 (OCR 반드시 병행)

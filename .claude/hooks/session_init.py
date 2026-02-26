@@ -8,6 +8,7 @@ SessionStart 이벤트에서 실행됩니다.
 import json
 import subprocess
 import os
+import shutil
 from datetime import datetime, timezone, timedelta
 from pathlib import Path
 
@@ -242,6 +243,39 @@ def cleanup_stale_omc_states(ttl_hours: int = 2) -> list[str]:
     return messages
 
 
+def cleanup_orphan_agent_teams() -> list[str]:
+    """세션 시작 시 고아 Agent Teams 즉시 정리 (TTL 없이 모두 제거)"""
+    messages = []
+    home = Path.home()
+    teams_dir = home / ".claude" / "teams"
+    tasks_dir = home / ".claude" / "tasks"
+
+    # Teams 정리
+    deleted_teams = []
+    if teams_dir.exists():
+        for entry in teams_dir.iterdir():
+            if entry.is_dir():
+                try:
+                    shutil.rmtree(entry)
+                    deleted_teams.append(entry.name)
+                except Exception as e:
+                    messages.append(f"⚠️ 팀 정리 실패: {entry.name} ({e})")
+
+    # Tasks 정리 (teams와 같은 이름만)
+    if tasks_dir.exists():
+        for entry in tasks_dir.iterdir():
+            if entry.is_dir() and entry.name in deleted_teams:
+                try:
+                    shutil.rmtree(entry)
+                except Exception:
+                    pass
+
+    if deleted_teams:
+        messages.append(f"🧹 고아 팀 {len(deleted_teams)}개 정리: {', '.join(deleted_teams[:3])}{'...' if len(deleted_teams) > 3 else ''}")
+
+    return messages
+
+
 def cleanup_stale_global_todos(ttl_hours: int = 2) -> list[str]:
     """~/.claude/todos/ 내 이전 세션의 stale TODO 파일 정리
 
@@ -305,6 +339,117 @@ def cleanup_stale_global_todos(ttl_hours: int = 2) -> list[str]:
     return messages
 
 
+def check_fatigue_signals(ttl_hours: int = 24) -> list[str]:
+    """피로도 신호 파일 분석 및 경고 생성"""
+    warnings = []
+    fatigue_log = ROOT_PROJECT_DIR / ".claude" / "logs" / "fatigue_signals.jsonl"
+
+    if not fatigue_log.exists():
+        return warnings
+
+    try:
+        import json
+        now = datetime.now(timezone.utc)
+        cutoff = now - timedelta(hours=ttl_hours)
+        cutoff_ts = cutoff.timestamp() * 1000  # ms
+
+        content = fatigue_log.read_text(encoding="utf-8")
+        lines = [l.strip() for l in content.strip().split("\n") if l.strip()]
+
+        burst_files = set()
+        burst_count = 0
+
+        for line in lines:
+            try:
+                entry = json.loads(line)
+                if entry.get("type") == "edit_burst" and entry.get("ts", 0) > cutoff_ts:
+                    burst_files.add(entry.get("file", ""))
+                    burst_count += 1
+            except Exception:
+                continue
+
+        if burst_count >= 3:
+            warnings.append(
+                f"⚠️ 피로도 경고: 최근 {ttl_hours}시간 내 집중 편집 패턴 {burst_count}회 감지 "
+                f"({len(burst_files)}개 파일). 잠시 휴식을 권장합니다."
+            )
+        elif burst_count >= 1:
+            warnings.append(
+                f"📊 편집 집중 패턴: {burst_count}회 (파일: {len(burst_files)}개)"
+            )
+    except Exception:
+        pass
+
+    return warnings
+
+
+def check_prd_sync_status() -> list[str]:
+    """최근 구현 커밋에 대한 PRD 업데이트 여부 감지
+
+    feat/fix 커밋이 있지만 docs(prd) 커밋이 없으면 PRD 미업데이트로 판단.
+    """
+    warnings = []
+    try:
+        # 최근 10개 커밋 로그 추출
+        result = subprocess.run(
+            ["git", "log", "--oneline", "-10"],
+            capture_output=True,
+            text=True,
+            cwd=PROJECT_DIR,
+        )
+        if result.returncode != 0:
+            return warnings
+
+        commits = result.stdout.strip().split("\n")
+        if not commits or commits == [""]:
+            return warnings
+
+        # feat/fix 커밋과 docs(prd) 커밋 분리
+        has_impl_commits = any(
+            line and (
+                " feat(" in line or line.split(" ", 1)[-1].startswith("feat(") or
+                " fix(" in line or line.split(" ", 1)[-1].startswith("fix(") or
+                " feat!" in line or " fix!" in line
+            )
+            for line in commits
+        )
+        has_prd_commits = any(
+            line and (
+                "docs(prd)" in line.lower() or
+                "docs: prd" in line.lower() or
+                "prd:" in line.lower()
+            )
+            for line in commits
+        )
+
+        if has_impl_commits and not has_prd_commits:
+            # docs/00-prd/ 최근 수정일 확인
+            prd_dir = ROOT_PROJECT_DIR / "docs" / "00-prd"
+            if prd_dir.exists():
+                prd_files = list(prd_dir.glob("*.prd.md"))
+                if prd_files:
+                    # 가장 최근 수정된 PRD 파일 확인
+                    latest_prd = max(prd_files, key=lambda p: p.stat().st_mtime)
+                    prd_age_days = (
+                        datetime.now(timezone.utc) -
+                        datetime.fromtimestamp(latest_prd.stat().st_mtime, tz=timezone.utc)
+                    ).days
+                    if prd_age_days >= 1:
+                        warnings.append(
+                            "📋 PRD 동기화 권장: 최근 구현에 대한 PRD 업데이트가 감지되지 않았습니다. "
+                            "/prd-update 실행 권장"
+                        )
+                else:
+                    warnings.append(
+                        "📋 PRD 미작성 감지: docs/00-prd/ 에 PRD 파일이 없습니다. "
+                        "/prd-update --new 로 생성 권장"
+                    )
+    except Exception:
+        pass
+
+    return warnings
+
+
 def load_previous_session() -> dict:
     """이전 세션 상태 로드"""
     session_file = Path(PROJECT_DIR) / ".claude" / "session_state.json"
@@ -343,6 +488,9 @@ def main():
         # Stale 상태 정리 (Stop hook 차단 방지)
         stale_messages = cleanup_stale_omc_states(ttl_hours=2)
         stale_messages.extend(cleanup_stale_global_todos(ttl_hours=2))
+        stale_messages.extend(cleanup_orphan_agent_teams())
+        stale_messages.extend(check_fatigue_signals(ttl_hours=24))
+        stale_messages.extend(check_prd_sync_status())
 
         # Junction 설정
         junction_created, junction_message = setup_commands_junction()

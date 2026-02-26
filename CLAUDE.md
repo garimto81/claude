@@ -2,7 +2,7 @@
 
 This file provides guidance to Claude Code (claude.ai/code) when working with code in this repository.
 
-**Version**: 14.0.0 | **Context**: Windows, Root: `C:\claude`
+**Version**: 14.1.0 | **Context**: Windows, Root: `C:\claude`
 
 **GitHub**: `garimto81/claude`
 
@@ -37,6 +37,9 @@ Claude Code 워크플로우 및 자동화 도구 메타 레포지토리. 커스�
 | **Git** | Conventional Commit, main 직접 수정은 허용 파일만 (`CLAUDE.md`, `README.md`, `.claude/`, `docs/`) |
 | **TDD** | 테스트 먼저 작성 (상세: `.claude/rules/04-tdd.md`) |
 | **이미지 분석** | "이미지 분석" 요청 시 Tesseract OCR 정밀 분석 자동 실행 (상세: `.claude/rules/10-image-analysis.md`) |
+| **다이어그램** | 터미널 응답의 모든 다이어그램은 ASCII art 출력 필수. Mermaid/PNG 금지 (상세: `.claude/rules/11-ascii-diagram.md`) |
+| **대형 문서** | 300줄+ 문서는 스켈레톤-퍼스트 + Map-Reduce 청킹 패턴 적용. 단일 Write 금지 (상세: `.claude/rules/12-large-document-protocol.md`) |
+| **PRD-First** | 신규 기능/변경 구현 전 `docs/00-prd/` PRD 확인/생성/업데이트 필수. 구현 완료 후 누락 금지 (상세: `.claude/rules/13-requirements-prd.md`) |
 
 ---
 
@@ -83,7 +86,7 @@ lib/
 ├── gmail/          # Gmail OAuth + 메일 CRUD (Browser OAuth)
 ├── slack/          # Slack OAuth + 메시징 + Lists API (Bot/User Token)
 ├── google_docs/    # Markdown→Google Docs 변환, Drive 정리, 프로젝트 레지스트리
-├── pdf_utils/      # PDF 텍스트 추출 + 토큰/페이지 기반 청킹
+├── pdf_utils/      # PDF/MD 텍스트 추출 + 4가지 청킹 전략 (Fixed-size, Hierarchical, Semantic, Late) + `/chunk --prd`
 ├── ocr/            # Tesseract OCR 정밀 텍스트 추출 (pytesseract + OpenCV)
 ├── mockup_hybrid/  # HTML 와이어프레임 + Google Stitch 하이브리드 목업
 └── ai_auth/        # AI 서비스 인증 통합 (GPT, Gemini)
@@ -93,7 +96,7 @@ lib/
 
 ### 3. 커맨드 시스템 (`.claude/commands/`)
 
-23개 커맨드 (`/auto`, `/commit`, `/check` 등). 각 `.md` 파일이 슬래시 커맨드 정의.
+22개 커맨드 (`/auto`, `/commit`, `/check`, `/chunk`, `/prd-update` 등). 각 `.md` 파일이 슬래시 커맨드 정의.
 
 ### 4. 에이전트 시스템 (`.claude/agents/`)
 
@@ -103,7 +106,7 @@ lib/
 
 ### 5. 스킬 시스템 (`.claude/skills/`)
 
-36개 스킬 디렉토리. 각 디렉토리에 `SKILL.md` + 관련 파일. 자동/수동 트리거 지원.
+38개 스킬 디렉토리. 각 디렉토리에 `SKILL.md` + 관련 파일. 자동/수동 트리거 지원.
 
 ### 6. Hook 시스템 (`.claude/hooks/`)
 
@@ -111,7 +114,7 @@ lib/
 |------|------|
 | `tool_validator.py` | 프로세스 전체 종료 명령 차단 (PreToolUse) |
 | `session_init.py` | 세션 시작 시 TDD 준수 경고 (SessionStart) |
-| `branch_guard.py` | 100줄+ 수정 시 자동 커밋 (PostToolUse) |
+| `branch_guard.py` | main/master 브랜치에서 비허용 파일 수정 차단 (PreToolUse) |
 | `post_edit_check.js` | 편집 후 품질 검증 (PostToolUse) |
 
 ---
@@ -122,7 +125,7 @@ lib/
 |------|------|---------|
 | **전체 프로세스 종료 금지** | `tool_validator.py` | **차단** |
 | TDD 미준수 | `session_init.py` | 경고 |
-| 100줄+ 수정 | `branch_guard.py` | 자동 커밋 |
+| main/master 비허용 파일 수정 | `branch_guard.py` | **차단** |
 
 ---
 
@@ -153,7 +156,7 @@ lib/
 | `/debug` | 가설-검증 기반 디버깅 | 필요 시 |
 | `/issue` | GitHub 이슈 관리 | 필요 시 |
 
-**전체 23개**: `docs/COMMAND_REFERENCE.md`
+**전체 22개**: `docs/COMMAND_REFERENCE.md`
 
 ---
 
