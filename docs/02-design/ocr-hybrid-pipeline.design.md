@@ -676,7 +676,7 @@ python -m lib.ocr extract "screenshot.png" --mode hybrid
 
 ```mermaid
 flowchart TD
-    A["이미지 입력\n(str | PIL.Image)"] --> B[HybridPipeline.analyze]
+    A["이미지 입력<br/>(str | PIL.Image)"] --> B[HybridPipeline.analyze]
 
     subgraph Layer1 [Layer 1: GraphicDetector]
         B --> C[PIL → OpenCV numpy array]
@@ -685,31 +685,31 @@ flowchart TD
         E --> F["findContours(RETR_EXTERNAL, CHAIN_APPROX_SIMPLE)"]
         F --> G[min_area 필터링]
         G --> H[approxPolyDP + boundingRect]
-        H --> I["List[UIElement]\nelement_type='graphic'\nlayer=1"]
+        H --> I["List[UIElement]<br/>element_type='graphic'<br/>layer=1"]
     end
 
     subgraph Layer2 [Layer 2: OCRExtractor]
         B --> J[OCRExtractor.extract_text]
-        J --> K["pytesseract.image_to_data\n신뢰도 필터링 >= 0.5"]
-        K --> L["List[UIElement]\nelement_type='text'\nlayer=2"]
+        J --> K["pytesseract.image_to_data<br/>신뢰도 필터링 >= 0.5"]
+        K --> L["List[UIElement]<br/>element_type='text'<br/>layer=2"]
     end
 
-    I --> M["_merge_and_deduplicate\nIoU 중복 제거 임계값 0.5"]
+    I --> M["_merge_and_deduplicate<br/>IoU 중복 제거 임계값 0.5"]
     L --> M
     M --> N{mode?}
 
-    N -->|coords| O["HybridAnalysisResult\nannotated_image_path=None"]
+    N -->|coords| O["HybridAnalysisResult<br/>annotated_image_path=None"]
 
     subgraph Layer3 [Layer 3: SoMAnnotator]
-        N -->|ui / full| P["annotate()\n번호 마커 삽입"]
-        P --> Q["label_with_vision()\nVision LLM SoM 프롬프트"]
-        Q --> R["semantic_label 업데이트\n실패시 'unknown'"]
+        N -->|ui / full| P["annotate()<br/>번호 마커 삽입"]
+        P --> Q["label_with_vision()<br/>Vision LLM SoM 프롬프트"]
+        Q --> R["semantic_label 업데이트<br/>실패시 'unknown'"]
     end
 
     R --> S{save_annotated?}
     S -->|True| T[어노테이션 이미지 저장]
     S -->|False| U[cleanup tmp]
-    T --> V["HybridAnalysisResult\nannotated_image_path 포함"]
+    T --> V["HybridAnalysisResult<br/>annotated_image_path 포함"]
     U --> O
     V --> W[완료]
     O --> W
@@ -719,21 +719,21 @@ flowchart TD
 
 ```mermaid
 flowchart LR
-    A["PIL.Image"] -->|numpy 변환| B["np.ndarray\nBGR/Gray"]
+    A["PIL.Image"] -->|numpy 변환| B["np.ndarray<br/>BGR/Gray"]
     B -->|findContours| C["List[Contour]"]
     C -->|boundingRect 변환| D["List[BBox]"]
-    D -->|UIElement 래핑| E["List[UIElement]\nlayer=1"]
+    D -->|UIElement 래핑| E["List[UIElement]<br/>layer=1"]
 
     F["PIL.Image"] -->|OCRExtractor| G["OCRResult"]
     G -->|layout_info.blocks 순회| H["List[Word]"]
-    H -->|UIElement 변환| I["List[UIElement]\nlayer=2"]
+    H -->|UIElement 변환| I["List[UIElement]<br/>layer=2"]
 
     E --> J["_merge_and_deduplicate"]
     I --> J
-    J --> K["List[UIElement]\n중복 제거됨"]
-    K -->|SoM annotate| L["annotated PIL.Image\nmarker_id 할당됨"]
+    J --> K["List[UIElement]<br/>중복 제거됨"]
+    K -->|SoM annotate| L["annotated PIL.Image<br/>marker_id 할당됨"]
     L -->|Vision LLM| M["{marker_id: label}"]
-    M -->|semantic_label 업데이트| N["List[UIElement]\nlayer=1,2,3"]
+    M -->|semantic_label 업데이트| N["List[UIElement]<br/>layer=1,2,3"]
     N --> O["HybridAnalysisResult"]
 ```
 
@@ -1104,7 +1104,7 @@ flowchart TD
     L -->|Yes| M[HybridAnalysisResult 반환\nLayer1+2 결과만]
     L -->|No| N[Layer 3: SoMAnnotator]
     N --> O{Vision LLM 성공?}
-    O -->|No| P["semantic_label='unknown'\n경고 로그"]
+    O -->|No| P["semantic_label='unknown'<br/>경고 로그"]
     O -->|Yes| Q[semantic_label 업데이트]
     P --> R[HybridAnalysisResult 반환]
     Q --> R
