@@ -424,6 +424,10 @@ class MarkdownToDocsConverter:
         # 정규식 패턴들 (순서 중요 - 긴 패턴 먼저)
         patterns = [
             (
+                r"\[!\[([^\]]*)\]\(([^)]+)\)\]\([^)]*\)",
+                "linked_image",
+            ),  # [![alt](img)](link) - 링크된 이미지 (image/link 패턴보다 먼저!)
+            (
                 r"!\[([^\]]*)\]\(([^)]+)\)",
                 "image",
             ),  # ![alt](url) - 이미지 (링크보다 먼저!)
@@ -448,7 +452,18 @@ class MarkdownToDocsConverter:
         all_matches = []
         for pattern, style in patterns:
             for match in re.finditer(pattern, text):
-                if style == "link":
+                if style == "linked_image":
+                    # 링크된 이미지: group(1)=alt텍스트, group(2)=이미지URL, group(3)=외부링크URL
+                    all_matches.append(
+                        (
+                            match.start(),
+                            match.end(),
+                            match.group(1),
+                            style,
+                            match.group(2),  # 이미지 URL (외부 링크 URL 아님)
+                        )
+                    )
+                elif style == "link":
                     all_matches.append(
                         (
                             match.start(),
@@ -507,6 +522,9 @@ class MarkdownToDocsConverter:
                 segment.code = True
             elif style == "strikethrough":
                 segment.strikethrough = True
+            elif style == "linked_image":
+                segment.image_url = link_url  # 내부 이미지 URL
+                segment.image_alt = content  # alt 텍스트
             elif style == "link":
                 segment.link = link_url
             elif style == "image":
@@ -1036,6 +1054,8 @@ class MarkdownToDocsConverter:
         # Mermaid 다이어그램 → PNG 이미지로 렌더링
         if lang.lower() == "mermaid":
             code = code.strip()
+            # \n 리터럴(백슬래시+n) → 실제 줄바꿈으로 변환 (mermaid.ink 호환)
+            code = code.replace('\\n', '\n')
             png_path = self._render_mermaid_to_png(code)
             if png_path:
                 self._mermaid_counter += 1
