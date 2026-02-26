@@ -133,9 +133,40 @@
   +----------+-------------------------------+
 ```
 
+## Mermaid 노드 레이블 줄바꿈 규칙 (CRITICAL)
+
+**트리거**: 저장 파일(.md)에 Mermaid 다이어그램 작성 시
+
+### 줄바꿈 방법 비교
+
+| 방법 | GitHub | VS Code | 로컬 mermaid.js | 결론 |
+|------|:------:|:-------:|:---------------:|------|
+| `\n` 리터럴 | 리터럴로 표시 | 리터럴로 표시 | 렌더링됨 | **사용 금지** |
+| `<br/>` 태그 | 줄바꿈 | 줄바꿈 | 줄바꿈 | **권장** |
+| 실제 줄바꿈 + 백틱 | 지원 (v10.1+) | 지원 | 지원 | 조건부 허용 |
+
+### 올바른 예시 (CORRECT)
+
+```
+A["이미지 입력<br/>(str | PIL.Image)"] --> B[HybridPipeline.analyze]
+H --> I["List[UIElement]<br/>element_type='graphic'<br/>layer=1"]
+```
+
+### 금지 예시 (WRONG — 반복 발생 패턴)
+
+```
+A["이미지 입력\n(str | PIL.Image)"] --> B[HybridPipeline.analyze]
+H --> I["List[UIElement]\nelement_type='graphic'\nlayer=1"]
+```
+
+**`\n` 리터럴은 GitHub/VS Code에서 줄바꿈으로 처리되지 않는다. `<br/>` 사용 필수.**
+
+---
+
 ## 금지 사항
 
 - **터미널 채팅 응답**에서 Mermaid 코드 블록 사용 금지 (렌더링 불가)
 - 다이어그램을 PNG/SVG 파일로만 제공하고 끝내기 금지
 - 텍스트 설명만으로 복잡한 흐름을 대체하기 금지
 - **저장 파일**에서 ASCII 다이어그램 강제 금지 (Mermaid 사용)
+- **Mermaid 노드 레이블**에서 `\n` 리터럴 사용 금지 — `<br/>` 사용 (모든 렌더러 호환)
