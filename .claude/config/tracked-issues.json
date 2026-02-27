@@ -6,14 +6,18 @@
       "number": 28847,
       "label": ".claude.json race condition",
       "added": "2026-02-27",
-      "reason": "v2.1.59 cascade amplification bug"
+      "reason": "v2.1.59 cascade amplification bug",
+      "status": "CLOSED",
+      "closed_at": "2026-02-27"
     },
     {
       "repo": "anthropics/claude-code",
       "number": 28922,
       "label": ".claude.json corruption meta-bug",
       "added": "2026-02-27",
-      "reason": "8+ prior reports consolidated"
+      "reason": "8+ prior reports consolidated",
+      "status": "CLOSED",
+      "closed_at": "2026-02-27"
     }
   ]
 }

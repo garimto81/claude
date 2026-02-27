@@ -1,6 +1,6 @@
 # Command Reference
 
-**Version**: 1.5.0 | **Updated**: 2026-02-25
+**Version**: 1.6.0 | **Updated**: 2026-02-27
 
 이 문서는 모든 슬래시 커맨드의 사용법을 정리합니다.
 
@@ -27,9 +27,7 @@
 | | `/deploy` | 버전/Docker 배포 |
 | | `/audit` | 설정 점검 및 개선 |
 | **도구** | `/auth` | AI 서비스 인증 (GPT, Gemini) |
-| | `/ai-subtitle` | Claude Vision AI 자막 생성 |
 | | `/chunk` | PDF 청킹 (토큰/페이지 기반) |
-| | `/ccs` | CCS CLI 위임 실행 |
 | | `/gmail` | Gmail 메일 관리 |
 | | `/mockup` | 하이브리드 목업 생성 |
 | | `/shorts` | 쇼츠 영상 생성 |
@@ -1099,22 +1097,7 @@ AI 검증용 서비스(OpenAI, Google) 인증을 관리합니다. Browser OAuth�
 
 ---
 
-## 19. /ai-subtitle - Claude Vision AI 자막 생성
-
-Claude의 Read 도구로 이미지를 직접 분석하여 휠 복원 마케팅 자막을 생성합니다.
-
-### 사용법
-
-```bash
-/ai-subtitle                           # temp/ 폴더 이미지 분석
-/ai-subtitle -g <group_id>             # 그룹 이미지 다운로드 후 분석
-/ai-subtitle -g <group_id> -n 10       # 최대 N개 이미지
-/ai-subtitle --output subtitles.json   # JSON 파일로 저장
-```
-
----
-
-## 20. /chunk - PDF 청킹
+## 19. /chunk - PDF 청킹
 
 PDF를 LLM 입력용 청크로 분할합니다. 토큰 기반과 페이지 기반 두 가지 모드를 지원합니다.
 
@@ -1137,22 +1120,7 @@ PDF를 LLM 입력용 청크로 분할합니다. 토큰 기반과 페이지 기�
 
 ---
 
-## 21. /ccs - CCS CLI 위임
-
-CCS CLI를 통해 다른 AI에게 작업을 위임합니다. 프로필 자동 선택 기능이 포함됩니다.
-
-### 사용법
-
-```bash
-/ccs "refactor auth.js to use async/await"    # 단순 작업
-/ccs "analyze entire architecture"            # 장문 분석
-/ccs --glm "add tests for UserService"        # 특정 프로필 강제
-/ccs "/cook create landing page"              # 중첩 커맨드
-```
-
----
-
-## 22. /gmail - Gmail 관리
+## 20. /gmail - Gmail 관리
 
 Gmail 메일 읽기, 검색, 전송, 관리를 위한 통합 커맨드입니다.
 
@@ -1181,7 +1149,7 @@ Gmail 메일 읽기, 검색, 전송, 관리를 위한 통합 커맨드입니다.
 
 ---
 
-## 23. /mockup - 하이브리드 목업 생성
+## 21. /mockup - 하이브리드 목업 생성
 
 HTML 와이어프레임과 Google Stitch를 자동 선택하여 최적의 목업을 생성합니다.
 
@@ -1198,7 +1166,7 @@ HTML 와이어프레임과 Google Stitch를 자동 선택하여 최적의 목업
 
 ---
 
-## 24. /shorts - 쇼츠 영상 생성
+## 22. /shorts - 쇼츠 영상 생성
 
 PocketBase에서 사진을 가져와 마케팅용 쇼츠 영상을 생성합니다.
 
