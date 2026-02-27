@@ -46,9 +46,9 @@
 **모든 에이전트 호출은 Agent Teams in-process 방식을 사용합니다. Skill() 호출 0개.**
 
 **모델 오버라이드**: 에이전트 정의의 model 필드는 기본값이며, 호출 시 `model` 파라미터가 복잡도 모드 + 역할에 따라 결정됩니다.
-- LIGHT: 실행=sonnet, 계획=haiku
-- STANDARD: 실행=sonnet, 계획/검증=opus
-- HEAVY: 실행=sonnet, 계획/검증=opus
+- LIGHT: 실행=opus, 계획=sonnet, 탐색=haiku
+- STANDARD: 실행=opus, 계획/검증=opus, 탐색=haiku
+- HEAVY: 실행=opus, 계획/검증=opus, 탐색=haiku
 - `--eco` 플래그: 전체 sonnet 강제 (opus 단계 포함)
 
 ### 팀 라이프사이클
@@ -215,11 +215,11 @@ ls ~/.claude/tasks/ | grep pdca
 ```
 # ❌ hang 위험
 Task(subagent_type="executor", name="impl-manager", team_name="pdca-{feature}",
-     model="sonnet", prompt="...")
+     model="opus", prompt="...")
 
 # ✅ 올바른 패턴 (max_turns 필수)
 Task(subagent_type="executor", name="impl-manager", team_name="pdca-{feature}",
-     model="sonnet", max_turns=60, prompt="...")
+     model="opus", max_turns=60, prompt="...")
 # → max_turns 소진 시 teammate 자동 종료, Lead 다음 단계 진행 가능
 ```
 
@@ -313,9 +313,9 @@ cmd /c "mklink /J \"C:\\claude\\wt\\{feature}-test\\.claude\" \"C:\\claude\\.cla
 
 ```
 Task(subagent_type="executor-high", name="impl", team_name="pdca-{feature}",
-     model="sonnet", prompt="C:\\claude\\wt\\{feature}-impl\\ 경로에서 구현. 다른 경로 수정 금지.")
+     model="opus", prompt="C:\\claude\\wt\\{feature}-impl\\ 경로에서 구현. 다른 경로 수정 금지.")
 Task(subagent_type="executor-high", name="tester", team_name="pdca-{feature}",
-     model="sonnet", prompt="C:\\claude\\wt\\{feature}-test\\ 경로에서 테스트 작성. 다른 경로 수정 금지.")
+     model="opus", prompt="C:\\claude\\wt\\{feature}-test\\ 경로에서 테스트 작성. 다른 경로 수정 금지.")
 ```
 
 cleanup 시 모든 sub-worktree도 함께 제거.
@@ -361,7 +361,7 @@ if not existing_prd:
 **신규 PRD 생성 (기존 PRD 없음):**
 ```
 Task(subagent_type="executor", name="prd-writer", team_name="pdca-{feature}",
-     model="sonnet",
+     model="opus",
      prompt="[Phase 0.5 PRD 생성] 사용자 요구사항을 PRD 문서로 작성하세요.
 
      === 사용자 요청 ===
@@ -421,7 +421,7 @@ SendMessage(type="message", recipient="prd-writer", content="PRD 문서 작성 �
 **기존 PRD 수정 (PRD 존재 시):**
 ```
 Task(subagent_type="executor", name="prd-writer", team_name="pdca-{feature}",
-     model="sonnet",
+     model="opus",
      prompt="[Phase 0.5 PRD 수정] 기존 PRD를 새 요구사항에 맞게 수정하세요.
 
      === 기존 PRD 파일 ===
@@ -533,16 +533,16 @@ SendMessage(type="shutdown_request", recipient="issue-analyst")
 ```
 
 **복잡도 모드:**
-- **0-1점**: LIGHT (간단, haiku)
-- **2-3점**: STANDARD (보통, sonnet)
+- **0-1점**: LIGHT (간단, sonnet)
+- **2-3점**: STANDARD (보통, opus)
 - **4-5점**: HEAVY (복잡, Planner-Critic Loop)
 
 ### Step 1.2: 계획 수립 (명시적 호출)
 
-**LIGHT (0-1점): Planner haiku teammate**
+**LIGHT (0-1점): Planner sonnet teammate**
 ```
 Task(subagent_type="planner", name="planner", team_name="pdca-{feature}",
-     model="haiku", prompt="... (복잡도: LIGHT {score}/5, 단일 파일 수정 예상).
+     model="sonnet", prompt="... (복잡도: LIGHT {score}/5, 단일 파일 수정 예상).
      PRD 참조: docs/00-prd/{feature}.prd.md (있으면 반드시 기반으로 계획 수립).
      PRD의 요구사항 번호(FR-xxx)를 Plan 항목에 매핑하세요.
      사용자 확인/인터뷰 단계를 건너뛰세요. 바로 계획 문서를 작성하세요.
@@ -643,7 +643,7 @@ Loop (max 5 iterations):
 
 ### Step 1.2 LIGHT: Lead Quality Gate (v22.1 신규)
 
-LIGHT(0-1점) 모드에서 Planner(haiku) 완료 후 Lead가 직접 수행하는 최소 검증:
+LIGHT(0-1점) 모드에서 Planner(sonnet) 완료 후 Lead가 직접 수행하는 최소 검증:
 
 ```
 # Lead Quality Gate (에이전트 추가 비용: 0)
@@ -662,7 +662,7 @@ if no file path pattern (e.g., "src/", ".py", ".ts", ".md") found:
 
 ### Step 1.2 STANDARD: Critic-Lite 단일 검토 (v22.1 신규)
 
-STANDARD(2-3점) 모드에서 Planner(sonnet) 완료 후 Critic-Lite 1회 검토:
+STANDARD(2-3점) 모드에서 Planner(opus) 완료 후 Critic-Lite 1회 검토:
 
 ```
 Task(subagent_type="critic", name="critic-lite", team_name="pdca-{feature}",
@@ -725,22 +725,22 @@ else:
 | Phase | 실행 |
 |-------|------|
 | Phase 0.5 | PRD 생성/수정 + 사용자 승인 (`--skip-prd`로 스킵 가능) |
-| Phase 1 | Explore teammates (haiku) x2 + Planner (haiku) + Lead Quality Gate |
+| Phase 1 | Explore teammates (haiku) x2 + Planner (sonnet) + Lead Quality Gate |
 | Phase 2 | **스킵** (설계 문서 생성 없음) |
-| Phase 3.1 | Executor teammate (sonnet) 단일 실행 |
+| Phase 3.1 | Executor teammate (opus) 단일 실행 |
 | Phase 3.2 | — (Architect Gate 없음) |
 | Phase 4.1 | QA Runner 1회 |
 | Phase 4.2 | Architect 검증 (code-reviewer, E2E 스킵) |
-| Phase 5 | haiku 보고서 (APPROVE 기반, code-reviewer 없음) |
+| Phase 5 | sonnet 보고서 (APPROVE 기반, code-reviewer 없음) |
 
 ### STANDARD 모드 (2-3점)
 
 | Phase | 실행 |
 |-------|------|
 | Phase 0.5 | PRD 생성/수정 + 사용자 승인 (`--skip-prd`로 스킵 가능) |
-| Phase 1 | Explore teammates (haiku) x2 + Planner (sonnet) + Critic-Lite |
-| Phase 2 | Executor teammate (sonnet) — 설계 문서 생성 |
-| Phase 3.1 | impl-manager teammate (sonnet) — 5조건 자체 루프 |
+| Phase 1 | Explore teammates (haiku) x2 + Planner (opus) + Critic-Lite |
+| Phase 2 | Executor teammate (opus) — 설계 문서 생성 |
+| Phase 3.1 | impl-manager teammate (opus) — 5조건 자체 루프 |
 | Phase 3.2 | Architect Gate (외부 검증, max 2회 rejection) |
 | Phase 4.1 | QA Runner 3회 + Architect 진단 + Domain-Smart Fix |
 | Phase 4.2 | Architect + code-reviewer (순차) |
@@ -752,8 +752,8 @@ else:
 |-------|------|
 | Phase 0.5 | PRD 생성/수정 + 사용자 승인 (`--skip-prd`로 스킵 가능) |
 | Phase 1 | Explore teammates (haiku) x2 + Planner-Critic Loop (max 5 iter, QG1-4) |
-| Phase 2 | Executor-high teammate (sonnet) — 설계 문서 생성 |
-| Phase 3.1 | impl-manager teammate (sonnet) — 5조건 자체 루프 + 병렬 가능 |
+| Phase 2 | Executor-high teammate (opus) — 설계 문서 생성 |
+| Phase 3.1 | impl-manager teammate (opus) — 5조건 자체 루프 + 병렬 가능 |
 | Phase 3.2 | Architect Gate (외부 검증, max 2회 rejection) |
 | Phase 4.1 | QA Runner 5회 + Architect 진단 + Domain-Smart Fix |
 | Phase 4.2 | Architect + code-reviewer (sonnet, 순차) |
@@ -776,10 +776,10 @@ else:
 
 **LIGHT 모드: 스킵** (설계 문서 생성 없음, Phase 3에서 직접 구현)
 
-**STANDARD 모드: Executor sonnet teammate**
+**STANDARD 모드: Executor opus teammate**
 ```
 Task(subagent_type="executor", name="design-writer", team_name="pdca-{feature}",
-     model="sonnet",
+     model="opus",
      prompt="docs/01-plan/{feature}.plan.md를 참조하여 설계 문서를 작성하세요.
      필수 포함: 구현 대상 파일 목록, 인터페이스 설계, 데이터 흐름, 테스트 전략.
      출력: docs/02-design/{feature}.design.md")
@@ -787,10 +787,10 @@ SendMessage(type="message", recipient="design-writer", content="설계 문서 �
 # 완료 대기 → shutdown_request
 ```
 
-**HEAVY 모드: Executor-high sonnet teammate**
+**HEAVY 모드: Executor-high opus teammate**
 ```
 Task(subagent_type="executor-high", name="design-writer", team_name="pdca-{feature}",
-     model="sonnet",
+     model="opus",
      prompt="docs/01-plan/{feature}.plan.md를 참조하여 설계 문서를 작성하세요.
      필수 포함: 구현 대상 파일 목록, 인터페이스 설계, 데이터 흐름, 테스트 전략, 예상 위험 요소.
      출력: docs/02-design/{feature}.design.md")
@@ -819,10 +819,10 @@ SendMessage(type="message", recipient="design-writer", content="설계 문서 �
 
 ### Step 3.1: 모드별 구현 (명시적 호출)
 
-**LIGHT 모드: Executor teammate (sonnet) 단일 실행**
+**LIGHT 모드: Executor teammate (opus) 단일 실행**
 ```
 Task(subagent_type="executor", name="executor", team_name="pdca-{feature}",
-     model="sonnet",
+     model="opus",
      prompt="docs/01-plan/{feature}.plan.md 기반 구현 (설계 문서 없음). TDD 필수.")
 SendMessage(type="message", recipient="executor", content="구현 시작. 완료 후 TaskUpdate로 completed 처리.")
 # 완료 대기 → shutdown_request
@@ -830,19 +830,19 @@ SendMessage(type="message", recipient="executor", content="구현 시작. 완료
 - 5조건 검증 없음 (단일 실행)
 - 빌드 실패 시 즉시 STANDARD 모드로 승격
 
-**STANDARD 모드: impl-manager teammate (sonnet) — 5조건 자체 루프**
+**STANDARD 모드: impl-manager teammate (opus) — 5조건 자체 루프**
 ```
 Task(subagent_type="executor", name="impl-manager", team_name="pdca-{feature}",
-     model="sonnet",
+     model="opus",
      prompt="{impl-manager prompt 전문 — 아래 'impl-manager Prompt 전문' 섹션 참조}")
 SendMessage(type="message", recipient="impl-manager", content="5조건 구현 루프 시작.")
 # Lead는 IMPLEMENTATION_COMPLETED 또는 IMPLEMENTATION_FAILED 메시지만 수신
 ```
 
-**HEAVY 모드: impl-manager teammate (sonnet) — 5조건 자체 루프 + 병렬 가능**
+**HEAVY 모드: impl-manager teammate (opus) — 5조건 자체 루프 + 병렬 가능**
 ```
 Task(subagent_type="executor-high", name="impl-manager", team_name="pdca-{feature}",
-     model="sonnet",
+     model="opus",
      prompt="{impl-manager prompt 전문 — 아래 'impl-manager Prompt 전문' 섹션 참조}")
 SendMessage(type="message", recipient="impl-manager", content="5조건 구현 루프 시작.")
 # Lead는 IMPLEMENTATION_COMPLETED 또는 IMPLEMENTATION_FAILED 메시지만 수신
@@ -852,11 +852,11 @@ SendMessage(type="message", recipient="impl-manager", content="5조건 구현 �
 ```
 # Lead가 설계 문서 분석 → 독립 작업 분할
 Task(subagent_type="executor-high", name="impl-api",
-     team_name="pdca-{feature}", model="sonnet",
+     team_name="pdca-{feature}", model="opus",
      prompt="[Phase 3 HEAVY 병렬] API 구현 담당. {impl-manager 전체 prompt}.
              담당 범위: src/api/ 하위 파일만. 다른 경로 수정 금지.")
 Task(subagent_type="executor-high", name="impl-ui",
-     team_name="pdca-{feature}", model="sonnet",
+     team_name="pdca-{feature}", model="opus",
      prompt="[Phase 3 HEAVY 병렬] UI 구현 담당. {impl-manager 전체 prompt}.
              담당 범위: src/components/ 하위 파일만. 다른 경로 수정 금지.")
 
@@ -937,7 +937,7 @@ Architect REJECT 시 DOMAIN 값에 따라 전문 에이전트에게 수정 위�
 ```
 # Domain-Smart Fix
 Task(subagent_type="{domain_agent}", name="domain-fixer",
-     team_name="pdca-{feature}", model="sonnet",
+     team_name="pdca-{feature}", model="opus",
      prompt="[Phase 3 Domain Fix] Architect 거부 사유 해결.
              거부 사유: {rejection_reason}
              DOMAIN: {domain}
@@ -1185,7 +1185,7 @@ while cycle < max_cycles:
     agent_type = domain_agent_map.get(domain, "executor")
 
     Task(subagent_type=agent_type, name="fixer-{cycle}",
-         team_name="pdca-{feature}", model="sonnet",
+         team_name="pdca-{feature}", model="opus",
          prompt="[Phase 4 Domain Fix] 진단 기반 QA 실패 수정.
                  DIAGNOSIS: {diagnosis}
                  FIX_GUIDE: {fix_guide}
@@ -1230,7 +1230,7 @@ while cycle < max_cycles:
 **LIGHT 모드: Architect teammate만 (code-reviewer 스킵)**
 ```
 Task(subagent_type="architect", name="verifier", team_name="pdca-{feature}",
-     model="sonnet",
+     model="opus",
      prompt="구현된 기능이 docs/01-plan/{feature}.plan.md 요구사항과 일치하는지 검증.")
 SendMessage(type="message", recipient="verifier", content="검증 시작. APPROVE/REJECT 판정 후 TaskUpdate 처리.")
 # verifier 완료 대기 → shutdown_request
@@ -1402,7 +1402,7 @@ if cumulative_iteration_count >= MAX_CUMULATIVE_ITERATIONS:
 **Case 1: gap < 90%**
 ```
 Task(subagent_type="executor", name="iterator", team_name="pdca-{feature}",
-     model="sonnet",
+     model="opus",
      prompt="[Gap Improvement] 설계-구현 갭을 90% 이상으로 개선하세요. gap-checker 결과에서 미구현/불일치 항목을 식별하고 순차적으로 수정하세요. 최대 5회 반복.")
 SendMessage(type="message", recipient="iterator", content="갭 자동 개선 시작.")
 # 완료 대기 → shutdown_request → Phase 4 재실행
@@ -1411,7 +1411,7 @@ SendMessage(type="message", recipient="iterator", content="갭 자동 개선 시
 **Case 2: gap >= 90% + APPROVE**
 ```
 # 보고서 모델 분기
-report_model = "haiku" if mode == "LIGHT" else "sonnet"
+report_model = "sonnet" if mode == "LIGHT" else "opus"
 Task(subagent_type="writer", name="reporter", team_name="pdca-{feature}",
      model=report_model,
      prompt="PDCA 사이클 완료 보고서를 생성하세요.
@@ -1428,7 +1428,7 @@ SendMessage(type="message", recipient="reporter", content="보고서 생성 요�
 **Case 3: Architect REJECT**
 ```
 Task(subagent_type="executor", name="fixer", team_name="pdca-{feature}",
-     model="sonnet",
+     model="opus",
      prompt="Architect 거부 사유를 해결하세요: {rejection_reason}")
 SendMessage(type="message", recipient="fixer", content="피드백 반영 시작.")
 # 완료 대기 → shutdown_request → Phase 4 재실행
