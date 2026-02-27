@@ -350,13 +350,13 @@ class MockupRouter:
             backend=final_backend,
             reason=final_reason,
             html_path=html_path,
-            image_path=image_path,
+            image_path=captured_path,  # 실제 캡처된 경로 (실패 시 None → embedder HTML 폴백)
             success=success,
             message=self._create_message(
                 backend=final_backend,
                 reason=final_reason,
                 html_path=html_path,
-                image_path=image_path,
+                image_path=captured_path,
                 success=success,
                 fallback_used=fallback_used,
             ),

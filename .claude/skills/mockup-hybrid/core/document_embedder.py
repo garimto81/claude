@@ -108,6 +108,7 @@ class DocumentEmbedder:
 
     def _image_block(self, result: MockupResult, doc_path: Path) -> str:
         """이미지 참조 블록"""
+        # PNG 스크린샷이 있으면 이미지로 삽입
         if result.image_path and result.image_path.exists():
             # 문서 위치 기준 상대 경로 계산
             try:
@@ -118,6 +119,15 @@ class DocumentEmbedder:
             rel_str = str(rel_path).replace("\\", "/")
             name = result.image_path.stem
             return f"![{name}]({rel_str})"
+        # PNG 캡처 실패 시 HTML 파일 링크로 폴백 (마크다운 미업데이트 방지)
+        if result.html_path and result.html_path.exists():
+            try:
+                rel_path = result.html_path.relative_to(doc_path.parent)
+            except ValueError:
+                rel_path = result.html_path
+            rel_str = str(rel_path).replace("\\", "/")
+            name = result.html_path.stem
+            return f"[{name} 목업]({rel_str})"
         return ""
 
     def embed_batch(
