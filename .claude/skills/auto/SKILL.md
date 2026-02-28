@@ -237,9 +237,46 @@ SendMessage(type="message", recipient="design-writer", content="설계 문서 �
               └─ --bnw 적용 시: HTML 목업에 B&W 스타일 제약 (색상·폰트)
 
 --mockup "화면명" (파일 미지정)
-      └─ 신규 화면 목업 생성 → designer teammate → docs/mockups/{name}.html
+      └─ Step 3.0.1: 신규 화면 목업 생성 → designer teammate → docs/mockups/{name}.html
               └─ --bnw 적용 시: B&W 스타일 제약
+      └─ Step 3.0.2: PNG 캡처 (Lead 직접 Bash 실행)
+              └─ capture_screenshot() → docs/images/mockups/{name}.png
+              └─ 실패 시: CAPTURE_FAILED → Step 3.0.3에서 HTML 링크 폴백
+      └─ Step 3.0.3: 문서 삽입 (Lead 직접 Edit 실행)
+              ├─ 성공: ![{name}](docs/images/mockups/{name}.png) + [HTML 원본] 링크
+              └─ 실패: [{name} 목업](docs/mockups/{name}.html) (HTML 폴백)
 ```
+
+**Step 3.0.2**: PNG 캡처 (Lead 직접 Bash 실행 — designer 완료 후)
+
+```bash
+python -c "
+import sys; sys.path.insert(0, 'C:/claude')
+from pathlib import Path
+from lib.mockup_hybrid.export_utils import capture_screenshot, get_output_paths
+html_path = Path('docs/mockups/{name}.html')
+_, img_path = get_output_paths('{name}')
+result = capture_screenshot(html_path, img_path, auto_size=True)
+print(f'CAPTURED: {result}' if result else 'CAPTURE_FAILED')
+"
+```
+- 성공: `docs/images/mockups/{name}.png` 생성 → Step 3.0.3 성공 경로
+- 실패 (Playwright 미설치 등): `CAPTURE_FAILED` 출력 → Step 3.0.3 폴백 경로
+
+**Step 3.0.3**: 문서 삽입 (Lead 직접 Edit 실행 — 대상 문서가 있는 경우만)
+
+- **캡처 성공 시**: `generate_markdown_embed()` 결과를 Edit로 대상 문서에 삽입
+  ```
+  ![{name}](docs/images/mockups/{name}.png)
+  [HTML 원본](docs/mockups/{name}.html)
+  ```
+- **캡처 실패 시 (CAPTURE_FAILED)**: HTML 링크로 폴백
+  ```
+  [{name} 목업](docs/mockups/{name}.html)
+  > ⚠️ PNG 캡처 실패 — HTML 파일 직접 열기
+  ```
+- **대상 문서 없음**: 삽입 스킵 (HTML/PNG 파일만 생성된 상태로 완료)
+
 executor 또는 executor-high가 `docs/mockups/*.html`을 직접 Write하는 것은 금지. UI 목업 생성 시 반드시 designer 에이전트 경유.
 **--bnw**: HTML 목업의 스타일 제약만 (색상 없음). 자동 트리거 없음 — 명시적 플래그 필수.
 
