@@ -106,12 +106,13 @@ designer 에이전트 (Agent Teams 패턴)
 | 항목 | 상태 | 비고 |
 |------|------|------|
 | PRD 작성 | 완료 | 이 문서 |
-| SKILL.md Step 3.0.2 추가 | 예정 | PNG 캡처 단계 |
-| SKILL.md Step 3.0.3 추가 | 예정 | 문서 삽입 단계 |
-| 검증 | 예정 | SKILL.md 변경 후 구조 검증 |
+| SKILL.md Step 3.0.2 추가 | 완료 | PNG 캡처 단계 (169fba4) |
+| SKILL.md Step 3.0.3 추가 | 완료 | 문서 삽입 단계 (169fba4) |
+| 검증 | 완료 | Architect APPROVE (7/7 PASS) |
 
 ## Changelog
 
 | 날짜 | 버전 | 변경 내용 | 결정 근거 |
 |------|------|-----------|----------|
+| 2026-03-01 | v1.1 | 구현 완료 — Step 3.0.2/3.0.3 추가, Architect APPROVE | PDCA Phase 3-4 완료 |
 | 2026-03-01 | v1.0 | 최초 작성 | v21.0+ mockup 파이프라인 PNG 캡처/문서 삽입 누락 복원 |
