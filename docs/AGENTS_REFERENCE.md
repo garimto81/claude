@@ -117,7 +117,7 @@ Task(subagent_type="executor-low", model="haiku", ...)
 | `designer-low` | haiku | 단순 스타일링, 마이너 UI 수정 | CSS 조정, 소규모 변경 |
 | `frontend-dev` | sonnet | 프론트엔드 개발. React/Next.js 성능 최적화 | 전체 프론트엔드 작업 |
 
-> **plugin 연동**: `frontend-design` 플러그인이 designer 에이전트의 Aesthetic Guidelines 제공
+> **Aesthetic Guidelines**: `designer.md`에 직접 내장 (frontend-design 플러그인 가이드라인 통합 완료)
 
 ---
 

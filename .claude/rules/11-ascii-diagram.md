@@ -30,7 +30,7 @@
 
 | 대상 | 처리 방식 |
 |------|-----------|
-| PRD 내 UI 화면 목업 | `--mockup --bnw` (designer 에이전트 + frontend-design 플러그인) |
+| PRD 내 UI 화면 목업 | `--mockup --bnw` (designer 에이전트 내장 Aesthetic Guidelines) |
 | 최종 보고서/이해관계자 전달물의 시각화 | `--mockup --bnw` |
 | 화면 설계 목업 (docs/mockups/) | `--mockup --bnw` |
 

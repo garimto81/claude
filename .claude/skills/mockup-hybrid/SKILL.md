@@ -183,7 +183,7 @@ STITCH_API_KEY=your-api-key
 STITCH_API_BASE_URL=https://api.stitch.withgoogle.com/v1
 ```
 
-## --bnw 모드 (frontend-design 기반 모노크롬)
+## --bnw 모드 (designer 에이전트 내장 가이드라인 기반 모노크롬)
 
 `--bnw`는 **B&W 스타일 제약**이며, HTML 강제 옵션이 아니다. 3-Tier 라우팅이 먼저 결정된다.
 

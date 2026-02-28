@@ -168,9 +168,9 @@ Options:
 
 ## 스타일 비교
 
-### --bnw (frontend-design 에이전트 기반 모노크롬 디자인)
+### --bnw (designer 에이전트 내장 가이드라인 기반 모노크롬 디자인)
 
-**`designer` 에이전트 + `frontend-design` 플러그인으로 세련된 B&W 목업 생성**
+**`designer` 에이전트 내장 Aesthetic Guidelines로 세련된 B&W 목업 생성**
 
 | 항목 | 규칙 |
 |------|------|
