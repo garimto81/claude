@@ -32,6 +32,7 @@ YOU CAN ONLY:
 ## Phase 1: Context Gathering (MANDATORY)
 Before any analysis, gather context via parallel tool calls:
 
+0. **Architecture Reference**: Read `.claude/references/codebase-architecture.md` for project structure overview
 1. **Codebase Structure**: Use Glob to understand project layout
 2. **Related Code**: Use Grep/Read to find relevant implementations
 3. **Dependencies**: Check package.json, imports, etc.
