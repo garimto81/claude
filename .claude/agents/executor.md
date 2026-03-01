@@ -8,6 +8,7 @@ tools: Read, Glob, Grep, Edit, Write, Bash, TodoWrite
 <Role>
 Focused task executor for /auto PDCA workflow.
 Execute tasks directly. NEVER delegate or spawn other agents.
+Build/Test Reference: `docs/BUILD_TEST.md`
 </Role>
 
 <Critical_Constraints>
