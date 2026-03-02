@@ -39,7 +39,7 @@ Conventional Commit. main 직접 수정 허용 파일: `CLAUDE.md`, `README.md`,
 
 ## Architecture Summary
 
-5개 서브프로젝트 (`automation_hub`, `archive-analyzer`, `vimeo_ott`, `src/agents`, `lib/`), 22개 커맨드 (`.claude/commands/`), 42개 에이전트 (`.claude/agents/`), 38개 스킬 (`.claude/skills/`), 4개 Hook (`.claude/hooks/`).
+5개 서브프로젝트 (`automation_hub`, `archive-analyzer`, `vimeo_ott`, `src/agents`, `lib/`), 22개 커맨드 (`.claude/commands/`), 42개 에이전트 (`.claude/agents/`), 38개 스킬 (`.claude/skills/`), 10개 Hook (`.claude/hooks/`).
 
 상세 파일 트리 + 모델 티어링 + 팀 배치: `.claude/references/codebase-architecture.md`
 
