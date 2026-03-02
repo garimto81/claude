@@ -1257,11 +1257,15 @@ SendMessage(type="message", recipient="verifier", content="검증 시작. APPROV
 if e2e_enabled:
     Task(subagent_type="qa-tester", name="e2e-runner", team_name="pdca-{feature}",
          model="sonnet", max_turns=30,
-         prompt="[Phase 4 E2E Background] Playwright E2E 테스트 백그라운드 실행.
-         1. npx playwright test --reporter=list 실행
-         2. 결과 요약: 총 테스트 수, PASS 수, FAIL 수
-         3. 실패 시: 실패 테스트명 + 에러 메시지 (첫 3줄)
-         4. 출력 형식: E2E_PASSED 또는 E2E_FAILED + 실패 상세 목록
+         prompt="[Phase 4 E2E Background] E2E 테스트 백그라운드 실행.
+         1. 프레임워크 감지:
+            - playwright.config.* -> npx playwright test --reporter=list
+            - cypress.config.* -> npx cypress run --reporter spec
+            - vitest.config.* (browser) -> npx vitest run --reporter verbose
+         2. 감지된 프레임워크로 실행 (첫 번째 매칭 우선)
+         3. 결과 요약: 총 테스트 수, PASS 수, FAIL 수
+         4. 실패 시: 실패 테스트명 + 에러 메시지 (첫 3줄)
+         5. 출력 형식: E2E_PASSED 또는 E2E_FAILED + 실패 상세 목록
          --strict 모드: {strict_mode} (true 시 1회 실패 즉시 E2E_FAILED 보고)")
     SendMessage(type="message", recipient="e2e-runner", content="E2E 백그라운드 실행 시작.")
     # ※ 완료 대기하지 않음 — 아래 포그라운드 검증과 병렬 진행
@@ -1328,7 +1332,7 @@ Task(subagent_type="code-reviewer", name="gap-checker", ..., model="sonnet", ...
 Task(subagent_type="code-reviewer", name="quality-checker", ..., model="sonnet", ...)
 ```
 
-- e2e-runner: Playwright E2E 테스트 (백그라운드 병렬, 포그라운드 검증과 동시 실행)
+- e2e-runner: E2E 테스트 (백그라운드 병렬, 포그라운드 검증과 동시 실행 - Playwright/Cypress/Vitest 자동 감지)
 - Architect: 기능 완성도 검증 (APPROVE/REJECT)
 - gap-checker: 설계-구현 일치도 검증 (0-100%)
 - quality-checker: 코드 품질, 보안, 성능 분석 + Vercel BP (해당 시)

@@ -335,7 +335,11 @@ QA Runner 6종 goal, Architect 진단 prompt, Domain routing 상세: `REFERENCE.
 e2e_enabled = (
     mode != "LIGHT"
     and not skip_e2e                              # --skip-e2e 옵션 아님
-    and Glob("playwright.config.{ts,js}")         # Playwright 설정 존재
+    and (                                          # E2E 프레임워크 설정 존재
+        Glob("playwright.config.{ts,js}")
+        or Glob("cypress.config.{ts,js}")
+        or Glob("vitest.config.{ts,js}")           # browser mode
+    )
 )
 
 # Step 4.2.1: E2E 백그라운드 spawn (STANDARD/HEAVY + e2e_enabled 시)
