@@ -743,7 +743,8 @@ else:
 | Phase 3.1 | impl-manager teammate (opus) — 5조건 자체 루프 |
 | Phase 3.2 | Architect Gate (외부 검증, max 2회 rejection) |
 | Phase 4.1 | QA Runner 3회 + Architect 진단 + Domain-Smart Fix |
-| Phase 4.2 | Architect + code-reviewer (순차) |
+| Phase 4.2 | Architect + code-reviewer (순차) + E2E 백그라운드 병렬 |
+| Phase 4.3 | E2E 실패 처리 (진단 + Domain-Smart Fix, max 2회) |
 | Phase 5 | gap < 90% → executor teammate (최대 5회) |
 
 ### HEAVY 모드 (4-5점)
@@ -756,7 +757,8 @@ else:
 | Phase 3.1 | impl-manager teammate (opus) — 5조건 자체 루프 + 병렬 가능 |
 | Phase 3.2 | Architect Gate (외부 검증, max 2회 rejection) |
 | Phase 4.1 | QA Runner 5회 + Architect 진단 + Domain-Smart Fix |
-| Phase 4.2 | Architect + code-reviewer (sonnet, 순차) |
+| Phase 4.2 | Architect + code-reviewer (sonnet, 순차) + E2E 백그라운드 병렬 |
+| Phase 4.3 | E2E 실패 처리 (진단 + Domain-Smart Fix, max 2회) |
 | Phase 5 | gap < 90% → executor teammate (최대 5회) |
 
 ### 자동 승격 규칙 (Phase 중 복잡도 상향 조정)
@@ -1225,19 +1227,46 @@ while cycle < max_cycles:
 
 > **주의**: Interactive testing은 tmux가 설치된 환경에서만 작동합니다.
 
-### Step 4.2: 이중 검증 (순차 teammate - context 분리)
+### Step 4.2: 이중 검증 + E2E 백그라운드 (순차 검증 + 병렬 E2E)
 
-**LIGHT 모드: Architect teammate만 (code-reviewer 스킵)**
+**E2E 인덱스 체크 (Step 4.2 진입 시 1회 평가):**
+
+```
+# E2E 실행 조건 인덱싱 — 3개 조건 모두 충족 시만 e2e_enabled = true
+e2e_enabled = (
+    mode != "LIGHT"                               # LIGHT 모드 아님
+    and not skip_e2e                              # --skip-e2e 옵션 아님
+    and Glob("playwright.config.{ts,js}")         # Playwright 설정 파일 존재
+)
+# e2e_enabled == false → E2E 관련 모든 단계 스킵 (Step 4.2.1, 4.2.3, 4.3 전체)
+```
+
+**LIGHT 모드: Architect teammate만 (code-reviewer, E2E 스킵)**
 ```
 Task(subagent_type="architect", name="verifier", team_name="pdca-{feature}",
      model="opus",
      prompt="구현된 기능이 docs/01-plan/{feature}.plan.md 요구사항과 일치하는지 검증.")
 SendMessage(type="message", recipient="verifier", content="검증 시작. APPROVE/REJECT 판정 후 TaskUpdate 처리.")
 # verifier 완료 대기 → shutdown_request
+# e2e_enabled == false → Step 4.3 스킵
 ```
 
-**STANDARD/HEAVY 모드: Architect → code-reviewer (순차 teammate)**
+**STANDARD/HEAVY 모드: E2E 백그라운드 + Architect → code-reviewer 순차**
 ```
+# Step 4.2.1: E2E 백그라운드 spawn (e2e_enabled 시 — 포그라운드 검증과 병렬)
+if e2e_enabled:
+    Task(subagent_type="qa-tester", name="e2e-runner", team_name="pdca-{feature}",
+         model="sonnet", max_turns=30,
+         prompt="[Phase 4 E2E Background] Playwright E2E 테스트 백그라운드 실행.
+         1. npx playwright test --reporter=list 실행
+         2. 결과 요약: 총 테스트 수, PASS 수, FAIL 수
+         3. 실패 시: 실패 테스트명 + 에러 메시지 (첫 3줄)
+         4. 출력 형식: E2E_PASSED 또는 E2E_FAILED + 실패 상세 목록
+         --strict 모드: {strict_mode} (true 시 1회 실패 즉시 E2E_FAILED 보고)")
+    SendMessage(type="message", recipient="e2e-runner", content="E2E 백그라운드 실행 시작.")
+    # ※ 완료 대기하지 않음 — 아래 포그라운드 검증과 병렬 진행
+
+# Step 4.2.2: 포그라운드 검증 (기존 순차 검증 동일)
 # 1. Architect teammate 먼저 실행
 Task(subagent_type="architect", name="verifier", team_name="pdca-{feature}",
      model="opus",
@@ -1269,38 +1298,101 @@ Task(subagent_type="code-reviewer", name="quality-checker", team_name="pdca-{fea
      prompt=analyzer_prompt)  # ← React/Next.js 프로젝트일 때만 Vercel BP 규칙 포함
 SendMessage(type="message", recipient="quality-checker", content="코드 품질 분석 시작. 완료 후 TaskUpdate 처리.")
 # quality-checker 완료 대기 → shutdown_request
+
+# Step 4.2.3: E2E 결과 수집 (포그라운드 검증 완료 후)
+if e2e_enabled:
+    # e2e-runner는 이미 백그라운드에서 병렬 실행 중
+    # Mailbox에서 e2e-runner 메시지 수신 대기
+    # 이미 완료된 경우 → 즉시 수신 / 아직 실행 중 → 대기
+    e2e_result = wait_for_message(from="e2e-runner")
+    SendMessage(type="shutdown_request", recipient="e2e-runner")
+    if e2e_result == "E2E_PASSED":
+        # 정상 진행 → Step 4.3 스킵
+        pass
+    elif e2e_result == "E2E_FAILED":
+        e2e_failures = e2e_result.failures
+        if strict_mode:
+            # --strict: 즉시 중단 + 실패 보고 → Phase 5 미진입
+            report_e2e_failure(e2e_failures)
+            return
+        # 비-strict → Step 4.3 E2E 실패 처리 진입
 ```
 
-**HEAVY 모드: 동일 구조 (순차 teammate, architect=opus/code-reviewer=sonnet)**
+**HEAVY 모드: 동일 구조 (순차 teammate + E2E 백그라운드)**
 
-HEAVY 모드에서도 Architect는 `model="opus"`, code-reviewer는 `model="sonnet"` 사용:
+HEAVY 모드에서도 Architect는 `model="opus"`, code-reviewer는 `model="sonnet"`, e2e-runner는 `model="sonnet"` 사용:
 ```
+Task(subagent_type="qa-tester", name="e2e-runner", ..., model="sonnet", ...)  # 백그라운드
 Task(subagent_type="architect", name="verifier", ..., model="opus", ...)
 Task(subagent_type="code-reviewer", name="gap-checker", ..., model="sonnet", ...)
 Task(subagent_type="code-reviewer", name="quality-checker", ..., model="sonnet", ...)
 ```
 
+- e2e-runner: Playwright E2E 테스트 (백그라운드 병렬, 포그라운드 검증과 동시 실행)
 - Architect: 기능 완성도 검증 (APPROVE/REJECT)
 - gap-checker: 설계-구현 일치도 검증 (0-100%)
 - quality-checker: 코드 품질, 보안, 성능 분석 + Vercel BP (해당 시)
 
-### Step 4.3: E2E 검증 (Playwright 있을 때만)
+### Step 4.3: E2E 실패 처리 (e2e_enabled + E2E_FAILED 시만)
 
-**실행 조건:** `playwright.config.ts` 또는 `playwright.config.js` 존재
+> **인덱싱**: `e2e_enabled == false` 또는 `E2E_PASSED`면 이 Step 전체를 스킵합니다.
+> Step 4.2.3에서 E2E_FAILED를 수신한 경우에만 진입합니다.
 
-```bash
-npx playwright test --reporter=list
+**진입 조건 (모두 충족 시):**
+- `e2e_enabled == true` (Step 4.2.0에서 평가)
+- Step 4.2.3에서 `E2E_FAILED` 수신
+- `strict_mode == false` (strict 시 Step 4.2.3에서 이미 중단)
+
+**E2E 실패 수정 루프 (max 2회):**
+```
+e2e_fix_attempts = 0
+max_e2e_fixes = 2
+
+Loop (max_e2e_fixes):
+    e2e_fix_attempts += 1
+
+    # A. Architect E2E 실패 root cause 진단
+    Task(subagent_type="architect", name="e2e-diagnostician", team_name="pdca-{feature}",
+         model="opus", max_turns=15,
+         prompt="[E2E Failure Diagnosis] Playwright E2E 테스트 실패 분석.
+         실패 상세: {e2e_failures}
+         1. 실패 root cause 식별 (UI 렌더링, 네트워크, 타이밍, 셀렉터 등)
+         2. 수정 지침 (FIX_GUIDE) 작성
+         3. DOMAIN 분류: UI/build/test/security/기타
+         출력: DIAGNOSIS + FIX_GUIDE + DOMAIN")
+    SendMessage(type="message", recipient="e2e-diagnostician", content="E2E 실패 진단 시작.")
+    # 완료 대기 → shutdown_request
+
+    # B. Domain-Smart Fix (Step 3.3 동일 라우팅)
+    Task(subagent_type="{domain-agent}", name="e2e-fixer", team_name="pdca-{feature}",
+         model="opus", max_turns=30,
+         prompt="E2E 진단 기반 수정.
+         DIAGNOSIS: {diagnosis}
+         FIX_GUIDE: {fix_guide}
+         수정 후 npx playwright test --reporter=list 로 검증.")
+    SendMessage(type="message", recipient="e2e-fixer", content="E2E 수정 시작.")
+    # 완료 대기 → shutdown_request
+
+    # C. E2E 재실행
+    Task(subagent_type="qa-tester", name="e2e-rerun", team_name="pdca-{feature}",
+         model="sonnet", max_turns=20,
+         prompt="npx playwright test --reporter=list 재실행. E2E_PASSED 또는 E2E_FAILED 보고.")
+    SendMessage(type="message", recipient="e2e-rerun", content="E2E 재실행 시작.")
+    # 완료 대기 → shutdown_request
+
+    if e2e_rerun_result == "E2E_PASSED":
+        break  # 성공 → Phase 5 진입
+    # E2E_FAILED → 다음 iteration
+
+# 2회 초과: 미해결 E2E 실패 경고 포함하여 Phase 5 진입 허용
+if e2e_fix_attempts >= max_e2e_fixes:
+    warn("E2E 테스트 {len(e2e_failures)}건 미해결. Phase 5 보고서에 포함.")
 ```
 
-**실패 시:**
-1. Playwright `--reporter=line` 옵션으로 상세 로그 수집
-2. `/debug` 스킬 호출 (D0-D4 Phase 디버깅)
-3. 실패 원인 수정 후 재실행
-
-**스킵 조건:**
-- LIGHT 모드
-- Playwright 설정 파일 없음
-- `--skip-e2e` 옵션 명시
+**스킵 조건 (인덱싱 — Step 4.3 전체 비활성화):**
+- `e2e_enabled == false` (LIGHT 모드, Playwright 미설치, `--skip-e2e`)
+- Step 4.2.3에서 `E2E_PASSED` 수신
+- `strict_mode == true` + `E2E_FAILED` (Step 4.2.3에서 이미 중단됨)
 
 ### Step 4.4: TDD 커버리지 보고 (있을 때만)
 
