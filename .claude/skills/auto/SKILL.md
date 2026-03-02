@@ -1,7 +1,7 @@
 ---
 name: auto
 description: PDCA Orchestrator - 통합 자율 워크플로우 (Agent Teams 단일 패턴)
-version: 22.4.0
+version: 23.0.0
 triggers:
   keywords:
     - "/auto"
@@ -24,292 +24,197 @@ agents:
   - writer
 ---
 
-# /auto - PDCA Orchestrator (v22.4)
+# /auto - PDCA Orchestrator (v23.0)
 
-> **핵심**: `/auto "작업"` = Phase 0-5 PDCA 자동 진행. `/auto` 단독 = 자율 발견 모드. `/work`는 `/auto`로 통합됨.
-> **PRD-First**: 요구사항 요청 시 반드시 PRD 문서를 먼저 생성/수정 → 사용자 승인 후 구현 진행 (v22.3).
-> **Agent Teams**: 모든 Phase에서 Agent Teams 단일 패턴 사용. Skill() 호출 0개. State 파일 의존 0개 (pdca-status.json은 진행 추적용, stop hook 비연동). 상세: `REFERENCE.md`
+> **핵심**: `/auto "작업"` = Phase 0-4 자동 진행. `/auto` 단독 = 자율 발견 모드. `/work`는 `/auto`로 통합됨.
+> **Agent Teams 단일 패턴**: TeamCreate → Task(team_name+name) → SendMessage → TeamDelete. Skill() 호출 0개.
+> **코드 블록/상세 prompt**: `REFERENCE.md` 참조. 이 파일은 판단 로직과 흐름만 기술.
 
 ---
 
-## 필수 실행 규칙 (CRITICAL)
+## Phase 0→4 실행 흐름
 
-**이 스킬이 활성화되면 반드시 Phase 0→5 순서로 실행하세요!**
+```
+  Phase 0        Phase 1           Phase 2            Phase 3          Phase 4
+  INIT    ──→    PLAN       ──→    BUILD       ──→    VERIFY    ──→    CLOSE
+  옵션 파싱       PRD 생성         구현 실행           QA 사이클        보고서
+  팀 생성         사전 분석         코드 리뷰           E2E 검증         팀 정리
+  복잡도 판단     계획+설계 수립    Architect Gate      최종 판정         커밋
+```
 
-### Phase 0: 옵션 파싱 + 모드 결정 + 팀 생성
+---
+
+## Phase 0: INIT (옵션 + 팀 + 복잡도)
+
+### 옵션
 
 | 옵션 | 효과 |
 |------|------|
-| `--skip-prd` | Phase 0.5 PRD 생성/수정 스킵 |
-| `--skip-analysis` | Step 1.0 사전 분석 스킵 |
-| `--no-issue` | Step 1.3 이슈 연동 스킵 |
-| `--strict` | E2E 테스트 1회 실패 즉시 중단 (QA cycle과 무관) |
-| `--skip-e2e` | E2E 백그라운드 검증 + 실패 처리 전체 스킵 (Step 4.2.1, 4.2.3, 4.3) |
-| `--dry-run` | 판단만 출력, 실행 안함 |
-| `--eco` | LIGHT 모드 강제 (모든 단계 sonnet, opus 비활성화 포함) |
-| `--worktree` | feature 전용 worktree 생성 후 해당 경로에서 작업, 완료 시 자동 정리 |
-| `--mockup [파일]` | Phase 3.0에서 실행. **[파일] 지정 시**: 파일 내 ASCII 탐지 → `11-ascii-diagram.md` 기준 변환 (흐름/시퀀스/아키텍처 → Mermaid 코드 블록, UI 화면/컴포넌트 → HTML 목업 + PNG → Markdown 교체). **[파일] 미지정 시**: 화면명 인수 기반 신규 목업 생성. 하위 옵션: `--bnw` (HTML 목업에 B&W 스타일 제약만, 색상·폰트), `--force-html`, `--prd=` |
+| `--skip-prd` | Phase 1 PRD 스킵 |
+| `--skip-analysis` | Phase 1 사전 분석 스킵 |
+| `--no-issue` | 이슈 연동 스킵 |
+| `--strict` | E2E 1회 실패 즉시 중단 |
+| `--skip-e2e` | E2E 검증 전체 스킵 |
+| `--dry-run` | 판단만 출력 |
+| `--eco` | LIGHT 강제 (전체 sonnet) |
+| `--worktree` | feature worktree에서 작업 |
+| `--mockup [파일]` | Phase 2 진입 전 실행. 상세: mockup-hybrid SKILL.md |
 
-**팀 생성 (MANDATORY):**
-```
-TeamCreate(team_name="pdca-{feature}")
-```
-**TeamCreate 실패 방어 (Orphaned State 복구):**
-- `Already leading team` 에러 발생 시 → `TeamDelete()` 즉시 호출 → `TeamCreate()` 재시도
-- `Team already exists` 에러 발생 시 → `TeamDelete()` 즉시 호출 → `TeamCreate()` 재시도
-- 재시도 1회 실패 시 → 사용자에게 에러 보고 후 중단 (무한 재시도 금지)
+### 팀 생성 (MANDATORY)
 
-### 유의미 변경 커밋 원칙 (Commit Policy)
+`TeamCreate(team_name="pdca-{feature}")`. 실패 시 `TeamDelete()` → 재시도 1회. 재실패 시 중단.
 
-**유의미 변경 기준**: Phase 완료 후 `git status --short` 결과가 비어있지 않은 경우
-- 코드 파일: `.py`, `.ts`, `.js`, `.tsx`, `.jsx`, `.go`, `.rs` 등
-- **문서 파일**: `.md` (PRD, Plan, Design, Report 등 모두 포함)
-- 설정 파일: `.json`, `.yaml`, `.toml`, `pyproject.toml` 등
+### 복잡도 판단 (5점 만점)
 
-**커밋 트리거 포인트** (각 Phase 완료 직후):
-| 트리거 | 조건 | 커밋 메시지 패턴 |
-|--------|------|----------------|
-| Phase 2 설계 완료 | 설계 문서 생성 | `docs(design): {feature} 설계 문서 작성` |
-| Phase 3.2 Architect APPROVE | 구현 완료 + 검증 통과 | `feat({feature}): 구현 완료` |
-| Phase 4.2 Verification APPROVE | QA + 최종 검증 통과 | `fix({feature}): QA 수정사항 반영` |
-| Phase 5 보고서 생성 후 | 보고서 생성 완료 | `docs(report): {feature} PDCA 완료 보고서` |
-| 조기 종료 시 | max cycles 초과, 루프 가드 등 | `wip({feature}): 진행 중 변경사항 보존` |
+상세 채점 기준: `REFERENCE.md`
 
-> **공통 규칙**: 커밋 전 `git status --short`로 변경사항 확인 필수. 변경사항이 없으면 커밋 스킵.
+| 점수 | 모드 | 특성 |
+|:----:|:----:|------|
+| 0-1 | LIGHT | 단일 실행, QA 1회, 최소 검증 |
+| 2-3 | STANDARD | 자체 루프, QA 3회, 이중 검증 |
+| 4-5 | HEAVY | Planner-Critic, QA 5회, 전체 검증 |
 
-### Phase 0.5: PRD (요구사항 문서화 — 구현 전 필수)
+**자동 승격**: LIGHT→STANDARD (빌드 실패 2회 or 영향 파일 5+). STANDARD→HEAVY (QA 3사이클 초과 or 영향 파일 5+).
 
-> **CRITICAL**: 요구사항 요청 시 반드시 PRD 문서를 먼저 생성/수정한 후 구현을 진행합니다. `--skip-prd`로 스킵 가능.
+### 커밋 정책
 
-**Step 0.5.1**: 기존 PRD 탐색
+Phase 완료 후 `git status --short` 확인 → 변경사항 있으면 커밋.
 
-```
-# docs/00-prd/ 디렉토리에서 기존 PRD 탐색
-existing_prd = Glob("docs/00-prd/{feature}*.prd.md")
-# 관련 PRD가 없으면 docs/00-prd/ 전체 탐색하여 연관 문서 확인
-if not existing_prd:
-    all_prds = Glob("docs/00-prd/*.prd.md")
-```
+| 트리거 | 커밋 메시지 패턴 |
+|--------|----------------|
+| Phase 2 Architect APPROVE | `feat({feature}): 구현 완료` |
+| Phase 3 최종 검증 통과 | `fix({feature}): QA 수정사항 반영` |
+| Phase 4 보고서 생성 | `docs(report): {feature} PDCA 완료 보고서` |
+| 조기 종료 | `wip({feature}): 진행 중 변경사항 보존` |
 
-**Step 0.5.2**: PRD 생성 또는 수정 — executor teammate
+---
 
-```
-# 기존 PRD 없음 → 신규 생성
-Task(subagent_type="executor", name="prd-writer", team_name="pdca-{feature}",
-     model="opus", max_turns=25, prompt="[Phase 0.5 PRD] 사용자 요구사항을 PRD 문서로 작성.
-     사용자 요청: {user_request}
-     기존 관련 PRD: {existing_prds_summary}
-     출력: docs/00-prd/{feature}.prd.md
-     필수 섹션: 배경/목적, 요구사항 목록(번호 부여), 기능 범위, 비기능 요구사항, 제약사항, 우선순위.
-     상세 템플릿: REFERENCE.md")
-SendMessage(type="message", recipient="prd-writer", content="PRD 문서 작성 시작.")
-# 완료 대기 → shutdown_request
+## Phase 1: PLAN (PRD → 분석 → 계획+설계)
 
-# 기존 PRD 있음 → 수정
-Task(subagent_type="executor", name="prd-writer", team_name="pdca-{feature}",
-     model="opus", max_turns=25, prompt="[Phase 0.5 PRD Update] 기존 PRD를 요구사항에 맞게 수정.
-     기존 PRD: docs/00-prd/{existing_prd_file}
-     추가/변경 요구사항: {user_request}
-     변경 이력을 ## Changelog 섹션에 기록.")
-SendMessage(type="message", recipient="prd-writer", content="PRD 수정 시작.")
-# 완료 대기 → shutdown_request
-```
+### Step 1.1: PRD (요구사항 문서화)
 
-**Step 0.5.3**: 사용자 승인 (MANDATORY)
+`--skip-prd`로 스킵 가능. 상세 prompt/템플릿: `REFERENCE.md`
 
-```
-# PRD 내용을 사용자에게 제시
-prd_content = Read("docs/00-prd/{feature}.prd.md")
-# AskUserQuestion으로 승인 요청
-# 승인 → Phase 1 진입
-# 수정 요청 → Step 0.5.2 재실행 (수정 반영, max 3회)
-# 3회 초과 → 현재 PRD로 Phase 1 진입 (경고 포함)
-```
+1. `docs/00-prd/` 기존 PRD 탐색
+2. prd-writer teammate (executor, opus) → PRD 생성/수정
+3. **사용자 승인** (AskUserQuestion, max 수정 3회)
+4. 산출물: `docs/00-prd/{feature}.prd.md`
 
-**산출물**: `docs/00-prd/{feature}.prd.md`
+### Step 1.2: 사전 분석
 
-### Phase 1: PLAN (사전 분석 → 복잡도 판단 → 계획 수립 → 이슈 연동)
+`--skip-analysis`로 스킵 가능.
 
-**Step 1.0**: 병렬 explore(haiku) x2 — 문서 탐색 + 이슈 탐색. `--skip-analysis`로 스킵 가능.
+병렬 explore(haiku) x2: 문서 탐색 + 이슈 탐색. 결과 5줄 요약.
 
-```
-Task(subagent_type="explore", name="doc-analyst", team_name="pdca-{feature}",
-     model="haiku", max_turns=10, prompt="docs/, .claude/ 내 관련 문서 탐색. 결과 5줄 이내 요약.")
-Task(subagent_type="explore", name="issue-analyst", team_name="pdca-{feature}",
-     model="haiku", max_turns=10, prompt="gh issue list로 유사 이슈 탐색. 결과 5줄 이내 요약.")
-# 완료 대기 → 각각 SendMessage(type="shutdown_request", recipient="...")
-```
-
-**Step 1.1: 복잡도 판단 (5점 만점)** — 상세 기준: `REFERENCE.md`
-
-| 점수 | 모드 | 라우팅 |
-|:----:|:----:|--------|
-| 0-1 | LIGHT | planner teammate (sonnet) |
-| 2-3 | STANDARD | planner teammate (opus) |
-| 4-5 | HEAVY | Planner-Critic Loop (max 5 iter) |
-
-> **모델 오버라이드**: 에이전트 정의(architect=sonnet 등)와 무관하게, 호출 시 `model` 파라미터가 복잡도 모드에 따라 결정됨.
-
-**Step 1.2**: 계획 수립 → `docs/01-plan/{feature}.plan.md` 생성 (Graduated Plan Review)
-
-**LIGHT (0-1점): Planner + Lead Quality Gate**
-```
-Task(subagent_type="planner", name="planner", team_name="pdca-{feature}",
-     model="sonnet", max_turns=30, prompt="(복잡도: LIGHT {score}/5). docs/01-plan/{feature}.plan.md 생성.
-     PRD 참조: docs/00-prd/{feature}.prd.md (있으면 반드시 기반으로 계획 수립).
-     사용자 확인/인터뷰 단계 건너뛰고 바로 계획 문서를 작성하세요.")
-SendMessage(type="message", recipient="planner", content="계획 수립 시작.")
-# 완료 대기 → shutdown_request
-# Lead Quality Gate: (1) plan 파일 존재+내용 있음, (2) 파일 경로 1개+ 언급
-# 미충족 시 Planner 1회 재요청
-```
-
-**STANDARD (2-3점): Planner + Critic-Lite 단일 검토**
-```
-Task(subagent_type="planner", name="planner", team_name="pdca-{feature}",
-     model="opus", max_turns=30, prompt="(복잡도: STANDARD {score}/5). docs/01-plan/{feature}.plan.md 생성.
-     PRD 참조: docs/00-prd/{feature}.prd.md (있으면 반드시 기반으로 계획 수립).
-     사용자 확인/인터뷰 단계 건너뛰세요. Critic-Lite가 검토합니다.")
-SendMessage(type="message", recipient="planner", content="계획 수립 시작.")
-# 완료 대기 → shutdown_request
-# Critic-Lite: Quality Gates 4 검증 (QG1-QG4) — 상세 prompt: REFERENCE.md
-Task(subagent_type="critic", name="critic-lite", team_name="pdca-{feature}",
-     model="opus", max_turns=15, prompt="[Critic-Lite] QG1-QG4 검증. VERDICT: APPROVE/REVISE.")
-SendMessage(type="message", recipient="critic-lite", content="Plan 검토 시작.")
-# REVISE → Planner 1회 수정 → 수정본 수용 (추가 Critic 없음)
-```
-
-**HEAVY (4-5점): Planner-Critic Loop (max 5 iterations)** — 상세 prompt: `REFERENCE.md`
-```
-critic_feedback = ""
-Loop (i=1..5):
-  1. Planner teammate (opus) → 계획 수립 (critic_feedback 반영)
-  2. Architect teammate (opus) → 기술적 타당성 검증
-  3. Critic teammate (opus) → Quality Gates 4 (QG1-QG4) + VERDICT: APPROVE/REVISE
-  APPROVE → Loop 종료 / REVISE → critic_feedback 업데이트 → 다음 iteration
-  5회 초과 → 경고 포함 강제 승인
-```
-
-**Step 1.3**: 이슈 연동 (없으면 생성, 있으면 코멘트). `--no-issue`로 스킵 가능.
-
-### Phase 2: DESIGN (설계 문서 생성)
-
-**Plan→Design Gate (STANDARD/HEAVY만)**: 4개 필수 섹션 확인 (배경, 구현 범위, 영향 파일, 위험 요소)
-
-| 모드 | 실행 | 에이전트 |
-|------|------|---------|
-| LIGHT | **스킵** (Phase 3 직행) | — |
-| STANDARD | design-writer teammate | `executor` (opus) |
-| HEAVY | design-writer teammate | `executor-high` (opus) |
-
-> **주의**: `architect`는 READ-ONLY (Write 도구 없음). 설계 **문서 생성**에는 executor 계열 사용 필수.
-
-```
-# STANDARD 예시 (HEAVY: executor-high + opus)
-Task(subagent_type="executor", name="design-writer", team_name="pdca-{feature}",
-     model="opus", max_turns=40, prompt="docs/01-plan/{feature}.plan.md 참조. 설계 문서 작성. 출력: docs/02-design/{feature}.design.md")
-SendMessage(type="message", recipient="design-writer", content="설계 문서 생성 요청.")
-```
-
-**산출물**: `docs/02-design/{feature}.design.md` (STANDARD/HEAVY만)
-> **커밋 (유의미 변경 시)**: 설계 문서 생성 후 `git status --short` 확인 → 변경사항 있으면 `git add docs/ && git commit -m "docs(design): {feature} 설계 문서 작성"`
-
-### Phase 3: DO (옵션 라우팅 + 구현)
-
-**Step 3.0**: 옵션 처리 (구현 진입 전 실행)
-
-| 옵션 | 스킬 | 옵션 | 스킬 |
-|------|------|------|------|
-| `--gdocs` | `prd-sync` | `--slack <채널>` | Slack 분석 |
-| `--mockup [파일] [--bnw]` | ASCII→형식 변환 (`11-ascii-diagram.md` 기준) | `--gmail` | Gmail 분석 |
-| `--debate` | `ultimate-debate` | `--daily` | `daily` |
-| `--research` | `research` | `--interactive` | Phase별 승인 |
-
-**--mockup 실행 경로**: mockup-hybrid 스킬 참조 (`.claude/skills/mockup-hybrid/SKILL.md`)
-- 파일 지정: 문서 내 ASCII 다이어그램 감지 → Mermaid/HTML 자동 변환
-- 화면명 지정: designer teammate → HTML 생성 → PNG 캡처 → 문서 삽입
-- 상세 워크플로우 (캡처, 문서 삽입, 폴백): mockup-hybrid SKILL.md `/auto 연동` 섹션 참조
-
-**옵션 실패 시**: 에러 출력, **절대 조용히 스킵 금지**. 상세: `REFERENCE.md`
-
-**Step 3.1**: 구현 실행
+### Step 1.3: 계획 수립 (Graduated Plan Review)
 
 | 모드 | 실행 |
 |------|------|
-| LIGHT | executor teammate (opus) — 단일 실행 |
-| STANDARD | impl-manager teammate (opus) — 5조건 자체 루프 |
-| HEAVY | impl-manager teammate (opus) — 5조건 자체 루프 + 병렬 가능 |
+| LIGHT | planner (sonnet) + Lead Quality Gate |
+| STANDARD | planner (opus) + Critic-Lite (opus) 단일 검토 |
+| HEAVY | Planner-Critic Loop (opus, max 5회) |
 
-```
-# LIGHT: executor teammate 단일 실행
-Task(subagent_type="executor", name="executor", team_name="pdca-{feature}",
-     model="opus", max_turns=50, prompt="docs/01-plan/{feature}.plan.md 기반 구현. TDD 필수.")
-SendMessage(type="message", recipient="executor", content="구현 시작.")
+**Lead Quality Gate** (LIGHT): plan 파일 존재+내용 있음, 파일 경로 1개+ 언급. 미충족 시 1회 재요청.
+**Critic-Lite** (STANDARD): QG1-QG4 검증 → APPROVE/REVISE. REVISE 시 1회 수정.
+**Planner-Critic Loop** (HEAVY): Planner → Architect 타당성 → Critic QG1-QG4 → 반복. 상세: `REFERENCE.md`
 
-# STANDARD/HEAVY: impl-manager teammate (5조건 자체 루프) — 상세 prompt: REFERENCE.md
-Task(subagent_type="executor[-high]", name="impl-manager",
-     team_name="pdca-{feature}", model="opus", max_turns=60,
-     prompt="설계 문서 기반 구현. 5조건 자체 루프 (max 10회). 상세 prompt: REFERENCE.md")
-SendMessage(type="message", recipient="impl-manager", content="5조건 구현 루프 시작.")
-# Lead는 IMPLEMENTATION_COMPLETED 또는 IMPLEMENTATION_FAILED 메시지만 수신
-```
+산출물: `docs/01-plan/{feature}.plan.md`
 
-impl-manager 5조건: TODO==0, 빌드 성공, 테스트 통과, 에러==0, 자체 코드 리뷰. 상세: `REFERENCE.md`
-**Step 3.2**: Architect Verification Gate (STANDARD/HEAVY 필수, LIGHT 스킵)
+### Step 1.4: 설계 통합 (STANDARD/HEAVY만)
 
-```
-# impl-manager IMPLEMENTATION_COMPLETED 수신 후 (STANDARD/HEAVY만)
-Task(subagent_type="architect", name="impl-verifier", team_name="pdca-{feature}",
-     model="opus", max_turns=20, prompt="[Phase 3 Architect Gate] 구현 외부 검증. 상세: REFERENCE.md")
-SendMessage(type="message", recipient="impl-verifier", content="구현 검증 시작.")
-# VERDICT: APPROVE → 유의미 변경 커밋 → Phase 4 진입
-#   git status --short 확인 → 변경사항 있으면:
-#   git add -A && git commit -m "feat({feature}): 구현 완료 (Architect APPROVE)"
-# VERDICT: REJECT + DOMAIN → Step 3.3 Domain-Smart Fix
-# 2회 REJECT → 사용자 알림 후 Phase 4 진입 허용
-```
+LIGHT는 스킵. STANDARD/HEAVY: 계획 문서에 **아키텍처 결정 섹션** 포함 (별도 design.md 불필요).
+필수 포함: 컴포넌트 구조, 데이터 흐름, 인터페이스 설계, 위험 요소.
 
-**Step 3.3**: Domain-Smart Fix Routing (Architect REJECT 시)
+> **Plan→Build Gate** (STANDARD/HEAVY): 4개 필수 섹션 확인 (배경, 구현 범위, 영향 파일, 위험 요소). 미충족 시 planner 1회 보완.
 
-| Architect DOMAIN | 에이전트 | 용도 |
-|------------------|---------|------|
-| UI, component, style | designer | 프론트엔드 수정 |
-| build, compile, type | build-fixer | 빌드/타입 에러 |
-| test, coverage | executor | 테스트 수정 |
-| security | security-reviewer | 보안 이슈 |
-| 기타 | executor | 일반 수정 |
+### Step 1.5: 이슈 연동
 
-```
-# Domain-Smart Fix → Architect 재검증 (max 2회)
-Task(subagent_type="{domain-agent}", name="domain-fixer", team_name="pdca-{feature}",
-     model="opus", max_turns=30, prompt="Architect 거부 사유: {rejection}. DOMAIN: {domain}. 수정 실행.")
-# 수정 완료 → Step 3.2 Architect 재검증
-```
+`--no-issue`로 스킵. 없으면 생성, 있으면 코멘트.
 
-### Phase 4: CHECK (QA Runner + Architect 진단 + 검증 + E2E + TDD)
+---
 
-**Step 4.1**: QA 사이클 — QA Runner + Architect 진단 + Domain-Smart Fix
+## Phase 2: BUILD (구현 → 코드 리뷰 → Architect Gate)
 
-```
-# LIGHT: QA 1회 실행. 실패 시 보고만 (STANDARD 자동 승격 검토). 진단/수정 없음.
-Task(subagent_type="qa-tester", name="qa-runner", team_name="pdca-{feature}",
-     model="sonnet", max_turns=40, prompt="6종 QA 실행. 상세: REFERENCE.md")
-# QA_PASSED → Step 4.2 / QA_FAILED → 실패 보고 + STANDARD 승격 조건 확인
+> **핵심 변경 (v23.0)**: Code Review가 BUILD 내부에 통합. 구현 완료 즉시 리뷰 → 수정 → Architect 판정.
 
-# STANDARD/HEAVY: QA 사이클 (max STANDARD:3 / HEAVY:5)
-failure_history = []
-Loop (max_cycles):
-  # A. QA Runner teammate
-  Task(subagent_type="qa-tester", name="qa-runner-{i}", team_name="pdca-{feature}",
-       model="sonnet", max_turns=40, prompt="6종 QA 실행. 상세: REFERENCE.md")
-  # QA_PASSED → Step 4.2 / QA_FAILED → B
-  # B. Architect Root Cause 진단 (MANDATORY)
-  Task(subagent_type="architect", name="diagnostician-{i}", team_name="pdca-{feature}",
-       model="opus", max_turns=20, prompt="QA 실패 root cause 진단. 출력: DIAGNOSIS + FIX_GUIDE + DOMAIN.")
-  # C. Domain-Smart Fix
-  Task(subagent_type="{domain-agent}", name="fixer-{i}", team_name="pdca-{feature}",
-       model="opus", max_turns=30, prompt="진단 기반 수정: {DIAGNOSIS}. 지침: {FIX_GUIDE}.")
-```
+### Step 2.0: 옵션 처리 (구현 진입 전)
+
+| 옵션 | 처리 | 옵션 | 처리 |
+|------|------|------|------|
+| `--gdocs` | prd-sync | `--slack <채널>` | Slack 분석 |
+| `--mockup [파일]` | ASCII→형식 변환 | `--gmail` | Gmail 분석 |
+| `--debate` | ultimate-debate | `--daily` | daily |
+| `--research` | research | `--interactive` | Phase별 승인 |
+
+옵션 실패 시: 에러 출력, **절대 조용히 스킵 금지**. 상세: `REFERENCE.md`
+
+### Step 2.1: 구현
+
+| 모드 | 실행 방식 |
+|------|----------|
+| LIGHT | executor (opus) — 단일 실행, TDD 필수 |
+| STANDARD | impl-manager (opus) — 5조건 자체 루프 (max 10회) |
+| HEAVY | impl-manager (opus) — 5조건 자체 루프 + 병렬 가능 |
+
+**impl-manager 5조건** (STANDARD/HEAVY — 모든 조건 충족 시 IMPLEMENTATION_COMPLETED):
+
+| # | 조건 | 검증 방법 |
+|:-:|------|----------|
+| 1 | TODO == 0 | plan.md 체크리스트 전체 완료 |
+| 2 | 빌드 성공 | 빌드 명령 exit code 0 |
+| 3 | 테스트 통과 | pytest/jest exit code 0 |
+| 4 | 에러 == 0 | lint + type check 클린 |
+| 5 | 자체 코드 리뷰 | 명백한 결함 없음 확인 |
+
+상세 impl-manager prompt: `REFERENCE.md`
+
+### Step 2.2: Code Review (STANDARD/HEAVY 필수)
+
+구현 완료 후 **즉시** code-reviewer (sonnet) 실행. Vercel BP 규칙 동적 주입 (React/Next.js 시).
+
+| 판정 | 처리 |
+|------|------|
+| APPROVE | Step 2.3 Architect Gate 진입 |
+| REVISE + 수정 목록 | executor로 수정 → code-reviewer 재검토 (max 2회) |
+
+> LIGHT 모드: code-reviewer 스킵. Step 2.1 완료 후 바로 Phase 3 진입.
+
+### Step 2.3: Architect Verification Gate (STANDARD/HEAVY 필수)
+
+architect (opus, READ-ONLY) → 구현이 Plan 요구사항과 일치하는지 외부 검증.
+
+| VERDICT | 처리 |
+|---------|------|
+| APPROVE | 유의미 변경 커밋 → Phase 3 진입 |
+| REJECT + DOMAIN | Step 2.4 Domain-Smart Fix |
+
+2회 REJECT → 사용자 알림 후 Phase 3 진입 허용.
+
+### Step 2.4: Domain-Smart Fix (Architect REJECT 시)
+
+| DOMAIN | 에이전트 |
+|--------|---------|
+| UI, component, style | designer |
+| build, compile, type | build-fixer |
+| test, coverage | executor |
+| security | security-reviewer |
+| 기타 | executor |
+
+수정 완료 → Step 2.3 Architect 재검증 (max 2회).
+
+---
+
+## Phase 3: VERIFY (QA → E2E → 최종 판정)
+
+### Step 3.1: QA 사이클
+
+| 모드 | QA 횟수 | 실패 시 |
+|------|:-------:|---------|
+| LIGHT | 1회 | 보고만 (STANDARD 승격 검토) |
+| STANDARD | max 3회 | Architect 진단 → Domain-Smart Fix → 재실행 |
+| HEAVY | max 5회 | Architect 진단 → Domain-Smart Fix → 재실행 |
+
+QA Runner (sonnet): 6종 검증 (lint, type, unit, integration, build, security). 상세: `REFERENCE.md`
 
 **4종 Exit Conditions:**
 
@@ -317,152 +222,78 @@ Loop (max_cycles):
 |:--------:|------|------|
 | 1 | Environment Error | 즉시 중단 + 환경 문제 보고 |
 | 2 | Same Failure 3x | 조기 종료 + root cause 보고 |
-| 3 | Max Cycles 도달 | 미해결 이슈 보고 |
-| 4 | Goal Met | Step 4.2 이중 검증 진입 |
+| 3 | Max Cycles | 미해결 이슈 보고 |
+| 4 | Goal Met | Step 3.2 진입 |
 
-QA Runner 6종 goal, Architect 진단 prompt, Domain routing 상세: `REFERENCE.md`
+### Step 3.2: E2E 검증 (STANDARD/HEAVY + 프레임워크 존재 시)
 
-**Step 4.2**: 검증 + E2E 백그라운드 (순차 검증 + 병렬 E2E)
+`--skip-e2e`로 스킵. `playwright.config.*` / `cypress.config.*` / `vitest.config.*` 존재 시 활성.
 
-| 모드 | 검증 (포그라운드) | E2E (백그라운드) |
-|------|-------------------|-----------------|
-| LIGHT | architect teammate (opus) — APPROVE/REJECT만 | — (스킵) |
-| STANDARD | architect (opus) → code-reviewer (sonnet) 순차 | e2e-runner (sonnet) 병렬 |
-| HEAVY | architect (opus) → code-reviewer (sonnet) 순차 | e2e-runner (sonnet) 병렬 |
+e2e-runner (sonnet) 백그라운드 실행 → 결과 수집.
+E2E_FAILED 시: Architect 진단 → Domain-Smart Fix → 재실행 (max 2회). `--strict`: 1회 실패 즉시 중단.
 
-```
-# Step 4.2.0: E2E 인덱스 체크 — 조건 충족 시만 백그라운드 spawn
-e2e_enabled = (
-    mode != "LIGHT"
-    and not skip_e2e                              # --skip-e2e 옵션 아님
-    and (                                          # E2E 프레임워크 설정 존재
-        Glob("playwright.config.{ts,js}")
-        or Glob("cypress.config.{ts,js}")
-        or Glob("vitest.config.{ts,js}")           # browser mode
-    )
-)
+### Step 3.3: 최종 검증
 
-# Step 4.2.1: E2E 백그라운드 spawn (STANDARD/HEAVY + e2e_enabled 시)
-if e2e_enabled:
-    Task(subagent_type="qa-tester", name="e2e-runner", team_name="pdca-{feature}",
-         model="sonnet", max_turns=30, prompt="[Phase 4 E2E Background]
-         Playwright E2E 테스트 백그라운드 실행.
-         1. npx playwright test --reporter=list 실행
-         2. 결과 요약: PASS 수, FAIL 수, 실패 테스트 목록
-         3. 출력 형식: E2E_PASSED 또는 E2E_FAILED + 실패 상세
-         --strict 모드: {strict_mode} (true 시 1회 실패 즉시 보고)")
-    SendMessage(type="message", recipient="e2e-runner", content="E2E 백그라운드 실행 시작.")
-    # ※ 완료 대기하지 않음 — 포그라운드 검증과 병렬 진행
+architect (opus) → Plan 대비 구현 일치 검증. APPROVE/REJECT 판정.
 
-# Step 4.2.2: 포그라운드 검증 (기존 Step 4.2 동일)
-Task(subagent_type="architect", name="verifier", team_name="pdca-{feature}",
-     model="opus", max_turns=20, prompt="구현이 Plan/Design 요구사항과 일치하는지 검증. APPROVE/REJECT 판정.")
-SendMessage(type="message", recipient="verifier", content="검증 시작.")
-# 완료 대기 → shutdown_request → (STANDARD/HEAVY: code-reviewer 순차 spawn)
-# code-reviewer prompt에 Vercel BP 규칙 동적 주입 (React/Next.js 프로젝트 시) — 상세: REFERENCE.md
+| 결과 | 처리 |
+|------|------|
+| APPROVE | 유의미 변경 커밋 → Phase 4 |
+| REJECT (gap < 90%) | executor로 갭 수정 → Phase 3 재실행 |
 
-# Step 4.2.3: E2E 결과 수집 (포그라운드 검증 완료 후)
-if e2e_enabled:
-    # e2e-runner Mailbox 메시지 수신 대기 (이미 병렬 실행 중)
-    # E2E_PASSED → 정상 진행
-    # E2E_FAILED → e2e_failures 기록 + --strict 시 즉시 중단
-    # e2e-runner shutdown_request
+### Step 3.4: TDD 커버리지
 
-# code-reviewer APPROVE + E2E PASS 후 → 유의미 변경 커밋:
-#   git status --short 확인 → 변경사항 있으면:
-#   git add -A && git commit -m "fix({feature}): QA 검증 수정사항 반영"
-```
+신규 코드 80% 이상, 전체 커버리지 감소 불가. 상세: `REFERENCE.md`
 
-> architect는 READ-ONLY이므로 **검증/판정에 적합**. 파일 생성에는 사용 금지.
+> **Phase 3↔4 루프 가드**: Phase 4→Phase 3 재진입 최대 3회. 초과 시 커밋 + 미해결 이슈 보고.
 
-**Step 4.3**: E2E 실패 처리 (e2e_enabled + E2E_FAILED 시만)
+---
 
-```
-# Step 4.2.3에서 E2E_FAILED 수신 시 진입 (e2e_enabled == false면 스킵)
-# --strict 모드: 1회 실패 즉시 중단 + 실패 보고
-if strict_mode:
-    # E2E 실패 상세 보고 → Phase 5 미진입, 사용자 알림
-    return
+## Phase 4: CLOSE (보고서 + 팀 정리)
 
-# 비-strict: /debug 기반 수정 루프 (max 2회)
-Loop (max 2):
-    # A. Architect 진단
-    Task(subagent_type="architect", name="e2e-diagnostician", team_name="pdca-{feature}",
-         model="opus", max_turns=15, prompt="E2E 실패 root cause 진단: {e2e_failures}")
-    # B. Domain-Smart Fix (Step 3.3 동일 라우팅)
-    Task(subagent_type="{domain-agent}", name="e2e-fixer", team_name="pdca-{feature}",
-         model="opus", max_turns=30, prompt="E2E 진단 기반 수정: {DIAGNOSIS}")
-    # C. E2E 재실행
-    Task(subagent_type="qa-tester", name="e2e-rerun", team_name="pdca-{feature}",
-         model="sonnet", max_turns=20, prompt="npx playwright test --reporter=list 재실행")
-    # E2E_PASSED → break / E2E_FAILED → 다음 iteration
-# 2회 초과 → 미해결 E2E 실패 보고 + Phase 5 진입 허용 (경고 포함)
-```
+### Step 4.1: 보고서 생성
 
-**Step 4.4**: TDD 커버리지 — 신규 80% 이상, 전체 감소 불가. 상세: `REFERENCE.md`
+writer teammate → `docs/04-report/{feature}.report.md`. 모델: LIGHT=sonnet, STANDARD/HEAVY=opus.
 
-### Phase 5: ACT (결과 기반 자동 실행 + 팀 정리)
+### Step 4.2: 커밋 + Safe Cleanup
 
-| Check 결과 | 자동 실행 |
-|-----------|----------|
-| gap < 90% | executor teammate로 갭 개선 (최대 5회) → Phase 4 재실행 |
-| gap >= 90% + APPROVE | writer teammate → `docs/04-report/` |
-| Architect REJECT | executor teammate (수정) → Phase 4 재실행 |
-
-> **Phase 4↔5 루프 가드**: Phase 5→Phase 4 재진입 누적 최대 3회. 초과 시 유의미 변경 커밋 후 미해결 이슈 보고 + 종료.
-
-```
-# gap >= 90% + APPROVE → 보고서 생성 후 Safe Cleanup
-# 보고서 모델 분기: LIGHT=sonnet, STANDARD/HEAVY=opus
-report_model = "sonnet" if mode == "LIGHT" else "opus"
-Task(subagent_type="writer", name="reporter", team_name="pdca-{feature}",
-     model=report_model, max_turns=25, prompt="PDCA 완료 보고서 생성. 출력: docs/04-report/{feature}.report.md")
-SendMessage(type="message", recipient="reporter", content="보고서 생성 요청.")
-# 완료 대기 → shutdown_request
-# 유의미 변경 커밋: git add docs/04-report/ && git commit -m "docs(report): {feature} PDCA 완료 보고서"
-# → Safe Cleanup (아래 절차)
-```
-
-**팀 정리 (MANDATORY — Safe Cleanup):**
-1. 모든 활성 teammate에 `SendMessage(type="shutdown_request")` 순차 전송
-2. 각 teammate 응답 대기 (최대 5초). 무응답 시 다음 단계로 진행 (차단 금지)
+1. 유의미 변경 커밋: `docs(report): {feature} PDCA 완료 보고서`
+2. 모든 teammate `shutdown_request` 순차 전송 (응답 대기 max 5초)
 3. `TeamDelete()` 실행
-4. TeamDelete 실패 시 수동 fallback: `python3 -c "import shutil,pathlib; [shutil.rmtree(pathlib.Path.home()/'.claude'/d/'{팀명}', ignore_errors=True) for d in ['teams','tasks']]"`
-5. 실패 원인 로그 출력 (사용자 알림)
+4. 실패 시 Python `shutil.rmtree()` fallback
 
-> **세션 crash recovery**: 새 세션 시작 시 `session_init.py` hook이 고아 팀을 자동 정리합니다. 수동 정리 필요 시 Python `shutil.rmtree()` 사용 (`rm -rf ~/...`는 tool_validator.py에 의해 차단됨).
+> 세션 crash recovery: `session_init.py` hook이 고아 팀 자동 정리.
 
 ---
 
 ## 복잡도 기반 모드 분기
 
-| | LIGHT (0-1) | STANDARD (2-3) | HEAVY (4-5) |
-|------|:-----------:|:--------------:|:-----------:|
-| **Phase 0** | TeamCreate | TeamCreate | TeamCreate |
-| **Phase 0.5** | PRD 생성/수정 + 사용자 승인 | PRD 생성/수정 + 사용자 승인 | PRD 생성/수정 + 사용자 승인 |
-| **Phase 1** | sonnet 계획 + Lead QG | opus 계획 + Critic-Lite | Planner-Critic Loop |
-| **Phase 2** | 스킵 | executor (opus) 설계 | executor-high (opus) 설계 |
-| **Phase 3.1** | executor (opus) | impl-manager (opus) | impl-manager (opus) + 병렬 |
-| **Phase 3.2** | — | Architect Gate | Architect Gate |
-| **Phase 4.1** | QA 1회 (보고만) | QA 3회 + 진단 | QA 5회 + 진단 |
-| **Phase 4.2** | Architect (opus) | Architect (opus) + code-reviewer (sonnet) | Architect (opus) + code-reviewer (sonnet) |
-| **Phase 4.3** | — (E2E 스킵) | e2e-runner (sonnet) 백그라운드 병렬 | e2e-runner (sonnet) 백그라운드 병렬 |
-| **Phase 5** | writer (sonnet) + 커밋 + TeamDelete | writer (opus) + 커밋 + TeamDelete | writer (opus) + 커밋 + TeamDelete |
+| Phase | LIGHT (0-1) | STANDARD (2-3) | HEAVY (4-5) |
+|-------|:-----------:|:--------------:|:-----------:|
+| **0 INIT** | TeamCreate | TeamCreate | TeamCreate |
+| **1 PLAN** | PRD + sonnet 계획 | PRD + opus 계획 + Critic-Lite + 설계 통합 | PRD + Planner-Critic Loop + 설계 통합 |
+| **2 BUILD** | executor 단일 | impl-manager 5조건 + code-reviewer + Architect Gate | impl-manager 5조건 + code-reviewer + Architect Gate |
+| **3 VERIFY** | QA 1회 + Architect | QA 3회 + E2E + Architect + 진단 루프 | QA 5회 + E2E + Architect + 진단 루프 |
+| **4 CLOSE** | writer (sonnet) | writer (opus) | writer (opus) |
 
-**자동 승격**: LIGHT→STANDARD: 빌드 실패 2회 또는 영향 파일 5개+. STANDARD→HEAVY: QA 3사이클 초과 또는 영향 파일 5개+.
+## 자율 발견 모드 (`/auto` 단독)
 
-## 자율 발견 모드 (`/auto` 단독 실행 — 작업 인수 없음)
-
-Tier 0 CONTEXT → 1 EXPLICIT → 2 URGENT → 3 WORK → 4 SUPPORT → 5 AUTONOMOUS 순서로 발견. 상세: `REFERENCE.md`
+Tier 0 CONTEXT → 1 EXPLICIT → 2 URGENT → 3 WORK → 4 SUPPORT → 5 AUTONOMOUS 순서. 상세: `REFERENCE.md`
 
 ## 세션 관리
 
 `/auto status` (상태 확인) / `/auto stop` (중지+TeamDelete) / `/auto resume` (재개+TeamCreate). 상세: `REFERENCE.md`
 
-> **🚨 Ctrl+C + /auto stop 모두 무효인 경우 (완전 frozen)**:
-> 별도 PowerShell 창에서 `python C:\claude\.claude\scripts\emergency_stop.py` 실행.
-> 원인·절차 상세: `REFERENCE.md` → Nuclear Option 섹션
+> **완전 frozen 시**: 별도 PowerShell 창에서 `python C:\claude\.claude\scripts\emergency_stop.py` 실행.
 
 ## 금지 사항
 
-옵션 실패 시 조용히 스킵 / Architect 검증 없이 완료 선언 / 증거 없이 "완료됨" 주장 / 테스트 삭제로 문제 해결 / **TeamDelete 없이 세션 종료** / **architect 에이전트로 파일 생성 시도** / **Skill() 호출 금지 (Agent Teams 단일 패턴)** / **mockup 관련 금지 사항**: mockup-hybrid SKILL.md 참조 / **Team-Lead(오케스트레이터)가 `SendMessage(type="shutdown_response")` 호출 금지** — 호출 즉시 메인 세션 종료 (teammate 전용 도구). shutdown_request가 Team-Lead에게 수신되면 무시하고 계속 진행. / **코드 블록 상세, 옵션 워크플로우, impl-manager prompt, Vercel BP**: `REFERENCE.md`
+- 옵션 실패 시 조용히 스킵
+- Architect 검증 없이 완료 선언
+- 증거 없이 "완료됨" 주장
+- 테스트 삭제로 문제 해결
+- TeamDelete 없이 세션 종료
+- architect로 파일 생성 시도 (READ-ONLY)
+- Skill() 호출 (Agent Teams 단일 패턴)
+- Team-Lead가 `shutdown_response` 호출 (세션 종료됨)
+- 코드 블록 상세/prompt는 `REFERENCE.md` 참조
