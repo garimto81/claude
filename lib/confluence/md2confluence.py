@@ -23,6 +23,14 @@ import argparse
 from pathlib import Path
 
 import requests
+from dotenv import load_dotenv
+
+# Load .env.local → .env (first found wins)
+for _env in (".env.local", ".env"):
+    _p = Path(__file__).resolve().parents[2] / _env  # C:\claude\{.env.local,.env}
+    if _p.exists():
+        load_dotenv(_p)
+        break
 
 
 # ---------------------------------------------------------------------------
@@ -30,7 +38,7 @@ import requests
 # ---------------------------------------------------------------------------
 
 def get_config():
-    return {
+    cfg = {
         "base_url": os.environ.get(
             "CONFLUENCE_BASE_URL",
             "https://ggnetwork.atlassian.net/wiki",
@@ -38,6 +46,13 @@ def get_config():
         "email": os.environ.get("ATLASSIAN_EMAIL", ""),
         "token": os.environ.get("ATLASSIAN_API_TOKEN", ""),
     }
+    if not cfg["email"] or not cfg["token"]:
+        raise RuntimeError(
+            "Confluence 인증 정보 미설정.\n"
+            "  ATLASSIAN_EMAIL / ATLASSIAN_API_TOKEN 환경변수를 설정하거나\n"
+            "  C:\\claude\\.env.local 파일에 추가하세요."
+        )
+    return cfg
 
 
 def get_auth(cfg):
