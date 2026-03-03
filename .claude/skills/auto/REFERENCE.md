@@ -1620,6 +1620,85 @@ SendMessage(type="message", recipient="gmail-analyst", content="Gmail 분석 요
 
 ---
 
+## `--con` 옵션 워크플로우
+
+Markdown 파일을 Confluence Storage Format으로 변환하여 지정 페이지에 발행합니다.
+
+```bash
+/auto "기능 구현" --con <page_id>           # PRD/Plan 문서 자동 발행
+/auto "기능 구현" --con <page_id> <file.md>  # 지정 파일 발행
+```
+
+### 파라미터
+
+| 파라미터 | 필수 | 설명 |
+|----------|:----:|------|
+| `<page_id>` | YES | Confluence 페이지 ID (숫자) |
+| `<file.md>` | NO | 발행할 MD 파일 경로. 미지정 시 PRD 또는 Plan 문서 자동 탐지 |
+
+### 변환 파이프라인
+
+```
+MD 파일 읽기 → Mermaid 블록 추출 → mmdc PNG 렌더링
+→ pandoc MD→HTML 변환 → HTML 후처리 (ac:image, table auto-width, p-wrap)
+→ 첨부파일 업로드 → 페이지 본문 업데이트 (version +1)
+```
+
+### HTML 후처리 규칙
+
+| 변환 | 설명 |
+|------|------|
+| `<img>` → `<ac:image>` | `<ri:attachment ri:filename="..."/>` 매크로 |
+| `<table>` | `data-layout="default"` auto-width 스타일링 |
+| `<th>/<td>` 내용 | `<p>` 태그 래핑 (Confluence 필수) |
+
+### 실행 스크립트
+
+```bash
+python lib/confluence/md2confluence.py <file.md> <page_id>
+python lib/confluence/md2confluence.py <file.md> <page_id> --dry-run  # 미리보기
+```
+
+### 필수 도구 및 환경변수
+
+| 도구 | 용도 | 환경변수 |
+|------|------|----------|
+| `pandoc` | MD→HTML | `ATLASSIAN_EMAIL` (필수) |
+| `mmdc` | Mermaid→PNG | `ATLASSIAN_API_TOKEN` (필수) |
+| `requests` | REST API | `CONFLUENCE_BASE_URL` (선택, 기본: ggnetwork) |
+
+### 에러 처리
+
+| 에러 | 처리 |
+|------|------|
+| 인증 실패 (401) | 환경변수 확인 안내 + 중단 |
+| 페이지 미존재 (404) | page_id 확인 안내 + 중단 |
+| mmdc 미설치 | Mermaid 블록을 코드 블록으로 유지 + 경고 |
+| 이미지 파일 누락 | 누락 파일 목록 출력 + 나머지 계속 진행 |
+| pandoc 실패 | 에러 메시지 출력 + 중단 |
+
+**옵션 실패 시: 에러 출력, 절대 조용히 스킵 금지.**
+
+### Step 2.0 통합 처리 흐름
+
+```python
+# 1. page_id 파라미터 파싱
+page_id = options.get("con")  # 숫자 문자열
+
+# 2. 발행 대상 파일 결정
+if explicit_file:
+    target = explicit_file
+else:
+    target = f"docs/00-prd/{feature}.prd.md"  # 또는 plan.md
+
+# 3. 실행
+# python lib/confluence/md2confluence.py <target> <page_id>
+
+# 4. 결과 보고 (성공/실패 + 페이지 버전)
+```
+
+---
+
 ## /work 통합 안내 (완료)
 
 `/work`는 `/auto`로 통합되었습니다 (v19.0).
