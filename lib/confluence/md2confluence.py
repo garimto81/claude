@@ -33,6 +33,21 @@ for _env in (".env.local", ".env"):
         break
 
 
+def _win_env(name):
+    """Fallback: read Windows User-level env var via PowerShell."""
+    if sys.platform != "win32":
+        return ""
+    try:
+        r = subprocess.run(
+            ["powershell.exe", "-Command",
+             f"[System.Environment]::GetEnvironmentVariable('{name}', 'User')"],
+            capture_output=True, text=True, timeout=5,
+        )
+        return (r.stdout.strip() if r.returncode == 0 else "")
+    except Exception:
+        return ""
+
+
 # ---------------------------------------------------------------------------
 # Configuration
 # ---------------------------------------------------------------------------
@@ -43,8 +58,8 @@ def get_config():
             "CONFLUENCE_BASE_URL",
             "https://ggnetwork.atlassian.net/wiki",
         ),
-        "email": os.environ.get("ATLASSIAN_EMAIL", ""),
-        "token": os.environ.get("ATLASSIAN_API_TOKEN", ""),
+        "email": os.environ.get("ATLASSIAN_EMAIL", "") or _win_env("ATLASSIAN_EMAIL"),
+        "token": os.environ.get("ATLASSIAN_API_TOKEN", "") or _win_env("ATLASSIAN_API_TOKEN"),
     }
     if not cfg["email"] or not cfg["token"]:
         raise RuntimeError(
