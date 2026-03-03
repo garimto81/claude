@@ -1,0 +1,1037 @@
+<!DOCTYPE html>
+<!-- Reference Style: Brutalist -->
+<!--
+  AESTHETIC DIRECTION: Brutalist / Raw Industrial
+  ================================================
+  Inspiration: David Carson, Emigre magazine, concrete architecture,
+  exposed structural systems, punk zine layouts
+
+  Typography:
+    - Display: "Space Grotesk" — geometric, industrial, raw authority
+    - Data/Mono: "JetBrains Mono" — terminal precision, hacker aesthetic
+    - Extreme contrast: 48px hero numbers vs 10px micro-labels
+    - Weight warfare: 300 thin vs 700 bold in same line
+
+  Spatial Composition:
+    - Asymmetric grid: 1:2 ratio, NEVER equal columns
+    - Dense data clusters next to vast empty zones
+    - Full-bleed black sections that PUNCH through the layout
+    - 8px vertical rhythm, 48-64px section gaps
+    - Deliberately broken alignment — controlled chaos
+
+  Visual Texture (CSS Only):
+    - Diagonal stripe patterns via repeating-linear-gradient
+    - Dot grids via radial-gradient
+    - Hard shadows: 4px 4px 0 #000 — letterpress feel
+    - Double borders: border-style: double
+    - Thick top borders on cards (4px solid #000)
+
+  Anti-Patterns Avoided:
+    - NO Inter/Roboto/Arial
+    - NO equal-width grid
+    - NO emoji/SVG/icon fonts
+    - NO color (grayscale only)
+    - NO soft shadows or rounded corners
+    - NO generic card layouts
+
+  --bnw Compliance:
+    - max-width: 720px, max-height: 1280px
+    - Grayscale palette: #000, #111, #222, #333, #555, #888, #aaa, #ccc, #ddd, #eee, #f5f5f5, #fff
+    - Font sizes: body 14px, caption 12px, heading max 22px, hero numbers 36-48px
+-->
+<html lang="ko">
+<head>
+<meta charset="UTF-8">
+<meta name="viewport" content="width=device-width, initial-scale=1.0">
+<title>LIVE BROADCAST CONTROL</title>
+<link rel="preconnect" href="https://fonts.googleapis.com">
+<link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
+<link href="https://fonts.googleapis.com/css2?family=Space+Grotesk:wght@300;400;500;600;700&family=JetBrains+Mono:wght@300;400;500;700&display=swap" rel="stylesheet">
+<style>
+  /* ============================================
+     RESET & BASE
+     ============================================ */
+  *, *::before, *::after {
+    margin: 0;
+    padding: 0;
+    box-sizing: border-box;
+  }
+
+  html {
+    font-size: 14px;
+    -webkit-font-smoothing: antialiased;
+    -moz-osx-font-smoothing: grayscale;
+  }
+
+  body {
+    font-family: 'Space Grotesk', sans-serif;
+    font-weight: 400;
+    color: #111;
+    background: #f5f5f5;
+    line-height: 1.4;
+    max-width: 720px;
+    max-height: 1280px;
+    overflow: visible;
+    position: relative;
+  }
+
+  /* ============================================
+     BRUTALIST UTILITIES
+     ============================================ */
+  .mono {
+    font-family: 'JetBrains Mono', monospace;
+  }
+
+  .uppercase {
+    text-transform: uppercase;
+    letter-spacing: 0.2em;
+  }
+
+  .thin { font-weight: 300; }
+  .bold { font-weight: 700; }
+  .medium { font-weight: 500; }
+
+  .micro {
+    font-size: 10px;
+    letter-spacing: 0.15em;
+    text-transform: uppercase;
+  }
+
+  .caption {
+    font-size: 12px;
+  }
+
+  /* ============================================
+     DIAGONAL STRIPE TEXTURE — background utility
+     ============================================ */
+  .stripe-bg {
+    background: repeating-linear-gradient(
+      -45deg,
+      transparent,
+      transparent 3px,
+      #ddd 3px,
+      #ddd 4px
+    );
+  }
+
+  .dot-bg {
+    background-image: radial-gradient(#ccc 1px, transparent 1px);
+    background-size: 8px 8px;
+  }
+
+  .dense-dot-bg {
+    background-image: radial-gradient(#888 0.8px, transparent 0.8px);
+    background-size: 5px 5px;
+  }
+
+  /* ============================================
+     HEADER — BRUTALIST BANNER
+     ============================================ */
+  .header {
+    background: #000;
+    color: #fff;
+    padding: 14px 24px 10px 24px;
+    position: relative;
+    overflow: hidden;
+  }
+
+  .header::after {
+    content: '';
+    position: absolute;
+    bottom: 0;
+    left: 0;
+    right: 0;
+    height: 4px;
+    background: repeating-linear-gradient(
+      90deg,
+      #fff 0px,
+      #fff 8px,
+      transparent 8px,
+      transparent 12px
+    );
+  }
+
+  .header__eyebrow {
+    font-family: 'JetBrains Mono', monospace;
+    font-size: 10px;
+    font-weight: 300;
+    letter-spacing: 0.3em;
+    text-transform: uppercase;
+    color: #888;
+    margin-bottom: 4px;
+  }
+
+  .header__title {
+    font-size: 22px;
+    font-weight: 700;
+    letter-spacing: 0.08em;
+    text-transform: uppercase;
+    line-height: 1.1;
+  }
+
+  .header__status {
+    display: inline-flex;
+    align-items: center;
+    gap: 6px;
+    margin-top: 8px;
+    font-family: 'JetBrains Mono', monospace;
+    font-size: 11px;
+    font-weight: 500;
+    letter-spacing: 0.05em;
+  }
+
+  .header__status-dot {
+    width: 8px;
+    height: 8px;
+    background: #fff;
+    border: 2px solid #888;
+    display: inline-block;
+  }
+
+  .header__timestamp {
+    position: absolute;
+    top: 20px;
+    right: 24px;
+    font-family: 'JetBrains Mono', monospace;
+    font-size: 11px;
+    font-weight: 300;
+    color: #666;
+    text-align: right;
+    line-height: 1.6;
+  }
+
+  /* ============================================
+     KPI STRIP — HERO NUMBERS
+     ============================================ */
+  .kpi-strip {
+    display: grid;
+    grid-template-columns: 1.6fr 1fr 1fr 1.4fr;
+    border-bottom: 3px solid #000;
+    background: #fff;
+  }
+
+  .kpi-cell {
+    padding: 14px 16px 12px;
+    position: relative;
+    border-right: 1px solid #ddd;
+  }
+
+  .kpi-cell:last-child {
+    border-right: none;
+  }
+
+  .kpi-cell--primary {
+    background: #111;
+    color: #fff;
+    border-right: 1px solid #333;
+  }
+
+  .kpi-cell--primary .kpi-cell__label {
+    color: #777;
+  }
+
+  .kpi-cell__label {
+    font-family: 'JetBrains Mono', monospace;
+    font-size: 10px;
+    font-weight: 400;
+    letter-spacing: 0.2em;
+    text-transform: uppercase;
+    color: #888;
+    margin-bottom: 6px;
+    display: block;
+  }
+
+  .kpi-cell__value {
+    font-family: 'JetBrains Mono', monospace;
+    font-size: 36px;
+    font-weight: 700;
+    line-height: 1;
+    letter-spacing: -0.02em;
+  }
+
+  .kpi-cell__value--large {
+    font-size: 42px;
+  }
+
+  .kpi-cell__unit {
+    font-family: 'Space Grotesk', sans-serif;
+    font-size: 10px;
+    font-weight: 300;
+    letter-spacing: 0.15em;
+    text-transform: uppercase;
+    color: #999;
+    margin-top: 4px;
+    display: block;
+  }
+
+  .kpi-cell--primary .kpi-cell__unit {
+    color: #666;
+  }
+
+  .kpi-cell__delta {
+    position: absolute;
+    top: 14px;
+    right: 12px;
+    font-family: 'JetBrains Mono', monospace;
+    font-size: 10px;
+    font-weight: 500;
+    color: #555;
+  }
+
+  .kpi-cell--primary .kpi-cell__delta {
+    color: #aaa;
+  }
+
+  /* ============================================
+     MAIN BODY — ASYMMETRIC TWO-COLUMN
+     ============================================ */
+  .body-grid {
+    display: grid;
+    grid-template-columns: 1fr 220px;
+    min-height: 0;
+  }
+
+  /* ---- LEFT COLUMN: GAUGES + LOG ---- */
+  .main-col {
+    padding: 0;
+    border-right: 2px solid #000;
+  }
+
+  /* ============================================
+     SECTION: SYSTEM GAUGES
+     ============================================ */
+  .gauges {
+    padding: 16px 20px 14px;
+    border-bottom: 1px solid #ccc;
+    position: relative;
+  }
+
+  .gauges::before {
+    content: '';
+    position: absolute;
+    top: 0;
+    left: 0;
+    width: 4px;
+    height: 100%;
+    background: #000;
+  }
+
+  .section-label {
+    font-family: 'JetBrains Mono', monospace;
+    font-size: 10px;
+    font-weight: 700;
+    letter-spacing: 0.25em;
+    text-transform: uppercase;
+    color: #000;
+    margin-bottom: 14px;
+    padding-bottom: 4px;
+    border-bottom: 2px solid #000;
+    display: inline-block;
+  }
+
+  .gauge {
+    margin-bottom: 12px;
+    position: relative;
+  }
+
+  .gauge:last-child {
+    margin-bottom: 0;
+  }
+
+  .gauge__header {
+    display: flex;
+    justify-content: space-between;
+    align-items: baseline;
+    margin-bottom: 5px;
+  }
+
+  .gauge__name {
+    font-family: 'Space Grotesk', sans-serif;
+    font-size: 13px;
+    font-weight: 500;
+    letter-spacing: 0.02em;
+  }
+
+  .gauge__pct {
+    font-family: 'JetBrains Mono', monospace;
+    font-size: 22px;
+    font-weight: 700;
+    letter-spacing: -0.02em;
+    line-height: 1;
+  }
+
+  .gauge__bar-track {
+    width: 100%;
+    height: 12px;
+    background: #eee;
+    position: relative;
+    border: 1px solid #ccc;
+  }
+
+  .gauge__bar-fill {
+    height: 100%;
+    background: #111;
+    position: relative;
+    transition: width 0.3s ease;
+  }
+
+  .gauge__bar-fill--warning {
+    background: repeating-linear-gradient(
+      -45deg,
+      #333,
+      #333 3px,
+      #555 3px,
+      #555 6px
+    );
+  }
+
+  .gauge__bar-marker {
+    position: absolute;
+    top: -4px;
+    right: -1px;
+    width: 2px;
+    height: 20px;
+    background: #000;
+  }
+
+  .gauge__threshold {
+    font-family: 'JetBrains Mono', monospace;
+    font-size: 10px;
+    color: #999;
+    text-align: right;
+    margin-top: 3px;
+  }
+
+  /* ============================================
+     SECTION: EVENT LOG
+     ============================================ */
+  .event-log {
+    padding: 0;
+    position: relative;
+  }
+
+  .event-log__header {
+    padding: 10px 20px 8px;
+    background: #000;
+    color: #fff;
+    display: flex;
+    justify-content: space-between;
+    align-items: center;
+  }
+
+  .event-log__header .section-label {
+    color: #fff;
+    border-bottom-color: #fff;
+    margin-bottom: 0;
+    padding-bottom: 2px;
+  }
+
+  .event-log__count {
+    font-family: 'JetBrains Mono', monospace;
+    font-size: 10px;
+    font-weight: 300;
+    color: #888;
+    letter-spacing: 0.1em;
+  }
+
+  .event-log__list {
+    list-style: none;
+  }
+
+  .event-item {
+    padding: 7px 20px 7px 20px;
+    border-bottom: 1px solid #e5e5e5;
+    display: grid;
+    grid-template-columns: 72px 1fr;
+    gap: 10px;
+    align-items: start;
+    position: relative;
+  }
+
+  .event-item:nth-child(odd) {
+    background: #fafafa;
+  }
+
+  .event-item::before {
+    content: '';
+    position: absolute;
+    left: 0;
+    top: 0;
+    bottom: 0;
+    width: 3px;
+  }
+
+  .event-item--critical::before {
+    background: #000;
+  }
+
+  .event-item--warning::before {
+    background: #888;
+  }
+
+  .event-item--info::before {
+    background: #ccc;
+  }
+
+  .event-item__time {
+    font-family: 'JetBrains Mono', monospace;
+    font-size: 11px;
+    font-weight: 400;
+    color: #555;
+    padding-top: 1px;
+  }
+
+  .event-item__body {
+    font-size: 13px;
+    line-height: 1.4;
+  }
+
+  .event-item__tag {
+    font-family: 'JetBrains Mono', monospace;
+    font-size: 9px;
+    font-weight: 700;
+    letter-spacing: 0.15em;
+    text-transform: uppercase;
+    display: inline-block;
+    padding: 1px 5px;
+    border: 1px solid currentColor;
+    margin-right: 6px;
+    vertical-align: middle;
+  }
+
+  .event-item__tag--critical {
+    color: #000;
+    background: #ddd;
+    border-color: #000;
+  }
+
+  .event-item__tag--warning {
+    color: #555;
+    border-color: #999;
+  }
+
+  .event-item__tag--info {
+    color: #888;
+    border-color: #ccc;
+  }
+
+  .event-item__msg {
+    color: #333;
+    font-weight: 400;
+  }
+
+  /* ============================================
+     RIGHT COLUMN: CONTROL PANEL
+     ============================================ */
+  .side-col {
+    background: #f5f5f5;
+    display: flex;
+    flex-direction: column;
+  }
+
+  .control-panel {
+    padding: 14px 16px;
+    flex: 1;
+  }
+
+  .control-panel .section-label {
+    margin-bottom: 10px;
+  }
+
+  .control-btn {
+    display: block;
+    width: 100%;
+    padding: 10px 12px;
+    margin-bottom: 6px;
+    border: 2px solid #000;
+    background: #fff;
+    font-family: 'JetBrains Mono', monospace;
+    font-size: 12px;
+    font-weight: 700;
+    letter-spacing: 0.12em;
+    text-transform: uppercase;
+    text-align: left;
+    cursor: pointer;
+    position: relative;
+    box-shadow: 3px 3px 0 #000;
+    transition: all 0.08s ease;
+  }
+
+  .control-btn:hover {
+    transform: translate(1px, 1px);
+    box-shadow: 2px 2px 0 #000;
+  }
+
+  .control-btn:active {
+    transform: translate(3px, 3px);
+    box-shadow: 0 0 0 #000;
+  }
+
+  .control-btn__shortcut {
+    display: block;
+    font-size: 9px;
+    font-weight: 300;
+    color: #999;
+    letter-spacing: 0.08em;
+    margin-top: 2px;
+    text-transform: none;
+  }
+
+  .control-btn--danger {
+    background: #000;
+    color: #fff;
+    border-color: #000;
+    box-shadow: 3px 3px 0 #555;
+  }
+
+  .control-btn--danger:hover {
+    box-shadow: 2px 2px 0 #555;
+  }
+
+  .control-btn--danger:active {
+    box-shadow: 0 0 0 #555;
+  }
+
+  .control-btn--danger .control-btn__shortcut {
+    color: #777;
+  }
+
+  /* ============================================
+     BROADCAST TIME — FEATURED BLOCK
+     ============================================ */
+  .broadcast-time-block {
+    padding: 14px 16px;
+    text-align: center;
+    position: relative;
+    border-top: 1px solid #ddd;
+    border-bottom: 1px solid #ddd;
+  }
+
+  .broadcast-time-block::before {
+    content: '';
+    position: absolute;
+    top: 0;
+    left: 0;
+    right: 0;
+    bottom: 0;
+    background-image: radial-gradient(#ddd 1px, transparent 1px);
+    background-size: 6px 6px;
+    opacity: 0.5;
+    pointer-events: none;
+  }
+
+  .broadcast-time-block__label {
+    font-family: 'JetBrains Mono', monospace;
+    font-size: 9px;
+    font-weight: 400;
+    letter-spacing: 0.3em;
+    text-transform: uppercase;
+    color: #888;
+    margin-bottom: 4px;
+    position: relative;
+    z-index: 1;
+  }
+
+  .broadcast-time-block__value {
+    font-family: 'JetBrains Mono', monospace;
+    font-size: 28px;
+    font-weight: 700;
+    letter-spacing: 0.05em;
+    color: #000;
+    position: relative;
+    z-index: 1;
+  }
+
+  .broadcast-time-block__sub {
+    font-family: 'Space Grotesk', sans-serif;
+    font-size: 10px;
+    font-weight: 300;
+    color: #aaa;
+    letter-spacing: 0.1em;
+    margin-top: 4px;
+    position: relative;
+    z-index: 1;
+  }
+
+  /* ============================================
+     CHANNEL STATUS STRIP
+     ============================================ */
+  .channel-strip {
+    padding: 8px 16px;
+    border-top: 1px solid #ddd;
+  }
+
+  .channel-strip__item {
+    display: flex;
+    justify-content: space-between;
+    align-items: center;
+    padding: 3px 0;
+    font-family: 'JetBrains Mono', monospace;
+    font-size: 10px;
+  }
+
+  .channel-strip__item + .channel-strip__item {
+    border-top: 1px dotted #ccc;
+  }
+
+  .channel-strip__key {
+    font-weight: 400;
+    color: #888;
+    letter-spacing: 0.08em;
+    text-transform: uppercase;
+  }
+
+  .channel-strip__val {
+    font-weight: 700;
+    color: #111;
+  }
+
+  .channel-strip__val--ok {
+    color: #333;
+  }
+
+  .channel-strip__val--warn {
+    color: #111;
+    text-decoration: underline;
+    text-decoration-style: double;
+    text-underline-offset: 3px;
+  }
+
+  /* ============================================
+     FOOTER
+     ============================================ */
+  .footer {
+    background: #111;
+    color: #666;
+    padding: 7px 24px;
+    display: flex;
+    justify-content: space-between;
+    align-items: center;
+    font-family: 'JetBrains Mono', monospace;
+    font-size: 9px;
+    letter-spacing: 0.1em;
+    border-top: 4px double #555;
+  }
+
+  .footer__left {
+    display: flex;
+    gap: 16px;
+  }
+
+  .footer__item {
+    color: #777;
+  }
+
+  .footer__divider {
+    width: 1px;
+    height: 10px;
+    background: #444;
+    align-self: center;
+  }
+
+  /* ============================================
+     DECORATIVE ELEMENTS
+     ============================================ */
+  .rule-thick {
+    border: none;
+    height: 3px;
+    background: #000;
+    margin: 0;
+  }
+
+  .hash-decoration {
+    font-family: 'JetBrains Mono', monospace;
+    font-size: 10px;
+    color: #ccc;
+    letter-spacing: 0.05em;
+    overflow: hidden;
+    white-space: nowrap;
+    line-height: 1;
+    padding: 3px 0;
+    user-select: none;
+  }
+
+  /* ============================================
+     MICRO ANIMATION — blinking live indicator
+     ============================================ */
+  @keyframes pulse-border {
+    0%, 100% { border-color: #fff; }
+    50% { border-color: #555; }
+  }
+
+  .header__status-dot {
+    animation: pulse-border 2s ease-in-out infinite;
+  }
+
+  /* ============================================
+     RESPONSIVE CLAMP
+     ============================================ */
+  @media (max-width: 480px) {
+    .kpi-strip {
+      grid-template-columns: 1fr 1fr;
+    }
+
+    .kpi-cell {
+      border-bottom: 1px solid #ddd;
+    }
+
+    .body-grid {
+      grid-template-columns: 1fr;
+    }
+
+    .main-col {
+      border-right: none;
+      border-bottom: 2px solid #000;
+    }
+  }
+</style>
+</head>
+<body>
+
+  <!-- ============================================
+       HEADER: BRUTALIST BLACK BANNER
+       ============================================ -->
+  <header class="header">
+    <div class="header__eyebrow">system // broadcast.control.v4</div>
+    <h1 class="header__title">LIVE BROADCAST<br>CONTROL</h1>
+    <div class="header__status">
+      <span class="header__status-dot"></span>
+      ON AIR
+    </div>
+    <div class="header__timestamp">
+      2026.03.01<br>
+      14:22:07 KST
+    </div>
+  </header>
+
+  <!-- decorative hash line -->
+  <div class="hash-decoration">####//####//####//####//####//####//####//####//####//####//####//####//####//####//####//####</div>
+
+  <!-- ============================================
+       KPI STRIP: 4 HERO METRICS
+       ============================================ -->
+  <section class="kpi-strip">
+
+    <!-- Viewers — PRIMARY (inverted) -->
+    <div class="kpi-cell kpi-cell--primary">
+      <span class="kpi-cell__label">Viewers</span>
+      <div class="kpi-cell__value kpi-cell__value--large">12,847</div>
+      <span class="kpi-cell__unit">concurrent</span>
+      <span class="kpi-cell__delta">+2.4%</span>
+    </div>
+
+    <!-- Chat Rate -->
+    <div class="kpi-cell">
+      <span class="kpi-cell__label">Chat Rate</span>
+      <div class="kpi-cell__value">342</div>
+      <span class="kpi-cell__unit">/min</span>
+      <span class="kpi-cell__delta">+18%</span>
+    </div>
+
+    <!-- Airtime -->
+    <div class="kpi-cell">
+      <span class="kpi-cell__label">Airtime</span>
+      <div class="kpi-cell__value mono" style="font-size: 28px; letter-spacing: 0.04em;">02:34:18</div>
+      <span class="kpi-cell__unit">elapsed</span>
+    </div>
+
+    <!-- Peak -->
+    <div class="kpi-cell">
+      <span class="kpi-cell__label">Peak</span>
+      <div class="kpi-cell__value">18,203</div>
+      <span class="kpi-cell__unit">max viewers</span>
+      <span class="kpi-cell__delta">@ 13:48</span>
+    </div>
+
+  </section>
+
+  <hr class="rule-thick">
+
+  <!-- ============================================
+       BODY: ASYMMETRIC TWO-COLUMN
+       ============================================ -->
+  <div class="body-grid">
+
+    <!-- ---- LEFT: GAUGES + EVENT LOG ---- -->
+    <div class="main-col">
+
+      <!-- SYSTEM GAUGES -->
+      <section class="gauges">
+        <div class="section-label">System Gauges</div>
+
+        <!-- Encoding Quality: 94% -->
+        <div class="gauge">
+          <div class="gauge__header">
+            <span class="gauge__name">Encoding Quality</span>
+            <span class="gauge__pct">94<span style="font-size: 13px; font-weight: 300; color: #888;">%</span></span>
+          </div>
+          <div class="gauge__bar-track">
+            <div class="gauge__bar-fill" style="width: 94%;">
+              <span class="gauge__bar-marker"></span>
+            </div>
+          </div>
+          <div class="gauge__threshold">threshold: 85%</div>
+        </div>
+
+        <!-- Network Stability: 87% -->
+        <div class="gauge">
+          <div class="gauge__header">
+            <span class="gauge__name">Network Stability</span>
+            <span class="gauge__pct">87<span style="font-size: 13px; font-weight: 300; color: #888;">%</span></span>
+          </div>
+          <div class="gauge__bar-track">
+            <div class="gauge__bar-fill" style="width: 87%;">
+              <span class="gauge__bar-marker"></span>
+            </div>
+          </div>
+          <div class="gauge__threshold">threshold: 80%</div>
+        </div>
+
+        <!-- Storage: 63% -->
+        <div class="gauge">
+          <div class="gauge__header">
+            <span class="gauge__name">Storage</span>
+            <span class="gauge__pct">63<span style="font-size: 13px; font-weight: 300; color: #888;">%</span></span>
+          </div>
+          <div class="gauge__bar-track">
+            <div class="gauge__bar-fill gauge__bar-fill--warning" style="width: 63%;">
+              <span class="gauge__bar-marker"></span>
+            </div>
+          </div>
+          <div class="gauge__threshold">warning at 75%</div>
+        </div>
+
+      </section>
+
+      <!-- EVENT LOG -->
+      <section class="event-log">
+        <div class="event-log__header">
+          <div class="section-label">Event Log</div>
+          <span class="event-log__count">5 / 128 total</span>
+        </div>
+        <ul class="event-log__list">
+
+          <li class="event-item event-item--critical">
+            <span class="event-item__time">14:21:33</span>
+            <div class="event-item__body">
+              <span class="event-item__tag event-item__tag--critical">CRIT</span>
+              <span class="event-item__msg">Encoder frame drop detected: 12 frames lost in 2s window</span>
+            </div>
+          </li>
+
+          <li class="event-item event-item--warning">
+            <span class="event-item__time">14:18:07</span>
+            <div class="event-item__body">
+              <span class="event-item__tag event-item__tag--warning">WARN</span>
+              <span class="event-item__msg">CDN latency spike: edge-kr-02 response 340ms (avg 45ms)</span>
+            </div>
+          </li>
+
+          <li class="event-item event-item--info">
+            <span class="event-item__time">14:15:22</span>
+            <div class="event-item__body">
+              <span class="event-item__tag event-item__tag--info">INFO</span>
+              <span class="event-item__msg">Scene transition completed: CAM-A to CAM-B (crossfade 0.8s)</span>
+            </div>
+          </li>
+
+          <li class="event-item event-item--info">
+            <span class="event-item__time">14:12:41</span>
+            <div class="event-item__body">
+              <span class="event-item__tag event-item__tag--info">INFO</span>
+              <span class="event-item__msg">Recording checkpoint saved: segment-047.ts (2.3GB cumulative)</span>
+            </div>
+          </li>
+
+          <li class="event-item event-item--warning">
+            <span class="event-item__time">14:08:55</span>
+            <div class="event-item__body">
+              <span class="event-item__tag event-item__tag--warning">WARN</span>
+              <span class="event-item__msg">Audio peak clipping on CH-2: -0.3dB headroom remaining</span>
+            </div>
+          </li>
+
+        </ul>
+      </section>
+
+    </div><!-- /main-col -->
+
+    <!-- ---- RIGHT: CONTROL PANEL ---- -->
+    <div class="side-col">
+
+      <!-- BROADCAST TIMER -->
+      <div class="broadcast-time-block">
+        <div class="broadcast-time-block__label">Broadcast Elapsed</div>
+        <div class="broadcast-time-block__value">02:34:18</div>
+        <div class="broadcast-time-block__sub">started 11:48:00</div>
+      </div>
+
+      <!-- QUICK CONTROLS -->
+      <div class="control-panel">
+        <div class="section-label">Quick Control</div>
+
+        <button class="control-btn">
+          Mute Audio
+          <span class="control-btn__shortcut">Ctrl + M</span>
+        </button>
+
+        <button class="control-btn">
+          Scene Switch
+          <span class="control-btn__shortcut">Ctrl + [1-9]</span>
+        </button>
+
+        <button class="control-btn">
+          Toggle Record
+          <span class="control-btn__shortcut">Ctrl + R</span>
+        </button>
+
+        <button class="control-btn control-btn--danger">
+          Emergency Stop
+          <span class="control-btn__shortcut">Ctrl + Shift + X</span>
+        </button>
+      </div>
+
+      <!-- CHANNEL STATUS -->
+      <div class="channel-strip">
+        <div class="channel-strip__item">
+          <span class="channel-strip__key">Protocol</span>
+          <span class="channel-strip__val channel-strip__val--ok">RTMP</span>
+        </div>
+        <div class="channel-strip__item">
+          <span class="channel-strip__key">Bitrate</span>
+          <span class="channel-strip__val channel-strip__val--ok">8,500 kbps</span>
+        </div>
+        <div class="channel-strip__item">
+          <span class="channel-strip__key">Res.</span>
+          <span class="channel-strip__val">1080p60</span>
+        </div>
+        <div class="channel-strip__item">
+          <span class="channel-strip__key">Buffer</span>
+          <span class="channel-strip__val channel-strip__val--warn">1.2s</span>
+        </div>
+        <div class="channel-strip__item">
+          <span class="channel-strip__key">Dropped</span>
+          <span class="channel-strip__val channel-strip__val--warn">0.04%</span>
+        </div>
+      </div>
+
+    </div><!-- /side-col -->
+
+  </div><!-- /body-grid -->
+
+  <!-- ============================================
+       FOOTER
+       ============================================ -->
+  <footer class="footer">
+    <div class="footer__left">
+      <span class="footer__item">NODE: KR-SEL-04</span>
+      <div class="footer__divider"></div>
+      <span class="footer__item">CLUSTER: PROD-A</span>
+      <div class="footer__divider"></div>
+      <span class="footer__item">PID: 48291</span>
+    </div>
+    <span class="footer__item">v4.2.1-stable</span>
+  </footer>
+
+</body>
+</html>

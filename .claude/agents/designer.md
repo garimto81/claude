@@ -64,14 +64,54 @@ Mermaid/PNG/SVG 금지. 상세: `.claude/rules/11-ascii-diagram.md`
 
 ---
 
-# --bnw 모드 제약 (B&W 목업 전용)
+# --bnw 모드 (B&W 모노크롬 디자인 크래프트)
 
-Task prompt에 `--bnw` 또는 B&W 목업 지시가 있을 때 반드시 적용:
+Task prompt에 `--bnw` 또는 B&W 목업 지시가 있을 때 적용.
 
-- **최대 규격**: 너비 720px, 높이 1280px 이내 (`max-width: 720px; max-height: 1280px;`)
-- **폰트 크기**: 규격에 맞게 조정 — body 14px, caption 12px, 제목 최대 22px
-- **텍스트 우선**: 텍스트로 표현 가능한 요소는 이미지/SVG/아이콘 삽입 금지 — 레이블/텍스트로만 표현
+## 제약 조건
+- **규격**: max-width 720px, max-height 1280px
+- **폰트**: body 14px, caption 12px, heading max 22px (hero 숫자/제목은 36-48px 허용)
 - **색상**: 그레이스케일 전용 (#000 ~ #fff), emoji/SVG/icon font 금지
+- **텍스트 우선**: 이미지/SVG 삽입 금지 — CSS와 텍스트만으로 표현
+
+## 디자인 크래프트 (CRITICAL — 이 섹션이 품질을 결정한다)
+
+색상 없이도 시각적으로 강렬한 인터페이스를 만든다. B&W는 제약이 아니라 디자인 기회다. 단순 텍스트 나열은 절대 금지.
+
+### Typography as Hero
+- **극단적 크기 대비**: 36-48px hero 숫자/제목 옆에 10-11px 캡션 배치. 크기 차이가 시각적 긴장감 생성
+- **Weight 대조**: 같은 서체의 300 vs 800+ weight를 한 화면에 혼합
+- **서체 성격 충돌**: 세리프 헤드라인 + 모노스페이스 데이터, 기하학적 산세리프 + 클래시컬 세리프 등
+- **레터 스페이싱**: 소제목/라벨에 0.2em+ letter-spacing, uppercase 변환으로 공기감 부여
+- **텍스트 장식**: `text-decoration`, `border-bottom` 스타일 언더라인, 취소선 강조
+
+### Visual Texture (CSS Only)
+- **패턴 배경**: `repeating-linear-gradient(45deg, #000 0, #000 1px, transparent 1px, transparent 6px)` 사선 줄무늬
+- **도트 패턴**: `radial-gradient(circle, #000 1px, transparent 1px)` + background-size로 도트 그리드
+- **보더 조합**: 1px 실선 + 4px 실선 이중 프레임, `border-style: double`, 3px solid 구분선
+- **하드 셰도우**: `box-shadow: 4px 4px 0 #000` — 활판인쇄 느낌의 입체감
+- **구분선 장식**: 두께 변화(1px→3px), 점선/대시 패턴, 비대칭 마진으로 리듬
+
+### Spatial Drama
+- **비대칭 그리드**: 1:2 또는 1:3 비율 컬럼, 균등 분할 금지
+- **의도적 여백 불균형**: 한쪽 넓은 마진 + 반대쪽 밀집 — 시각적 긴장
+- **풀 블리드 섹션**: 일부 영역은 패딩 없이 edge-to-edge로 확장
+- **수직 리듬**: 8px 기반 spacing scale, 섹션 간 48-64px 간격으로 호흡
+- **밀도 대비**: 데이터 밀집 영역 옆에 넓은 빈 공간 배치
+
+### Data Visualization (CSS + 텍스트)
+- **프로그레스 바**: `background: linear-gradient()` + 퍼센트 라벨 오버레이
+- **메트릭 강조**: 핵심 숫자 36-48px 볼드, 부제 10px uppercase letter-spaced
+- **상태 표시**: CSS `::before` 원형 (`border-radius: 50%` + 배경색)
+- **표 스타일**: 교차 행 배경(#f5f5f5/#fff), 헤더 하단 3px solid border, 셀 내부 충분한 padding
+- **구분된 카드**: 카드에 하드 셰도우 + 두꺼운 상단 보더(4px solid #000)
+
+### 레퍼런스 스타일 (하나를 선택하고 HTML 주석에 명시)
+- **Editorial/Magazine**: 대형 세리프 헤드라인, 얇은 규칙선, 넓은 마진, pull-quote 스타일
+- **Swiss International**: 수학적 그리드, 산세리프, 기하학적 정렬, 정보 계층
+- **Brutalist**: 모노스페이스 전면, 두꺼운 보더, 의도적 투박함, raw 에너지
+- **Art Deco**: 기하학적 장식선, 대칭 패턴, 우아한 세리프, 프레임 장식
+- **Japanese Minimal**: 극도의 여백, 작은 텍스트, 단 하나의 시각적 앵커 포인트
 
 ---
 
