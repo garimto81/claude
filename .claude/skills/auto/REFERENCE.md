@@ -737,7 +737,7 @@ else:
 | 2.1 BUILD | Executor teammate (opus) 단일 실행 |
 | 2.2-2.3 | — (Code Review, Architect Gate 없음) |
 | 3.1 VERIFY | QA Runner 1회 |
-| 3.2 검증 | Architect 검증 (code-reviewer, E2E 스킵) |
+| 3.2-3.3 | Architect 최종 검증 (E2E 스킵) |
 | 4 CLOSE | sonnet 보고서 |
 
 ### STANDARD 모드 (2-3점)
@@ -750,7 +750,7 @@ else:
 | 2.1 BUILD | impl-manager teammate (opus) — 5조건 자체 루프 |
 | 2.2-2.3 | Code Review + Architect Gate (외부 검증, max 2회 rejection) |
 | 3.1 VERIFY | QA Runner 3회 + Architect 진단 + Domain-Smart Fix |
-| 3.2 검증 | Architect + code-reviewer (순차) + E2E 백그라운드 병렬 |
+| 3.2 E2E | E2E 백그라운드 + Architect 최종 검증 |
 | 3.3 E2E | E2E 실패 처리 (진단 + Domain-Smart Fix, max 2회) |
 | 4 CLOSE | gap < 90% → executor teammate (최대 5회) |
 
@@ -762,9 +762,9 @@ else:
 | Phase 1.2-1.3 | Explore teammates (haiku) x2 + Planner-Critic Loop (max 5 iter, QG1-4) |
 | Phase 1.4 | Executor-high teammate (opus) — 설계 문서 생성 |
 | Phase 2.1 | impl-manager teammate (opus) — 5조건 자체 루프 + 병렬 가능 |
-| Phase 2.2 | Architect Gate (외부 검증, max 2회 rejection) |
+| Phase 2.2-2.3 | Code Review + Architect Gate (외부 검증, max 2회 rejection) |
 | Phase 3.1 | QA Runner 5회 + Architect 진단 + Domain-Smart Fix |
-| Phase 3.2 | Architect + code-reviewer (sonnet, 순차) + E2E 백그라운드 병렬 |
+| Phase 3.2 | E2E 백그라운드 + Architect 최종 검증 |
 | Phase 3.3 | E2E 실패 처리 (진단 + Domain-Smart Fix, max 2회) |
 | Phase 4 | gap < 90% → executor teammate (최대 5회) |
 
@@ -880,11 +880,38 @@ SendMessage(type="message", recipient="impl-ui", content="UI 구현 시작.")
 ### Build→Verify Gate: impl-manager 완료 판정 + Architect Gate (v22.1)
 
 - LIGHT: 빌드 통과만 확인 (Architect Gate 없음, Phase 3 직행)
-- STANDARD/HEAVY: impl-manager `IMPLEMENTATION_COMPLETED` → **Step 2.2 Architect Gate 필수** → Phase 3
+- STANDARD/HEAVY: impl-manager `IMPLEMENTATION_COMPLETED` → **Step 2.2 Code Review → Step 2.3 Architect Gate 필수** → Phase 3
 - impl-manager가 `IMPLEMENTATION_FAILED` 메시지 전송 시 Lead가 사용자에게 알림 + 수동 개입 요청
 - --interactive 모드: 사용자 확인 요청
 
-### Step 2.2: Architect Verification Gate (v22.1 신규, STANDARD/HEAVY 필수)
+### Step 2.2: Code Review (STANDARD/HEAVY 필수)
+
+구현 완료 후 **즉시** code-reviewer (sonnet) 실행. LIGHT 모드는 스킵.
+
+```
+# Code Review — 코드 품질 + Vercel BP 동적 주입
+# Lead가 직접 프로젝트 유형 감지 후 Vercel BP 규칙 동적 주입
+#
+# === Vercel BP 동적 주입 메커니즘 (Lead 직접 실행) ===
+# has_nextjs = len(Glob("next.config.*")) > 0
+# has_react = "react" in Read("package.json")  # dependency 존재 여부
+# if has_nextjs or has_react:
+#     vercel_bp_rules = Read("C:\claude\.claude\references\vercel-bp-rules.md")
+#     reviewer_prompt = f"구현 코드의 품질, 보안, 성능 이슈 분석.\n\n추가 검증 — Vercel BP 규칙:\n{vercel_bp_rules}"
+# else:
+#     reviewer_prompt = "구현 코드의 품질, 보안, 성능 이슈 분석."
+
+Task(subagent_type="code-reviewer", name="code-reviewer", team_name="pdca-{feature}",
+     model="sonnet",
+     prompt=reviewer_prompt)
+SendMessage(type="message", recipient="code-reviewer", content="코드 품질 리뷰 시작. APPROVE 또는 REVISE + 수정 목록 제공.")
+# code-reviewer 완료 대기 → shutdown_request
+
+# APPROVE → Step 2.3 Architect Gate 진입
+# REVISE + 수정 목록 → executor로 수정 → code-reviewer 재검토 (max 2회)
+```
+
+### Step 2.3: Architect Verification Gate (STANDARD/HEAVY 필수)
 
 impl-manager가 IMPLEMENTATION_COMPLETED를 보고한 후, 독립 Architect가 구현을 외부 검증합니다.
 
@@ -928,10 +955,10 @@ elif "VERDICT: REJECT" in first_line:
         → "[Phase 2] Architect 2회 거부. 사용자 판단 필요." 출력
         → 사용자에게 알림 후 Phase 3 진입 허용 (완전 차단은 아님)
     else:
-        → Step 2.3 Domain-Smart Fix 실행 → Architect 재검증
+        → Step 2.4 Domain-Smart Fix 실행 → Architect 재검증
 ```
 
-### Step 2.3: Domain-Smart Fix Routing (v22.1 신규)
+### Step 2.4: Domain-Smart Fix Routing
 
 Architect REJECT 시 DOMAIN 값에 따라 전문 에이전트에게 수정 위임:
 
@@ -1234,7 +1261,7 @@ while cycle < max_cycles:
 
 > **주의**: Interactive testing은 tmux가 설치된 환경에서만 작동합니다.
 
-### Step 3.2: 이중 검증 + E2E 백그라운드 (순차 검증 + 병렬 E2E)
+### Step 3.2: E2E 검증 + Architect 최종 검증
 
 **E2E 인덱스 체크 (Step 3.2 진입 시 1회 평가):**
 
@@ -1248,7 +1275,7 @@ e2e_enabled = (
 # e2e_enabled == false → E2E 관련 모든 단계 스킵 (Step 3.2.1, 3.2.3, 3.3 전체)
 ```
 
-**LIGHT 모드: Architect teammate만 (code-reviewer, E2E 스킵)**
+**LIGHT 모드: Architect teammate만 (E2E 스킵)**
 ```
 Task(subagent_type="architect", name="verifier", team_name="pdca-{feature}",
      model="opus",
@@ -1258,7 +1285,7 @@ SendMessage(type="message", recipient="verifier", content="검증 시작. APPROV
 # e2e_enabled == false → Step 3.3 스킵
 ```
 
-**STANDARD/HEAVY 모드: E2E 백그라운드 + Architect → code-reviewer 순차**
+**STANDARD/HEAVY 모드: E2E 백그라운드 + Architect 최종 검증**
 ```
 # Step 3.2.1: E2E 백그라운드 spawn (e2e_enabled 시 — 포그라운드 검증과 병렬)
 if e2e_enabled:
@@ -1277,38 +1304,12 @@ if e2e_enabled:
     SendMessage(type="message", recipient="e2e-runner", content="E2E 백그라운드 실행 시작.")
     # ※ 완료 대기하지 않음 — 아래 포그라운드 검증과 병렬 진행
 
-# Step 3.2.2: 포그라운드 검증 (기존 순차 검증 동일)
-# 1. Architect teammate 먼저 실행
+# Step 3.2.2: Architect 최종 검증 (포그라운드)
 Task(subagent_type="architect", name="verifier", team_name="pdca-{feature}",
      model="opus",
-     prompt="구현된 기능이 docs/02-design/{feature}.design.md와 일치하는지 검증.")
+     prompt="구현된 기능이 docs/01-plan/{feature}.plan.md 요구사항과 일치하는지 최종 검증.")
 SendMessage(type="message", recipient="verifier", content="검증 시작. APPROVE/REJECT 판정 후 TaskUpdate 처리.")
 # verifier 완료 대기 → shutdown_request
-
-# 2. gap-checker teammate (verifier 완료 후 spawn) — code-reviewer 역할
-Task(subagent_type="code-reviewer", name="gap-checker", team_name="pdca-{feature}",
-     model="sonnet",
-     prompt="[Gap Analysis] docs/02-design/{feature}.design.md와 실제 구현 코드 간 일치도 분석. 설계 문서의 각 항목을 코드에서 검증하고 일치율(0-100%)을 산출하세요. 90% 기준.")
-SendMessage(type="message", recipient="gap-checker", content="갭 분석 시작. 완료 후 TaskUpdate 처리.")
-# gap-checker 완료 대기 → shutdown_request
-
-# 3. quality-checker teammate (gap-checker 완료 후 spawn) — code-reviewer 역할
-# Lead가 직접 프로젝트 유형 감지 후 Vercel BP 규칙 동적 주입
-#
-# === Vercel BP 동적 주입 메커니즘 (Lead 직접 실행) ===
-# has_nextjs = len(Glob("next.config.*")) > 0
-# has_react = "react" in Read("package.json")  # dependency 존재 여부
-# if has_nextjs or has_react:
-#     vercel_bp_rules = "(아래 'Vercel BP 검증 규칙' 섹션 전문)"
-#     analyzer_prompt = f"구현 코드의 품질, 보안, 성능 이슈 분석.\n\n추가 검증 — Vercel BP 규칙:\n{vercel_bp_rules}"
-# else:
-#     analyzer_prompt = "구현 코드의 품질, 보안, 성능 이슈 분석."
-#
-Task(subagent_type="code-reviewer", name="quality-checker", team_name="pdca-{feature}",
-     model="sonnet",
-     prompt=analyzer_prompt)  # ← React/Next.js 프로젝트일 때만 Vercel BP 규칙 포함
-SendMessage(type="message", recipient="quality-checker", content="코드 품질 분석 시작. 완료 후 TaskUpdate 처리.")
-# quality-checker 완료 대기 → shutdown_request
 
 # Step 3.2.3: E2E 결과 수집 (포그라운드 검증 완료 후)
 if e2e_enabled:
@@ -1329,20 +1330,18 @@ if e2e_enabled:
         # 비-strict → Step 3.3 E2E 실패 처리 진입
 ```
 
-**HEAVY 모드: 동일 구조 (순차 teammate + E2E 백그라운드)**
+**HEAVY 모드: 동일 구조 (Architect + E2E 백그라운드)**
 
-HEAVY 모드에서도 Architect는 `model="opus"`, code-reviewer는 `model="sonnet"`, e2e-runner는 `model="sonnet"` 사용:
+HEAVY 모드에서도 Architect는 `model="opus"`, e2e-runner는 `model="sonnet"` 사용:
 ```
 Task(subagent_type="qa-tester", name="e2e-runner", ..., model="sonnet", ...)  # 백그라운드
 Task(subagent_type="architect", name="verifier", ..., model="opus", ...)
-Task(subagent_type="code-reviewer", name="gap-checker", ..., model="sonnet", ...)
-Task(subagent_type="code-reviewer", name="quality-checker", ..., model="sonnet", ...)
 ```
 
-- e2e-runner: E2E 테스트 (백그라운드 병렬, 포그라운드 검증과 동시 실행 - Playwright/Cypress/Vitest 자동 감지)
-- Architect: 기능 완성도 검증 (APPROVE/REJECT)
-- gap-checker: 설계-구현 일치도 검증 (0-100%)
-- quality-checker: 코드 품질, 보안, 성능 분석 + Vercel BP (해당 시)
+- e2e-runner: E2E 테스트 (백그라운드 병렬 -- Playwright/Cypress/Vitest 자동 감지)
+- Architect: Plan 대비 구현 일치 최종 검증 (APPROVE/REJECT)
+
+> code-reviewer는 Phase 2 Step 2.2에서 이미 수행되었으므로 Phase 3에서는 생략합니다.
 
 ### Step 3.3: E2E 실패 처리 (e2e_enabled + E2E_FAILED 시만)
 
@@ -1374,7 +1373,7 @@ Loop (max_e2e_fixes):
     SendMessage(type="message", recipient="e2e-diagnostician", content="E2E 실패 진단 시작.")
     # 완료 대기 → shutdown_request
 
-    # B. Domain-Smart Fix (Step 2.3 동일 라우팅)
+    # B. Domain-Smart Fix (Step 2.4 동일 라우팅)
     Task(subagent_type="{domain-agent}", name="e2e-fixer", team_name="pdca-{feature}",
          model="opus", max_turns=30,
          prompt="E2E 진단 기반 수정.
@@ -1423,7 +1422,7 @@ jest --coverage
 
 ## Vercel BP 검증 규칙
 
-Phase 3 Step 3.2에서 code-reviewer teammate prompt에 동적 주입하는 규칙:
+Phase 2 Step 2.2에서 code-reviewer teammate prompt에 동적 주입하는 규칙:
 
 > 상세: `.claude/references/vercel-bp-rules.md`
 >
