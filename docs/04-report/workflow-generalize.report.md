@@ -219,10 +219,13 @@ SKILL.md/REFERENCE.md 본문은 PDCA 사이클 제어에 집중하고, 도메인
 
 | 문서 | 경로 |
 |------|------|
+| Plan | `C:\claude\docs\01-plan\workflow-generalize.plan.md` |
+| Design | `C:\claude\docs\02-design\workflow-generalize.design.md` |
 | SKILL.md | `C:\claude\.claude\skills\auto\SKILL.md` |
 | REFERENCE.md | `C:\claude\.claude\skills\auto\REFERENCE.md` |
 | Vercel BP 규칙 (추출) | `C:\claude\.claude\references\vercel-bp-rules.md` |
 | 이미지 분석 가이드라인 (이동) | `C:\claude\.claude\skills\auto\guidelines\image-analysis.md` |
+| mockup-hybrid SKILL.md (이동 대상) | `C:\claude\.claude\skills\mockup-hybrid\SKILL.md` |
 
 ---
 
