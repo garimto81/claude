@@ -7,7 +7,7 @@ triggers:
     - "confluence"
     - "컨플루언스"
     - "confluence upload"
-model: sonnet
+model_preference: sonnet
 ---
 
 # Confluence 발행 스킬 (`--con`)

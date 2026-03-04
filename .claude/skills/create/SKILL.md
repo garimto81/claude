@@ -1,9 +1,13 @@
 ---
 name: create
 description: Create PRD, PR, or documentation (prd, pr, docs)
+version: 1.0.0
 triggers:
   keywords:
-    - "create"
+    - "/create"
+    - "PRD 생성"
+    - "PR 생성"
+    - "문서 생성"
 ---
 
 # /create

@@ -1,11 +1,11 @@
 ---
 name: issue
 description: GitHub issue lifecycle management (list, create, fix, failed)
+version: 1.0.0
 triggers:
   keywords:
-    - "issue"
     - "/issue"
-    - "이슈"
+    - "이슈 관리"
     - "github issue"
     - "버그 리포트"
 ---
