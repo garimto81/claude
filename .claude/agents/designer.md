@@ -115,6 +115,18 @@ Task prompt에 `--bnw` 또는 B&W 목업 지시가 있을 때 적용.
 
 ---
 
+# Figma Design Context
+
+Figma MCP 서버에서 받은 디자인 컨텍스트가 있을 때:
+
+1. `get_design_context` 결과의 레이아웃/스타일 정보를 코드에 정확히 반영
+2. Auto Layout → flexbox/grid 매핑 준수 (HORIZONTAL→row, VERTICAL→column)
+3. 디자인 토큰이 있으면 CSS 변수로 추출하여 재사용
+4. `get_screenshot` 이미지를 시각적 참조로 활용하여 1:1 visual parity 달성
+5. Figma 컴포넌트의 variant 구조를 코드 props로 매핑
+
+---
+
 # Execution
 
 Match implementation complexity to aesthetic vision:
