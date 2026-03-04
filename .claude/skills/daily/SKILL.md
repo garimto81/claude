@@ -79,6 +79,21 @@ Bootstrap Context  (incr)  Analyze Analyze Recom   Ops    Housekp  Update
 | `/daily` | 전체 대시보드 (9-Phase 전체) |
 | `/daily ebs` | EBS 브리핑: `cd C:\claude\ebs\tools\morning-automation && python main.py --post` |
 
+## /auto --daily 연동
+
+`/auto --daily` 실행 시 아래 워크플로우가 적용된다.
+
+### Step 2.0: /auto에서 호출 시
+
+```
+Lead가 /auto Step 2.0에서 --daily 옵션 감지 시:
+1. 9-Phase Pipeline 전체 실행 (Phase 0-8 순차)
+2. 결과를 /auto 컨텍스트에 반환 (액션 추천 + 대시보드)
+3. /auto는 daily 결과를 참고하여 구현 진행
+```
+
+> **주의**: `/auto --daily`는 구현 전 현황 파악 용도. daily 결과가 /auto Phase 1 계획에 반영된다.
+
 ## 상세 참조
 
 > Phase 0-8 상세 설명, Config Bootstrap yaml 예시, Expert Context Tier 세부, 데이터 수집 소스별 상세,

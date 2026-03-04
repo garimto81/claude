@@ -36,11 +36,11 @@ SendMessage(type="message", recipient="researcher", content="리서치 시작.")
 ## 인과관계 (CRITICAL - 절대 보존)
 
 ```
-/auto Tier 3
+/auto Phase 1 Step 1.2 (사전 분석)
     └── /research code (코드 분석 필요 시)
     └── /research web (오픈소스 탐색 필요 시)
 
-/auto Phase 1
+/auto Phase 1 Step 1.3 (계획 수립)
     └── /research plan (구현 계획 수립)
 ```
 

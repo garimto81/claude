@@ -258,7 +258,7 @@ STITCH_API_BASE_URL=https://api.stitch.withgoogle.com/v1
 
 `/auto --mockup` 실행 시 아래 워크플로우가 적용된다.
 
-### Step 3.0.2: PNG 캡처 (Lead 직접 Bash 실행 -- designer 완료 후)
+### Step 2.0.2: PNG 캡처 (Lead 직접 Bash 실행 -- designer 완료 후)
 
 ```bash
 python -c "
@@ -272,10 +272,10 @@ print(f'CAPTURED: {result}' if result else 'CAPTURE_FAILED')
 "
 ```
 
-- 성공: `docs/images/mockups/{name}.png` 생성 -> Step 3.0.3 성공 경로
-- 실패 (Playwright 미설치 등): `CAPTURE_FAILED` 출력 -> Step 3.0.3 폴백 경로
+- 성공: `docs/images/mockups/{name}.png` 생성 -> Step 2.0.3 성공 경로
+- 실패 (Playwright 미설치 등): `CAPTURE_FAILED` 출력 -> Step 2.0.3 폴백 경로
 
-### Step 3.0.3: 문서 삽입 (Lead 직접 Edit 실행 -- 대상 문서가 있는 경우만)
+### Step 2.0.3: 문서 삽입 (Lead 직접 Edit 실행 -- 대상 문서가 있는 경우만)
 
 - **캡처 성공 시**: `generate_markdown_embed()` 결과를 Edit로 대상 문서에 삽입
   - `![{name}](docs/images/mockups/{name}.png)` + `[HTML 원본](docs/mockups/{name}.html)`
