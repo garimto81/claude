@@ -116,7 +116,7 @@ Phase 완료 후 `git status --short` 확인 → 변경사항 있으면 커밋.
 | HEAVY | Planner-Critic Loop (opus, max 5회) |
 
 **Lead Quality Gate** (LIGHT): plan 파일 존재+내용 있음, 파일 경로 1개+ 언급. 미충족 시 1회 재요청.
-**Critic-Lite** (STANDARD): QG1-QG4 검증 → APPROVE/REVISE. REVISE 시 1회 수정.
+**Critic-Lite** (STANDARD): QG1-QG5 검증 → APPROVE/REVISE. REVISE 시 max 2회 수정. QG5: 실현 가능성.
 **Planner-Critic Loop** (HEAVY): Planner → Architect 타당성 → Critic QG1-QG4 → 반복. 상세: `REFERENCE.md`
 
 산출물: `docs/01-plan/{feature}.plan.md`
@@ -240,14 +240,14 @@ architect (opus) → Plan 대비 구현 일치 검증. APPROVE/REJECT 판정.
 
 | 결과 | 처리 |
 |------|------|
-| APPROVE | 유의미 변경 커밋 → Phase 4 |
-| REJECT (gap < 90%) | executor로 갭 수정 → Phase 3 재실행 |
+| APPROVE (MATCH_RATE >= 90%) | 유의미 변경 커밋 → Phase 4 |
+| REJECT (MATCH_RATE < 90%) + MISSING_ITEMS | executor가 MISSING_ITEMS 기반 수정 → Architect 재검증 |
 
 ### Step 3.4: TDD 커버리지
 
 신규 코드 80% 이상, 전체 커버리지 감소 불가. 상세: `REFERENCE.md`
 
-> **Phase 3↔4 루프 가드**: Phase 4→Phase 3 재진입 최대 3회. 초과 시 커밋 + 미해결 이슈 보고.
+> **Phase 3↔4 루프 가드**: STANDARD max 3회, HEAVY max 5회. 2회 연속 MATCH_RATE 미변동 시 조기 종료. 초과 시 커밋 + 미해결 이슈 보고.
 
 ---
 

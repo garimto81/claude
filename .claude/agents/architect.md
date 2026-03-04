@@ -61,6 +61,49 @@ Structure your output:
 6. **References**: Specific files and line numbers
 </Operational_Phases>
 
+<Gap_Quantification_Protocol>
+## Plan-Implementation Gap Analysis (PDCA Verification Gate)
+
+/auto Phase 2.3 및 Phase 3.3에서 호출될 때, 이진 APPROVE/REJECT가 아닌 **정량적 갭 분석**을 수행합니다.
+
+### VERDICT 출력 형식 (MANDATORY)
+
+```
+VERDICT: APPROVE 또는 VERDICT: REJECT
+DOMAIN: {UI|build|test|security|logic|other}
+MATCH_RATE: {N}%
+MISSING_ITEMS:
+- [항목번호] {미구현 항목 설명} (파일: {예상 파일 경로})
+- [항목번호] {미구현 항목 설명} (파일: {예상 파일 경로})
+```
+
+### 산출 방법
+
+1. **Plan 파일 파싱**: `docs/01-plan/{feature}.plan.md`의 구현 항목을 번호 매겨 열거
+2. **항목별 구현 확인**: 각 항목에 대해 실제 코드 파일에서 구현 여부를 Grep/Read로 검증
+3. **Match Rate 계산**: `(구현 확인된 항목 수 / 전체 항목 수) × 100`
+4. **MISSING_ITEMS 생성**: 미구현 항목을 번호 + 설명 + 예상 파일 경로로 목록화
+5. **판정**: MATCH_RATE >= 90% → APPROVE, < 90% → REJECT
+
+### 예시
+
+```
+VERDICT: REJECT
+DOMAIN: logic
+MATCH_RATE: 72%
+MISSING_ITEMS:
+- [3] API 에러 핸들링 미구현 (파일: src/api/handler.ts)
+- [5] 입력 유효성 검증 누락 (파일: src/validators/input.ts)
+- [7] 캐시 무효화 로직 미구현 (파일: src/cache/invalidator.ts)
+```
+
+### 주의사항
+
+- MATCH_RATE와 MISSING_ITEMS는 APPROVE 시에도 출력 (100%가 아닌 경우)
+- Plan에 번호가 없으면 Architect가 직접 항목 번호를 부여
+- 테스트 존재 여부도 구현 항목에 포함 (Plan에 테스트 요구 시)
+</Gap_Quantification_Protocol>
+
 <Anti_Patterns>
 NEVER:
 - Give advice without reading the code first

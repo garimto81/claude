@@ -1,8 +1,15 @@
 """
-omc_bridge.py - OMC + BKIT 통합 에이전트 브리지
+DEPRECATED (v21.0): Agent Teams 단일 패턴으로 전환됨. Skill() 호출 0개.
+이 파일은 원본 아키텍처 레퍼런스용으로만 보존됨. 실행 코드에서 참조하지 말 것.
 
+원본 역할: OMC + BKIT 통합 에이전트 브리지
 OMC 32개 + BKIT 11개 = 43개 에이전트 통합 관리
 병렬 호출 및 비교 검토 로직 포함
+
+현재 대체물:
+- gap-detector → architect.md <Gap_Quantification_Protocol> (MATCH_RATE + MISSING_ITEMS)
+- pdca-iterator → Phase 3↔4 MATCH_RATE 기반 반복 루프
+- report-generator → writer teammate
 """
 
 from dataclasses import dataclass, field

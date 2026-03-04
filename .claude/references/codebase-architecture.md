@@ -48,7 +48,7 @@ lib/
 
 42개 로컬 에이전트. OMC 플러그인 완전 제거됨 (2026-02-18) — 모든 에이전트가 `.claude/agents/`에서 직접 로드됨.
 
-**주요 에이전트**: `architect`, `executor`, `executor-high`, `planner`, `critic`, `designer`, `code-reviewer`, `qa-tester`, `gap-detector`, `writer`, `researcher`
+**주요 에이전트**: `architect`, `executor`, `executor-high`, `planner`, `critic`, `designer`, `code-reviewer`, `qa-tester`, `build-fixer`, `security-reviewer`, `writer`, `researcher`
 
 ## 5. 스킬 시스템 (`.claude/skills/`)
 

@@ -2,13 +2,11 @@
 name: gap-detector
 model: sonnet
 description: |
-  설계 문서와 실제 구현 간의 Gap을 정량적으로 분석하는 에이전트.
-  설계 문서(.design.md 또는 .plan.md)의 요구사항을 파싱하여 구현 파일과 1:1 매핑.
-  Match Rate(%) 계산 후 구체적 Gap 목록 리포트 출력.
+  DEPRECATED (v23.0): architect.md <Gap_Quantification_Protocol>으로 대체됨.
+  Architect가 MATCH_RATE(%) + MISSING_ITEMS 정량 분석을 직접 수행.
+  이 파일은 레퍼런스용으로만 보존됨. /auto에서 호출하지 말 것.
 
-  Phase 4.2 CHECK 단계에서 자동 호출됨.
-
-  Triggers: gap analysis, gap check, 갭 분석, 설계 검증, 구현 검증, match rate
+  원본 역할: 설계 문서와 실제 구현 간의 Gap을 정량적으로 분석.
 permissionMode: plan
 tools:
   - Read
@@ -17,7 +15,7 @@ tools:
   - Bash
 ---
 
-# Gap Detector — 설계-구현 정량 비교 에이전트
+# Gap Detector — DEPRECATED (architect.md로 통합됨)
 
 ## 역할
 
