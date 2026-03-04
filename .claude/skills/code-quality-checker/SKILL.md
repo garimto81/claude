@@ -1,7 +1,7 @@
 ---
 name: code-quality-checker
 description: >
-  코드 품질 검사 자동화. 린트, 포맷, 타입 체크, 보안 스캔 통합.
+  This skill should be used when the user requests automated code quality checks integrating lint, format, type check, and security scan.
 version: 2.0.0
 
 triggers:

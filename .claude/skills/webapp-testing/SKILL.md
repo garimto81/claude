@@ -1,8 +1,7 @@
 ---
 name: webapp-testing
 description: >
-  Docker 환경에서 Playwright E2E 테스트 실행.
-  브라우저 미종료 문제 해결, 스크린샷, 로그 캡처 지원.
+  This skill should be used when the user needs Docker-based Playwright E2E testing with browser lifecycle management and screenshot capture.
 version: 2.0.0
 
 triggers:

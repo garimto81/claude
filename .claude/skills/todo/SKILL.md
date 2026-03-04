@@ -1,6 +1,7 @@
 ---
 name: todo
-description: Manage project todos with priorities, due dates, and tracking
+description: >
+  This skill should be used when the user needs to manage project todos with priorities, due dates, and progress tracking.
 triggers:
   keywords:
     - "todo"

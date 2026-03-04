@@ -1,9 +1,7 @@
 ---
 name: drive
 description: >
-  Google Drive 맥락 기반 정리 스킬. AI가 파일명, 내용, 폴더 구조를 분석하여
-  의미적으로 분류하고 중복 제거, 버전 관리, 폴더 구조화를 수행합니다.
-  단순 패턴 매칭이 아닌 문맥 이해 기반 정리.
+  This skill should be used when the user needs AI-powered Google Drive file organization, deduplication, or folder restructuring.
 version: 2.1.0
 
 triggers:

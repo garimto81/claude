@@ -1,6 +1,7 @@
 ---
 name: research
-description: RPI Phase 1 - 코드베이스 분석, 리서치, AI 리뷰
+description: >
+  This skill should be used when the user requests codebase analysis, external research, or AI-powered code review (RPI Phase 1).
 version: 2.0.0
 triggers:
   keywords:

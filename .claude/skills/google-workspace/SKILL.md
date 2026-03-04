@@ -1,9 +1,7 @@
 ---
 name: google-workspace
 description: >
-  Google Workspace 통합 스킬. Docs, Sheets, Drive, Gmail, Calendar API 연동.
-  OAuth 2.0 인증, 서비스 계정 설정, 데이터 읽기/쓰기 자동화 지원.
-  파랑 계열 전문 문서 스타일, 2단계 네이티브 테이블 렌더링 포함.
+  This skill should be used when the user needs Google Workspace API integration for Docs, Sheets, Drive, or Calendar with OAuth 2.0 authentication.
 version: 2.8.0
 
 triggers:

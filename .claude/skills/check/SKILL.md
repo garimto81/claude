@@ -1,6 +1,7 @@
 ---
 name: check
-description: 코드 품질 및 보안 검사
+description: >
+  This skill should be used when the user requests code quality checks, security audits, lint, type checks, or QA cycles.
 version: 2.0.0
 triggers:
   keywords:
@@ -8,6 +9,7 @@ triggers:
     - "코드 검사"
     - "품질 검사"
     - "QA 실행"
+auto_trigger: false
 ---
 
 # /check - 코드 품질 검사

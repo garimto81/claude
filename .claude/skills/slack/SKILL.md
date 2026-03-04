@@ -1,8 +1,7 @@
 ---
 name: slack
 description: >
-  Slack 메시징 스킬. Browser OAuth 인증, 메시지 전송/수신, 채널 관리.
-  "slack", "슬랙 메시지", "slack 전송" 요청 시 사용.
+  This skill should be used when the user requests Slack operations like sending/receiving messages, channel management, or browser OAuth authentication.
 version: 1.0.0
 triggers:
   keywords:

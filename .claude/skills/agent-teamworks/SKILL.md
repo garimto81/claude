@@ -1,6 +1,7 @@
 ---
 name: agent-teamworks
-description: Multi-Agent Team Workflow - 4개 전문 팀 자율 협업 시스템
+description: >
+  This skill should be used when the user requests multi-agent team collaboration with 4 specialized teams working autonomously.
 version: 1.0.0
 triggers:
   keywords:

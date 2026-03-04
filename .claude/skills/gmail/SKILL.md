@@ -1,8 +1,7 @@
 ---
 name: gmail
 description: >
-  Gmail 메일 관리 스킬. OAuth 2.0 인증, 메일 읽기/전송, 라벨 관리.
-  "gmail", "메일 확인", "이메일 보내줘" 요청 시 사용.
+  This skill should be used when the user requests Gmail operations like reading inbox, sending emails, searching messages, or managing labels via OAuth 2.0.
 version: 1.0.0
 triggers:
   keywords:

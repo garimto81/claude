@@ -1,6 +1,7 @@
 ---
 name: ultimate-debate
-description: "3AI 병렬 분석 및 합의 판정 시스템"
+description: >
+  This skill should be used when the user requests 3-AI parallel analysis and consensus judgment for complex decisions.
 version: "2.0.0"
 author: "Claude Code"
 

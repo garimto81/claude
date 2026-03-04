@@ -1,6 +1,7 @@
 ---
 name: tdd
-description: Guide Test-Driven Development with Red-Green-Refactor discipline
+description: >
+  This skill should be used when the user requests Test-Driven Development guidance with Red-Green-Refactor discipline.
 version: 2.0.0
 triggers:
   keywords:
