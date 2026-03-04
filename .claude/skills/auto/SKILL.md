@@ -61,6 +61,8 @@ agents:
 | `--worktree` | feature worktree에서 작업 |
 | `--mockup [파일]` | Phase 2 진입 전 실행. 상세: mockup-hybrid SKILL.md |
 | `--con <page_id> [파일]` | Confluence 발행. 상세: confluence SKILL.md |
+| `--jira <cmd> <target>` | Jira 조회/분석. 상세: jira SKILL.md |
+| `--figma <url> [connect\|rules]` | Figma 디자인 연동. 상세: figma SKILL.md |
 
 ### 팀 생성 (MANDATORY)
 
@@ -147,7 +149,8 @@ LIGHT는 스킵. STANDARD/HEAVY: 계획 문서에 **아키텍처 결정 섹션**
 | `--mockup [파일]` | ASCII→형식 변환 | `--gmail` | Gmail 분석 |
 | `--debate` | ultimate-debate | `--daily` | daily |
 | `--research` | research | `--interactive` | Phase별 승인 |
-| `--con <page_id>` | Confluence 발행 | | |
+| `--con <page_id>` | Confluence 발행 | `--jira <cmd> <target>` | Jira 조회/분석 |
+| `--figma <url>` | Figma 구현 | `--figma connect <url>` | Figma 컴포넌트 매핑 |
 
 옵션 실패 시: 에러 출력, **절대 조용히 스킵 금지**. 상세: `REFERENCE.md`
 

@@ -13,6 +13,8 @@
 | `/parallel` | Agent Teams (병렬 executor) | dev, test, review, research, check |
 | `/research` | Agent Teams (researcher) | code, web, plan, review |
 | `/commit`, `/issue`, `/pr`, `/verify`, `/mockup-hybrid` | 직접 실행 | 각 고유 서브커맨드 |
+| `--jira` | `/auto` 옵션 (lib/jira/jira_client.py 실행) | epics, project, board, search, issue |
+| `--figma` | `/auto` 옵션 (Figma MCP 플러그인 래퍼) | `<url>`, `connect <url>`, `rules` |
 | `/overlay-fallback` | 직접 실행 (자동 트리거: T-1~T-5 조건) | — |
 
 ## 외부 플러그인 연동
@@ -20,6 +22,7 @@
 | 플러그인 | 역할 | 통합 상태 |
 |---------|------|----------|
 | `frontend-design` | 프론트엔드 미학 가이드라인 (Typography, Color, Motion, Spatial, Anti-Patterns) | `designer.md`에 가이드라인 직접 내장 완료. 플러그인은 세션 컨텍스트 보강용. |
+| `figma` | Figma MCP 서버 + 3개 스킬 (implement-design, code-connect, design-system-rules) | 로컬 래퍼 스킬 `.claude/skills/figma/SKILL.md`로 /auto 통합 완료. |
 
 ## Deprecated 스킬
 
