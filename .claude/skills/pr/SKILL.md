@@ -1,9 +1,13 @@
 ---
 name: pr
 description: PR review, improvement suggestions, and auto-merge workflow
+version: 1.0.0
 triggers:
   keywords:
-    - "pr"
+    - "/pr"
+    - "PR 리뷰"
+    - "풀리퀘스트"
+    - "PR 생성"
 ---
 
 # /pr

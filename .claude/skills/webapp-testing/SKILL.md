@@ -108,16 +108,14 @@ page.wait_for_selector('#login', timeout=10000)
 page.click('button', timeout=5000)
 ```
 
-### 해결 패턴 4: 강제 종료 스크립트
+### 해결 패턴 4: Playwright CLI 정리
 
 ```powershell
-# Windows: 남은 브라우저 프로세스 정리
-taskkill /F /IM "chromium.exe" 2>$null
-taskkill /F /IM "chrome.exe" 2>$null
-taskkill /F /IM "firefox.exe" 2>$null
+# Windows: Playwright 브라우저 캐시 재설치로 잔존 프로세스 정리
+npx playwright install --force
 
-# 또는 Playwright CLI
-npx playwright install --force  # 재설치로 정리
+# 남은 프로세스 확인
+tasklist | findstr "chromium"
 ```
 
 ## Docker 환경 테스트 흐름
@@ -182,11 +180,11 @@ export default defineConfig({
 # 1. 프로세스 확인
 tasklist | findstr "chromium"
 
-# 2. 강제 종료
-taskkill /F /IM "chromium.exe"
-
-# 3. Playwright 캐시 정리
+# 2. Playwright 브라우저 재설치 (잔존 프로세스 정리)
 npx playwright install --force
+
+# 3. Playwright 캐시 초기화
+npx playwright install chromium
 ```
 
 ### Docker 서버 연결 실패

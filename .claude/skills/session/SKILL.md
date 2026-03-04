@@ -1,6 +1,7 @@
 ---
 name: session
 description: 세션 관리 통합 (compact, journey, changelog, resume, search)
+version: 1.0.0
 triggers:
   keywords:
     - "session"

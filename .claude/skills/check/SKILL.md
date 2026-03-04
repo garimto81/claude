@@ -4,9 +4,10 @@ description: 코드 품질 및 보안 검사
 version: 2.0.0
 triggers:
   keywords:
-    - "check"
     - "/check"
-    - "검사"
+    - "코드 검사"
+    - "품질 검사"
+    - "QA 실행"
 ---
 
 # /check - 코드 품질 검사
