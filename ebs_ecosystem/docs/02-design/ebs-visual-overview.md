@@ -35,9 +35,9 @@ graph LR
     E1 -->|"실시간 스트림"| V1
     E4 -->|"OTT 콘텐츠"| V2
 
-    style WSOPLIVE fill:#e3f2fd,stroke:#1565c0,stroke-width:2px
-    style EBS fill:#fce4ec,stroke:#c62828,stroke-width:2px
-    style Viewer fill:#e8f5e9,stroke:#2e7d32,stroke-width:2px
+    style WSOPLIVE fill:#e3f2fd,stroke:#1565c0,stroke-width:2px,color:#333
+    style EBS fill:#fce4ec,stroke:#c62828,stroke-width:2px,color:#333
+    style Viewer fill:#e8f5e9,stroke:#2e7d32,stroke-width:2px,color:#333
 ```
 
 ### 핵심 관계 요약
@@ -87,10 +87,10 @@ graph TB
     Phase3 -.->|"독립 가치: 콘텐츠 파이프라인"| Value3["24시간 내 VOD 배포"]
     Phase4 -.->|"독립 가치: AI 인사이트"| Value4["데이터 기반 의사결정"]
 
-    style Phase1 fill:#e8f5e9,stroke:#2e7d32,stroke-width:2px
-    style Phase2 fill:#e3f2fd,stroke:#1565c0,stroke-width:2px
-    style Phase3 fill:#fff3e0,stroke:#e65100,stroke-width:2px
-    style Phase4 fill:#f3e5f5,stroke:#6a1b9a,stroke-width:2px
+    style Phase1 fill:#e8f5e9,stroke:#2e7d32,stroke-width:2px,color:#333
+    style Phase2 fill:#e3f2fd,stroke:#1565c0,stroke-width:2px,color:#333
+    style Phase3 fill:#fff3e0,stroke:#e65100,stroke-width:2px,color:#333
+    style Phase4 fill:#f3e5f5,stroke:#6a1b9a,stroke-width:2px,color:#333
 ```
 
 ### 2.2 조각별 Layer 매핑
@@ -122,10 +122,10 @@ graph LR
     P4 --> L5
     P4 --> L6
 
-    style P1 fill:#e8f5e9,stroke:#2e7d32
-    style P2 fill:#e3f2fd,stroke:#1565c0
-    style P3 fill:#fff3e0,stroke:#e65100
-    style P4 fill:#f3e5f5,stroke:#6a1b9a
+    style P1 fill:#e8f5e9,stroke:#2e7d32,color:#333
+    style P2 fill:#e3f2fd,stroke:#1565c0,color:#333
+    style P3 fill:#fff3e0,stroke:#e65100,color:#333
+    style P4 fill:#f3e5f5,stroke:#6a1b9a,color:#333
 ```
 
 ### 2.3 조각 전략 상세
@@ -177,9 +177,9 @@ flowchart LR
     Pre -->|"방송 시작"| Live
     Live -->|"방송 종료"| Post
 
-    style Pre fill:#fff3e0,stroke:#e65100,stroke-width:2px
-    style Live fill:#e8f5e9,stroke:#2e7d32,stroke-width:2px
-    style Post fill:#e3f2fd,stroke:#1565c0,stroke-width:2px
+    style Pre fill:#fff3e0,stroke:#e65100,stroke-width:2px,color:#333
+    style Live fill:#e8f5e9,stroke:#2e7d32,stroke-width:2px,color:#333
+    style Post fill:#e3f2fd,stroke:#1565c0,stroke-width:2px,color:#333
 ```
 
 ### 3.2 Live Show 시퀀스 다이어그램
@@ -286,13 +286,13 @@ graph TB
     Frontend --> Streaming
     Hardware --> Backend
 
-    style Frontend fill:#e3f2fd,stroke:#1565c0
-    style Backend fill:#fce4ec,stroke:#c62828
-    style Database fill:#f3e5f5,stroke:#6a1b9a
-    style AI fill:#fff3e0,stroke:#e65100
-    style Streaming fill:#e8f5e9,stroke:#2e7d32
-    style Hardware fill:#efebe9,stroke:#4e342e
-    style Infra fill:#eceff1,stroke:#37474f
+    style Frontend fill:#e3f2fd,stroke:#1565c0,color:#333
+    style Backend fill:#fce4ec,stroke:#c62828,color:#333
+    style Database fill:#f3e5f5,stroke:#6a1b9a,color:#333
+    style AI fill:#fff3e0,stroke:#e65100,color:#333
+    style Streaming fill:#e8f5e9,stroke:#2e7d32,color:#333
+    style Hardware fill:#efebe9,stroke:#4e342e,color:#333
+    style Infra fill:#eceff1,stroke:#37474f,color:#333
 ```
 
 ### 4.2 Layer별 기술 매핑
@@ -313,13 +313,13 @@ graph LR
 
     L7["L7 Operations"] --> T7["Python (Cron 자동화)<br/>React Flow (오케스트레이션)<br/>Gmail/Slack API"]
 
-    style L1 fill:#eceff1,stroke:#37474f
-    style L2 fill:#efebe9,stroke:#4e342e
-    style L3 fill:#f3e5f5,stroke:#6a1b9a
-    style L4 fill:#fce4ec,stroke:#c62828
-    style L5 fill:#fff3e0,stroke:#e65100
-    style L6 fill:#e3f2fd,stroke:#1565c0
-    style L7 fill:#e8f5e9,stroke:#2e7d32
+    style L1 fill:#eceff1,stroke:#37474f,color:#333
+    style L2 fill:#efebe9,stroke:#4e342e,color:#333
+    style L3 fill:#f3e5f5,stroke:#6a1b9a,color:#333
+    style L4 fill:#fce4ec,stroke:#c62828,color:#333
+    style L5 fill:#fff3e0,stroke:#e65100,color:#333
+    style L6 fill:#e3f2fd,stroke:#1565c0,color:#333
+    style L7 fill:#e8f5e9,stroke:#2e7d32,color:#333
 ```
 
 ### 4.3 기술 스택 요약
@@ -397,10 +397,10 @@ flowchart LR
     Operation -.->|"이상 발생"| Exception
     Exception -.->|"복구"| Operation
 
-    style Setup fill:#fff3e0,stroke:#e65100
-    style Operation fill:#e8f5e9,stroke:#2e7d32
-    style Exception fill:#fce4ec,stroke:#c62828
-    style Close fill:#e3f2fd,stroke:#1565c0
+    style Setup fill:#fff3e0,stroke:#e65100,color:#333
+    style Operation fill:#e8f5e9,stroke:#2e7d32,color:#333
+    style Exception fill:#fce4ec,stroke:#c62828,color:#333
+    style Close fill:#e3f2fd,stroke:#1565c0,color:#333
 ```
 
 ### 5.3 콘텐츠 PD
@@ -430,9 +430,9 @@ flowchart TB
 
     PreShow --> LiveControl --> PostProd
 
-    style PreShow fill:#fff3e0,stroke:#e65100
-    style LiveControl fill:#e8f5e9,stroke:#2e7d32
-    style PostProd fill:#e3f2fd,stroke:#1565c0
+    style PreShow fill:#fff3e0,stroke:#e65100,color:#333
+    style LiveControl fill:#e8f5e9,stroke:#2e7d32,color:#333
+    style PostProd fill:#e3f2fd,stroke:#1565c0,color:#333
 ```
 
 ### 5.4 데이터 분석가
@@ -458,9 +458,9 @@ flowchart LR
 
     Collect --> Analyze --> Report
 
-    style Collect fill:#f3e5f5,stroke:#6a1b9a
-    style Analyze fill:#fff3e0,stroke:#e65100
-    style Report fill:#e8f5e9,stroke:#2e7d32
+    style Collect fill:#f3e5f5,stroke:#6a1b9a,color:#333
+    style Analyze fill:#fff3e0,stroke:#e65100,color:#333
+    style Report fill:#e8f5e9,stroke:#2e7d32,color:#333
 ```
 
 ### 5.5 페르소나별 EBS 접점 요약
@@ -635,10 +635,10 @@ graph LR
 
     Phase0 --> Phase1 --> Phase2 --> Phase3
 
-    style Phase0 fill:#e8f8f5,stroke:#1abc9c
-    style Phase1 fill:#ebf5fb,stroke:#3498db
-    style Phase2 fill:#fef9e7,stroke:#f1c40f
-    style Phase3 fill:#fdedec,stroke:#e74c3c
+    style Phase0 fill:#e8f8f5,stroke:#1abc9c,color:#333
+    style Phase1 fill:#ebf5fb,stroke:#3498db,color:#333
+    style Phase2 fill:#fef9e7,stroke:#f1c40f,color:#333
+    style Phase3 fill:#fdedec,stroke:#e74c3c,color:#333
 ```
 
 ### 7.3 Phase별 핵심 지표
@@ -683,8 +683,8 @@ graph LR
 
     NOW -->|"Phase 1~3<br/>자동화 전환"| TARGET
 
-    style NOW fill:#ffcccc,stroke:#e74c3c
-    style TARGET fill:#ccffcc,stroke:#27ae60
+    style NOW fill:#ffcccc,stroke:#e74c3c,color:#333
+    style TARGET fill:#ccffcc,stroke:#27ae60,color:#333
 ```
 
 ### 8.2 비용 구성 비교
@@ -829,8 +829,8 @@ graph LR
 
     Daily -->|"x 45일"| Season
 
-    style Daily fill:#ecf0f1,stroke:#95a5a6
-    style Season fill:#dfe6e9,stroke:#636e72
+    style Daily fill:#ecf0f1,stroke:#95a5a6,color:#333
+    style Season fill:#dfe6e9,stroke:#636e72,color:#333
 ```
 
 ## 10. 모니터링 & 알림 토폴로지
@@ -876,13 +876,13 @@ graph TB
         M14["비용 대시보드<br/>예산 대비 실적"]
     end
 
-    style L1 fill:#e8f8f5,stroke:#1abc9c
-    style L2 fill:#ebf5fb,stroke:#3498db
-    style L3 fill:#fef9e7,stroke:#f1c40f
-    style L4 fill:#fdebd0,stroke:#e67e22
-    style L5 fill:#fdedec,stroke:#e74c3c
-    style L6 fill:#f4ecf7,stroke:#8e44ad
-    style L7 fill:#eaecee,stroke:#2c3e50
+    style L1 fill:#e8f8f5,stroke:#1abc9c,color:#333
+    style L2 fill:#ebf5fb,stroke:#3498db,color:#333
+    style L3 fill:#fef9e7,stroke:#f1c40f,color:#333
+    style L4 fill:#fdebd0,stroke:#e67e22,color:#333
+    style L5 fill:#fdedec,stroke:#e74c3c,color:#333
+    style L6 fill:#f4ecf7,stroke:#8e44ad,color:#333
+    style L7 fill:#eaecee,stroke:#2c3e50,color:#333
 ```
 
 ### 10.2 알림 경로 (감지 → 대응)
