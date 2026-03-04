@@ -22,19 +22,19 @@
 | 워크플로우/흐름도 (터미널 채팅 응답) | **ASCII** |
 | UI 레이아웃/와이어프레임 (터미널 채팅 응답) | **ASCII** |
 | 저장 파일 내 기술 다이어그램 ASCII (흐름/시퀀스/아키텍처) | `--mockup <파일>` → **Mermaid 코드 블록** 변환 |
-| 저장 파일 내 UI 화면/컴포넌트 ASCII 목업 | `--mockup <파일> --bnw` → **HTML + PNG** 변환 |
+| 저장 파일 내 UI 화면/컴포넌트 ASCII 목업 | `--mockup <파일>` → **3-Tier 라우팅** (HTML 선택 시 `--bnw` B&W 스타일 적용) |
 
-## 적용 제외 대상 (--mockup --bnw 사용)
+## 적용 제외 대상 (--mockup 사용)
 
-아래 컨텍스트에서는 ASCII 대신 `--mockup --bnw`로 HTML 목업을 생성한다:
+아래 컨텍스트에서는 ASCII 대신 `--mockup`으로 목업을 생성한다. `--bnw`는 스타일 제약(B&W 팔레트)이며, 3-Tier 라우팅이 출력 형식을 결정한다 (정본: `mockup-hybrid/SKILL.md` v2.0):
 
 | 대상 | 처리 방식 |
 |------|-----------|
-| PRD 내 UI 화면 목업 | `--mockup --bnw` (designer 에이전트 내장 Aesthetic Guidelines) |
+| PRD 내 UI 화면 목업 | `--mockup --bnw` (3-Tier → HTML 선택 시 B&W 스타일 적용) |
 | 최종 보고서/이해관계자 전달물의 시각화 | `--mockup --bnw` |
 | 화면 설계 목업 (docs/mockups/) | `--mockup --bnw` |
 
-**구분 원칙**: 터미널에서 즉시 확인하는 기술 다이어그램 → ASCII / 문서로 저장·전달되는 UI 목업 → `--mockup --bnw`
+**구분 원칙**: 터미널에서 즉시 확인하는 기술 다이어그램 → ASCII / 문서로 저장·전달되는 목업 → `--mockup` (3-Tier 라우팅 자동 선택)
 
 ## HTML 목업 사이즈 규약
 
