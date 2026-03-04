@@ -9,8 +9,6 @@ triggers:
   keywords:
     - "webapp test"
     - "E2E docker"
-    - "playwright test"
-    - "브라우저 테스트"
   file_patterns:
     - "playwright.config.ts"
     - "e2e/**/*"
