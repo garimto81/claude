@@ -1,8 +1,7 @@
 ---
 name: mockup-hybrid
 description: >
-  3-Tier 하이브리드 목업 생성 시스템.
-  Mermaid 다이어그램 + HTML 와이어프레임 + Google Stitch AI 자동 선택.
+  This skill should be used when the user needs UI mockups via 3-Tier hybrid system: Mermaid diagrams, HTML wireframes, or Google Stitch AI.
 version: 2.0.0
 
 triggers:

@@ -1,6 +1,7 @@
 ---
 name: chunk
-description: PDF 청킹 - 토큰 기반(텍스트) 또는 페이지 기반(레이아웃 보존) 분할
+description: >
+  This skill should be used when the user needs to split PDF files using token-based (text) or page-based (layout-preserving) chunking strategies.
 triggers:
   keywords:
     - "chunk"

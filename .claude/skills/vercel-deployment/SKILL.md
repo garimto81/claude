@@ -1,8 +1,7 @@
 ---
 name: vercel-deployment
 description: >
-  Vercel 배포, Preview/Production 환경 관리, Edge Functions,
-  환경 변수 설정, CI/CD 파이프라인 통합 전문 스킬.
+  This skill should be used when the user needs Vercel deployment, Preview/Production environment management, Edge Functions, or CI/CD pipeline integration.
 version: 2.0.0
 
 triggers:

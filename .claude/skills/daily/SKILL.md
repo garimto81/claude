@@ -1,9 +1,7 @@
 ---
 name: daily
 description: >
-  Daily Dashboard v3.0 - 3소스 통합 학습+액션 추천 엔진.
-  Gmail/Slack/GitHub 증분 수집, AI 크로스소스 분석, 액션 초안 생성.
-  프로젝트 전문가 모드 + Config Auto-Bootstrap.
+  This skill should be used when the user requests daily dashboards, morning briefings, or cross-source analysis from Gmail/Slack/GitHub.
 version: 3.1.0
 
 triggers:

@@ -1,8 +1,7 @@
 ---
 name: supabase-integration
 description: >
-  Supabase 프로젝트 설정, 데이터베이스 설계, RLS 정책, Edge Functions,
-  인증/권한 통합 전문 스킬. Supabase CLI 및 클라이언트 라이브러리 활용.
+  This skill should be used when the user needs Supabase project setup, database design, RLS policies, Edge Functions, or auth integration.
 version: 2.0.0
 
 triggers:

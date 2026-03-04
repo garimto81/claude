@@ -1,6 +1,7 @@
 ---
 name: issue
-description: GitHub issue lifecycle management (list, create, fix, failed)
+description: >
+  This skill should be used when the user requests GitHub issue management including listing, creating, fixing, or triaging issues.
 version: 1.0.0
 triggers:
   keywords:
@@ -8,6 +9,7 @@ triggers:
     - "이슈 관리"
     - "github issue"
     - "버그 리포트"
+auto_trigger: false
 ---
 
 # /issue

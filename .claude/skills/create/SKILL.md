@@ -1,6 +1,7 @@
 ---
 name: create
-description: Create PRD, PR, or documentation (prd, pr, docs)
+description: >
+  This skill should be used when the user requests creation of PRDs, pull requests, or documentation artifacts.
 version: 1.0.0
 triggers:
   keywords:
@@ -8,6 +9,7 @@ triggers:
     - "PRD 생성"
     - "PR 생성"
     - "문서 생성"
+auto_trigger: false
 ---
 
 # /create

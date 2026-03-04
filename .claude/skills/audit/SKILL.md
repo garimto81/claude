@@ -1,6 +1,7 @@
 ---
 name: audit
-description: Daily configuration audit, improvement suggestions, and trend-based workflow optimization
+description: >
+  This skill should be used when the user requests daily configuration audits, improvement suggestions, or trend-based workflow optimization.
 triggers:
   keywords:
     - "audit"

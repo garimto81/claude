@@ -1,6 +1,7 @@
 ---
 name: prd-sync
-description: PRD 동기화 (Google Docs -> 로컬)
+description: >
+  This skill should be used when the user needs to synchronize PRD documents between Google Docs and local repository.
 triggers:
   keywords:
     - "prd-sync"

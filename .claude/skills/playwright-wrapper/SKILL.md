@@ -1,8 +1,7 @@
 ---
 name: playwright-wrapper
 description: >
-  Playwright 브라우저 자동화 래퍼. CLI 및 Python SDK 직접 호출.
-  E2E 테스트, 스크린샷, 웹 자동화에 사용.
+  This skill should be used when the user needs Playwright browser automation via CLI or Python SDK for E2E testing, screenshots, or web automation.
 version: 1.0.0
 
 triggers:

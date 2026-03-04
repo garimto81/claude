@@ -1,6 +1,7 @@
 ---
 name: deploy
-description: Version update and Docker rebuild workflow
+description: >
+  This skill should be used when the user requests version updates, Docker rebuilds, or deployment workflows.
 triggers:
   keywords:
     - "deploy"

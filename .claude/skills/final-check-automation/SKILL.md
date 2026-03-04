@@ -1,7 +1,7 @@
 ---
 name: final-check-automation
 description: >
-  FINAL_CHECK 워크플로우 자동화. E2E 테스트, Phase 3-5 자동 진행.
+  This skill should be used when the user requests FINAL_CHECK workflow automation including E2E tests and Phase 3-5 execution.
 version: 2.0.0
 
 triggers:

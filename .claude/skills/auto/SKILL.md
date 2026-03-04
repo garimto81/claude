@@ -1,6 +1,7 @@
 ---
 name: auto
-description: PDCA Orchestrator - 통합 자율 워크플로우 (Agent Teams 단일 패턴)
+description: >
+  This skill should be used when the user requests automated PDCA workflows, autopilot execution, or multi-phase build-verify-close cycles.
 version: 23.0.0
 triggers:
   keywords:

@@ -1,12 +1,14 @@
 ---
 name: debug
-description: 가설-검증 기반 디버깅
+description: >
+  This skill should be used when the user needs hypothesis-verification based debugging with structured Phase Gate D0-D4.
 version: 2.0.0
 triggers:
   keywords:
     - "debug"
     - "/debug"
     - "디버깅"
+auto_trigger: false
 ---
 
 # /debug - 체계적 디버깅

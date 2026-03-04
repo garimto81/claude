@@ -1,12 +1,14 @@
 ---
 name: session
-description: 세션 관리 통합 (compact, journey, changelog, resume, search)
+description: >
+  This skill should be used when the user needs session management operations like compact, journey, changelog, resume, or search.
 version: 1.0.0
 triggers:
   keywords:
     - "session"
     - "세션 검색"
     - "과거 결정"
+auto_trigger: false
 ---
 
 # /session
