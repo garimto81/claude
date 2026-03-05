@@ -28,7 +28,7 @@ agents:
 # /auto - PDCA Orchestrator (v23.0)
 
 > **핵심**: `/auto "작업"` = Phase 0-4 자동 진행. `/auto` 단독 = 자율 발견 모드. `/work`는 `/auto`로 통합됨.
-> **Agent Teams 단일 패턴**: TeamCreate → Task(team_name+name) → SendMessage → TeamDelete. Skill() 호출 0개.
+> **Agent Teams 단일 패턴**: TeamCreate → Agent(subagent_type+name+description+team_name) → SendMessage → TeamDelete. Skill() 호출 0개.
 > **코드 블록/상세 prompt**: `REFERENCE.md` 참조. 이 파일은 판단 로직과 흐름만 기술.
 
 ---
@@ -49,6 +49,8 @@ agents:
 
 ### 옵션
 
+#### 흐름 제어 옵션
+
 | 옵션 | 효과 |
 |------|------|
 | `--skip-prd` | Phase 1 PRD 스킵 |
@@ -56,13 +58,25 @@ agents:
 | `--no-issue` | 이슈 연동 스킵 |
 | `--strict` | E2E 1회 실패 즉시 중단 |
 | `--skip-e2e` | E2E 검증 전체 스킵 |
-| `--dry-run` | 판단만 출력 |
+| `--dry-run` | 판단만 출력 (Phase 0-1까지만 실행) |
 | `--eco` | LIGHT 강제 (전체 sonnet) |
 | `--worktree` | feature worktree에서 작업 |
-| `--mockup [파일]` | Phase 2 진입 전 실행. 상세: mockup-hybrid SKILL.md |
-| `--con <page_id> [파일]` | Confluence 발행. 상세: confluence SKILL.md |
-| `--jira <cmd> <target>` | Jira 조회/분석. 상세: jira SKILL.md |
-| `--figma <url> [connect\|rules]` | Figma 디자인 연동. 상세: figma SKILL.md |
+| `--interactive` | Phase 전환 시 사용자 확인 |
+
+#### 실행 옵션 (Step 2.0 처리)
+
+| 옵션 | 효과 |
+|------|------|
+| `--mockup [파일]` | 3-Tier 목업 생성. 상세: mockup-hybrid SKILL.md, REFERENCE.md Step 2.0 |
+| `--gdocs` | Google Docs PRD 동기화 |
+| `--debate` | 3-AI 병렬 분석 합의 |
+| `--research` | 코드베이스/외부 리서치 |
+| `--daily` | 일일 대시보드 (9-Phase Pipeline) |
+| `--slack <채널>` | Slack 채널 분석 |
+| `--gmail` | Gmail 분석 |
+| `--con <page_id> [파일]` | Confluence 발행. 상세: confluence SKILL.md, REFERENCE.md `--con` 섹션 |
+| `--jira <cmd> <target>` | Jira 조회/분석. 상세: jira SKILL.md, REFERENCE.md `--jira` 섹션 |
+| `--figma <url> [connect\|rules\|capture\|auth]` | Figma 디자인 연동. 상세: figma SKILL.md |
 
 ### 팀 생성 (MANDATORY)
 
@@ -100,7 +114,7 @@ Phase 완료 후 `git status --short` 확인 → 변경사항 있으면 커밋.
 `--skip-prd`로 스킵 가능. 상세 prompt/템플릿: `REFERENCE.md`
 
 1. `docs/00-prd/` 기존 PRD 탐색
-2. prd-writer teammate (executor, opus) → PRD 생성/수정
+2. prd-writer teammate (executor-high) → PRD 생성/수정
 3. **사용자 승인** (AskUserQuestion, max 수정 3회)
 4. 산출물: `docs/00-prd/{feature}.prd.md`
 
@@ -114,9 +128,9 @@ Phase 완료 후 `git status --short` 확인 → 변경사항 있으면 커밋.
 
 | 모드 | 실행 |
 |------|------|
-| LIGHT | planner (sonnet) + Lead Quality Gate |
-| STANDARD | planner (opus) + Critic-Lite (opus) 단일 검토 |
-| HEAVY | Planner-Critic Loop (opus, max 5회) |
+| LIGHT | planner + Lead Quality Gate |
+| STANDARD | planner + Critic-Lite 단일 검토 |
+| HEAVY | Planner-Critic Loop (max 5회) |
 
 **Lead Quality Gate** (LIGHT): plan 파일 존재+내용 있음, 파일 경로 1개+ 언급. 미충족 시 1회 재요청.
 **Critic-Lite** (STANDARD): QG1-QG4 검증 → APPROVE/REVISE. REVISE 시 1회 수정.
@@ -146,21 +160,32 @@ LIGHT는 스킵. STANDARD/HEAVY: 계획 문서에 **아키텍처 결정 섹션**
 | 옵션 | 처리 | 옵션 | 처리 |
 |------|------|------|------|
 | `--gdocs` | prd-sync | `--slack <채널>` | Slack 분석 |
-| `--mockup [파일]` | ASCII→형식 변환 | `--gmail` | Gmail 분석 |
+| `--mockup [파일]` | 3-Tier 목업 (Step 1-4) | `--gmail` | Gmail 분석 |
 | `--debate` | ultimate-debate | `--daily` | daily |
 | `--research` | research | `--interactive` | Phase별 승인 |
 | `--con <page_id>` | Confluence 발행 | `--jira <cmd> <target>` | Jira 조회/분석 |
 | `--figma <url>` | Figma 구현 | `--figma connect <url>` | Figma 컴포넌트 매핑 |
+| `--figma capture` | HTML→Figma 캡처 | `--figma auth` | Figma 인증 확인 |
+| `--figma rules` | 디자인 시스템 규칙 | | |
 
 옵션 실패 시: 에러 출력, **절대 조용히 스킵 금지**. 상세: `REFERENCE.md`
+
+#### `--mockup` 서브스텝 (4-Step)
+
+| Step | 내용 | 실행 주체 |
+|------|------|----------|
+| 1 | MockupRouter.route() — 3-Tier 라우팅 + 기본 HTML 생성 | Lead (Python 호출) |
+| 2 | `--bnw` AND HTML 선택 시 → designer(sonnet) 스폰 (B&W 스타일링) | designer 에이전트 |
+| 3 | Playwright PNG 캡처 | Lead (Bash) |
+| 4 | 문서 임베드 (대상 문서 있을 때만) | Lead (Edit) |
 
 ### Step 2.1: 구현
 
 | 모드 | 실행 방식 |
 |------|----------|
-| LIGHT | executor (opus) — 단일 실행, TDD 필수 |
-| STANDARD | impl-manager (opus) — 5조건 자체 루프 (max 10회) |
-| HEAVY | impl-manager (opus) — 5조건 자체 루프 + 병렬 가능 |
+| LIGHT | executor-high — 단일 실행, TDD 필수 |
+| STANDARD | impl-manager (executor-high) — 5조건 자체 루프 (max 10회) |
+| HEAVY | impl-manager (executor-high) — 5조건 자체 루프 + 병렬 가능 |
 
 **impl-manager 5조건** (STANDARD/HEAVY — 모든 조건 충족 시 IMPLEMENTATION_COMPLETED):
 
@@ -176,7 +201,7 @@ LIGHT는 스킵. STANDARD/HEAVY: 계획 문서에 **아키텍처 결정 섹션**
 
 ### Step 2.2: Code Review (STANDARD/HEAVY 필수)
 
-구현 완료 후 **즉시** code-reviewer (sonnet) 실행. Vercel BP 규칙 동적 주입 (React/Next.js 시).
+구현 완료 후 **즉시** code-reviewer 실행. Vercel BP 규칙 동적 주입 (React/Next.js 시).
 
 | 판정 | 처리 |
 |------|------|
@@ -187,7 +212,7 @@ LIGHT는 스킵. STANDARD/HEAVY: 계획 문서에 **아키텍처 결정 섹션**
 
 ### Step 2.3: Architect Verification Gate (STANDARD/HEAVY 필수)
 
-architect (opus, READ-ONLY) → 구현이 Plan 요구사항과 일치하는지 외부 검증.
+architect (READ-ONLY) → 구현이 Plan 요구사항과 일치하는지 외부 검증.
 
 | VERDICT | 처리 |
 |---------|------|
@@ -240,7 +265,7 @@ E2E_FAILED 시: Architect 진단 → Domain-Smart Fix → 재실행 (max 2회). 
 
 ### Step 3.3: 최종 검증
 
-architect (opus) → Plan 대비 구현 일치 검증. APPROVE/REJECT 판정.
+architect (READ-ONLY) → Plan 대비 구현 일치 검증. APPROVE/REJECT 판정.
 
 | 결과 | 처리 |
 |------|------|
@@ -259,7 +284,7 @@ architect (opus) → Plan 대비 구현 일치 검증. APPROVE/REJECT 판정.
 
 ### Step 4.1: 보고서 생성
 
-writer teammate → `docs/04-report/{feature}.report.md`. 모델: LIGHT=sonnet, STANDARD/HEAVY=opus.
+writer teammate → `docs/04-report/{feature}.report.md`. 티어: LIGHT=writer(haiku), STANDARD/HEAVY=executor-high(opus).
 
 ### Step 4.2: 커밋 + Safe Cleanup
 
@@ -277,10 +302,10 @@ writer teammate → `docs/04-report/{feature}.report.md`. 모델: LIGHT=sonnet, 
 | Phase | LIGHT (0-1) | STANDARD (2-3) | HEAVY (4-5) |
 |-------|:-----------:|:--------------:|:-----------:|
 | **0 INIT** | TeamCreate | TeamCreate | TeamCreate |
-| **1 PLAN** | PRD + sonnet 계획 | PRD + opus 계획 + Critic-Lite + 설계 통합 | PRD + Planner-Critic Loop + 설계 통합 |
+| **1 PLAN** | PRD + planner 계획 | PRD + planner 계획 + Critic-Lite + 설계 통합 | PRD + Planner-Critic Loop + 설계 통합 |
 | **2 BUILD** | executor 단일 | impl-manager 5조건 + code-reviewer + Architect Gate | impl-manager 5조건 + code-reviewer + Architect Gate |
 | **3 VERIFY** | QA 1회 + Architect | QA 3회 + E2E + Architect + 진단 루프 | QA 5회 + E2E + Architect + 진단 루프 |
-| **4 CLOSE** | writer (sonnet) | writer (opus) | writer (opus) |
+| **4 CLOSE** | writer (haiku) | executor-high (opus) | executor-high (opus) |
 
 ## 자율 발견 모드 (`/auto` 단독)
 

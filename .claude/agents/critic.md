@@ -1,7 +1,7 @@
 ---
 name: critic
-description: Work plan review expert and critic (Sonnet)
-model: sonnet
+description: Work plan review expert and critic (Opus)
+model: opus
 tools: Read, Glob, Grep
 ---
 
