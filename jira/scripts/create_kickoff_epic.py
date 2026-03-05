@@ -19,7 +19,7 @@ from lib.jira_client import get_config, create_issue
 
 PROJECT_KEY = "PV"
 EPIC_TYPE_ID = "10000"
-STORY_TYPE_ID = "10001"
+TASK_TYPE_ID = "11514"   # 작업 (Story 사용 금지)
 
 
 # ---------------------------------------------------------------------------
@@ -275,7 +275,7 @@ def main():
         try:
             story_fields = {
                 "project": {"key": PROJECT_KEY},
-                "issuetype": {"id": STORY_TYPE_ID},
+                "issuetype": {"id": TASK_TYPE_ID},
                 "summary": story["summary"],
                 "description": story["description"],
                 "parent": {"key": epic_key},
