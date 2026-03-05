@@ -1,7 +1,7 @@
 import 'package:flutter/material.dart';
 import '../../theme/ebs_colors.dart';
 
-class EbsButton extends StatelessWidget {
+class EbsButton extends StatefulWidget {
   final String text;
   final VoidCallback? onPressed;
   final bool small;
@@ -14,30 +14,57 @@ class EbsButton extends StatelessWidget {
   });
 
   @override
+  State<EbsButton> createState() => _EbsButtonState();
+}
+
+class _EbsButtonState extends State<EbsButton> {
+  bool _hovered = false;
+
+  @override
   Widget build(BuildContext context) {
-    return Material(
-      color: Colors.white.withValues(alpha: 0.06),
-      borderRadius: BorderRadius.circular(EbsColors.borderRadiusSm),
-      child: InkWell(
-        onTap: onPressed,
-        borderRadius: BorderRadius.circular(EbsColors.borderRadiusSm),
-        hoverColor: Colors.white.withValues(alpha: 0.12),
-        child: Container(
-          padding: EdgeInsets.symmetric(
-            horizontal: small ? 10 : 14,
-            vertical: small ? 4 : 6,
+    return MouseRegion(
+      onEnter: (_) => setState(() => _hovered = true),
+      onExit: (_) => setState(() => _hovered = false),
+      child: AnimatedContainer(
+        duration: const Duration(milliseconds: 150),
+        curve: Curves.easeOut,
+        decoration: BoxDecoration(
+          color: _hovered
+              ? EbsColors.neonGlow
+              : Colors.white.withValues(alpha: 0.06),
+          border: Border.all(
+            color: _hovered
+                ? EbsColors.accentBlue.withValues(alpha: 0.4)
+                : EbsColors.glassBorder,
           ),
-          decoration: BoxDecoration(
-            border: Border.all(color: EbsColors.glassBorder),
-            borderRadius: BorderRadius.circular(EbsColors.borderRadiusSm),
-          ),
-          child: Text(
-            text,
-            style: TextStyle(
-              fontSize: small ? 11 : 12,
-              fontWeight: FontWeight.w600,
-              letterSpacing: 0.24,
-              color: EbsColors.textPrimary,
+          borderRadius: BorderRadius.circular(EbsColors.borderRadiusSm),
+          boxShadow: _hovered
+              ? [
+                  BoxShadow(
+                    color: EbsColors.accentBlue.withValues(alpha: 0.2),
+                    blurRadius: 8,
+                    spreadRadius: 0,
+                  ),
+                ]
+              : null,
+        ),
+        child: InkWell(
+          onTap: widget.onPressed,
+          borderRadius: BorderRadius.circular(EbsColors.borderRadiusSm),
+          hoverColor: Colors.transparent,
+          child: Padding(
+            padding: EdgeInsets.symmetric(
+              horizontal: widget.small ? 10 : 14,
+              vertical: widget.small ? 4 : 6,
+            ),
+            child: Text(
+              widget.text,
+              style: TextStyle(
+                fontSize: widget.small ? 11 : 12,
+                fontWeight: FontWeight.w600,
+                letterSpacing: 0.24,
+                color: _hovered ? EbsColors.accentBlue : EbsColors.textPrimary,
+              ),
             ),
           ),
         ),

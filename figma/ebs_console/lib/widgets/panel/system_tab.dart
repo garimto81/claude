@@ -2,89 +2,42 @@ import 'package:flutter/material.dart';
 import 'package:flutter_riverpod/flutter_riverpod.dart';
 import 'package:google_fonts/google_fonts.dart';
 import '../../theme/ebs_colors.dart';
-import '../../providers/app_providers.dart';
+import '../../providers/system_state_provider.dart';
 import '../common/setting_row.dart';
 import '../common/ebs_toggle.dart';
 import '../common/ebs_button.dart';
+import '../common/ebs_dropdown.dart';
+import '../common/rfid_antenna_card.dart';
+import '../common/diagnostic_panel.dart';
+import '../common/section_title.dart';
 
 class SystemTab extends ConsumerWidget {
   const SystemTab({super.key});
 
   @override
   Widget build(BuildContext context, WidgetRef ref) {
-    final allowAt = ref.watch(allowAtAccessProvider);
-    final predictiveBet = ref.watch(predictiveBetProvider);
-    final autoStart = ref.watch(autoStartProvider);
-    final upcardAntennas = ref.watch(upcardAntennasProvider);
-    final disableMuck = ref.watch(disableMuckProvider);
-    final disableCommunity = ref.watch(disableCommunityProvider);
+    final sys = ref.watch(systemStateProvider);
 
     return SingleChildScrollView(
       padding: const EdgeInsets.all(EbsColors.spacingMd),
       child: Column(
         crossAxisAlignment: CrossAxisAlignment.start,
         children: [
-          // RFID
-          _SectionTitle('RFID'),
+          // RFID 3 ANTENNAS
+          const SectionTitle('RFID Antennas', padding: EdgeInsets.zero),
           const SizedBox(height: 8),
-          // Connected status
           Row(
             children: [
-              Container(
-                width: 10,
-                height: 10,
-                decoration: BoxDecoration(
-                  shape: BoxShape.circle,
-                  color: EbsColors.success,
-                  boxShadow: [BoxShadow(color: EbsColors.success.withValues(alpha: 0.6), blurRadius: 8)],
-                ),
-              ),
-              const SizedBox(width: 8),
-              const Text(
-                'CONNECTED',
-                style: TextStyle(
-                  fontSize: 13,
-                  fontWeight: FontWeight.w700,
-                  letterSpacing: 1.04,
-                  color: EbsColors.success,
-                ),
-              ),
+              for (int i = 0; i < sys.antennas.length; i++) ...[
+                if (i > 0) const SizedBox(width: 8),
+                Expanded(child: RfidAntennaCard(antenna: sys.antennas[i])),
+              ],
             ],
-          ),
-          const SizedBox(height: 10),
-          Row(
-            children: [
-              Expanded(child: EbsButton(text: 'RESET', small: true)),
-              const SizedBox(width: 8),
-              Expanded(child: EbsButton(text: 'CALIBRATE', small: true)),
-            ],
-          ),
-          const SizedBox(height: 8),
-          SettingRow(
-            label: 'UPCARD Antennas',
-            child: EbsToggle(
-              value: upcardAntennas,
-              onChanged: (v) => ref.read(upcardAntennasProvider.notifier).state = v,
-            ),
-          ),
-          SettingRow(
-            label: 'Disable Muck',
-            child: EbsToggle(
-              value: disableMuck,
-              onChanged: (v) => ref.read(disableMuckProvider.notifier).state = v,
-            ),
-          ),
-          SettingRow(
-            label: 'Disable Community',
-            child: EbsToggle(
-              value: disableCommunity,
-              onChanged: (v) => ref.read(disableCommunityProvider.notifier).state = v,
-            ),
           ),
           const SizedBox(height: EbsColors.spacingLg),
 
           // TABLE
-          _SectionTitle('Table'),
+          const SectionTitle('Table', padding: EdgeInsets.zero),
           const SizedBox(height: 8),
           SettingRow(
             label: 'Table Name',
@@ -94,40 +47,43 @@ class SystemTab extends ConsumerWidget {
             label: 'Table Password',
             child: _TextInput(value: '\u2022\u2022\u2022\u2022\u2022\u2022\u2022\u2022', width: 130),
           ),
+          const SizedBox(height: 8),
+          Row(
+            children: [
+              Expanded(child: EbsButton(text: 'RESET', small: true)),
+              const SizedBox(width: 8),
+              Expanded(child: EbsButton(text: 'CALIBRATE', small: true)),
+              const SizedBox(width: 8),
+              Expanded(child: EbsButton(text: 'UPDATE', small: true)),
+            ],
+          ),
           const SizedBox(height: EbsColors.spacingLg),
 
           // ACTION TRACKER
-          _SectionTitle('Action Tracker'),
+          const SectionTitle('Action Tracker', padding: EdgeInsets.zero),
           const SizedBox(height: 8),
           SettingRow(
             label: 'Allow AT Access',
             child: EbsToggle(
-              value: allowAt,
-              onChanged: (v) => ref.read(allowAtAccessProvider.notifier).state = v,
-            ),
-          ),
-          SettingRow(
-            label: 'Predictive Bet',
-            child: EbsToggle(
-              value: predictiveBet,
-              onChanged: (v) => ref.read(predictiveBetProvider.notifier).state = v,
+              value: sys.atConnected,
+              onChanged: (_) => ref.read(systemStateProvider.notifier).toggleAtConnected(),
             ),
           ),
           const SizedBox(height: EbsColors.spacingLg),
 
           // DIAGNOSTICS
-          _SectionTitle('Diagnostics'),
+          const SectionTitle('Diagnostics', padding: EdgeInsets.zero),
           const SizedBox(height: 8),
-          SizedBox(
-            width: double.infinity,
-            child: EbsButton(text: 'TABLE DIAGNOSTICS'),
+          DiagnosticPanel(diagnostics: sys.diagnostics),
+          const SizedBox(height: 12),
+          SettingRow(
+            label: 'Log Level',
+            child: EbsDropdown(
+              value: 'INFO',
+              items: const ['DEBUG', 'INFO', 'WARN', 'ERROR'],
+              width: 90,
+            ),
           ),
-          const SizedBox(height: 6),
-          SizedBox(
-            width: double.infinity,
-            child: EbsButton(text: 'SYSTEM LOG'),
-          ),
-          const SizedBox(height: 6),
           SettingRow(
             label: 'Export Folder',
             child: Row(
@@ -135,10 +91,7 @@ class SystemTab extends ConsumerWidget {
               children: [
                 Text(
                   'C:\\EBS\\exports\\',
-                  style: GoogleFonts.jetBrainsMono(
-                    fontSize: 11,
-                    color: EbsColors.textMuted,
-                  ),
+                  style: GoogleFonts.jetBrainsMono(fontSize: 11, color: EbsColors.textMuted),
                   overflow: TextOverflow.ellipsis,
                 ),
                 const SizedBox(width: 6),
@@ -148,35 +101,38 @@ class SystemTab extends ConsumerWidget {
           ),
           const SizedBox(height: EbsColors.spacingLg),
 
+          // CONFIG
+          const SectionTitle('Config', padding: EdgeInsets.zero),
+          const SizedBox(height: 8),
+          Row(
+            children: [
+              Expanded(child: EbsButton(text: 'EXPORT CONFIG')),
+              const SizedBox(width: 8),
+              Expanded(child: EbsButton(text: 'IMPORT CONFIG')),
+            ],
+          ),
+          const SizedBox(height: EbsColors.spacingLg),
+
           // STARTUP
-          _SectionTitle('Startup'),
+          const SectionTitle('Startup', padding: EdgeInsets.zero),
           const SizedBox(height: 8),
           SettingRow(
             label: 'Auto Start',
-            child: EbsToggle(
-              value: autoStart,
-              onChanged: (v) => ref.read(autoStartProvider.notifier).state = v,
+            child: EbsToggle(value: false),
+          ),
+          SettingRow(
+            label: 'Auto Connect',
+            child: EbsToggle(value: true),
+          ),
+          SettingRow(
+            label: 'Default Theme',
+            child: EbsDropdown(
+              value: 'Dark',
+              items: const ['Dark', 'Light'],
+              width: 80,
             ),
           ),
         ],
-      ),
-    );
-  }
-}
-
-class _SectionTitle extends StatelessWidget {
-  final String text;
-  const _SectionTitle(this.text);
-
-  @override
-  Widget build(BuildContext context) {
-    return Text(
-      text.toUpperCase(),
-      style: const TextStyle(
-        fontSize: 10,
-        fontWeight: FontWeight.w700,
-        letterSpacing: 1.0,
-        color: EbsColors.textMuted,
       ),
     );
   }

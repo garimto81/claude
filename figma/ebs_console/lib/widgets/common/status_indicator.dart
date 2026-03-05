@@ -22,15 +22,18 @@ class _StatusIndicatorState extends State<StatusIndicator>
   late final AnimationController? _controller;
   late final Animation<double>? _animation;
 
+  bool get _shouldAnimate =>
+      widget.type == IndicatorType.live || widget.type == IndicatorType.active;
+
   @override
   void initState() {
     super.initState();
-    if (widget.type == IndicatorType.live) {
+    if (_shouldAnimate) {
       _controller = AnimationController(
         vsync: this,
         duration: const Duration(milliseconds: 1500),
       )..repeat(reverse: true);
-      _animation = Tween<double>(begin: 1.0, end: 0.4).animate(
+      _animation = Tween<double>(begin: 1.0, end: 0.35).animate(
         CurvedAnimation(parent: _controller!, curve: Curves.easeInOut),
       );
     } else {
@@ -46,33 +49,42 @@ class _StatusIndicatorState extends State<StatusIndicator>
   }
 
   Color get _color {
-    switch (widget.type) {
-      case IndicatorType.live:
-        return EbsColors.danger;
-      case IndicatorType.active:
-        return EbsColors.success;
-      case IndicatorType.idle:
-        return EbsColors.textMuted;
-      case IndicatorType.warning:
-        return EbsColors.warning;
-    }
+    return switch (widget.type) {
+      IndicatorType.live => EbsColors.danger,
+      IndicatorType.active => EbsColors.success,
+      IndicatorType.idle => EbsColors.textMuted,
+      IndicatorType.warning => EbsColors.warning,
+    };
   }
 
-  bool get _hasGlow =>
-      widget.type == IndicatorType.live ||
-      widget.type == IndicatorType.active ||
-      widget.type == IndicatorType.warning;
+  double get _glowRadius {
+    return switch (widget.type) {
+      IndicatorType.live => 8.0,
+      IndicatorType.active => 6.0,
+      IndicatorType.warning => 5.0,
+      IndicatorType.idle => 0.0,
+    };
+  }
 
   @override
   Widget build(BuildContext context) {
+    final color = _color;
+    final glow = _glowRadius;
+
     final dot = Container(
       width: widget.size,
       height: widget.size,
       decoration: BoxDecoration(
         shape: BoxShape.circle,
-        color: _color,
-        boxShadow: _hasGlow
-            ? [BoxShadow(color: _color.withValues(alpha: 0.6), blurRadius: 6)]
+        color: color,
+        boxShadow: glow > 0
+            ? [
+                BoxShadow(
+                  color: color.withValues(alpha: 0.7),
+                  blurRadius: glow,
+                  spreadRadius: 1,
+                ),
+              ]
             : null,
       ),
     );

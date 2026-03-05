@@ -1,9 +1,47 @@
+import 'dart:math';
+import 'dart:ui';
 import 'package:flutter/material.dart';
+import 'package:flutter/services.dart';
 import 'package:flutter_riverpod/flutter_riverpod.dart';
 import 'package:google_fonts/google_fonts.dart';
 import '../theme/ebs_colors.dart';
-import '../models/mock_data.dart';
-import '../providers/app_providers.dart';
+import '../providers/tab_provider.dart';
+
+class CommandItem {
+  final String command;
+  final String description;
+  final String category;
+
+  const CommandItem({
+    required this.command,
+    required this.description,
+    required this.category,
+  });
+}
+
+const _allCommands = [
+  // OVERLAY
+  CommandItem(command: 'show gfx', description: 'Show GFX overlay', category: 'OVERLAY'),
+  CommandItem(command: 'hide gfx', description: 'Hide GFX overlay', category: 'OVERLAY'),
+  CommandItem(command: 'toggle overlay', description: 'Toggle overlay visibility', category: 'OVERLAY'),
+  CommandItem(command: 'show leaderboard', description: 'Show Leaderboard overlay', category: 'OVERLAY'),
+  CommandItem(command: 'show equity', description: 'Show equity display', category: 'OVERLAY'),
+  // SYSTEM
+  CommandItem(command: 'reset hand', description: 'Reset current hand', category: 'SYSTEM'),
+  CommandItem(command: 'theme dark', description: 'Switch to dark theme', category: 'SYSTEM'),
+  CommandItem(command: 'theme light', description: 'Switch to light theme', category: 'SYSTEM'),
+  CommandItem(command: 'output 1080p', description: 'Set output to 1080p', category: 'SYSTEM'),
+  CommandItem(command: 'output 720p', description: 'Set output to 720p', category: 'SYSTEM'),
+  CommandItem(command: 'delay 30', description: 'Set Secure Delay to 30s', category: 'SYSTEM'),
+  CommandItem(command: 'export config', description: 'Export configuration', category: 'SYSTEM'),
+  // RFID
+  CommandItem(command: 'calibrate', description: 'Calibrate RFID antennas', category: 'RFID'),
+  CommandItem(command: 'antenna 1', description: 'Select Upcard antenna', category: 'RFID'),
+  CommandItem(command: 'antenna 2', description: 'Select Muck antenna', category: 'RFID'),
+  CommandItem(command: 'antenna 3', description: 'Select Community antenna', category: 'RFID'),
+  CommandItem(command: 'reset rfid', description: 'Reset RFID module', category: 'RFID'),
+  CommandItem(command: 'register deck', description: 'Start RFID deck registration', category: 'RFID'),
+];
 
 class CommandPalette extends ConsumerStatefulWidget {
   const CommandPalette({super.key});
@@ -13,85 +51,147 @@ class CommandPalette extends ConsumerStatefulWidget {
 }
 
 class _CommandPaletteState extends ConsumerState<CommandPalette> {
-  final int _selectedIndex = 0;
-  final _controller = TextEditingController(text: 'show');
+  final _controller = TextEditingController();
+  late final _focusNode = FocusNode();
+  int _selectedIndex = 0;
+  List<CommandItem> _filtered = _allCommands;
+
+  @override
+  void initState() {
+    super.initState();
+    _controller.addListener(_onSearchChanged);
+  }
 
   @override
   void dispose() {
     _controller.dispose();
+    _focusNode.dispose();
     super.dispose();
+  }
+
+  void _onSearchChanged() {
+    final query = _controller.text.trim().toLowerCase();
+    setState(() {
+      if (query.isEmpty) {
+        _filtered = _allCommands;
+      } else {
+        _filtered = _allCommands
+            .where((item) =>
+                item.command.contains(query) ||
+                _levenshteinDistance(query, item.command.split(' ').first) <= 2)
+            .toList();
+      }
+      _selectedIndex = 0;
+    });
   }
 
   void _close() {
     ref.read(commandPaletteVisibleProvider.notifier).state = false;
   }
 
+  int _levenshteinDistance(String s, String t) {
+    if (s == t) return 0;
+    if (s.isEmpty) return t.length;
+    if (t.isEmpty) return s.length;
+
+    List<int> v0 = List<int>.generate(t.length + 1, (i) => i);
+    List<int> v1 = List<int>.filled(t.length + 1, 0);
+
+    for (int i = 0; i < s.length; i++) {
+      v1[0] = i + 1;
+      for (int j = 0; j < t.length; j++) {
+        final cost = s[i] == t[j] ? 0 : 1;
+        v1[j + 1] = [v1[j] + 1, v0[j + 1] + 1, v0[j] + cost].reduce(min);
+      }
+      final temp = v0;
+      v0 = v1;
+      v1 = temp;
+    }
+    return v0[t.length];
+  }
+
   @override
   Widget build(BuildContext context) {
-    final items = ref.watch(commandItemsProvider);
-    final recentItems = items.where((e) => e.isRecent).toList();
-    final commandItems = items.where((e) => !e.isRecent).toList();
+    final grouped = <String, List<CommandItem>>{};
+    for (final item in _filtered) {
+      grouped.putIfAbsent(item.category, () => []).add(item);
+    }
+
+    // O(1) 조회를 위해 아이템 → 글로벌 인덱스 매핑을 한 번만 계산
+    final indexMap = <CommandItem, int>{};
+    for (var i = 0; i < _filtered.length; i++) {
+      indexMap[_filtered[i]] = i;
+    }
 
     return GestureDetector(
       onTap: _close,
       child: Container(
-        color: const Color(0xB805050F), // 0.72 alpha
+        color: const Color(0xB805050F),
         child: Center(
           child: GestureDetector(
-            onTap: () {}, // absorb taps on the palette itself
-            child: Container(
-              width: 560,
-              decoration: BoxDecoration(
-                color: const Color(0xF5141424), // 0.96 alpha
-                border: Border.all(color: Colors.white.withValues(alpha: 0.14)),
+            onTap: () {},
+            child: KeyboardListener(
+              focusNode: _focusNode,
+              onKeyEvent: (event) {
+                if (event is KeyDownEvent) {
+                  if (event.logicalKey == LogicalKeyboardKey.arrowDown) {
+                    setState(() => _selectedIndex = (_selectedIndex + 1).clamp(0, _filtered.length - 1));
+                  } else if (event.logicalKey == LogicalKeyboardKey.arrowUp) {
+                    setState(() => _selectedIndex = (_selectedIndex - 1).clamp(0, _filtered.length - 1));
+                  } else if (event.logicalKey == LogicalKeyboardKey.escape) {
+                    _close();
+                  }
+                }
+              },
+              child: ClipRRect(
                 borderRadius: BorderRadius.circular(EbsColors.borderRadiusLg),
-                boxShadow: [
-                  BoxShadow(
-                    color: Colors.black.withValues(alpha: 0.7),
-                    blurRadius: 64,
-                    offset: const Offset(0, 24),
-                  ),
-                  BoxShadow(
-                    color: EbsColors.accentGold.withValues(alpha: 0.05),
-                    blurRadius: 40,
-                  ),
-                ],
-              ),
-              child: Column(
-                mainAxisSize: MainAxisSize.min,
-                children: [
-                  // Search bar
-                  _SearchBar(controller: _controller, onClose: _close),
-                  // Results
-                  ConstrainedBox(
-                    constraints: const BoxConstraints(maxHeight: 360),
-                    child: SingleChildScrollView(
-                      child: Column(
-                        crossAxisAlignment: CrossAxisAlignment.start,
-                        children: [
-                          // Recent
-                          const _SectionLabel('Recent'),
-                          for (int i = 0; i < recentItems.length; i++)
-                            _ResultRow(
-                              item: recentItems[i],
-                              isSelected: i == _selectedIndex,
-                              isRecent: true,
-                            ),
-                          // Commands
-                          const _SectionLabel('Commands'),
-                          for (int i = 0; i < commandItems.length; i++)
-                            _ResultRow(
-                              item: commandItems[i],
-                              isSelected: (i + recentItems.length) == _selectedIndex,
-                              isRecent: false,
-                            ),
-                        ],
+                child: BackdropFilter(
+                  filter: ImageFilter.blur(sigmaX: 20, sigmaY: 20),
+                  child: Container(
+                width: 560,
+                decoration: BoxDecoration(
+                  color: const Color(0xE8141424),
+                  border: Border.all(color: Colors.white.withValues(alpha: 0.14)),
+                  borderRadius: BorderRadius.circular(EbsColors.borderRadiusLg),
+                  boxShadow: [
+                    BoxShadow(
+                      color: Colors.black.withValues(alpha: 0.7),
+                      blurRadius: 64,
+                      offset: const Offset(0, 24),
+                    ),
+                    BoxShadow(
+                      color: EbsColors.accentGold.withValues(alpha: 0.06),
+                      blurRadius: 48,
+                    ),
+                  ],
+                ),
+                child: Column(
+                  mainAxisSize: MainAxisSize.min,
+                  children: [
+                    _SearchBar(controller: _controller, onClose: _close),
+                    ConstrainedBox(
+                      constraints: const BoxConstraints(maxHeight: 360),
+                      child: SingleChildScrollView(
+                        child: Column(
+                          crossAxisAlignment: CrossAxisAlignment.start,
+                          children: [
+                            for (final entry in grouped.entries) ...[
+                              _SectionLabel(entry.key),
+                              for (int i = 0; i < entry.value.length; i++)
+                                _ResultRow(
+                                  item: entry.value[i],
+                                  isSelected: indexMap[entry.value[i]] == _selectedIndex,
+                                ),
+                            ],
+                          ],
+                        ),
                       ),
                     ),
-                  ),
-                  // Footer
-                  const _PaletteFooter(),
-                ],
+                    const _PaletteFooter(),
+                  ],
+                ),
+              ),
+                ),
               ),
             ),
           ),
@@ -200,30 +300,22 @@ class _SectionLabel extends StatelessWidget {
 }
 
 class _ResultRow extends StatelessWidget {
-  final MockCommandItem item;
+  final CommandItem item;
   final bool isSelected;
-  final bool isRecent;
 
-  const _ResultRow({
-    required this.item,
-    required this.isSelected,
-    required this.isRecent,
-  });
+  const _ResultRow({required this.item, required this.isSelected});
 
   @override
   Widget build(BuildContext context) {
     return Container(
       padding: const EdgeInsets.symmetric(horizontal: 16, vertical: 10),
-      color: isSelected
-          ? EbsColors.accentGold.withValues(alpha: 0.07)
-          : Colors.transparent,
+      color: isSelected ? EbsColors.accentGold.withValues(alpha: 0.07) : Colors.transparent,
       child: Row(
         children: [
-          // Arrow
           SizedBox(
             width: 12,
             child: Text(
-              isRecent ? '\u2191' : '\u00B7',
+              '\u00B7',
               textAlign: TextAlign.center,
               style: TextStyle(
                 fontSize: 11,
@@ -232,7 +324,6 @@ class _ResultRow extends StatelessWidget {
             ),
           ),
           const SizedBox(width: 12),
-          // Command
           Expanded(
             child: Text(
               item.command,
@@ -243,7 +334,6 @@ class _ResultRow extends StatelessWidget {
               ),
             ),
           ),
-          // Description
           Expanded(
             child: Text(
               item.description,
@@ -251,10 +341,8 @@ class _ResultRow extends StatelessWidget {
             ),
           ),
           const SizedBox(width: 8),
-          // Category badge
           _CategoryBadge(category: item.category),
           const SizedBox(width: 8),
-          // Enter hint
           AnimatedOpacity(
             duration: const Duration(milliseconds: 100),
             opacity: isSelected ? 0.7 : 0.0,

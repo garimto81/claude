@@ -24,6 +24,69 @@ class EbsTheme {
         thickness: WidgetStateProperty.all(4),
         radius: const Radius.circular(2),
       ),
+      elevatedButtonTheme: ElevatedButtonThemeData(
+        style: ElevatedButton.styleFrom(
+          backgroundColor: EbsColors.glassBg,
+          foregroundColor: EbsColors.textPrimary,
+          side: const BorderSide(color: EbsColors.glassBorder),
+          textStyle: GoogleFonts.inter(
+            fontSize: 12,
+            fontWeight: FontWeight.w600,
+            letterSpacing: 0.3,
+          ),
+          shape: RoundedRectangleBorder(
+            borderRadius: BorderRadius.circular(EbsColors.borderRadiusSm),
+          ),
+          padding: const EdgeInsets.symmetric(horizontal: 14, vertical: 6),
+          elevation: 0,
+        ),
+      ),
+      popupMenuTheme: PopupMenuThemeData(
+        color: EbsColors.bgSecondary,
+        surfaceTintColor: Colors.transparent,
+        shape: RoundedRectangleBorder(
+          borderRadius: BorderRadius.circular(EbsColors.borderRadius),
+          side: const BorderSide(color: EbsColors.glassBorder),
+        ),
+        textStyle: GoogleFonts.inter(
+          fontSize: 12,
+          color: EbsColors.textPrimary,
+        ),
+        elevation: 16,
+      ),
+      dividerTheme: const DividerThemeData(
+        color: EbsColors.glassBorder,
+        thickness: 1,
+        space: 1,
+      ),
+      inputDecorationTheme: InputDecorationTheme(
+        filled: true,
+        fillColor: Colors.white.withValues(alpha: 0.04),
+        border: OutlineInputBorder(
+          borderRadius: BorderRadius.circular(EbsColors.borderRadiusSm),
+          borderSide: const BorderSide(color: EbsColors.glassBorder),
+        ),
+        enabledBorder: OutlineInputBorder(
+          borderRadius: BorderRadius.circular(EbsColors.borderRadiusSm),
+          borderSide: const BorderSide(color: EbsColors.glassBorder),
+        ),
+        focusedBorder: OutlineInputBorder(
+          borderRadius: BorderRadius.circular(EbsColors.borderRadiusSm),
+          borderSide: BorderSide(
+            color: EbsColors.accentGold.withValues(alpha: 0.5),
+          ),
+        ),
+        labelStyle: GoogleFonts.inter(
+          fontSize: 12,
+          color: EbsColors.textMuted,
+        ),
+        hintStyle: GoogleFonts.inter(
+          fontSize: 12,
+          color: EbsColors.textMuted,
+        ),
+        contentPadding: const EdgeInsets.symmetric(horizontal: 10, vertical: 8),
+        isDense: true,
+      ),
     );
   }
 

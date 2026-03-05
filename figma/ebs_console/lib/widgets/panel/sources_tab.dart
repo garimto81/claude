@@ -2,78 +2,103 @@ import 'package:flutter/material.dart';
 import 'package:flutter_riverpod/flutter_riverpod.dart';
 import 'package:google_fonts/google_fonts.dart';
 import '../../theme/ebs_colors.dart';
-import '../../models/mock_data.dart';
-import '../../providers/app_providers.dart';
+import '../../providers/sources_provider.dart';
 import '../common/setting_row.dart';
 import '../common/ebs_toggle.dart';
-import '../common/segment_toggle.dart';
-import '../common/color_swatch_widget.dart';
-import '../common/ebs_button.dart';
-import '../common/ebs_badge.dart';
-import '../common/status_indicator.dart';
 import '../common/ebs_dropdown.dart';
+import '../common/ebs_badge.dart';
+import '../common/ebs_button.dart';
+import '../common/status_indicator.dart';
+import '../common/spinner_input.dart';
+import '../common/color_swatch_widget.dart';
+import '../common/segment_toggle.dart';
+import '../common/section_title.dart';
 
 class SourcesTab extends ConsumerWidget {
   const SourcesTab({super.key});
 
   @override
   Widget build(BuildContext context, WidgetRef ref) {
-    final sources = ref.watch(videoSourcesProvider);
-    final chromaEnabled = ref.watch(chromaKeyEnabledProvider);
-    final cameraMode = ref.watch(cameraModeProvider);
-    final atemControl = ref.watch(atemControlProvider);
+    final src = ref.watch(sourcesSettingsProvider);
 
     return SingleChildScrollView(
       padding: const EdgeInsets.all(EbsColors.spacingSm),
       child: Column(
         crossAxisAlignment: CrossAxisAlignment.start,
         children: [
-          // VIDEO SOURCES TABLE
-          _SectionTitle('Video Sources'),
+          // VIDEO SOURCES TABLE (7 columns)
+          const SectionTitle('Video Sources'),
           const SizedBox(height: 8),
-          _SourceTable(sources: sources),
+          const _SourceTable(),
           const SizedBox(height: EbsColors.spacingLg),
 
-          // CAMERA MODE
-          _SectionTitle('Camera Mode'),
+          // BOARD SYNC
+          const SectionTitle('Board Sync'),
           const SizedBox(height: 8),
           SettingRow(
-            label: 'Mode',
-            child: SegmentToggle(
-              labels: const ['STATIC', 'DYNAMIC'],
-              selectedIndex: cameraMode,
-              onChanged: (i) => ref.read(cameraModeProvider.notifier).state = i,
+            label: 'Offset X',
+            child: SpinnerInput(
+              value: src.boardSyncOffsetX,
+              min: -50, max: 50, step: 1,
+              suffix: 'px',
+              width: 110,
+              onChanged: (v) => ref.read(sourcesSettingsProvider.notifier).setBoardSyncOffsetX(v),
+            ),
+          ),
+          SettingRow(
+            label: 'Offset Y',
+            child: SpinnerInput(
+              value: src.boardSyncOffsetY,
+              min: -50, max: 50, step: 1,
+              suffix: 'px',
+              width: 110,
+              onChanged: (v) => ref.read(sourcesSettingsProvider.notifier).setBoardSyncOffsetY(v),
             ),
           ),
           const SizedBox(height: EbsColors.spacingLg),
 
           // CHROMA KEY
-          _SectionTitle('Chroma Key'),
+          const SectionTitle('Chroma Key'),
           const SizedBox(height: 8),
           SettingRow(
             label: 'Enable',
             child: EbsToggle(
-              value: chromaEnabled,
-              onChanged: (v) => ref.read(chromaKeyEnabledProvider.notifier).state = v,
+              value: src.chromaKeyEnabled,
+              onChanged: (_) => ref.read(sourcesSettingsProvider.notifier).toggleChromaKey(),
             ),
           ),
           SettingRow(
             label: 'Background Color',
             child: const ColorSwatchWidget(color: Color(0xFF0000FF), hexLabel: '#0000FF'),
           ),
+          SettingRow(
+            label: 'Intensity',
+            child: SpinnerInput(
+              value: src.chromaKeyIntensity,
+              min: 0, max: 1, step: 0.05,
+              width: 100,
+              onChanged: (v) => ref.read(sourcesSettingsProvider.notifier).setChromaKeyIntensity(v),
+            ),
+          ),
+          const SizedBox(height: EbsColors.spacingLg),
+
+          // CAMERA MODE
+          const SectionTitle('Camera Mode'),
+          const SizedBox(height: 8),
+          SettingRow(
+            label: 'Mode',
+            child: SegmentToggle(
+              labels: const ['STATIC', 'DYNAMIC'],
+              selectedIndex: src.cameraMode == 'STATIC' ? 0 : 1,
+              onChanged: (i) => ref.read(sourcesSettingsProvider.notifier)
+                  .setCameraMode(i == 0 ? 'STATIC' : 'DYNAMIC'),
+            ),
+          ),
           const SizedBox(height: EbsColors.spacingLg),
 
           // ATEM CONTROL
-          _SectionTitle('ATEM Control'),
+          const SectionTitle('ATEM Control'),
           const SizedBox(height: 8),
-          SettingRow(
-            label: 'Switcher Source',
-            child: EbsDropdown(
-              value: 'ATEM Mini Pro',
-              items: const ['ATEM Mini Pro', 'ATEM Mini Extreme'],
-              width: 140,
-            ),
-          ),
           SettingRow(
             label: 'ATEM IP',
             child: Container(
@@ -85,19 +110,41 @@ class SourcesTab extends ConsumerWidget {
                 borderRadius: BorderRadius.circular(EbsColors.borderRadiusSm),
               ),
               child: Text(
-                '192.168.1.100',
+                src.atemIp ?? 'Not connected',
                 style: GoogleFonts.jetBrainsMono(
                   fontSize: 12,
-                  color: EbsColors.textPrimary,
+                  color: src.atemIp != null ? EbsColors.textPrimary : EbsColors.textMuted,
                 ),
               ),
             ),
           ),
+          const SizedBox(height: EbsColors.spacingLg),
+
+          // CROSSFADE
+          const SectionTitle('Crossfade'),
+          const SizedBox(height: 8),
           SettingRow(
-            label: 'ATEM Control',
-            child: EbsToggle(
-              value: atemControl,
-              onChanged: (v) => ref.read(atemControlProvider.notifier).state = v,
+            label: 'Duration',
+            child: SpinnerInput(
+              value: src.crossfadeDuration,
+              min: 0, max: 5, step: 0.1,
+              suffix: 's',
+              width: 100,
+              onChanged: (v) => ref.read(sourcesSettingsProvider.notifier).setCrossfadeDuration(v),
+            ),
+          ),
+          const SizedBox(height: EbsColors.spacingLg),
+
+          // AUDIO INPUT
+          const SectionTitle('Audio Input'),
+          const SizedBox(height: 8),
+          SettingRow(
+            label: 'Input',
+            child: EbsDropdown(
+              value: src.audioInput,
+              items: const ['Default', 'HDMI 1', 'USB Audio'],
+              width: 130,
+              onChanged: (v) => ref.read(sourcesSettingsProvider.notifier).setAudioInput(v),
             ),
           ),
         ],
@@ -106,30 +153,8 @@ class SourcesTab extends ConsumerWidget {
   }
 }
 
-class _SectionTitle extends StatelessWidget {
-  final String text;
-  const _SectionTitle(this.text);
-
-  @override
-  Widget build(BuildContext context) {
-    return Padding(
-      padding: const EdgeInsets.symmetric(horizontal: 8),
-      child: Text(
-        text.toUpperCase(),
-        style: const TextStyle(
-          fontSize: 10,
-          fontWeight: FontWeight.w700,
-          letterSpacing: 1.0,
-          color: EbsColors.textMuted,
-        ),
-      ),
-    );
-  }
-}
-
 class _SourceTable extends StatelessWidget {
-  final List<MockVideoSource> sources;
-  const _SourceTable({required this.sources});
+  const _SourceTable();
 
   @override
   Widget build(BuildContext context) {
@@ -140,17 +165,25 @@ class _SourceTable extends StatelessWidget {
       color: EbsColors.textMuted,
     );
 
+    final sources = [
+      ('1', 'L', 'Camera 1', '1080p60', '60Hz', 'Active', true),
+      ('2', 'R', 'Camera 2', '720p30', '30Hz', 'Inactive', false),
+      ('3', '', 'NDI Input 1', '', '', 'No Signal', false),
+      ('4', '', 'NDI Input 2', '', '', 'No Signal', false),
+    ];
+
     return Table(
       columnWidths: const {
         0: FixedColumnWidth(20),
-        1: FlexColumnWidth(1),
-        2: FixedColumnWidth(60),
+        1: FixedColumnWidth(20),
+        2: FlexColumnWidth(2),
         3: FixedColumnWidth(65),
-        4: FixedColumnWidth(45),
+        4: FixedColumnWidth(40),
+        5: FlexColumnWidth(1),
+        6: FixedColumnWidth(50),
       },
       defaultVerticalAlignment: TableCellVerticalAlignment.middle,
       children: [
-        // Header
         TableRow(
           decoration: BoxDecoration(
             color: EbsColors.bgSecondary,
@@ -158,53 +191,66 @@ class _SourceTable extends StatelessWidget {
           ),
           children: [
             _cell(Text('L', style: headerStyle), pad: 5),
+            _cell(Text('R', style: headerStyle), pad: 5),
             _cell(Text('SOURCE', style: headerStyle), pad: 5),
             _cell(Text('FORMAT', style: headerStyle), pad: 5),
+            _cell(Text('CYCLE', style: headerStyle), pad: 5),
             _cell(Text('STATUS', style: headerStyle), pad: 5),
             _cell(Text('', style: headerStyle), pad: 5),
           ],
         ),
-        // Rows
-        for (final src in sources)
+        for (final s in sources)
           TableRow(
             children: [
               _cell(
-                src.status == SourceStatus.active
+                s.$7
                     ? const StatusIndicator(type: IndicatorType.active, size: 7)
                     : const SizedBox(width: 7),
                 pad: 6,
               ),
               _cell(
+                Text(s.$2, style: TextStyle(fontSize: 10, color: EbsColors.textMuted)),
+                pad: 6,
+              ),
+              _cell(
+                Text(s.$3, style: TextStyle(
+                  fontSize: 11,
+                  fontWeight: s.$7 ? FontWeight.w700 : FontWeight.w400,
+                  color: s.$7 ? EbsColors.textPrimary : EbsColors.textSecondary,
+                )),
+                pad: 6,
+              ),
+              _cell(
                 Text(
-                  src.name,
-                  style: TextStyle(
+                  s.$4.isEmpty ? '\u2014' : s.$4,
+                  style: GoogleFonts.jetBrainsMono(
                     fontSize: 11,
-                    fontWeight: src.isLive ? FontWeight.w700 : FontWeight.w400,
-                    color: src.isLive ? EbsColors.textPrimary : EbsColors.textSecondary,
+                    color: s.$4.isNotEmpty ? EbsColors.textSecondary : EbsColors.textMuted,
                   ),
                 ),
                 pad: 6,
               ),
               _cell(
                 Text(
-                  src.format ?? '\u2014',
-                  style: GoogleFonts.jetBrainsMono(
-                    fontSize: 11,
-                    color: src.format != null ? EbsColors.textSecondary : EbsColors.textMuted,
-                  ),
+                  s.$5.isEmpty ? '\u2014' : s.$5,
+                  style: GoogleFonts.jetBrainsMono(fontSize: 10, color: EbsColors.textMuted),
                 ),
                 pad: 6,
               ),
               _cell(
                 EbsBadge(
-                  text: _statusLabel(src.status),
-                  variant: _statusVariant(src.status),
+                  text: s.$6,
+                  variant: switch (s.$6) {
+                    'Active' => BadgeVariant.success,
+                    'Inactive' => BadgeVariant.muted,
+                    _ => BadgeVariant.danger,
+                  },
                 ),
                 pad: 6,
               ),
               _cell(
                 EbsButton(
-                  text: src.status == SourceStatus.noSignal ? 'LINK' : 'EDIT',
+                  text: s.$6 == 'No Signal' ? 'LINK' : 'EDIT',
                   small: true,
                 ),
                 pad: 6,
@@ -220,27 +266,5 @@ class _SourceTable extends StatelessWidget {
       padding: EdgeInsets.symmetric(vertical: pad, horizontal: 4),
       child: child,
     );
-  }
-
-  String _statusLabel(SourceStatus s) {
-    switch (s) {
-      case SourceStatus.active:
-        return 'Active';
-      case SourceStatus.inactive:
-        return 'Inactive';
-      case SourceStatus.noSignal:
-        return 'No Signal';
-    }
-  }
-
-  BadgeVariant _statusVariant(SourceStatus s) {
-    switch (s) {
-      case SourceStatus.active:
-        return BadgeVariant.success;
-      case SourceStatus.inactive:
-        return BadgeVariant.muted;
-      case SourceStatus.noSignal:
-        return BadgeVariant.danger;
-    }
   }
 }

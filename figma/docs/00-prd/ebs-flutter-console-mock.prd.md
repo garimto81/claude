@@ -7,11 +7,11 @@ owner: "BRACELET STUDIO"
 created: "2026-03-05"
 updated: "2026-03-05"
 depends_on:
-  - "EBS-UI-Design-v3.prd.md (UI 설계 원본)"
+  - "C:/claude/ebs/docs/00-prd/EBS-UI-Design-v3.prd.md (UI 설계 원본)"
   - "figma/mockups/index.html (HTML Hi-Fi 프로토타입)"
-  - "pokergfx-prd-v2.md (22개 게임 변형, GFX 3서브탭)"
-  - "pokergfx-reverse-engineering-complete.md (GameTypeData 79필드, ConfigurationPreset 99+필드)"
-  - "pokergfx-v3.2-complete-whitepaper.md (GFX1/2/3 요소, Sources/Outputs/System)"
+  - "C:/claude/ebs_reverse/docs/pokergfx-prd-v2.md (22개 게임 변형, GFX 3서브탭)"
+  - "C:/claude/ebs_reverse/docs/02-design/pokergfx-reverse-engineering-complete.md (GameTypeData 79필드, ConfigurationPreset 99+필드)"
+  - "C:/claude/ui_overlay/docs/03-analysis/pokergfx-v3.2-complete-whitepaper.md (GFX1/2/3 요소, Sources/Outputs/System)"
 ---
 
 # EBS Console Flutter Mock App PRD

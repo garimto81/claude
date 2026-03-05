@@ -1,21 +1,19 @@
 import 'package:flutter/material.dart';
 import 'package:flutter_riverpod/flutter_riverpod.dart';
 import '../../theme/ebs_colors.dart';
-import '../../providers/app_providers.dart';
+import '../../providers/outputs_provider.dart';
 import '../common/setting_row.dart';
 import '../common/ebs_toggle.dart';
-import '../common/color_swatch_widget.dart';
 import '../common/ebs_dropdown.dart';
+import '../common/color_swatch_widget.dart';
+import '../common/section_title.dart';
 
 class OutputsTab extends ConsumerWidget {
   const OutputsTab({super.key});
 
   @override
   Widget build(BuildContext context, WidgetRef ref) {
-    final resolution = ref.watch(resolutionProvider);
-    final frameRate = ref.watch(frameRateProvider);
-    final vertical = ref.watch(verticalOutputProvider);
-    final fillKey = ref.watch(fillKeyEnabledProvider);
+    final out = ref.watch(outputsSettingsProvider);
 
     return SingleChildScrollView(
       padding: const EdgeInsets.all(EbsColors.spacingMd),
@@ -23,72 +21,76 @@ class OutputsTab extends ConsumerWidget {
         crossAxisAlignment: CrossAxisAlignment.start,
         children: [
           // RESOLUTION
-          _SectionTitle('Resolution'),
+          const SectionTitle('Resolution', padding: EdgeInsets.zero),
           const SizedBox(height: 8),
           SettingRow(
             label: 'Video Size',
             child: EbsDropdown(
-              value: resolution,
+              value: out.videoSize,
               items: const ['1920x1080', '1280x720', '3840x2160'],
               width: 140,
-              onChanged: (v) => ref.read(resolutionProvider.notifier).state = v,
+              onChanged: (v) => ref.read(outputsSettingsProvider.notifier).setVideoSize(v),
             ),
           ),
           SettingRow(
             label: '9\u00D716 Vertical',
             child: EbsToggle(
-              value: vertical,
-              onChanged: (v) => ref.read(verticalOutputProvider.notifier).state = v,
+              value: out.verticalMode,
+              onChanged: (_) => ref.read(outputsSettingsProvider.notifier).toggleVerticalMode(),
             ),
           ),
           SettingRow(
             label: 'Frame Rate',
             child: EbsDropdown(
-              value: frameRate,
+              value: '${out.frameRate}fps',
               items: const ['60fps', '30fps', '50fps'],
               width: 100,
-              onChanged: (v) => ref.read(frameRateProvider.notifier).state = v,
+              onChanged: (v) => ref.read(outputsSettingsProvider.notifier)
+                  .setFrameRate(int.parse(v.replaceAll('fps', ''))),
             ),
           ),
           const SizedBox(height: EbsColors.spacingLg),
 
           // LIVE PIPELINE
-          _SectionTitle('Live Pipeline'),
+          const SectionTitle('Live Pipeline', padding: EdgeInsets.zero),
           const SizedBox(height: 8),
           SettingRow(
-            label: 'Video Output',
+            label: 'NDI Output',
             child: EbsDropdown(
-              value: 'DeckLink 4K Extreme',
-              items: const ['DeckLink 4K Extreme', 'DeckLink Mini Monitor'],
-              width: 160,
+              value: out.ndiOutput,
+              items: const ['Disabled', 'NDI 1', 'NDI 2'],
+              width: 120,
+              onChanged: (v) => ref.read(outputsSettingsProvider.notifier).setNdiOutput(v),
             ),
           ),
           SettingRow(
-            label: 'Audio Output',
+            label: 'DeckLink',
             child: EbsDropdown(
-              value: 'DeckLink 4K Extreme',
-              items: const ['DeckLink 4K Extreme', 'System Default'],
+              value: out.deckLinkOutput,
+              items: const ['Disabled', 'DeckLink 4K Extreme', 'DeckLink Mini Monitor'],
               width: 160,
+              onChanged: (v) => ref.read(outputsSettingsProvider.notifier).setDeckLinkOutput(v),
             ),
           ),
           SettingRow(
-            label: 'Device Port',
+            label: 'Audio Preview',
             child: EbsDropdown(
-              value: 'Port 1',
-              items: const ['Port 1', 'Port 2'],
-              width: 80,
+              value: out.audioPreview,
+              items: const ['Default', 'Monitor', 'System Default'],
+              width: 130,
+              onChanged: (v) => ref.read(outputsSettingsProvider.notifier).setAudioPreview(v),
             ),
           ),
           const SizedBox(height: EbsColors.spacingLg),
 
           // FILL & KEY
-          _SectionTitle('Fill & Key'),
+          const SectionTitle('Fill & Key', padding: EdgeInsets.zero),
           const SizedBox(height: 8),
           SettingRow(
             label: 'Key & Fill',
             child: EbsToggle(
-              value: fillKey,
-              onChanged: (v) => ref.read(fillKeyEnabledProvider.notifier).state = v,
+              value: out.fillAndKeyEnabled,
+              onChanged: (_) => ref.read(outputsSettingsProvider.notifier).toggleFillAndKey(),
             ),
           ),
           SettingRow(
@@ -99,8 +101,7 @@ class OutputsTab extends ConsumerWidget {
             ),
           ),
           const SizedBox(height: 12),
-
-          // Fill/Key preview boxes
+          // Fill/Key preview
           Row(
             children: [
               Expanded(child: _FkPreviewBox(label: 'FILL', port: 'Port 1', color: Colors.white.withValues(alpha: 0.06))),
@@ -108,41 +109,30 @@ class OutputsTab extends ConsumerWidget {
               Expanded(child: _FkPreviewBox(label: 'KEY', port: 'Port 2', color: Colors.black)),
             ],
           ),
-          const SizedBox(height: 12),
+          const SizedBox(height: EbsColors.spacingLg),
 
-          // Port mapping
-          Container(
-            padding: const EdgeInsets.only(top: 8),
-            decoration: const BoxDecoration(
-              border: Border(top: BorderSide(color: EbsColors.glassBorder)),
+          // COLOR SPACE
+          const SectionTitle('Color Space', padding: EdgeInsets.zero),
+          const SizedBox(height: 8),
+          SettingRow(
+            label: 'Color Space',
+            child: EbsDropdown(
+              value: out.colorSpace,
+              items: const ['BT.709', 'BT.2020'],
+              width: 100,
+              onChanged: (v) => ref.read(outputsSettingsProvider.notifier).setColorSpace(v),
             ),
-            child: Column(
-              children: [
-                _PortRow('Fill', 'Port 1'),
-                const SizedBox(height: 4),
-                _PortRow('Key', 'Port 2'),
-              ],
+          ),
+          SettingRow(
+            label: 'Bit Depth',
+            child: EbsDropdown(
+              value: out.bitDepth,
+              items: const ['8-bit', '10-bit'],
+              width: 100,
+              onChanged: (v) => ref.read(outputsSettingsProvider.notifier).setBitDepth(v),
             ),
           ),
         ],
-      ),
-    );
-  }
-}
-
-class _SectionTitle extends StatelessWidget {
-  final String text;
-  const _SectionTitle(this.text);
-
-  @override
-  Widget build(BuildContext context) {
-    return Text(
-      text.toUpperCase(),
-      style: const TextStyle(
-        fontSize: 10,
-        fontWeight: FontWeight.w700,
-        letterSpacing: 1.0,
-        color: EbsColors.textMuted,
       ),
     );
   }
@@ -169,35 +159,8 @@ class _FkPreviewBox extends StatelessWidget {
           ),
         ),
         const SizedBox(height: 4),
-        Text(
-          label,
-          style: const TextStyle(
-            fontSize: 9,
-            fontWeight: FontWeight.w700,
-            letterSpacing: 0.72,
-            color: EbsColors.textMuted,
-          ),
-        ),
+        Text(label, style: const TextStyle(fontSize: 9, fontWeight: FontWeight.w700, letterSpacing: 0.72, color: EbsColors.textMuted)),
         Text(port, style: const TextStyle(fontSize: 10, color: EbsColors.textSecondary)),
-      ],
-    );
-  }
-}
-
-class _PortRow extends StatelessWidget {
-  final String from;
-  final String to;
-  const _PortRow(this.from, this.to);
-
-  @override
-  Widget build(BuildContext context) {
-    return Row(
-      children: [
-        Text(from, style: const TextStyle(fontSize: 11, color: EbsColors.textMuted)),
-        const SizedBox(width: 8),
-        const Text('\u2192', style: TextStyle(fontSize: 11, color: EbsColors.textSecondary)),
-        const SizedBox(width: 8),
-        Text(to, style: const TextStyle(fontSize: 11, color: EbsColors.textMuted)),
       ],
     );
   }

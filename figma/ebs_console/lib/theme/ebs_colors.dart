@@ -27,12 +27,16 @@ class EbsColors {
   // Glassmorphism
   static const Color glassBg = Color(0xA60D0D1A); // 0.65 alpha
   static const Color glassBorder = Color(0x14FFFFFF); // 0.08 alpha
+  static const Color glassShadow = Color(0x4D000000); // 0.3 alpha
+  static const Color neonGlow = Color(0x2600D4FF); // 0.15 alpha
+  static const Color equityBar = Color(0xFF00D4FF);
+  static const double glassBlur = 12.0;
 
-  // Layout
-  static const double sidebarWidth = 220;
-  static const double panelWidth = 320;
+  // Layout (Full-Width Stacked)
   static const double headerHeight = 40;
-  static const double statusBarHeight = 36;
+  static const double previewHeight = 744;
+  static const double tabBarHeight = 36;
+  static const double tabContentHeight = 260;
 
   // Spacing
   static const double spacingXs = 4;
