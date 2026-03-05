@@ -7,12 +7,11 @@ import warnings
 from enum import Enum
 from dataclasses import dataclass, field
 from pathlib import Path
-from typing import List, Optional
+from typing import List
 
 from .prd_models import PRDChunk, PRDChunkResult
 from .strategy import (
-    estimate_tokens, auto_select_strategy, detect_prd_structure, TIKTOKEN_AVAILABLE,
-    extract_req_ids, extract_priority, detect_doc_type, extract_keywords, enrich_chunk_metadata
+    estimate_tokens, auto_select_strategy, detect_prd_structure, enrich_chunk_metadata
 )
 
 

@@ -8,8 +8,6 @@ Premium Dark Text 스타일 시스템 연동.
 import hashlib
 import json as _json
 import re
-import subprocess
-import tempfile
 from pathlib import Path as _Path
 from typing import Any, Optional
 
@@ -210,7 +208,6 @@ class MarkdownToDocsConverter:
 
         def replace_html_block(match) -> str:
             """HTML 블록을 Markdown Callout으로 변환"""
-            full_match = match.group(0)
             style = match.group(1) or ''
             inner_content = match.group(2) or ''
 
@@ -1171,9 +1168,6 @@ class MarkdownToDocsConverter:
         table_rows = table.get("tableRows", [])
 
         # 테이블 스타일 (전체 너비 510pt = 18cm)
-        table_start = table_element.get("startIndex", 1)
-        table_end = table_element.get("endIndex", table_start + 1)
-
         style_requests = []
 
         if lang and len(table_rows) >= 2:
@@ -1318,9 +1312,6 @@ class MarkdownToDocsConverter:
                                         })
 
                     # 셀 배경색 설정
-                    cell_start = cell.get("startIndex", 0)
-                    cell_end = cell.get("endIndex", cell_start + 1)
-
                     if lang and row_idx == 0:
                         # 헤더 셀: 언어별 연한 배경색
                         lang_lower = lang.lower()
@@ -2271,7 +2262,8 @@ def _compute_content_hash(content: str) -> str:
 
 def _gdocs_hash_cache_path() -> _Path:
     """해시 캐시 파일 경로"""
-    return _Path("C:/claude/json/.gdocs_hash_cache.json")
+    _base = _Path(__file__).resolve().parent.parent.parent  # → C:/claude/
+    return _base / "json" / ".gdocs_hash_cache.json"
 
 
 def _load_gdocs_hash_cache() -> dict:

@@ -6,9 +6,7 @@ pytesseract를 mock하여 Tesseract 미설치 환경에서도 테스트 가능.
 
 import pytest
 import numpy as np
-from pathlib import Path
-from unittest.mock import patch, MagicMock
-from PIL import Image
+from unittest.mock import patch
 
 from lib.ocr.extractor import OCRExtractor
 from lib.ocr.models import BBox, OCRResult

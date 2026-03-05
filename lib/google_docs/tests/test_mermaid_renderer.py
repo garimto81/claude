@@ -1,9 +1,7 @@
 """Mermaid 하이브리드 렌더러 테스트"""
 
 import os
-import tempfile
 
-import pytest
 from unittest.mock import patch, MagicMock
 
 # Test constants

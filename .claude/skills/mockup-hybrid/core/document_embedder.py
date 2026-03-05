@@ -4,7 +4,6 @@
 Mermaid → 인라인 코드 블록, HTML → 이미지 참조로 삽입합니다.
 """
 
-import re
 from dataclasses import dataclass
 from pathlib import Path
 from typing import Optional

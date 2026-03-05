@@ -16,7 +16,7 @@ logger = logging.getLogger(__name__)
 # Playwright Python SDK 사용 가능 여부
 _PLAYWRIGHT_AVAILABLE = False
 try:
-    from playwright.sync_api import sync_playwright
+    from playwright.sync_api import sync_playwright  # noqa: F401
     _PLAYWRIGHT_AVAILABLE = True
 except ImportError:
     pass
@@ -188,11 +188,16 @@ def _capture_with_cli(
     height: int = 600,
 ) -> Optional[Path]:
     """Playwright CLI로 스크린샷 캡처 (폴백용)"""
+    import platform
+
     # file:// URL로 변환
     file_url = html_path.resolve().as_uri()
 
-    # Playwright 명령어 구성
-    cmd = ["npx", "playwright", "screenshot"]
+    # Playwright 명령어 구성 (Windows: cmd /c npx 패턴 필수)
+    if platform.system() == "Windows":
+        cmd = ["cmd", "/c", "npx", "playwright", "screenshot"]
+    else:
+        cmd = ["npx", "playwright", "screenshot"]
 
     if selector:
         cmd.extend(["--selector", selector])
@@ -292,9 +297,13 @@ def get_output_paths(
     # 파일명 생성 (공백을 하이픈으로)
     safe_name = name.lower().replace(" ", "-").replace("_", "-")
 
-    # 한글 처리 (간단히 유지)
+    # 한글 + 유니코드 보존 (가-힣 명시 추가)
     import re
-    safe_name = re.sub(r'[^\w\-]', '', safe_name, flags=re.UNICODE)
+    safe_name = re.sub(r'[^\w가-힣\-]', '', safe_name, flags=re.UNICODE)
+
+    # 빈 문자열 폴백 (한국어만 포함된 이름이 모두 제거되는 경우 방지)
+    if not safe_name:
+        safe_name = "mockup"
 
     filename = f"{safe_name}{suffix}"
 

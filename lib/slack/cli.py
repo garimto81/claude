@@ -13,6 +13,7 @@ Usage:
 
 import sys
 import io
+from pathlib import Path
 
 # Windows 콘솔 UTF-8 인코딩 설정
 if sys.platform == "win32":
@@ -64,10 +65,10 @@ def login(
             from .auth import get_user_token
             user_token = get_user_token()
             if user_token:
-                console.print(f"\n[green]✓ User token obtained![/green]")
+                console.print("\n[green]✓ User token obtained![/green]")
                 console.print(f"  User Scopes: {user_token.scope}")
             else:
-                console.print(f"\n[yellow]⚠ User token not obtained. Check Slack App settings.[/yellow]")
+                console.print("\n[yellow]⚠ User token not obtained. Check Slack App settings.[/yellow]")
     except SlackError as e:
         console.print(f"[red]✗ Login failed: {e}[/red]")
         raise typer.Exit(1)
@@ -412,8 +413,8 @@ def pins(
 
 
 # Cache directory for list schemas
-from pathlib import Path
-LIST_SCHEMA_CACHE = Path("C:/claude/json/slack_list_schemas.json")
+_CLI_BASE = Path(__file__).resolve().parent.parent.parent  # → C:/claude/
+LIST_SCHEMA_CACHE = _CLI_BASE / "json" / "slack_list_schemas.json"
 
 
 def _load_schema_cache() -> dict:

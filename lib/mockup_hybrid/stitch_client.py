@@ -17,7 +17,6 @@ import os
 import json
 import logging
 from dataclasses import dataclass
-from pathlib import Path
 from typing import Optional
 from urllib.request import Request, urlopen
 from urllib.error import HTTPError, URLError

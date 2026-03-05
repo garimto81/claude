@@ -145,6 +145,18 @@ pip install -e .
 python -m pytest tests/ -v
 ```
 
+## /auto 통합 동작
+
+`--debate` 옵션이 `/auto`에 전달되면 **Step 2.0 (옵션 처리)** 단계에서 실행:
+
+1. 토론 주제 파라미터 파싱
+2. `python .claude/skills/ultimate-debate/scripts/main.py --task "{topic}"` 실행
+3. 5-Phase 워크플로우 (병렬 분석 → 합의 체크 → 교차 검토 → 재토론 → 최종 전략) 수행
+4. 최종 합의안을 `.claude/debates/{task_id}/FINAL.md`에 저장
+5. 결과를 후속 Phase 판단에 컨텍스트로 반영
+
+**옵션 실패 시: 에러 출력, 절대 조용히 스킵 금지.**
+
 ## 관련 문서
 
 - PRD: `tasks/prds/PRD-0035-multi-ai-consensus-verifier.md`

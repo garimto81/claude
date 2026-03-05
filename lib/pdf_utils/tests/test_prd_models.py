@@ -1,5 +1,4 @@
 """PRDChunk, PRDChunkResult 모델 테스트"""
-import pytest
 from lib.pdf_utils.prd_models import PRDChunk, PRDChunkResult
 
 

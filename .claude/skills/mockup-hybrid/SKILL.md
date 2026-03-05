@@ -201,7 +201,7 @@ STITCH_API_BASE_URL=https://api.stitch.withgoogle.com/v1
       └─ UI/화면 키워드 → designer 에이전트 (B&W 제약 주입)
               (화면, UI, 레이아웃, 페이지, 대시보드, 폼, 와이어프레임 등)
               │
-              ├── 팔레트: #000, #1a1a1a, #2d2d2d, #666, #999, #e5e5e5, #f8f8f8, #fff
+              ├── 팔레트: #000, #1a1a1a, #2d2d2d, #666, #767676, #e5e5e5, #f8f8f8, #fff
               ├── 아이콘 없음 (텍스트 레이블만, emoji/SVG/icon font 금지)
               ├── Roboto/Inter/Arial 금지 → 독창적 타이포그래피
               ├── 비대칭 레이아웃, 여백 리듬, 그리드 시스템 적용
@@ -222,7 +222,7 @@ STITCH_API_BASE_URL=https://api.stitch.withgoogle.com/v1
 |------|------|
 | 주요 텍스트 | `#000`, `#1a1a1a` |
 | 보조 텍스트 | `#2d2d2d`, `#666` |
-| 비활성/플레이스홀더 | `#999` |
+| 비활성/플레이스홀더 | `#767676` (WCAG AA 4.54:1) |
 | 구분선/보더 | `#e5e5e5` |
 | 배경 (밝은) | `#f8f8f8`, `#fff` |
 
@@ -254,11 +254,20 @@ STITCH_API_BASE_URL=https://api.stitch.withgoogle.com/v1
 
 - 초기 버전 (HTML + Stitch 2-tier)
 
-## /auto 연동
+## /auto 연동 (4-Step 워크플로우)
 
-`/auto --mockup` 실행 시 아래 워크플로우가 적용된다.
+`/auto --mockup` 실행 시 아래 워크플로우가 적용된다. 상세: `/auto REFERENCE.md` Step 2.0.
 
-### Step 2.0.2: PNG 캡처 (Lead 직접 Bash 실행 -- designer 완료 후)
+### Step 2.0.1: 라우팅 + 기본 HTML 생성 (Lead 직접 Python 호출)
+
+MockupRouter.route()로 3-Tier 라우팅 실행. `options.bnw=True` 시 html_adapter가 B&W 기본 팔레트 자동 적용.
+
+### Step 2.0.2: designer 스타일링 (--bnw AND HTML 선택 시)
+
+조건: `options.bnw == True` AND `backend == HTML`일 때만 실행.
+designer(sonnet) 에이전트를 스폰하여 B&W 제약으로 HTML 스타일링. `--bnw` 미지정 또는 Mermaid 선택 시 스킵.
+
+### Step 2.0.3: PNG 캡처 (Lead 직접 Bash 실행)
 
 ```bash
 python -c "
@@ -272,10 +281,10 @@ print(f'CAPTURED: {result}' if result else 'CAPTURE_FAILED')
 "
 ```
 
-- 성공: `docs/images/mockups/{name}.png` 생성 -> Step 2.0.3 성공 경로
-- 실패 (Playwright 미설치 등): `CAPTURE_FAILED` 출력 -> Step 2.0.3 폴백 경로
+- 성공: `docs/images/mockups/{name}.png` 생성 -> Step 2.0.4 성공 경로
+- 실패 (Playwright 미설치 등): `CAPTURE_FAILED` 출력 -> Step 2.0.4 폴백 경로
 
-### Step 2.0.3: 문서 삽입 (Lead 직접 Edit 실행 -- 대상 문서가 있는 경우만)
+### Step 2.0.4: 문서 삽입 (Lead 직접 Edit 실행 -- 대상 문서가 있는 경우만)
 
 - **캡처 성공 시**: `generate_markdown_embed()` 결과를 Edit로 대상 문서에 삽입
   - `![{name}](docs/images/mockups/{name}.png)` + `[HTML 원본](docs/mockups/{name}.html)`

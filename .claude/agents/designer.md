@@ -71,7 +71,7 @@ Task prompt에 `--bnw` 또는 B&W 목업 지시가 있을 때 적용.
 ## 제약 조건
 - **규격**: max-width 720px, max-height 1280px
 - **폰트**: body 14px, caption 12px, heading max 22px (hero 숫자/제목은 36-48px 허용)
-- **색상**: 그레이스케일 전용 (#000 ~ #fff), emoji/SVG/icon font 금지
+- **색상**: 그레이스케일 전용 (#000 ~ #fff), emoji/SVG/icon font 금지. 비활성 텍스트 최소 #767676 (WCAG AA 4.54:1)
 - **텍스트 우선**: 이미지/SVG 삽입 금지 — CSS와 텍스트만으로 표현
 
 ## 디자인 크래프트 (CRITICAL — 이 섹션이 품질을 결정한다)

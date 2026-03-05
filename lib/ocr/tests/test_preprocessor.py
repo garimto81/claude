@@ -6,7 +6,7 @@ lib.ocr.preprocessor 테스트
 
 import pytest
 from PIL import Image
-from unittest.mock import patch, MagicMock
+from unittest.mock import patch
 import numpy as np
 
 from lib.ocr.preprocessor import ImagePreprocessor

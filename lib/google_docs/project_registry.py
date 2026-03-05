@@ -4,7 +4,6 @@ Google Drive 프로젝트 레지스트리
 YAML 설정 파일에서 프로젝트별 Drive 폴더 ID를 관리하고 자동 해석합니다.
 """
 
-import os
 import warnings
 from pathlib import Path
 from fnmatch import fnmatch

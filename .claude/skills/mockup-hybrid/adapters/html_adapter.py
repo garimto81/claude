@@ -5,10 +5,16 @@ HTML 와이어프레임 어댑터
 """
 
 import re
+import sys
 from dataclasses import dataclass
 from pathlib import Path
 from typing import Optional
 from datetime import datetime
+
+_SKILL_ROOT = str(Path(__file__).resolve().parent.parent.parent.parent.parent)
+if _SKILL_ROOT not in sys.path:
+    sys.path.insert(0, _SKILL_ROOT)
+from lib.mockup_hybrid import MockupOptions  # noqa: E402
 
 
 @dataclass
@@ -33,12 +39,25 @@ class HTMLAdapter:
         """
         self.template_path = template_path or self.DEFAULT_TEMPLATE_PATH
 
+    # WCAG AA 준수 B&W 팔레트 (#767676 on #fff = 4.54:1)
+    BNW_PALETTE = {
+        "text_primary": "#000",
+        "text_secondary": "#1a1a1a",
+        "text_body": "#2d2d2d",
+        "text_muted": "#666",
+        "text_disabled": "#767676",  # WCAG AA 최소 대비율 4.54:1
+        "border": "#e5e5e5",
+        "bg_light": "#f8f8f8",
+        "bg_white": "#fff",
+    }
+
     def generate(
         self,
         screen_name: str,
         description: str = "",
         elements: Optional[list[str]] = None,
         layout: str = "1-column",
+        options: Optional[MockupOptions] = None,
     ) -> HTMLGenerationResult:
         """
         HTML 와이어프레임 생성
@@ -63,6 +82,10 @@ class HTMLAdapter:
             html = template.replace("{{title}}", screen_name)
             html = html.replace("{{description}}", description or screen_name)
             html = html.replace("{{date}}", datetime.now().strftime("%Y-%m-%d"))
+
+            # B&W 팔레트 적용 (options.bnw=True 시)
+            if options and options.bnw:
+                html = self._apply_bnw_palette(html)
 
             # 요소 기반 커스터마이징
             if elements:
@@ -198,6 +221,19 @@ class HTMLAdapter:
 </body>
 </html>'''
 
+    def _apply_bnw_palette(self, html: str) -> str:
+        """B&W 팔레트 강제 적용 — 비그레이스케일 색상 제거"""
+        p = self.BNW_PALETTE
+        # #999 → WCAG AA 준수 #767676
+        html = html.replace("#999", p["text_disabled"])
+        # rgba 그림자를 순수 그레이스케일로
+        html = re.sub(
+            r'rgba\(\d+,\s*\d+,\s*\d+,\s*[\d.]+\)',
+            'rgba(0,0,0,0.06)',
+            html,
+        )
+        return html
+
     def _customize_elements(self, html: str, elements: list[str]) -> str:
         """요소 기반 커스터마이징"""
         # 현재는 기본 템플릿 유지
@@ -213,12 +249,14 @@ class HTMLAdapter:
     def generate_from_prompt(
         self,
         prompt: str,
+        options: Optional[MockupOptions] = None,
     ) -> HTMLGenerationResult:
         """
         프롬프트에서 화면 정보 추출하여 생성
 
         Args:
             prompt: 사용자 프롬프트
+            options: 목업 옵션 (B&W 등)
 
         Returns:
             HTMLGenerationResult 객체
@@ -246,4 +284,5 @@ class HTMLAdapter:
             screen_name=screen_name,
             description=description,
             elements=elements if elements else None,
+            options=options,
         )

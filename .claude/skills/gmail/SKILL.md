@@ -84,6 +84,17 @@ Gmail 키워드 감지 시 반드시 자동 수행:
 | Bash tool 직접 사용 | "인프라가 없습니다" 응답 |
 | 에러 시 상세 안내 | 사용자에게 수동 실행 요청 |
 
+## /auto 통합 동작
+
+`--gmail` 옵션이 `/auto`에 전달되면 **Step 2.0 (옵션 처리)** 단계에서 실행:
+
+1. Gmail 인증 상태 확인 (`python -m lib.gmail status --json`)
+2. 요청된 Gmail 작업 실행 (inbox/unread/send/search)
+3. JSON 결과 파싱 → 컨텍스트로 수집
+4. 결과를 후속 작업에 활용 (예: daily 보고서 데이터 소스)
+
+**옵션 실패 시: 에러 출력, 절대 조용히 스킵 금지.**
+
 ## 상세 참조
 
 > Prerequisites (Google Cloud Console 설정, OAuth), Usage Examples, Python API,

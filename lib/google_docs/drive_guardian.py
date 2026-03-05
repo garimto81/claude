@@ -254,7 +254,7 @@ class DriveGuardian:
                         file_name=item["name"],
                         mime_type=item["mimeType"],
                         current_location="root",
-                        suggested_action=f"_아카이브로 이동",
+                        suggested_action="_아카이브로 이동",
                         suggested_target=self._config.get("special_folders", {}).get("_아카이브", {}).get("folder_id"),
                     ))
             else:

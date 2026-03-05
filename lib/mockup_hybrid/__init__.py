@@ -63,7 +63,7 @@ class SelectionReason(Enum):
 @dataclass
 class MockupOptions:
     """목업 생성 옵션"""
-    bnw: bool = True
+    bnw: bool = False
     force_html: bool = False
     force_hifi: bool = False
     force_mermaid: bool = False

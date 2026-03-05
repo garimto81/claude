@@ -4,10 +4,9 @@ lib.ocr.models 테스트
 데이터 모델의 메서드 및 property 검증.
 """
 
-import pytest
 from lib.ocr.models import (
     BBox, Word, Line, Paragraph, TextBlock, LayoutInfo,
-    TextRegion, TableDetection, OCRResult, AnalysisResult
+    TableDetection, OCRResult, AnalysisResult
 )
 
 
