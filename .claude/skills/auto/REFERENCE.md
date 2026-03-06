@@ -616,49 +616,67 @@ Loop (max 5 iterations):
   SendMessage(type="message", recipient="arch-{iteration_count}", content="타당성 검증 시작.")
   # 결과 수신 대기 → shutdown_request
 
-  # Step C: Critic Teammate
-  Agent(subagent_type="critic", name="critic-{iteration_count}", description="계획 완전성 검토",
+  # Step C: Critic Teammate (Adversarial Weakness Analyzer)
+  Agent(subagent_type="critic", name="critic-{iteration_count}", description="adversarial 약점 분석",
        team_name="pdca-{feature}",
-       prompt="[Phase 1 HEAVY] 계획 완전성 검토 (Iteration {iteration_count}/5).
+       prompt="[Phase 1 HEAVY] Adversarial Plan 공격 (Iteration {iteration_count}/5).
                Plan 파일: docs/01-plan/{feature}.plan.md
                Architect 소견: {architect_feedback}
-               당신은 까다로운 코드 리뷰어입니다. 일반적으로 계획은 3회 이상 수정이 필요합니다.
-               === Quality Gates 5 (QG1-QG5) ===
-               QG1 파일 참조 유효: 모든 파일 참조가 실제 존재하는 경로인지 검증
-               QG2 Acceptance Criteria 구체적: acceptance criteria가 구체적이고 측정 가능한지 검증
-               QG3 모호어 0건: '적절히', '필요 시', '가능하면', '등' 등 모호한 표현 0건 확인
-               QG4 Edge Case 2건+: 명시적 edge case가 2건 이상 포함되었는지 확인
-               QG5 Intent Compliance: 계획이 사용자의 명시적+암묵적 요구를 모두 반영하는지 확인. Intent Analysis(있으면) 교차 검증
-               각 QG에 대해 PASS/FAIL 판정을 출력하세요.
-               반드시 첫 줄에 VERDICT: APPROVE 또는 VERDICT: REVISE를 출력하세요.
-               APPROVE는 위 모든 조건 충족 시에만. REVISE 시 구체적 개선 피드백을 포함하세요.")
-  SendMessage(type="message", recipient="critic-{iteration_count}", content="계획 검토 시작.")
+               이전 iteration 약점 수정 이력: {previous_weakness_fixes}
+               당신은 adversarial 분석자입니다. 이 문서의 약점, 결함, 모순, 누락만 찾으세요.
+               === 6가지 공격 벡터 ===
+               A1 논리적 결함: 빠진 단계, 근거 없는 가정, 순환 논리
+               A2 실패 시나리오: 외부 의존성 실패, 해피패스 붕괴, 미처리 엣지 케이스
+               A3 모호성: '적절히','필요 시','가능하면','등' 등 모호어, 측정 불가 기준
+               A4 내부 모순: 섹션 간 불일치, 기존 아키텍처 충돌, 목표-범위 불일치
+               A5 누락 컨텍스트: 미존재 파일 참조, 미언급 의존성, 미고려 이해관계자
+               A6 과잉 설계: 요구사항에 없는 기능/추상화, 조기 최적화, 범위 확장
+               모든 벡터에서 공격하세요. 약점마다 문제-위치-영향을 명시하세요.
+               이해할 수 없거나 도메인 지식이 부족한 부분은 QUESTION으로 표시하세요.
+               반드시 첫 줄에 VERDICT: DESTROYED, VERDICT: QUESTION, 또는 VERDICT: SURVIVED를 출력하세요.
+               SURVIVED는 Critical 0건 + Major 0건일 때만. 첫 iteration에서 SURVIVED는 거의 불가능합니다.")
+  SendMessage(type="message", recipient="critic-{iteration_count}", content="Plan 공격 시작.")
   # 결과 수신 대기 → shutdown_request
 
   # Step D: Lead 판정
   critic_message = Mailbox에서 수신한 critic 메시지
   first_line = critic_message의 첫 줄
 
-  if "VERDICT: APPROVE" in first_line:
+  if "VERDICT: SURVIVED" in first_line:
       → Loop 종료, Phase 2 진입
-  elif "VERDICT: REVISE" in first_line:
-      → critic_feedback = critic_message에서 VERDICT: 줄 이후 전체
+  elif "VERDICT: QUESTION" in first_line:
+      → Loop 즉시 중단
+      → critic_message에서 질문 목록 추출
+      → AskUserQuestion으로 사용자에게 질문 전달
+      → 사용자 답변을 다음 iteration의 previous_weakness_fixes에 주입
+      → 다음 iteration 재개
+  elif "VERDICT: DESTROYED" in first_line:
+      → critic_feedback = critic_message에서 VERDICT: 줄 이후 전체 (약점 목록)
       → 누적 피드백이 1,500t 초과 시 최신 2회분만 유지
         (이전: "Iteration {N}: {핵심 요약 1줄}" 형태로 압축)
+      → Planner에게 critic_feedback 전달하여 문서 재설계
       → 다음 iteration
   else:
-      → REVISE로 간주 (안전 기본값)
+      → DESTROYED로 간주 (안전 기본값)
 
-  if iteration_count >= 5 and not APPROVED:
-      → Plan 파일에 "WARNING: Critic 5회 반복으로 강제 승인" 주석 추가
-      → 강제 APPROVE → Phase 2 진입
+  if iteration_count >= 5 and not SURVIVED:
+      → # 설계 자체에 근본적 문제가 있음 — 강제 통과 금지
+      → 미해결 약점 요약 보고서 작성 (남은 Critical/Major 약점 전체 목록)
+      → AskUserQuestion으로 사용자에게 보고:
+        "Critic 5회 반복 후에도 다음 약점이 해결되지 않았습니다: {남은 약점 요약}.
+         설계 자체에 근본적 문제가 있을 수 있습니다."
+        옵션:
+        1. "요구사항 재정의" → Phase 1 처음부터 재시작 (PRD 재검토)
+        2. "미해결 약점 수용 후 진행" → Plan에 WARNING 섹션 추가 + Phase 2 진입
+        3. "작업 중단" → wip 커밋 + TeamDelete + 세션 종료
 ```
 
 **Critic 판정 파싱 규칙:**
-- 판정 추출: Critic 메시지 첫 줄에서 `VERDICT: APPROVE` 또는 `VERDICT: REVISE` 키워드 확인
-- 키워드 불일치: 첫 줄에 VERDICT 없으면 REVISE로 간주
-- 피드백 범위: REVISE 시 `VERDICT:` 줄 이후 전체 내용을 critic_feedback에 저장
-- 피드백 1,500t 이하: 전체 누적 유지 / 초과: 최신 2회분 전문 + 이전은 1줄 압축 / 5회 초과: 강제 APPROVE
+- 판정 추출: Critic 메시지 첫 줄에서 `VERDICT: DESTROYED`, `VERDICT: QUESTION`, 또는 `VERDICT: SURVIVED` 키워드 확인
+- 키워드 불일치: 첫 줄에 VERDICT 없으면 DESTROYED로 간주
+- DESTROYED 시: `VERDICT:` 줄 이후 전체 약점 목록을 critic_feedback에 저장 → Planner에게 전달하여 문서 재설계
+- QUESTION 시: Loop 즉시 중단 → 질문 목록 추출 → AskUserQuestion으로 사용자에게 전달 → 답변 후 다음 iteration 재개
+- 피드백 1,500t 이하: 전체 누적 유지 / 초과: 최신 2회분 전문 + 이전은 1줄 압축 / 5회 초과: 사용자 보고 + 판단 요청 (강제 통과 금지)
 
 **산출물**: `docs/01-plan/{feature}.plan.md`
 
@@ -686,37 +704,37 @@ if no file path pattern (e.g., "src/", ".py", ".ts", ".md") found:
 STANDARD(2-3점) 모드에서 Planner(opus) 완료 후 Critic-Lite 1회 검토:
 
 ```
-Agent(subagent_type="critic", name="critic-lite", description="Critic-Lite 단일 검토", team_name="pdca-{feature}",
-     prompt="[Phase 1 STANDARD Critic-Lite] 계획 품질 검토.
+Agent(subagent_type="critic", name="critic-lite", description="Critic-Lite 단일 약점 공격", team_name="pdca-{feature}",
+     prompt="[Phase 1 STANDARD Critic-Lite] Adversarial Plan 공격 (1회).
              Plan 파일: docs/01-plan/{feature}.plan.md
 
-             === Quality Gates 5 (QG1-QG5) ===
-             QG1 파일 참조 유효: Plan에 언급된 모든 파일 경로가 실제 존재하는지 Glob으로 확인.
-                 PASS: 모든 경로 존재 / FAIL: 1개라도 미존재
-             QG2 Acceptance Criteria 구체적: 완료 기준이 구체적이고 측정 가능한지 확인.
-                 PASS: 각 항목에 검증 가능한 기준 명시 / FAIL: '잘 동작해야 함' 등 모호한 기준
-             QG3 모호어 0건: '적절히', '필요 시', '가능하면', '등', '기타' 등 모호 표현 스캔.
-                 PASS: 0건 / FAIL: 1건 이상 (위치와 대안 제시)
-             QG4 Edge Case 2건+: 예외 상황이 2건 이상 명시되었는지 확인.
-                 PASS: 2건+ / FAIL: 0-1건 (누락된 edge case 예시 제시)
-             QG5 Intent Compliance: 계획이 사용자의 명시적+암묵적 요구를 모두 반영하는지 확인.
-                 PASS: Intent Analysis의 모든 항목이 계획에 반영됨 / FAIL: 미반영 항목 존재 (목록 제시)
+             당신은 adversarial 분석자입니다. 이 문서의 약점만 찾으세요.
+             === 6가지 공격 벡터 ===
+             A1 논리적 결함: 빠진 단계, 근거 없는 가정, 순환 논리
+             A2 실패 시나리오: 외부 의존성 실패, 해피패스 붕괴, 미처리 엣지 케이스
+             A3 모호성: '적절히','필요 시','가능하면','등' 등 모호어, 측정 불가 기준
+             A4 내부 모순: 섹션 간 불일치, 기존 아키텍처 충돌, 목표-범위 불일치
+             A5 누락 컨텍스트: 미존재 파일 참조, 미언급 의존성
+             A6 과잉 설계: 요구사항에 없는 기능/추상화
 
-             반드시 첫 줄에 VERDICT: APPROVE 또는 VERDICT: REVISE를 출력하세요.
-             각 QG에 대해 PASS/FAIL + 근거를 포함하세요.
-             REVISE 시 구체적 개선 피드백을 포함하세요.")
-SendMessage(type="message", recipient="critic-lite", content="Plan 검토 시작.")
+             반드시 첫 줄에 VERDICT: DESTROYED, VERDICT: QUESTION, 또는 VERDICT: SURVIVED를 출력하세요.
+             약점마다 문제-위치-영향을 명시하세요. 이해 불가 시 QUESTION으로 표시.
+             SURVIVED는 Critical 0건 + Major 0건일 때만.")
+SendMessage(type="message", recipient="critic-lite", content="Plan 공격 시작.")
 # 완료 대기 → shutdown_request
 
 # VERDICT 파싱
 critic_message = Mailbox에서 수신한 critic-lite 메시지
-if "VERDICT: APPROVE" in first_line:
+if "VERDICT: SURVIVED" in first_line:
     → Phase 2 진입
-elif "VERDICT: REVISE" in first_line:
-    → Planner 1회 수정 (critic_feedback = REVISE 사유 전달)
+elif "VERDICT: QUESTION" in first_line:
+    → 질문 추출 → AskUserQuestion으로 사용자에게 전달 → 답변과 함께 Planner 1회 수정
+    → 수정본 수용 (추가 Critic 검토 없음, 무한 루프 방지)
+elif "VERDICT: DESTROYED" in first_line:
+    → Planner 1회 수정 (critic_feedback = 약점 목록 전달)
     → 수정본 수용 (추가 Critic 검토 없음, 무한 루프 방지)
 else:
-    → REVISE로 간주
+    → DESTROYED로 간주
 ```
 
 ### Step 1.3: 이슈 연동 (GitHub Issue)
