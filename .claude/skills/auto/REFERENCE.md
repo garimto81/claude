@@ -792,7 +792,7 @@ else:
 | Phase | 실행 |
 |-------|------|
 | Phase 1.1 | PRD 생성/수정 + 사용자 승인 (`--skip-prd`로 스킵 가능) |
-| Phase 1.2-1.3 | Explore teammates (haiku) x2 + Planner-Critic Loop (max 5 iter, QG1-4) |
+| Phase 1.2-1.3 | Explore teammates (haiku) x2 + Planner-Critic Loop (max 5 iter, A1-A6 adversarial 공격) |
 | Phase 1.4 | Executor-high teammate (opus) — 설계 문서 생성 |
 | Phase 2.1 | impl-manager teammate (opus) — 5조건 자체 루프 + 병렬 가능 |
 | Phase 2.2-2.3 | Code Review + Architect Gate (외부 검증, max 2회 rejection) |
@@ -2098,7 +2098,7 @@ else:
 - 토큰 사용량 약 1.5-2배 증가 (독립 context 비용)
 
 **v22.1 변경:**
-- Phase 1: Graduated Plan Review (LIGHT=Lead QG, STANDARD=Critic-Lite, HEAVY=QG1-4 구조화)
+- Phase 1: Graduated Plan Review (LIGHT=Lead QG, STANDARD=Critic-Lite, HEAVY=A1-A6 adversarial 공격)
 - Phase 2: Step 2.2 Architect Verification Gate (STANDARD/HEAVY 필수, 외부 검증)
 - Phase 2: Step 2.3 Domain-Smart Fix Routing (designer/build-fixer/security-reviewer/executor)
 - Phase 2: impl-manager Completion Promise 경고 추가
