@@ -18,8 +18,9 @@ triggers:
 
 ```
 TeamCreate(team_name="tdd-session")
-Task(subagent_type="tdd-guide", name="tdd-runner",
-     team_name="tdd-session", model="sonnet",
+Agent(subagent_type="tdd-guide", name="tdd-runner",
+     description="TDD 워크플로우 실행",
+     team_name="tdd-session",
      prompt="TDD 워크플로우 실행: [기능 설명]")
 SendMessage(type="message", recipient="tdd-runner", content="TDD 시작.")
 # 완료 대기 → shutdown_request → TeamDelete()

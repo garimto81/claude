@@ -20,7 +20,6 @@ triggers:
   file_patterns:
     - "**/slack_lists.json"
     - "**/lists_collector.py"
-model_preference: sonnet
 auto_trigger: true
 ---
 

@@ -25,18 +25,6 @@ triggers:
     - "업무 현황"
     - "프로젝트 관리"
 
-capabilities:
-  - daily_dashboard
-  - incremental_collection
-  - cross_source_analysis
-  - action_recommendation
-  - attachment_analysis
-  - expert_context_loading
-  - config_auto_bootstrap
-  - gmail_housekeeping
-  - slack_lists_update
-
-model_preference: sonnet
 auto_trigger: true
 ---
 

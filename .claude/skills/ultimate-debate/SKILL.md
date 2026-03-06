@@ -2,9 +2,7 @@
 name: ultimate-debate
 description: >
   This skill should be used when the user requests 3-AI parallel analysis and consensus judgment for complex decisions.
-version: "2.0.0"
-author: "Claude Code"
-
+version: 2.0.0
 triggers:
   keywords:
     - "토론"
@@ -21,17 +19,7 @@ triggers:
     - "아키텍처 결정"
     - "전략 수립"
 
-capabilities:
-  - multi_ai_parallel
-  - consensus_building
-  - round_based_debate
-  - context_management
-  - strategy_patterns
-
-model_preference: sonnet
-phase: [1, 2]
 auto_trigger: false
-token_budget: 5000
 ---
 
 # Ultimate Debate Skill

@@ -22,16 +22,6 @@ triggers:
     - "데이터베이스 스키마 설계"
     - "인증 시스템 구축"
 
-capabilities:
-  - init_supabase_project
-  - design_database_schema
-  - create_rls_policies
-  - setup_edge_functions
-  - configure_auth
-  - setup_realtime
-
-model_preference: sonnet
-
 auto_trigger: true
 ---
 

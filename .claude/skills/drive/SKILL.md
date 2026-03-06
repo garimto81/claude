@@ -28,17 +28,7 @@ triggers:
     - "구조 감사"
     - "드리프트 감지"
 
-capabilities:
-  - semantic_analysis      # 파일명/내용 의미 분석
-  - duplicate_detection    # 중복 파일 탐지
-  - version_management     # 버전 아카이빙
-  - folder_restructure     # 폴더 재구조화
-  - project_classification # 프로젝트별 분류
-
-model_preference: sonnet  # 의미 분석에 Sonnet 4.6 사용
-
 auto_trigger: true
-auto_execute: true  # /drive 호출 시 자동 실행
 ---
 
 # Drive Organizer Skill

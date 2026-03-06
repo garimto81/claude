@@ -12,7 +12,6 @@ triggers:
     - "overlay fallback"
     - "오버레이 좌표 직접"
 auto_trigger: true
-model_preference: sonnet
 ---
 
 # /overlay-fallback

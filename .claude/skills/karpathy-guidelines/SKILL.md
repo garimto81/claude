@@ -11,7 +11,8 @@ triggers:
     - "리팩토링"
     - "코드 작성"
     - "디버깅"
-model_preference: sonnet
+    - "카파시"
+    - "코드 리뷰 원칙"
 auto_trigger: false
 ---
 

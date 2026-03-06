@@ -19,18 +19,7 @@ triggers:
     - "이미지 기반 영상 생성"
     - "마케팅 콘텐츠 제작"
 
-capabilities:
-  - list_groups
-  - list_photos
-  - analyze_images_claude
-  - generate_subtitles
-  - generate_tts
-  - create_video
-  - batch_workflow
-
-model_preference: sonnet
 auto_trigger: false
-token_budget: 5000
 ---
 
 # Shorts Generator Skill

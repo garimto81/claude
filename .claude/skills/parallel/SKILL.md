@@ -16,10 +16,12 @@ auto_trigger: false
 
 ```
 TeamCreate(team_name="parallel-session")
-Task(subagent_type="executor", name="worker-1",
-     team_name="parallel-session", model="sonnet", prompt="작업 1")
-Task(subagent_type="executor", name="worker-2",
-     team_name="parallel-session", model="sonnet", prompt="작업 2")
+Agent(subagent_type="executor", name="worker-1",
+     description="병렬 작업 1 실행",
+     team_name="parallel-session", prompt="작업 1")
+Agent(subagent_type="executor", name="worker-2",
+     description="병렬 작업 2 실행",
+     team_name="parallel-session", prompt="작업 2")
 SendMessage(type="message", recipient="worker-1", content="Task 할당.")
 SendMessage(type="message", recipient="worker-2", content="Task 할당.")
 # 완료 대기 → shutdown_request → TeamDelete()

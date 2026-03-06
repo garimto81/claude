@@ -27,18 +27,7 @@ triggers:
     - "린트 오류 수정"
     - "React 성능 최적화"
 
-capabilities:
-  - run_quality_check
-  - auto_fix_lint
-  - security_scan
-  - react_performance_check
-
-model_preference: sonnet
 auto_trigger: false
-dependencies:
-  - code-reviewer
-  - security-reviewer
-  - vercel-react-best-practices
 ---
 
 # /check - 코드 품질 검사

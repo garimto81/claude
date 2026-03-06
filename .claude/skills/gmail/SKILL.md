@@ -29,13 +29,6 @@ triggers:
     - "Gmail 연동"
     - "이메일 자동화"
     - "메일 관리"
-capabilities:
-  - gmail_oauth
-  - send_email
-  - read_inbox
-  - search_emails
-  - manage_labels
-model_preference: sonnet
 auto_trigger: true
 ---
 

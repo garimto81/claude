@@ -23,14 +23,6 @@ triggers:
     - "웹앱 E2E 테스트"
     - "Docker 환경 테스트"
 
-capabilities:
-  - run_e2e_tests
-  - take_screenshot
-  - browser_automation
-  - safe_browser
-  - docker_server_test
-
-model_preference: sonnet
 auto_trigger: false
 ---
 

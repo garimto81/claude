@@ -17,8 +17,9 @@ triggers:
 
 ```
 TeamCreate(team_name="research-session")
-Task(subagent_type="researcher", name="researcher",
-     team_name="research-session", model="sonnet",
+Agent(subagent_type="researcher", name="researcher",
+     description="리서치 실행",
+     team_name="research-session",
      prompt="리서치: [주제]")
 SendMessage(type="message", recipient="researcher", content="리서치 시작.")
 # 완료 대기 → shutdown_request → TeamDelete()

@@ -5,7 +5,11 @@ description: >
   This skill should be used when the user needs to synchronize PRD documents between Google Docs and local repository.
 triggers:
   keywords:
-    - "prd-sync"
+    - "/prd-sync"
+    - "PRD 동기화"
+    - "Google Docs 동기화"
+    - "문서 동기화"
+    - "prd sync"
 ---
 
 # /prd-sync

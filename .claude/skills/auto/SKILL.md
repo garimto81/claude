@@ -9,20 +9,9 @@ triggers:
     - "auto"
     - "autopilot"
     - "/work"
-model_preference: opus
+    - "자동화"
+    - "자동 실행"
 auto_trigger: true
-agents:
-  - executor
-  - executor-high
-  - architect
-  - planner
-  - critic
-  - qa-tester
-  - build-fixer
-  - security-reviewer
-  - designer
-  - code-reviewer
-  - writer
 ---
 
 # /auto - PDCA Orchestrator (v23.0)

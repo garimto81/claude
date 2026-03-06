@@ -24,13 +24,6 @@ triggers:
     - "Slack 연동"
     - "채널 메시지"
     - "팀 커뮤니케이션"
-capabilities:
-  - slack_oauth
-  - send_message
-  - read_history
-  - list_channels
-  - get_user_info
-model_preference: sonnet
 auto_trigger: true
 ---
 

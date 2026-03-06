@@ -2,9 +2,7 @@
 name: figma
 version: 1.0.0
 description: >
-  Figma MCP 연동 스킬. 5가지 모드: 디자인→코드 변환 (implement), 컴포넌트 매핑 (connect),
-  디자인 시스템 규칙 생성 (rules), HTML→Figma 캡처 (capture), 인증 확인 (auth).
-  인증: MCP OAuth 자동. whoami로 사전 검증.
+  This skill should be used when the user needs Figma design-to-code conversion, component mapping, design system rules, HTML-to-Figma capture, or authentication via Figma MCP.
 triggers:
   keywords:
     - "--figma"
@@ -16,7 +14,6 @@ triggers:
     - "Figma URL이 포함된 요청"
     - "디자인→코드 변환 요청"
     - "HTML→Figma 캡처 요청"
-model_preference: opus
 auto_trigger: false
 ---
 

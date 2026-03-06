@@ -31,19 +31,7 @@ triggers:
     - "성능 최적화 요청"
     - "코드 리뷰"
 
-capabilities:
-  - detect_async_waterfalls
-  - suggest_bundle_optimization
-  - review_server_components
-  - recommend_rerender_fixes
-
-model_preference: sonnet
-phase: [2, 4]
 auto_trigger: true
-dependencies:
-  - designer
-  - code-reviewer
-token_budget: 2000
 ---
 
 # Vercel React Best Practices

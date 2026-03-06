@@ -26,16 +26,6 @@ triggers:
     - "시스템 구조"
     - "흐름도"
 
-capabilities:
-  - auto_backend_selection
-  - mermaid_diagram_generation
-  - html_wireframe_generation
-  - stitch_api_integration
-  - playwright_screenshot
-  - fallback_handling
-
-model_preference: sonnet
-
 auto_trigger: true
 ---
 

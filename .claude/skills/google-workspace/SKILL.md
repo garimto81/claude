@@ -31,17 +31,6 @@ triggers:
     - "docs.google.com"
     - "sheets.google.com"
 
-capabilities:
-  - setup_google_api
-  - oauth_authentication
-  - sheets_read_write
-  - drive_file_management
-  - gmail_send_receive
-  - calendar_integration
-  - service_account_setup
-
-model_preference: sonnet
-
 auto_trigger: true
 ---
 

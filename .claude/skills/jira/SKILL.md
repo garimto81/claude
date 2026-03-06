@@ -2,7 +2,7 @@
 name: jira
 version: 1.0.0
 description: >
-  Jira 프로젝트, 보드, Epic, 이슈를 조회하고 분석한다. Atlassian REST API + Agile API 사용.
+  This skill should be used when the user needs Jira project, board, Epic, or issue queries and structured analysis via Atlassian REST API.
 triggers:
   keywords:
     - "--jira"
@@ -10,7 +10,6 @@ triggers:
     - "지라"
     - "epic"
     - "에픽"
-model_preference: sonnet
 ---
 
 # Jira 조회/분석 스킬 (`--jira`)

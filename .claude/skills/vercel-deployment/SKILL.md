@@ -22,15 +22,6 @@ triggers:
     - "프로덕션 배포"
     - "서버리스 함수"
 
-capabilities:
-  - deploy_preview
-  - deploy_production
-  - manage_env_vars
-  - setup_edge_functions
-  - configure_domains
-
-model_preference: sonnet
-
 auto_trigger: true
 ---
 
