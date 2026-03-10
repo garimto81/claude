@@ -100,11 +100,13 @@ def _capture_with_auto_size(
     """
     Playwright Python SDK로 콘텐츠 크기에 맞춰 자동 캡처
 
-    동작 방식:
-    1. 넓은 viewport로 페이지 로드 (콘텐츠가 잘리지 않도록)
-    2. body의 실제 렌더링된 크기 감지 (getBoundingClientRect)
-    3. viewport를 콘텐츠 크기에 맞게 조정
-    4. 캡처 실행
+    전략 우선순위:
+    1. selector 파라미터 → 해당 요소만 캡처
+    2. body 첫 번째 자식 요소 → element.screenshot() (정확한 콘텐츠 영역)
+    3. 폴백 → body.getBoundingClientRect()로 크기 측정 후 캡처
+
+    NOTE: scrollHeight는 viewport 크기 이상을 반환하므로 사용하지 않는다.
+    element.screenshot()이 요소의 렌더링된 bounding box만 정확히 캡처한다.
     """
     try:
         from playwright.sync_api import sync_playwright
@@ -114,9 +116,9 @@ def _capture_with_auto_size(
                 headless=True,
                 args=["--disable-gpu", "--no-sandbox", "--disable-dev-shm-usage"],
             )
-            # 충분히 큰 viewport로 로드 - CSS max-width/max-height가 실제 렌더링 크기를 제어함
+            # 초기 viewport: 콘텐츠 로드용 (CSS max-width/max-height가 렌더링 크기 제어)
             context = browser.new_context(
-                viewport={"width": 720, "height": 10000},
+                viewport={"width": 720, "height": 800},
                 device_scale_factor=1,
             )
             page = context.new_page()
@@ -126,56 +128,74 @@ def _capture_with_auto_size(
             page.goto(file_url)
             page.wait_for_load_state("networkidle")
 
-            # 실제 렌더링 크기 측정 (CSS 제약 적용 후 값)
-            # CSS max-width: 720px / max-height: 1280px / overflow: hidden 이 이미 적용됨
-            dimensions = page.evaluate("""
-                () => {
-                    const scrollW = Math.max(
-                        document.documentElement.scrollWidth,
-                        document.body.scrollWidth
-                    );
-                    const scrollH = Math.max(
-                        document.documentElement.scrollHeight,
-                        document.body.scrollHeight
-                    );
-                    // 안전 상한선 (CSS가 이미 제어하지만 이중 방어)
-                    return {
-                        width: Math.min(scrollW, 720),
-                        height: Math.min(scrollH, 1280)
-                    };
-                }
-            """)
-
-            content_width = dimensions['width']
-            content_height = dimensions['height']
-
-            logger.info(
-                f"콘텐츠 크기 감지: {content_width}x{content_height}"
-            )
-
-            # 최소 크기 보장 (너무 작으면 잘못 감지된 것)
-            final_width = max(int(content_width), 50)
-            final_height = max(int(content_height), 50)
-
-            # viewport 조정 후 다시 로드
-            page.set_viewport_size({"width": final_width, "height": final_height})
-            page.goto(file_url)
-            page.wait_for_load_state("networkidle")
-
-            # 스크린샷 캡처
+            # === 전략 1: selector 파라미터 사용 ===
             if selector:
                 element = page.query_selector(selector)
                 if element:
                     element.screenshot(path=str(image_path))
-                else:
-                    logger.warning(f"선택자 '{selector}'를 찾을 수 없음, 전체 페이지 캡처")
-                    page.screenshot(path=str(image_path), full_page=False)
-            else:
-                page.screenshot(path=str(image_path), full_page=False)
+                    browser.close()
+                    logger.info(f"스크린샷 캡처 (selector: {selector}): {image_path}")
+                    return image_path
+                logger.warning(f"선택자 '{selector}'를 찾을 수 없음, .container 탐색")
 
+            # === 전략 2: body 첫 번째 자식 요소 캡처 ===
+            # .app, .wrapper 등 최상위 래퍼를 클래스명 무관하게 찾음
+            root_element = page.query_selector("body > *:first-child")
+            if root_element:
+                root_element.screenshot(path=str(image_path))
+                browser.close()
+                logger.info(f"스크린샷 캡처 (root element): {image_path}")
+                return image_path
+
+            # === 전략 3: CSS 제약 해제 후 실제 콘텐츠 크기 측정 ===
+            dimensions = page.evaluate("""
+                () => {
+                    const body = document.body;
+                    const html = document.documentElement;
+
+                    // 원래 스타일 저장
+                    const origBodyMaxH = body.style.maxHeight;
+                    const origBodyOverflow = body.style.overflow;
+                    const origHtmlMaxH = html.style.maxHeight;
+                    const origHtmlOverflow = html.style.overflow;
+
+                    // CSS max-height/overflow 제약 임시 해제
+                    body.style.maxHeight = 'none';
+                    body.style.overflow = 'visible';
+                    html.style.maxHeight = 'none';
+                    html.style.overflow = 'visible';
+
+                    // 실제 콘텐츠 크기 측정
+                    const rect = body.getBoundingClientRect();
+                    const scrollW = Math.max(rect.width, body.scrollWidth);
+                    const scrollH = Math.max(rect.height, body.scrollHeight);
+
+                    // 스타일 복원
+                    body.style.maxHeight = origBodyMaxH;
+                    body.style.overflow = origBodyOverflow;
+                    html.style.maxHeight = origHtmlMaxH;
+                    html.style.overflow = origHtmlOverflow;
+
+                    return {
+                        width: Math.ceil(scrollW),
+                        height: Math.ceil(scrollH)
+                    };
+                }
+            """)
+
+            content_width = max(min(int(dimensions['width']), 720), 50)
+            content_height = max(min(int(dimensions['height']), 1280), 50)
+
+            logger.info(f"콘텐츠 크기 감지 (폴백): {content_width}x{content_height}")
+
+            # viewport를 콘텐츠 크기에 맞게 조정
+            page.set_viewport_size({"width": content_width, "height": content_height})
+            page.wait_for_timeout(100)
+
+            page.screenshot(path=str(image_path), full_page=False)
             browser.close()
 
-            logger.info(f"스크린샷 캡처 (auto_size): {image_path} [{final_width}x{final_height}]")
+            logger.info(f"스크린샷 캡처 (폴백 auto_size): {image_path} [{content_width}x{content_height}]")
             return image_path
 
     except ImportError:
