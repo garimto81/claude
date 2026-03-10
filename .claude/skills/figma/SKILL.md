@@ -172,17 +172,22 @@ add_code_connect_map(fileKey, nodeId, source, componentName, label)
    - clipboard: 클립보드에 복사
 3. 캡처 대상 페이지 준비:
    a. HTML에 <script src="https://mcp.figma.com/mcp/html-to-design/capture.js" async></script> 주입
-   b. 로컬 HTTP 서버 실행 (python -m http.server 또는 npx http-server)
-   c. 브라우저에서 URL + hash 파라미터로 열기
+   b. 캡처 CSS 검증: body에 불필요한 background/padding이 없는지 확인
+      - body: margin:0, padding:0, background:transparent, display:inline-block
+      - wrapper/container: padding 제거
+      - 체커보드/장식 배경 제거
+      - capture-reset.css 링크 확인 (mockups/capture/ 내 파일)
+   c. 로컬 HTTP 서버 실행 (python -m http.server 또는 npx http-server)
+   d. 브라우저에서 URL + hash 파라미터로 열기
 4. 캡처 ID로 폴링 (5초 간격, max 10회):
    generate_figma_design(captureId="{id}") → status 확인
    - pending/processing → 재시도
    - completed → Figma 파일 URL 반환
 ```
 
-**Windows 브라우저 열기:**
-```
-start "" "http://localhost:{port}/{page}#figmacapture={captureId}&figmaendpoint=https%3A%2F%2Fmcp.figma.com%2Fmcp%2Fcapture%2F{captureId}%2Fsubmit&figmadelay=2000"
+**Headless 캡처 (브라우저 창 없음):**
+```bash
+cd C:\claude && python -c "from lib.figma.headless_capture import figma_headless_capture; figma_headless_capture('http://localhost:{port}/{page}#figmacapture={captureId}&figmaendpoint=https%3A%2F%2Fmcp.figma.com%2Fmcp%2Fcapture%2F{captureId}%2Fsubmit&figmadelay=2000')"
 ```
 
 **외부 URL 캡처 (EXTERNAL):** Playwright MCP 필요. 로컬 script-tag 방식으로 외부 사이트 캡처 불가.

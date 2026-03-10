@@ -110,9 +110,16 @@ def _capture_with_auto_size(
         from playwright.sync_api import sync_playwright
 
         with sync_playwright() as p:
-            browser = p.chromium.launch()
+            browser = p.chromium.launch(
+                headless=True,
+                args=["--disable-gpu", "--no-sandbox", "--disable-dev-shm-usage"],
+            )
             # 충분히 큰 viewport로 로드 - CSS max-width/max-height가 실제 렌더링 크기를 제어함
-            page = browser.new_page(viewport={"width": 720, "height": 10000})
+            context = browser.new_context(
+                viewport={"width": 720, "height": 10000},
+                device_scale_factor=1,
+            )
+            page = context.new_page()
 
             # file:// URL로 변환
             file_url = html_path.resolve().as_uri()
