@@ -4,6 +4,9 @@
   <meta charset="UTF-8">
   <meta name="viewport" content="width=device-width, initial-scale=1">
   <title>{{title}} - Wireframe</title>
+  <link rel="preconnect" href="https://fonts.googleapis.com">
+  <link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
+  <link href="https://fonts.googleapis.com/css2?family=Inter:wght@400;500;600&display=swap" rel="stylesheet">
   <style>
     * {
       box-sizing: border-box;
@@ -11,22 +14,30 @@
       padding: 0;
     }
     body {
-      font-family: -apple-system, BlinkMacSystemFont, 'Segoe UI', Roboto, sans-serif;
-      background: #fff;
+      font-family: 'Inter', -apple-system, BlinkMacSystemFont, 'Segoe UI', sans-serif;
+      background: #F4F5F8;
       padding: 0;
       margin: 0;
+      -webkit-font-smoothing: antialiased;
+      -moz-osx-font-smoothing: grayscale;
     }
     .container {
       width: 100%;
       max-width: 100%;
       margin: 0;
       padding: 0;
-      background: #fff;
+      background: #ffffff;
       border: none;
       overflow: visible;
     }
     .container-inner {
-      border: 2px solid #333;
+      border: 1px solid #e5e5e5;
+      border-radius: 12px;
+      overflow: hidden;
+      box-shadow:
+        0 1px 1px rgba(0,0,0,0.03),
+        0 3px 6px rgba(0,0,0,0.04),
+        0 8px 16px rgba(0,0,0,0.03);
     }
 
     /* Header */
@@ -35,19 +46,21 @@
       justify-content: space-between;
       align-items: center;
       padding: 16px 24px;
-      border-bottom: 2px solid #333;
-      background: #e8e8e8;
+      border-bottom: 1px solid #e5e5e5;
+      background: #ffffff;
     }
     .logo {
       width: 100px;
       height: 32px;
-      background: #ccc;
-      border: 1px dashed #999;
+      background: #F4F5F8;
+      border: 1px dashed #e5e5e5;
+      border-radius: 6px;
       display: flex;
       align-items: center;
       justify-content: center;
       font-size: 12px;
-      color: #666;
+      font-weight: 500;
+      color: #8a8a8a;
     }
     .nav {
       display: flex;
@@ -56,8 +69,9 @@
     .nav-item {
       width: 60px;
       height: 24px;
-      background: #ddd;
-      border: 1px dashed #999;
+      background: #F4F5F8;
+      border: 1px dashed #e5e5e5;
+      border-radius: 4px;
     }
 
     /* Sidebar Layout */
@@ -67,24 +81,25 @@
     .sidebar {
       width: 200px;
       min-height: 400px;
-      border-right: 2px solid #333;
+      border-right: 1px solid #e5e5e5;
       padding: 16px;
-      background: #f0f0f0;
+      background: #F4F5F8;
     }
     .sidebar-item {
       height: 32px;
-      background: #ddd;
-      border: 1px dashed #999;
+      background: #ffffff;
+      border: 1px solid #e5e5e5;
+      border-radius: 6px;
       margin-bottom: 8px;
     }
 
     /* Content */
     .content {
       flex: 1;
-      padding: 24px;
+      padding: 32px;
     }
     .content-full {
-      padding: 40px;
+      padding: 48px 32px;
     }
 
     /* Form */
@@ -93,35 +108,55 @@
     }
     .label {
       font-size: 12px;
-      color: #666;
-      margin-bottom: 4px;
+      font-weight: 500;
+      letter-spacing: 0.025em;
+      color: #8a8a8a;
+      text-transform: uppercase;
+      margin-bottom: 6px;
     }
     .input {
       width: 100%;
       max-width: 320px;
       height: 40px;
-      border: 2px solid #333;
-      background: #fff;
+      border: 1px solid #e5e5e5;
+      border-radius: 8px;
+      background: #ffffff;
       padding: 8px 12px;
       font-size: 14px;
+      font-family: 'Inter', sans-serif;
+      color: #222326;
+    }
+    .input:focus {
+      outline: none;
+      box-shadow: 0 0 0 2px rgba(0,0,0,0.08);
     }
     .input-placeholder {
-      color: #999;
+      color: #8a8a8a;
     }
     .button {
       display: inline-block;
-      padding: 12px 32px;
-      background: #333;
-      color: #fff;
+      padding: 10px 24px;
+      background: #222326;
+      color: #ffffff;
       border: none;
+      border-radius: 8px;
       font-size: 14px;
+      font-weight: 500;
+      font-family: 'Inter', sans-serif;
       cursor: pointer;
       margin-top: 8px;
+      transition: background 150ms cubic-bezier(0.16,1,0.3,1);
+    }
+    .button:hover {
+      background: #333538;
     }
     .button-outline {
-      background: #fff;
-      color: #333;
-      border: 2px solid #333;
+      background: #ffffff;
+      color: #222326;
+      border: 1px solid #e5e5e5;
+    }
+    .button-outline:hover {
+      background: #F4F5F8;
     }
 
     /* Table */
@@ -130,15 +165,24 @@
       border-collapse: collapse;
     }
     .table th, .table td {
-      border: 1px solid #333;
-      padding: 12px;
+      border-bottom: 1px solid #e5e5e5;
+      padding: 12px 16px;
       text-align: left;
+      font-size: 14px;
     }
     .table th {
-      background: #e8e8e8;
+      font-weight: 500;
+      font-size: 12px;
+      letter-spacing: 0.025em;
+      text-transform: uppercase;
+      color: #8a8a8a;
+      background: #F4F5F8;
+    }
+    .table td {
+      color: #555555;
     }
     .table-row-placeholder {
-      background: #f5f5f5;
+      background: #F4F5F8;
     }
 
     /* Cards */
@@ -148,30 +192,39 @@
       gap: 16px;
     }
     .card {
-      border: 2px solid #333;
-      padding: 16px;
-      background: #fff;
+      border: 1px solid #e5e5e5;
+      border-radius: 12px;
+      padding: 20px;
+      background: #ffffff;
+      box-shadow:
+        0 1px 1px rgba(0,0,0,0.03),
+        0 3px 6px rgba(0,0,0,0.04),
+        0 8px 16px rgba(0,0,0,0.03);
     }
     .card-image {
       width: 100%;
       height: 100px;
-      background: #ddd;
-      border: 1px dashed #999;
+      background: #F4F5F8;
+      border: 1px dashed #e5e5e5;
+      border-radius: 8px;
       margin-bottom: 12px;
       display: flex;
       align-items: center;
       justify-content: center;
-      color: #999;
+      color: #8a8a8a;
       font-size: 12px;
+      font-weight: 500;
     }
     .card-title {
       height: 20px;
-      background: #e0e0e0;
+      background: #F4F5F8;
+      border-radius: 4px;
       margin-bottom: 8px;
     }
     .card-text {
       height: 40px;
-      background: #f0f0f0;
+      background: #F4F5F8;
+      border-radius: 4px;
     }
 
     /* Modal */
@@ -181,23 +234,30 @@
       left: 0;
       right: 0;
       bottom: 0;
-      background: rgba(0,0,0,0.5);
+      background: rgba(0,0,0,0.3);
       display: flex;
       align-items: center;
       justify-content: center;
     }
     .modal {
       width: 400px;
-      background: #fff;
-      border: 2px solid #333;
+      background: #ffffff;
+      border: 1px solid #e5e5e5;
+      border-radius: 12px;
       padding: 24px;
+      box-shadow:
+        0 1px 1px rgba(0,0,0,0.03),
+        0 3px 6px rgba(0,0,0,0.04),
+        0 8px 16px rgba(0,0,0,0.03);
     }
     .modal-title {
       font-size: 18px;
-      font-weight: bold;
+      font-weight: 600;
+      letter-spacing: -0.025em;
+      color: #222326;
       margin-bottom: 16px;
       padding-bottom: 12px;
-      border-bottom: 1px solid #ddd;
+      border-bottom: 1px solid #e5e5e5;
     }
     .modal-actions {
       display: flex;
@@ -217,23 +277,17 @@
       margin-bottom: 24px;
     }
     .title {
-      font-size: 24px;
-      font-weight: bold;
-      color: #333;
+      font-size: 1.875rem;
+      font-weight: 600;
+      letter-spacing: -0.025em;
+      line-height: 1.2;
+      color: #222326;
     }
     .subtitle {
-      font-size: 14px;
-      color: #666;
-    }
-
-    /* Annotation */
-    .annotation {
-      position: absolute;
-      background: #ffeb3b;
-      padding: 4px 8px;
-      font-size: 11px;
-      border: 1px solid #333;
-      transform: rotate(-3deg);
+      font-size: 0.9375rem;
+      font-weight: 400;
+      line-height: 1.5;
+      color: #555555;
     }
   </style>
 </head>
@@ -270,7 +324,7 @@
     </div>
   </div>
 
-  <div style="text-align: center; padding: 8px 0; color: #999; font-size: 11px; background: #f5f5f5;">
+  <div style="text-align: center; padding: 8px 0; color: #8a8a8a; font-size: 11px; font-weight: 400; background: #F4F5F8;">
     Generated by Claude Code | {{date}}
   </div>
 </body>

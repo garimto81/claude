@@ -172,30 +172,30 @@ STITCH_API_KEY=your-api-key
 STITCH_API_BASE_URL=https://api.stitch.withgoogle.com/v1
 ```
 
-## --bnw 모드 (designer 에이전트 내장 가이드라인 기반 모노크롬)
+## B&W Refined Minimal (기본 스타일)
 
-`--bnw`는 **B&W 스타일 제약**이며, HTML 강제 옵션이 아니다. 3-Tier 라우팅이 먼저 결정된다.
+HTML 목업은 항상 Refined Minimal (Linear Style) B&W 디자인으로 생성된다. `--bnw` 플래그는 deprecated (하위 호환용 파싱만, 무시됨).
 
 ### 동작 방식
 
 ```
-/auto "요청" --mockup --bnw
+/auto "요청" --mockup
       │
       ▼
 3-Tier 라우터 (키워드 기반 — 라우팅 우선)
       │
       ├─ 다이어그램 키워드 → Mermaid 생성
       │   (흐름, 시퀀스, API, DB, ER, 클래스, 상태, 아키텍처 등)
-      │   → --bnw 무시 (Mermaid는 기본 흑백 계열)
+      │   (Mermaid는 기본 흑백 계열)
       │
-      └─ UI/화면 키워드 → designer 에이전트 (B&W 제약 주입)
+      └─ UI/화면 키워드 → designer 에이전트 (B&W Refined Minimal 적용)
               (화면, UI, 레이아웃, 페이지, 대시보드, 폼, 와이어프레임 등)
               │
-              ├── 팔레트: #000, #1a1a1a, #2d2d2d, #666, #767676, #e5e5e5, #f8f8f8, #fff
+              ├── 팔레트: #222326, #555555, #8a8a8a, #767676, #e5e5e5, #F4F5F8, #ffffff
               ├── 아이콘 없음 (텍스트 레이블만, emoji/SVG/icon font 금지)
-              ├── Roboto/Inter/Arial 금지 → 독창적 타이포그래피
-              ├── 비대칭 레이아웃, 여백 리듬, 그리드 시스템 적용
-              └── border, shadow, 배경 질감 허용 (색상 없이)
+              ├── 단일 서체 Inter 400/500/600 — Refined Minimal (Linear Style)
+              ├── 균등 padding, 8px grid, 3-layer shadow 깊이감
+              └── border-radius 12px, 1px solid #e5e5e5 border
 ```
 
 ### 크기 및 텍스트 규칙 (필수 적용)
@@ -203,25 +203,27 @@ STITCH_API_BASE_URL=https://api.stitch.withgoogle.com/v1
 | 항목 | 규칙 |
 |------|------|
 | **최대 규격** | 너비 720px × 높이 1280px (`max-width: 720px; max-height: 1280px`) |
-| **폰트 크기** | body 14px, caption 12px, 제목 최대 22px |
+| **폰트 크기** | body 15px, caption 12px, heading max 30px (hero max 36px) |
 | **텍스트 우선** | 텍스트로 표현 가능한 요소는 이미지/SVG/아이콘 삽입 금지 — 레이블/텍스트로만 표현 |
 
-### B&W 팔레트 규칙
+### B&W 팔레트 규칙 — Refined Minimal (Linear Style)
 
 | 용도 | 색상 |
 |------|------|
-| 주요 텍스트 | `#000`, `#1a1a1a` |
-| 보조 텍스트 | `#2d2d2d`, `#666` |
+| 주요 텍스트 | `#222326` (Nordic Gray) |
+| 보조 텍스트 | `#555555` |
+| 뮤트/캡션 | `#8a8a8a` |
 | 비활성/플레이스홀더 | `#767676` (WCAG AA 4.54:1) |
-| 구분선/보더 | `#e5e5e5` |
-| 배경 (밝은) | `#f8f8f8`, `#fff` |
+| 구분선/보더 | `#e5e5e5` (1px only) |
+| 페이지 배경 | `#F4F5F8` (Mercury White) |
+| 카드/surface | `#ffffff` |
 
 ### designer 에이전트 미사용 시 폴백
 
-`designer` 에이전트를 사용할 수 없는 경우 `html_adapter.py`의 개선된 기본 템플릿으로 폴백:
-- Google Fonts 독창적 선택 (`DM Serif Display` + `Space Mono`)
-- 8px 기반 공간 시스템
-- `box-shadow` + 세련된 보더
+`designer` 에이전트를 사용할 수 없는 경우 `html_adapter.py`의 기본 템플릿으로 폴백:
+- Inter 400/500/600 단일 서체 (Refined Minimal)
+- 8px grid, 3-layer shadow 깊이감
+- #F4F5F8 page background + #ffffff card + border-radius 12px
 
 ## 변경 로그
 
@@ -252,10 +254,10 @@ STITCH_API_BASE_URL=https://api.stitch.withgoogle.com/v1
 
 MockupRouter.route()로 3-Tier 라우팅 실행. `options.bnw=True` 시 html_adapter가 B&W 기본 팔레트 자동 적용.
 
-### Step 2.0.2: designer 스타일링 (--bnw AND HTML 선택 시)
+### Step 2.0.2: designer 스타일링 (HTML 선택 시)
 
-조건: `options.bnw == True` AND `backend == HTML`일 때만 실행.
-designer(sonnet) 에이전트를 스폰하여 B&W 제약으로 HTML 스타일링. `--bnw` 미지정 또는 Mermaid 선택 시 스킵.
+조건: `backend == HTML`일 때 실행.
+designer(sonnet) 에이전트를 스폰하여 Refined Minimal B&W 스타일링. Mermaid 선택 시 스킵.
 
 ### Step 2.0.3: PNG 캡처 (Lead 직접 Bash 실행)
 
@@ -286,4 +288,4 @@ print(f'CAPTURED: {result}' if result else 'CAPTURE_FAILED')
 
 - executor 또는 executor-high가 `docs/mockups/*.html`을 직접 Write하는 것은 금지
 - UI 목업 생성 시 반드시 designer 에이전트 경유
-- `--bnw`: HTML 목업의 스타일 제약만 (색상 없음). 자동 트리거 없음 -- 명시적 플래그 필수
+- `--bnw`: deprecated (하위 호환용 파싱만). B&W Refined Minimal은 HTML 목업의 기본 스타일

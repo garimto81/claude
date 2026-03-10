@@ -37,7 +37,7 @@ deprecated: false
 | 옵션 | 설명 |
 |------|------|
 | `--gdocs` | Google Docs PRD 동기화 |
-| `--mockup` | 목업 생성 (하위: `--bnw`, `--force-html`, `--prd=`) |
+| `--mockup` | 목업 생성 (하위: `--force-html`, `--prd=`). B&W Refined Minimal 기본 적용. `--bnw` deprecated |
 | `--debate` | 3AI 토론 |
 | `--research` | 리서치 모드 |
 | `--gmail` | Gmail 메일 분석 후 컨텍스트 주입 |

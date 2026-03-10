@@ -64,54 +64,58 @@ Mermaid/PNG/SVG 금지. 상세: `.claude/rules/11-ascii-diagram.md`
 
 ---
 
-# --bnw 모드 (B&W 모노크롬 디자인 크래프트)
+# B&W Refined Minimal (HTML 목업 기본 스타일)
 
-Task prompt에 `--bnw` 또는 B&W 목업 지시가 있을 때 적용.
+HTML 목업 생성 시 항상 적용. `--bnw` 플래그는 deprecated (하위 호환용).
 
 ## 제약 조건
 - **규격**: max-width 720px, max-height 1280px
-- **폰트**: body 14px, caption 12px, heading max 22px (hero 숫자/제목은 36-48px 허용)
-- **색상**: 그레이스케일 전용 (#000 ~ #fff), emoji/SVG/icon font 금지. 비활성 텍스트 최소 #767676 (WCAG AA 4.54:1)
+- **폰트**: body 15px, caption 12px, heading max 30px (hero max 36px)
+- **색상**: #222326 ~ #F4F5F8 + #ffffff, emoji/SVG/icon font 금지. 비활성 텍스트 최소 #767676 (WCAG AA 4.54:1)
 - **텍스트 우선**: 이미지/SVG 삽입 금지 — CSS와 텍스트만으로 표현
 
-## 디자인 크래프트 (CRITICAL — 이 섹션이 품질을 결정한다)
+## 디자인 크래프트 — Refined Minimal (Linear Style)
 
-색상 없이도 시각적으로 강렬한 인터페이스를 만든다. B&W는 제약이 아니라 디자인 기회다. 단순 텍스트 나열은 절대 금지.
+레퍼런스: Linear (linear.app), Vercel, Stripe. 색상 없이 정밀도와 깊이감으로 세련됨을 만든다. 단순 텍스트 나열은 절대 금지.
 
-### Typography as Hero
-- **극단적 크기 대비**: 36-48px hero 숫자/제목 옆에 10-11px 캡션 배치. 크기 차이가 시각적 긴장감 생성
-- **Weight 대조**: 같은 서체의 300 vs 800+ weight를 한 화면에 혼합
-- **서체 성격 충돌**: 세리프 헤드라인 + 모노스페이스 데이터, 기하학적 산세리프 + 클래시컬 세리프 등
-- **레터 스페이싱**: 소제목/라벨에 0.2em+ letter-spacing, uppercase 변환으로 공기감 부여
-- **텍스트 장식**: `text-decoration`, `border-bottom` 스타일 언더라인, 취소선 강조
+### Typography Precision
+- **단일 서체**: Inter 400/500/600만 사용. serif/monospace/display 금지
+- **Heading**: font-weight 600, letter-spacing -0.025em, color #222326, line-height 1.2
+- **Body**: font-weight 400, line-height 1.5, color #555555, font-size 15px
+- **Label/Caption**: font-weight 500, letter-spacing 0.025em, uppercase, color #8a8a8a, font-size 12px
+- **금지**: weight 700+, 서체 혼합, 0.15em+ letter-spacing, 극단적 크기 대비(36px+ hero)
 
-### Visual Texture (CSS Only)
-- **패턴 배경**: `repeating-linear-gradient(45deg, #000 0, #000 1px, transparent 1px, transparent 6px)` 사선 줄무늬
-- **도트 패턴**: `radial-gradient(circle, #000 1px, transparent 1px)` + background-size로 도트 그리드
-- **보더 조합**: 1px 실선 + 4px 실선 이중 프레임, `border-style: double`, 3px solid 구분선
-- **하드 셰도우**: `box-shadow: 4px 4px 0 #000` — 활판인쇄 느낌의 입체감
-- **구분선 장식**: 두께 변화(1px→3px), 점선/대시 패턴, 비대칭 마진으로 리듬
+### Color Discipline
+- **배경**: #F4F5F8 (page), #FFFFFF (card/elevated surface)
+- **텍스트**: #222326 (primary), #555555 (secondary), #8a8a8a (muted)
+- **Border**: #e5e5e5 (1px only)
+- **금지**: 순수 #000000, gradient, 패턴 배경, 장식적 border 색상, 사선 줄무늬, 도트 패턴
 
-### Spatial Drama
-- **비대칭 그리드**: 1:2 또는 1:3 비율 컬럼, 균등 분할 금지
-- **의도적 여백 불균형**: 한쪽 넓은 마진 + 반대쪽 밀집 — 시각적 긴장
-- **풀 블리드 섹션**: 일부 영역은 패딩 없이 edge-to-edge로 확장
-- **수직 리듬**: 8px 기반 spacing scale, 섹션 간 48-64px 간격으로 호흡
-- **밀도 대비**: 데이터 밀집 영역 옆에 넓은 빈 공간 배치
+### Depth via Layered Shadow
+- 카드/패널: 3-layer shadow (opacity 0.03~0.04 각 레이어)
+  ```css
+  box-shadow: 0 1px 1px rgba(0,0,0,0.03), 0 3px 6px rgba(0,0,0,0.04), 0 8px 16px rgba(0,0,0,0.03);
+  ```
+- Input/button hover: 단일 1px shadow
+- **금지**: hard shadow (4px 4px 0 #000), drop-shadow > opacity 0.1, 이중 프레임
+
+### Spatial Harmony
+- 8px grid (4px fine), section gap 48-64px
+- 균등하고 넉넉한 padding (24-32px card, 48px section)
+- Container: border-radius 12px, inner elements 8px
+- **금지**: 의도적 비대칭, 풀블리드, 밀도 대비 극단, 비대칭 그리드
+
+### Interaction Quality
+- hover: background #F4F5F8 + transition 150ms cubic-bezier(0.16,1,0.3,1)
+- focus: 0 0 0 2px rgba(0,0,0,0.08)
+- **금지**: scale transform, dramatic 색상 변화, bounce animation
 
 ### Data Visualization (CSS + 텍스트)
-- **프로그레스 바**: `background: linear-gradient()` + 퍼센트 라벨 오버레이
-- **메트릭 강조**: 핵심 숫자 36-48px 볼드, 부제 10px uppercase letter-spaced
-- **상태 표시**: CSS `::before` 원형 (`border-radius: 50%` + 배경색)
-- **표 스타일**: 교차 행 배경(#f5f5f5/#fff), 헤더 하단 3px solid border, 셀 내부 충분한 padding
-- **구분된 카드**: 카드에 하드 셰도우 + 두꺼운 상단 보더(4px solid #000)
-
-### 레퍼런스 스타일 (하나를 선택하고 HTML 주석에 명시)
-- **Editorial/Magazine**: 대형 세리프 헤드라인, 얇은 규칙선, 넓은 마진, pull-quote 스타일
-- **Swiss International**: 수학적 그리드, 산세리프, 기하학적 정렬, 정보 계층
-- **Brutalist**: 모노스페이스 전면, 두꺼운 보더, 의도적 투박함, raw 에너지
-- **Art Deco**: 기하학적 장식선, 대칭 패턴, 우아한 세리프, 프레임 장식
-- **Japanese Minimal**: 극도의 여백, 작은 텍스트, 단 하나의 시각적 앵커 포인트
+- **프로그레스 바**: background #222326 + 퍼센트 라벨, rounded corners
+- **메트릭 강조**: 핵심 숫자 24-30px weight 600, 부제 12px uppercase #8a8a8a
+- **상태 표시**: CSS `::before` 원형 (8px, border-radius 50%)
+- **표 스타일**: 교차 행 배경(#F4F5F8/#fff), 헤더 하단 1px solid #e5e5e5, 넉넉한 padding
+- **카드**: border-radius 12px + 3-layer shadow (두꺼운 상단 보더 금지)
 
 ---
 

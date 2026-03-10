@@ -165,7 +165,7 @@ LIGHT는 스킵. STANDARD/HEAVY: 계획 문서에 **아키텍처 결정 섹션**
 | Step | 내용 | 실행 주체 |
 |------|------|----------|
 | 1 | MockupRouter.route() — 3-Tier 라우팅 + 기본 HTML 생성 | Lead (Python 호출) |
-| 2 | `--bnw` AND HTML 선택 시 → designer(sonnet) 스폰 (B&W 스타일링) | designer 에이전트 |
+| 2 | HTML 선택 시 → designer(sonnet) 스폰 (B&W Refined Minimal 스타일링) | designer 에이전트 |
 | 3 | Playwright PNG 캡처 | Lead (Bash) |
 | 4 | 문서 임베드 (대상 문서 있을 때만) | Lead (Edit) |
 

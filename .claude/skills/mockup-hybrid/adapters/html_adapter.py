@@ -39,16 +39,16 @@ class HTMLAdapter:
         """
         self.template_path = template_path or self.DEFAULT_TEMPLATE_PATH
 
-    # WCAG AA 준수 B&W 팔레트 (#767676 on #fff = 4.54:1)
+    # WCAG AA 준수 B&W 팔레트 — Refined Minimal (Linear Style)
     BNW_PALETTE = {
-        "text_primary": "#000",
-        "text_secondary": "#1a1a1a",
-        "text_body": "#2d2d2d",
-        "text_muted": "#666",
-        "text_disabled": "#767676",  # WCAG AA 최소 대비율 4.54:1
+        "text_primary": "#222326",      # Nordic Gray (Linear)
+        "text_secondary": "#555555",    # secondary label
+        "text_body": "#555555",         # body
+        "text_muted": "#8a8a8a",        # muted caption
+        "text_disabled": "#767676",     # WCAG AA 최소 대비율 4.54:1
         "border": "#e5e5e5",
-        "bg_light": "#f8f8f8",
-        "bg_white": "#fff",
+        "bg_light": "#F4F5F8",          # Mercury White (Linear)
+        "bg_white": "#ffffff",
     }
 
     def generate(
@@ -107,7 +107,7 @@ class HTMLAdapter:
             )
 
     def _get_default_template(self) -> str:
-        """기본 템플릿 반환"""
+        """기본 템플릿 반환 — Refined Minimal (Linear Style)"""
         return '''<!DOCTYPE html>
 <html lang="ko">
 <head>
@@ -116,14 +116,16 @@ class HTMLAdapter:
   <title>{{title}} - Wireframe</title>
   <link rel="preconnect" href="https://fonts.googleapis.com">
   <link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
-  <link href="https://fonts.googleapis.com/css2?family=DM+Serif+Display&family=Space+Mono:wght@400;700&display=swap" rel="stylesheet">
+  <link href="https://fonts.googleapis.com/css2?family=Inter:wght@400;500;600&display=swap" rel="stylesheet">
   <style>
     * { box-sizing: border-box; margin: 0; padding: 0; }
     body {
-      font-family: 'Space Mono', monospace;
-      background: #fff;
+      font-family: 'Inter', -apple-system, BlinkMacSystemFont, sans-serif;
+      background: #F4F5F8;
       padding: 0;
       margin: 0;
+      -webkit-font-smoothing: antialiased;
+      -moz-osx-font-smoothing: grayscale;
     }
     .container {
       width: auto;
@@ -131,86 +133,87 @@ class HTMLAdapter:
       height: auto;
       max-height: 1280px;
       margin: 0;
-      background: #fff;
+      background: #ffffff;
       border: 1px solid #e5e5e5;
-      box-shadow: 0 4px 24px rgba(0,0,0,0.06), 0 1px 4px rgba(0,0,0,0.04);
+      border-radius: 12px;
+      box-shadow:
+        0 1px 1px rgba(0,0,0,0.03),
+        0 3px 6px rgba(0,0,0,0.04),
+        0 8px 16px rgba(0,0,0,0.03);
       overflow: hidden;
     }
     .header {
       display: flex;
       justify-content: space-between;
       align-items: center;
-      padding: 24px 32px;
-      border-bottom: 2px solid #1a1a1a;
-      background: #fff;
+      padding: 20px 32px;
+      border-bottom: 1px solid #e5e5e5;
+      background: #ffffff;
     }
     .logo-text {
-      font-family: 'Space Mono', monospace;
-      font-weight: 700;
-      font-size: 0.875rem;
-      letter-spacing: 0.15em;
-      color: #000;
-      text-transform: uppercase;
+      font-weight: 600;
+      font-size: 0.8125rem;
+      letter-spacing: -0.01em;
+      color: #222326;
     }
     .header-meta {
-      font-family: 'Space Mono', monospace;
       font-size: 0.75rem;
-      letter-spacing: 0.05em;
-      color: #999;
+      font-weight: 400;
+      color: #8a8a8a;
     }
     .content {
       padding: 48px 32px 64px;
     }
     .subtitle {
-      font-family: 'Space Mono', monospace;
       font-size: 0.75rem;
-      letter-spacing: 0.1em;
+      font-weight: 500;
+      letter-spacing: 0.025em;
       text-transform: uppercase;
-      color: #999;
-      margin-bottom: 16px;
+      color: #8a8a8a;
+      margin-bottom: 12px;
     }
     .title {
-      font-family: 'DM Serif Display', serif;
-      font-size: 2.5rem;
-      font-weight: 400;
-      color: #000;
-      letter-spacing: -0.02em;
-      line-height: 1.1;
-      margin-bottom: 24px;
+      font-size: 1.875rem;
+      font-weight: 600;
+      color: #222326;
+      letter-spacing: -0.025em;
+      line-height: 1.2;
+      margin-bottom: 16px;
     }
     .description {
-      font-family: 'Space Mono', monospace;
-      font-size: 0.875rem;
-      line-height: 1.6;
-      color: #2d2d2d;
+      font-size: 0.9375rem;
+      font-weight: 400;
+      line-height: 1.5;
+      color: #555555;
       margin-bottom: 48px;
       max-width: 560px;
     }
     .placeholder {
-      border: 1px dashed #999;
+      border: 1px dashed #e5e5e5;
       padding: 48px 32px;
-      background: #f8f8f8;
+      background: #F4F5F8;
+      border-radius: 8px;
       display: flex;
       align-items: center;
       justify-content: flex-start;
     }
     .placeholder-label {
-      font-family: 'Space Mono', monospace;
       font-size: 0.75rem;
-      letter-spacing: 0.1em;
+      font-weight: 500;
+      letter-spacing: 0.025em;
       text-transform: uppercase;
-      color: #666;
+      color: #8a8a8a;
     }
   </style>
 </head>
 <body>
   <div class="container">
     <div class="header">
-      <span class="logo-text">WIREFRAME</span>
+      <span class="logo-text">Wireframe</span>
       <span class="header-meta">{{date}}</span>
     </div>
     <div class="content">
-      <p class="subtitle">MOCKUP</p>
+      <p class="subtitle">Mockup</p>
       <h1 class="title">{{title}}</h1>
       <p class="description">{{description}}</p>
       <div class="placeholder">
@@ -222,14 +225,27 @@ class HTMLAdapter:
 </html>'''
 
     def _apply_bnw_palette(self, html: str) -> str:
-        """B&W 팔레트 강제 적용 — 비그레이스케일 색상 제거"""
+        """B&W 팔레트 강제 적용 — Refined Minimal 색상 정규화"""
         p = self.BNW_PALETTE
-        # #999 → WCAG AA 준수 #767676
-        html = html.replace("#999", p["text_disabled"])
-        # rgba 그림자를 순수 그레이스케일로
+        # 순수 검정 → Nordic Gray
+        html = html.replace("color: #000", f'color: {p["text_primary"]}')
+        html = html.replace("color:#000", f'color:{p["text_primary"]}')
+        # #1a1a1a → text_primary
+        html = html.replace("#1a1a1a", p["text_primary"])
+        # #2d2d2d → text_body
+        html = html.replace("#2d2d2d", p["text_body"])
+        # #999 → muted
+        html = html.replace("#999", p["text_muted"])
+        # #666 → muted
+        html = html.replace("#666", p["text_muted"])
+        # #f8f8f8 → Mercury White
+        html = html.replace("#f8f8f8", p["bg_light"])
+        # 비 grayscale rgba는 건드리지 않음 (3-layer shadow 패턴 보존)
+        # 단, 높은 opacity(>0.1) rgba만 낮춤
         html = re.sub(
-            r'rgba\(\d+,\s*\d+,\s*\d+,\s*[\d.]+\)',
-            'rgba(0,0,0,0.06)',
+            r'rgba\((\d+),\s*(\d+),\s*(\d+),\s*(0\.[1-9]\d*|[1-9][\d.]*)\)',
+            lambda m: f'rgba({m.group(1)},{m.group(2)},{m.group(3)},0.06)'
+            if float(m.group(4)) > 0.1 else m.group(0),
             html,
         )
         return html

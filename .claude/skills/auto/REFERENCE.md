@@ -890,18 +890,18 @@ target_doc = options.get("mockup")  # 문서 경로
 # 3-Tier 라우팅 (키워드 기반) → HTML/Mermaid/Stitch 자동 선택
 ```
 
-**Step 2: designer 스타일링 (--bnw AND HTML 선택 시)**
+**Step 2: designer 스타일링 (HTML 선택 시)**
 ```
-# 조건: options.bnw == True AND backend == HTML
+# 조건: backend == HTML (B&W Refined Minimal은 기본 스타일)
 Agent(subagent_type="designer", name="mockup-designer", description="목업 디자인", team_name="pdca-{feature}",
-     prompt="[Mockup B&W] docs/mockups/{name}.html을 B&W 제약으로 스타일링.
-             팔레트: #000, #1a1a1a, #2d2d2d, #666, #767676, #e5e5e5, #f8f8f8, #fff만.
-             emoji/SVG/icon font 금지. 독창적 타이포그래피. 비대칭 레이아웃.
+     prompt="[Mockup B&W] docs/mockups/{name}.html을 Refined Minimal B&W 스타일로 스타일링.
+             팔레트: #222326, #555555, #8a8a8a, #767676, #e5e5e5, #F4F5F8, #fff만.
+             emoji/SVG/icon font 금지. Inter 400/500/600 단일 서체.
              max-width: 720px, max-height: 1280px.
-             designer.md의 --bnw 섹션 참조.")
+             designer.md의 B&W Refined Minimal 섹션 참조.")
 SendMessage(type="message", recipient="mockup-designer", content="B&W 스타일링 시작.")
 # 완료 대기 → shutdown_request
-# --bnw 없으면 이 Step 스킵
+# Mermaid 선택 시 이 Step 스킵
 ```
 
 **Step 3: PNG 캡처 (Lead 직접 Bash 실행)**
@@ -922,10 +922,10 @@ print(f'CAPTURED: {result}' if result else 'CAPTURE_FAILED')
 - 캡처 실패: `[{name} 목업](docs/mockups/{name}.html)` + 경고 메시지
 - 대상 문서 없음: 삽입 스킵
 
-**--bnw 제약** (명시적 플래그 필수): B&W 스타일 제약이며 HTML 강제 아님. 3-Tier 라우팅이 우선.
-- Mermaid 선택 시: --bnw 무시 (기본 흑백)
-- HTML 선택 시: Step 1에서 기본 B&W 팔레트 적용 + Step 2에서 designer 스타일링
-- 팔레트: #000, #1a1a1a, #2d2d2d, #666, #767676(WCAG AA), #e5e5e5, #f8f8f8, #fff
+**B&W Refined Minimal** (기본 스타일): HTML 목업은 항상 B&W Refined Minimal로 생성. `--bnw`는 deprecated (파싱만, 무시됨).
+- Mermaid 선택 시: 기본 흑백 (designer 스킵)
+- HTML 선택 시: Step 1에서 기본 팔레트 적용 + Step 2에서 designer 스타일링
+- 팔레트: #222326, #555555, #8a8a8a, #767676(WCAG AA), #e5e5e5, #F4F5F8, #fff
 
 **에러 처리**: Task 실패 시 에러 메시지 출력 + Phase 2 BUILD 중단. 옵션 실패 시: 에러 출력, 절대 조용히 스킵 금지.
 
