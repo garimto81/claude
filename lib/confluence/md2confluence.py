@@ -66,7 +66,7 @@ def get_auth(cfg):
 
 def api_get(cfg, path, params=None):
     url = f"{cfg['base_url']}/rest/api{path}"
-    resp = requests.get(url, auth=get_auth(cfg), params=params)
+    resp = requests.get(url, auth=get_auth(cfg), params=params, timeout=30)
     resp.raise_for_status()
     return resp.json()
 
@@ -76,6 +76,7 @@ def api_put_json(cfg, path, payload):
     resp = requests.put(
         url, auth=get_auth(cfg), json=payload,
         headers={"Content-Type": "application/json"},
+        timeout=30,
     )
     resp.raise_for_status()
     return resp.json()
@@ -100,7 +101,7 @@ def upload_attachment(cfg, page_id, filepath, filename=None):
 
     with open(filepath, "rb") as f:
         files = {"file": (filename, f, "application/octet-stream")}
-        resp = requests.put(url, auth=get_auth(cfg), headers=headers, files=files)
+        resp = requests.put(url, auth=get_auth(cfg), headers=headers, files=files, timeout=60)
 
     if resp.status_code in (200, 201):
         print(f"  [OK] {filename}")

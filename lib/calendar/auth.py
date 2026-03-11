@@ -41,8 +41,9 @@ def get_credentials() -> Optional[Credentials]:
     if TOKEN_PATH.exists():
         try:
             creds = Credentials.from_authorized_user_file(str(TOKEN_PATH), DEFAULT_SCOPES)
-        except Exception:
-            pass
+        except Exception as e:
+            import sys
+            print(f"[WARN] Failed to load calendar token: {e}", file=sys.stderr)
 
     if creds and creds.expired and creds.refresh_token:
         try:
@@ -60,6 +61,7 @@ def _save_token(creds: Credentials) -> None:
     """Save credentials to token file."""
     TOKEN_PATH.parent.mkdir(parents=True, exist_ok=True)
 
+    # client_id/client_secret are required for token refresh (Google OAuth desktop app pattern)
     data = {
         "token": creds.token,
         "refresh_token": creds.refresh_token,
@@ -67,7 +69,6 @@ def _save_token(creds: Credentials) -> None:
         "client_id": creds.client_id,
         "client_secret": creds.client_secret,
         "scopes": list(creds.scopes) if creds.scopes else [],
-        "expires_at": creds.expiry.isoformat() if creds.expiry else None,
     }
 
     TOKEN_PATH.write_text(json.dumps(data, indent=2, ensure_ascii=False), encoding="utf-8")

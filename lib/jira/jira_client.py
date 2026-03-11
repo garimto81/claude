@@ -41,6 +41,9 @@ sys.stdout.reconfigure(encoding="utf-8")
 def _get_win_env(name):
     """Get Windows User environment variable (fallback when shell env is empty)."""
     try:
+        import re
+        if not re.match(r'^[A-Za-z_][A-Za-z0-9_]*$', name):
+            return ""
         result = subprocess.run(
             ["powershell.exe", "-Command",
              f"[System.Environment]::GetEnvironmentVariable('{name}', 'User')"],
@@ -280,8 +283,17 @@ def close_issues_by_jql(jql, dry_run=False, cfg=None):
     return results
 
 
+def _validate_issue_key(key: str) -> str:
+    """Validate and sanitize Jira issue key to prevent JQL injection."""
+    import re
+    if not re.match(r'^[A-Z][A-Z0-9]+-\d+$', key):
+        raise ValueError(f"Invalid Jira issue key format: {key}")
+    return key
+
+
 def close_children(epic_key, dry_run=False, cfg=None):
     """Close all non-Epic child issues under an Epic."""
+    epic_key = _validate_issue_key(epic_key)
     jql = f'parent = {epic_key} AND issuetype != Epic AND status != CLOSED AND status != Done'
     print(f"Closing children of {epic_key}...")
     return close_issues_by_jql(jql, dry_run=dry_run, cfg=cfg)
@@ -393,6 +405,24 @@ def analyze_epics(board_id, cfg=None):
     print("[3/3] Analyzing each epic...\n")
     print("=" * 70)
 
+    # Batch fetch descriptions (N calls → 1 call)
+    desc_map = {}
+    epic_keys = [e.get("key") for e in epics if e.get("key")]
+    if epic_keys:
+        try:
+            validated_keys = [_validate_issue_key(k) for k in epic_keys]
+            keys_jql = ", ".join(validated_keys)
+            batch = search_issues(
+                f"key in ({keys_jql})",
+                max_results=len(epic_keys),
+                fields=["description", "summary", "status"],
+                cfg=cfg,
+            )
+            for issue in batch.get("issues", []):
+                desc_map[issue["key"]] = issue.get("fields", {}).get("description")
+        except Exception as e:
+            print(f"  [WARN] Batch description fetch failed, falling back: {e}")
+
     for epic in epics:
         epic_key = epic.get("key", "N/A")
         epic_name = epic.get("name", "") or epic.get("summary", "N/A")
@@ -404,22 +434,25 @@ def analyze_epics(board_id, cfg=None):
         print(f"Status: {status} | Done: {done}")
         print(f"{'-' * 70}")
 
-        # Fetch full issue for description
-        try:
-            full = get_issue(epic_key, fields=["description", "summary", "status"], cfg=cfg)
-            desc = full.get("fields", {}).get("description")
-            if desc:
-                print("\nDescription:")
-                print(extract_adf_text(desc))
-            else:
-                print("\n(No description)")
-        except Exception as e:
-            print(f"  [WARN] Could not fetch details: {e}")
+        # Use batched description (fallback to individual fetch)
+        desc = desc_map.get(epic_key)
+        if desc is None and epic_key not in desc_map:
+            try:
+                full = get_issue(epic_key, fields=["description"], cfg=cfg)
+                desc = full.get("fields", {}).get("description")
+            except Exception as e:
+                print(f"  [WARN] Could not fetch details: {e}")
+        if desc:
+            print("\nDescription:")
+            print(extract_adf_text(desc))
+        else:
+            print("\n(No description)")
 
         # Count child stories
         try:
+            validated_key = _validate_issue_key(epic_key)
             children = search_issues(
-                f'"Epic Link" = {epic_key}',
+                f'"Epic Link" = {validated_key}',
                 max_results=1,
                 fields=["summary"],
                 cfg=cfg,

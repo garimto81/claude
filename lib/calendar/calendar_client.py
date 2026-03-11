@@ -173,8 +173,8 @@ class CalendarClient:
             List of CalendarEvent objects
         """
         now = datetime.now(timezone.utc)
-        time_min = now.isoformat() + "Z"
-        time_max = (now + timedelta(days=days)).isoformat() + "Z"
+        time_min = now.strftime("%Y-%m-%dT%H:%M:%S.%fZ")
+        time_max = (now + timedelta(days=days)).strftime("%Y-%m-%dT%H:%M:%S.%fZ")
 
         # Try gws first
         if self._gws_available:
@@ -263,6 +263,8 @@ class CalendarClient:
             body["start"] = {"date": request.all_day_start.isoformat()}
             body["end"] = {"date": (request.all_day_end or request.all_day_start).isoformat()}
         else:
+            if request.start_time is None or request.end_time is None:
+                raise CalendarAPIError("start_time and end_time are required for timed events")
             body["start"] = {
                 "dateTime": request.start_time.isoformat(),
                 "timeZone": request.time_zone,

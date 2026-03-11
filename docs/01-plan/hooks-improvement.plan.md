@@ -109,7 +109,7 @@ echo "def test_fail(): assert False" > C:\claude\tests\test_hook.py
 
 ### 2.3 Playwright CLI 워크플로우 개선
 
-**현황**: `.claude/skills/webapp-testing/`에서 Playwright CLI 사용 중
+**현황**: `.claude/skills/playwright-wrapper/`에서 Playwright CLI 사용 중
 
 **목표**: CLI 기반 스크린샷 및 테스트 워크플로우 최적화
 
@@ -118,7 +118,7 @@ echo "def test_fail(): assert False" > C:\claude\tests\test_hook.py
   ```powershell
   npx playwright screenshot docs/mockups/feature.html docs/images/feature.png
   ```
-- 스킬 업데이트: `webapp-testing/SKILL.md`에서 CLI 명령 가이드 제공
+- 스킬 업데이트: `playwright-wrapper/SKILL.md`에서 CLI 명령 가이드 제공
   - 스크린샷: `npx playwright screenshot <url> <output>`
   - 헤드리스 테스트: `npx playwright test`
   - 디버깅: `npx playwright test --headed --debug`
@@ -133,7 +133,7 @@ echo "def test_fail(): assert False" > C:\claude\tests\test_hook.py
 - 외부 의존성 최소화
 
 **영향 파일**:
-- `.claude/skills/webapp-testing/SKILL.md` (CLI 사용 예시 추가)
+- `.claude/skills/playwright-wrapper/SKILL.md` (CLI 사용 예시 추가)
 
 **의존성**:
 - Playwright CLI (npm/npx 기반)
@@ -243,7 +243,7 @@ npm install --save-dev playwright  # 예상: 1-2분 소요
 | 파일 | 변경 내용 |
 |------|----------|
 | `C:\claude\.claude\settings.json` | PostToolUse, Notification Hook 등록 |
-| `C:\claude\.claude\skills\webapp-testing\SKILL.md` | MCP 사용 예시 추가 |
+| `C:\claude\.claude\skills\playwright-wrapper\SKILL.md` | MCP 사용 예시 추가 |
 | `C:\claude\docs\AGENTS_REFERENCE.md` | Task 의존성 패턴 예시 추가 |
 
 ---
@@ -349,7 +349,7 @@ npx playwright screenshot file:///C:/claude/docs/mockups/feature.html docs/image
 Test-Path docs/images/feature.png
 ```
 
-**webapp-testing/SKILL.md 업데이트**:
+**playwright-wrapper/SKILL.md 업데이트**:
 ```markdown
 ## Playwright CLI 사용 예시
 

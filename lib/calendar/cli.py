@@ -310,7 +310,13 @@ def _parse_create_request(
         )
     else:
         # All-day event
-        end_date = date.fromisoformat(end_str) if end_str else start_date
+        if end_str:
+            try:
+                end_date = date.fromisoformat(end_str)
+            except ValueError:
+                raise ValueError(f"Invalid end date format: {end_str}. Use 'YYYY-MM-DD'")
+        else:
+            end_date = start_date
         return CreateEventRequest(
             summary=summary,
             description=description,
