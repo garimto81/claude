@@ -310,7 +310,7 @@ git worktree prune
 
 ### Agent Teams 병렬 격리 (HEAVY 모드)
 
-HEAVY(4-5점) 시 teammate별 별도 worktree로 완전 격리:
+HEAVY(4-6점) 시 teammate별 별도 worktree로 완전 격리:
 
 ```bash
 # Phase 2 병렬 구현 시
@@ -375,6 +375,12 @@ Agent(subagent_type="executor-high", name="prd-writer", description="PRD 문서 
      === PRD 템플릿 (필수 섹션) ===
 
      # {feature} PRD
+
+     ## 0. Market Context (선택)
+     - 시장 배경 / 고객 페인포인트
+     - 비즈니스 Impact 범위
+     - Target Segment / Volume
+     - Appetite: {Small 2주 | Big 6주} (이 기능에 투자할 시간 예산)
 
      ## 1. 배경 및 목적
      - 왜 이 기능/변경이 필요한지
@@ -523,7 +529,7 @@ SendMessage(type="shutdown_request", recipient="intent-analyst")
 
 **산출물**: 문서 중복 여부, 연관 이슈 번호, Intent Analysis (Phase 1.3에 사용)
 
-### Step 1.1: 복잡도 점수 판단 (MANDATORY - 5점 만점)
+### Step 1.1: 복잡도 점수 판단 (MANDATORY - 6점 만점)
 
 | # | 조건 | 1점 기준 | 0점 기준 |
 |:-:|------|---------|---------|
@@ -532,6 +538,7 @@ SendMessage(type="shutdown_request", recipient="intent-analyst")
 | 3 | **의존성** | 새 라이브러리/서비스 추가 | 기존 의존성만 사용 |
 | 4 | **모듈 영향** | 2개 이상 모듈/패키지 영향 | 단일 모듈 내 변경 |
 | 5 | **사용자 명시** | `ralplan` 키워드 포함 | 키워드 없음 |
+| 6 | **Appetite 선언** | "제대로/production-ready" 명시 | "빠르게/간단히/hotfix" 또는 미선언 |
 
 **판단 로그 출력 (항상 필수):**
 ```
@@ -541,20 +548,21 @@ SendMessage(type="shutdown_request", recipient="intent-analyst")
 의존성:   {0|1}점 ({근거})
 모듈 영향: {0|1}점 ({근거})
 사용자 명시: {0|1}점
-총점: {score}/5 -> {LIGHT|STANDARD|HEAVY}
+Appetite: {0|1}점 ({빠르게→0 | 제대로→1 | 미선언→0})
+총점: {score}/6 -> {LIGHT|STANDARD|HEAVY}
 ===================
 ```
 
 **복잡도 모드:**
 - **0-1점**: LIGHT (간단, executor-high 단일)
 - **2-3점**: STANDARD (보통, executor-high 루프)
-- **4-5점**: HEAVY (복잡, Planner-Critic Loop)
+- **4-6점**: HEAVY (복잡, Planner-Critic Loop)
 
 ### Step 1.2: 계획 수립 (명시적 호출)
 
 **LIGHT (0-1점): Planner sonnet teammate**
 ```
-Agent(subagent_type="planner", name="planner", description="계획 수립", team_name="pdca-{feature}", prompt="... (복잡도: LIGHT {score}/5, 단일 파일 수정 예상).
+Agent(subagent_type="planner", name="planner", description="계획 수립", team_name="pdca-{feature}", prompt="... (복잡도: LIGHT {score}/6, 단일 파일 수정 예상).
      PRD 참조: docs/00-prd/{feature}.prd.md (있으면 반드시 기반으로 계획 수립).
      PRD의 요구사항 번호(FR-xxx)를 Plan 항목에 매핑하세요.
      사용자 확인/인터뷰 단계를 건너뛰세요. 바로 계획 문서를 작성하세요.
@@ -568,7 +576,7 @@ SendMessage(type="message", recipient="planner", content="계획 수립 시작. 
 
 **STANDARD (2-3점): Planner opus teammate**
 ```
-Agent(subagent_type="planner", name="planner", description="계획 수립", team_name="pdca-{feature}", prompt="... (복잡도: STANDARD {score}/5, 판단 근거 포함).
+Agent(subagent_type="planner", name="planner", description="계획 수립", team_name="pdca-{feature}", prompt="... (복잡도: STANDARD {score}/6, 판단 근거 포함).
      PRD 참조: docs/00-prd/{feature}.prd.md (있으면 반드시 기반으로 계획 수립).
      PRD의 요구사항 번호(FR-xxx)를 Plan 항목에 매핑하세요.
      사용자 확인/인터뷰 단계를 건너뛰세요. 바로 계획 문서를 작성하세요.
@@ -580,7 +588,7 @@ SendMessage(type="message", recipient="planner", content="계획 수립 시작. 
 # 완료 대기 → shutdown_request
 ```
 
-**HEAVY (4-5점): Planner-Critic Loop (max 5 iterations)**
+**HEAVY (4-6점): Planner-Critic Loop (max 5 iterations)**
 
 ```
 critic_feedback = ""      # Lead 메모리에서 관리
@@ -787,7 +795,7 @@ else:
 | 3.3 E2E | E2E 실패 처리 (진단 + Domain-Smart Fix, max 2회) |
 | 4 CLOSE | gap < 90% → executor teammate (최대 5회) |
 
-### HEAVY 모드 (4-5점)
+### HEAVY 모드 (4-6점)
 
 | Phase | 실행 |
 |-------|------|

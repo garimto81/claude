@@ -1,0 +1,721 @@
+<!DOCTYPE html>
+<html lang="ko">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>Project Management Process</title>
+    <script src="https://cdn.tailwindcss.com"></script>
+    <style>
+        @import url('https://fonts.googleapis.com/css2?family=Noto+Sans+KR:wght@300;400;500;700&display=swap');
+        
+        body {
+            font-family: 'Noto Sans KR', sans-serif;
+            background-color: #f3f4f6;
+            color: #333;
+        }
+
+        .slide-container {
+            background-color: white;
+            max-w: 1200px;
+            margin: 2rem auto;
+            padding: 4rem;
+            box-shadow: 0 4px 6px -1px rgba(0, 0, 0, 0.1), 0 2px 4px -1px rgba(0, 0, 0, 0.06);
+            border-radius: 0.5rem;
+        }
+
+        /* Custom SVG arrows and lines */
+        .arrow-down::after {
+            content: '↓';
+            display: block;
+            text-align: center;
+            font-size: 1.5rem;
+            color: #6b7280;
+            margin: 0.5rem 0;
+        }
+
+        .tag {
+            display: inline-block;
+            font-size: 0.7rem;
+            font-weight: bold;
+            padding: 0.1rem 0.3rem;
+            border-radius: 0.2rem;
+            border: 1.5px solid;
+            margin-right: 0.2rem;
+        }
+        .tag-gd { border-color: #3b82f6; color: #3b82f6; }
+        .tag-pm { border-color: #ef4444; color: #ef4444; }
+        .tag-dev { border-color: #22c55e; color: #22c55e; }
+
+        .flow-box {
+            border: 1.5px solid #6b7280;
+            background-color: #f3f4f6;
+            border-radius: 0.5rem;
+            padding: 0.75rem;
+            text-align: center;
+            font-weight: 500;
+            position: relative;
+            z-index: 10;
+        }
+        .flow-box.black {
+            background-color: #111827;
+            color: #facc15;
+            border-color: #111827;
+        }
+        
+        .dashed-box {
+            border: 1.5px dashed #6b7280;
+            padding: 0.75rem;
+            font-size: 0.875rem;
+            color: #4b5563;
+        }
+
+        .connecting-line-h {
+            position: absolute;
+            top: 50%;
+            left: 100%;
+            width: 3rem;
+            height: 1.5px;
+            background-image: linear-gradient(to right, transparent 50%, #6b7280 50%);
+            background-size: 6px 100%;
+            z-index: 1;
+        }
+
+        .handwritten {
+            font-family: 'Comic Sans MS', 'Chalkboard SE', sans-serif; /* fallback for handwritten style */
+            font-style: italic;
+            color: #b91c1c;
+        }
+    </style>
+</head>
+<body class="antialiased">
+
+    <!-- Slide 1: Basic Process -->
+    <div class="slide-container">
+        <h1 class="text-3xl font-bold text-gray-600 mb-8">Project(Product) Management 기본 Process</h1>
+        
+        <div class="text-sm space-y-4 mb-8">
+            <p>먼저, Project management 상의 Process를 크게 두개의 phase로 구분한다.<br>
+            Process Phase를 요구사항 취합 정리 Process와 Delivery Phase 두개의 Phase로 구분하여, 각 Process Phase 별로 PM의 역할을 확장 한다. High-level 기획-요구사항 수립 단계에서의 PM의 역할을 정의 하여, 요구사항에 대한 최종 개발 안건 fix하는데 중심적으로 기여하며, 이후 개발안건의 구체화-개발진행-배포까지 그 역할을 수행 할 수 있도록 한다.</p>
+
+            <ul class="list-disc pl-5 space-y-2">
+                <li><span class="font-bold">Collecting Requirement Phase:</span> 요구사항 및 의사결정 수집 단계에서의 취합 정리 process, Quality 있는 기획안건의 마련에 그 초점을 맞춘다.
+                    <ul class="list-none pl-5 mt-1 space-y-1">
+                        <li>○ High-level 기획- 요구사항 수립 단계에서의 PM의 역할을 정의 하여, 요구사항에 대한 최종 개발 안건 fix하는데 중심적으로 기여</li>
+                        <li>○ <span class="font-bold">요구사항에 대한 Main concept가 정립되면, 기본 Rule과 UI Mockup 이 포함된 구체화된 결과물을 도출할 수 있도록 한다.</span>
+                            <ul class="list-square pl-5 mt-1">
+                                <li>■ 기획팀과 Rule과 UI Mockup 완료 일정을 협의/확인 하고, Resource발주 이후 개발에 필요한 결과물을 도출할 수 있도록 Manage한다.</li>
+                                <li>■ 이 단계 제작 단계에서 검토 해야 하는 예상 이슈들을 발의하여 Risk를 최소화 할 수 있게 한다.</li>
+                            </ul>
+                        </li>
+                    </ul>
+                </li>
+                <li><span class="font-bold">Delivery phase:</span> 구체화된 내용이 포함된 요구사항을 공유하고, 효율적인 개발 업무 및 안정적이고 계획성있는 배포(Delivery)를 위한 Process, 즉 실제 개발과 구현에 그 초점을 맞춘다.
+                    <ul class="list-none pl-5 mt-1 space-y-1">
+                        <li>○ <span class="font-bold">안건의 구체화:</span> 개발이 가능한 수준으로 안건을 구체화 하는데 최대한 기여한다.</li>
+                        <li>○ <span class="font-bold">구체화된 안건의 공유:</span> 요구사항의 방향성과 기대결과기 무엇인지에 대한 뚜렷한 인지를 할 수 있도록 한다. 즉, 모든 사람이 같은 page를 볼 수 있도록 기여한다.
+                            <ul class="list-square pl-5 mt-1">
+                                <li>■ <span class="font-bold">이렇게 하기 위해서는, 요구사항(Requirement) 의 최종 confirm이 필수이다</span></li>
+                            </ul>
+                        </li>
+                        <li>○ <span class="font-bold">개발 및 배포:</span> 안정적인 배포를 할 수 있도록, Test Version 및 Release version을 Test/Stage/UAT 환경에 안착시키는 데 그 목표를 둔다.</li>
+                    </ul>
+                </li>
+            </ul>
+        </div>
+
+        <!-- Two Phase Boxes -->
+        <div class="flex items-start justify-center gap-8 relative mt-12">
+            <!-- Box 1 -->
+            <div class="w-5/12">
+                <div class="bg-gray-200 border border-gray-400 rounded-md py-2 px-4 text-center font-bold mb-4">
+                    Phase 1: Collecting Requirement Process
+                </div>
+                <ul class="text-sm pl-4 list-disc space-y-1">
+                    <li class="font-bold">High Level 기획 - 기본 Concept 최소한의 구체화 단계</li>
+                    <li class="font-bold">결과물
+                        <ul class="list-none pl-4 font-normal mt-1">
+                            <li>○ 안건의 기본 Rule 과 개발 결과물을 예상할 수 있는 최소한의 UI Mockup 이 Confirm된 결과물이 도출됨.</li>
+                            <li>○ 우선순위(Priority) 산정 및 대략의 배포 일정(Release Date)</li>
+                            <li>○ 안건이 Summary 된 Jira Issue</li>
+                        </ul>
+                    </li>
+                </ul>
+            </div>
+
+            <!-- Loop Icon -->
+            <div class="flex flex-col items-center justify-center pt-10">
+                <svg xmlns="http://www.w3.org/2000/svg" width="32" height="32" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round" class="text-gray-600"><path d="M3 12a9 9 0 1 0 9-9 9.75 9.75 0 0 0-6.74 2.74L3 8"/><path d="M3 3v5h5"/></svg>
+            </div>
+
+            <!-- Box 2 -->
+            <div class="w-5/12">
+                <div class="bg-gray-200 border border-gray-400 rounded-md py-2 px-4 text-center font-bold mb-4">
+                    Phase 2: Delivery Process
+                </div>
+                <ul class="text-sm pl-4 list-disc space-y-1">
+                    <li class="font-bold">실무 개발 착수-완료 단계</li>
+                    <li class="font-bold">Confirm이 완료된 Requirement(기획 안건) 공유 단계</li>
+                    <li class="font-bold">결과물
+                        <ul class="list-none pl-4 font-normal mt-1">
+                            <li>○ 구체적인 배포 일정</li>
+                            <li>○ Project Status를 한눈에 확인할 수 있는 Visibility가 있는 Dashboard</li>
+                            <li>○ Test/Stage/UAT 배포 일정</li>
+                            <li>○ 배포 및 사후관리 계획</li>
+                        </ul>
+                    </li>
+                </ul>
+            </div>
+        </div>
+        
+        <!-- Bottom Banner -->
+        <div class="flex justify-center mt-8">
+            <div class="bg-black text-white px-6 py-1 text-sm font-bold rounded-sm">
+                이 2개의 Process Phase를 무한 loop 한다
+            </div>
+        </div>
+    </div>
+
+    <!-- Slide 2: Phase 1 Detail -->
+    <div class="slide-container">
+        <h1 class="text-3xl font-bold text-gray-600 mb-6">Phase1: Collecting Requirement Process</h1>
+        
+        <div class="text-sm mb-8">
+            <p class="font-bold text-gray-700">주요 참여 파트</p>
+            <ul class="list-disc pl-5 mb-4 text-gray-600">
+                <li><span class="tag tag-gd">GD</span> Game Design, <span class="tag tag-pm">PM</span> PM</li>
+            </ul>
+            
+            <p class="font-bold text-gray-700">사용 Tool</p>
+            <ul class="list-disc pl-5 text-gray-600">
+                <li>Slack 의사결정 관련 채널 (#dev-design 등)</li>
+                <li>대면 Meeting</li>
+            </ul>
+        </div>
+
+        <div class="grid grid-cols-[200px_350px_400px] gap-8 items-start mt-10">
+            <!-- Left Column (Feedbacks) -->
+            <div class="flex flex-col gap-y-24 pt-20">
+                <div class="dashed-box text-center relative ml-auto mr-4">
+                    필요시 일정 및<br>specification 조정
+                    <!-- Feedback arrow to step 2 -->
+                    <div class="absolute top-1/2 -right-4 w-4 border-b border-gray-400"></div>
+                    <div class="absolute -top-10 left-1/2 h-10 border-l border-gray-400"></div>
+                    <div class="absolute -top-10 left-1/2 w-[220px] border-t border-gray-400"></div>
+                </div>
+                <div class="dashed-box text-center relative ml-auto mr-4">
+                    필요시 안건의<br>우선순위 재배치
+                     <!-- Feedback arrow to step 4 -->
+                     <div class="absolute top-1/2 -right-4 w-4 border-b border-gray-400"></div>
+                     <div class="absolute -top-10 left-1/2 h-10 border-l border-gray-400"></div>
+                     <div class="absolute -top-10 left-1/2 w-[220px] border-t border-gray-400"></div>
+                </div>
+            </div>
+
+            <!-- Middle Column (Main Flow) -->
+            <div class="flex flex-col items-center relative">
+                <!-- Vertical Line Background -->
+                <div class="absolute top-4 bottom-10 left-1/2 w-[1.5px] bg-gray-400 -z-10 transform -translate-x-1/2"></div>
+                
+                <!-- Step 1 -->
+                <div class="relative w-full mb-10">
+                    <div class="absolute -top-6 left-2"><span class="tag tag-gd bg-white">GD</span></div>
+                    <div class="flow-box black text-lg w-full">요구사항 안건 발의 및 Main concept 수립</div>
+                    <div class="text-center text-gray-500 my-1 text-xl">↓</div>
+                </div>
+                
+                <!-- Step 2 -->
+                <div class="relative w-full mb-10">
+                    <div class="absolute -top-6 left-2 bg-white px-1">
+                        <span class="tag tag-gd bg-white">GD</span><span class="tag tag-pm bg-white">PM</span>
+                    </div>
+                    <div class="flow-box w-full">안건 작업 일정 사전 협의</div>
+                    <div class="text-center text-gray-500 my-1 text-xl">↓</div>
+                </div>
+
+                <!-- Step 3 -->
+                <div class="relative w-full mb-10">
+                    <div class="absolute -top-6 left-2"><span class="tag tag-gd bg-white">GD</span></div>
+                    <div class="flow-box w-full">안건 구체화</div>
+                    <div class="text-center text-gray-500 my-1 text-xl">↓</div>
+                </div>
+
+                <!-- Step 4 -->
+                <div class="relative w-full mb-10">
+                    <div class="absolute -top-6 left-2 bg-white px-1">
+                        <span class="tag tag-gd bg-white">GD</span><span class="tag tag-pm bg-white">PM</span>
+                    </div>
+                    <div class="flow-box w-full">우선순위 산정</div>
+                    <div class="text-center text-gray-500 my-1 text-xl">↓</div>
+                </div>
+
+                <!-- Step 5 -->
+                <div class="relative w-full">
+                    <div class="absolute -top-6 left-2"><span class="tag tag-pm bg-white">PM</span></div>
+                    <div class="flow-box w-full">개발이슈 공유 준비</div>
+                </div>
+            </div>
+
+            <!-- Right Column (Details) -->
+            <div class="flex flex-col gap-y-[2.8rem] pt-1">
+                <div class="dashed-box relative">
+                    <div class="absolute top-1/2 -left-8 w-8 border-b border-dotted border-gray-600"></div>
+                    1. High-Level 기획안건 발의 및 개발여부 검토<br>
+                    2. 관련 검토 사항(예외처리 Case) 질의 응답
+                </div>
+                <div class="dashed-box relative">
+                    <div class="absolute top-1/2 -left-8 w-8 border-b border-dotted border-gray-600"></div>
+                    1. 대략(Roughly)의 필요 개발 일정(공수) 확인
+                </div>
+                <div class="dashed-box relative">
+                    <div class="absolute top-1/2 -left-8 w-8 border-b border-dotted border-gray-600"></div>
+                    1. 기획 안건 문서 작성 완료 일정 계획<br>
+                    2. 기획 안건 문서 작성 완료<br>
+                    3. 안건에 대한 최종 Confirm<br>
+                    4. 리소스 발주 요청
+                </div>
+                <div class="dashed-box relative">
+                    <div class="absolute top-1/2 -left-8 w-8 border-b border-dotted border-gray-600"></div>
+                    1. 개발 진행중인 Task 들이 있는가?<br>
+                    2. 작업 착수를 위한 실무진 Slot이 있는가?<br>
+                    3. 배포 전략 수립
+                </div>
+                <div class="dashed-box relative">
+                    <div class="absolute top-1/2 -left-8 w-8 border-b border-dotted border-gray-600"></div>
+                    1. 기획 문서 내용 확인<br>
+                    2. Create or Update Jira Issue (Summary)<br>
+                    3. Project:GGPO에 생성 및 업데이트<br>
+                    4. GGNS에 이슈 연결
+                </div>
+            </div>
+        </div>
+    </div>
+
+    <!-- Slide 3: Phase 2 Detail -->
+    <div class="slide-container">
+        <h1 class="text-3xl font-bold text-gray-600 mb-6">Phase2: Delivery Process</h1>
+        
+        <div class="flex">
+            <div class="text-sm mb-8 w-1/3">
+                <p class="font-bold text-gray-700">주요 참여 파트</p>
+                <ul class="list-disc pl-5 mb-4 text-gray-600">
+                    <li><span class="tag tag-dev">DEV</span> Dev Team, <span class="tag tag-pm">PM</span> PM</li>
+                </ul>
+                
+                <p class="font-bold text-gray-700">사용 Tool</p>
+                <ul class="list-disc pl-5 text-gray-600">
+                    <li>Jira Kanban Board, Jira<br>Advanced Planning Board</li>
+                    <li>Slack Channel: #dev-{feature 이름}</li>
+                    <li class="text-gray-500">대면 Meeting (특별한 경우를<br>제외하고, 개발 착수 이후 진행<br>과정에서는 비추함)</li>
+                </ul>
+            </div>
+
+            <!-- Flowchart Area -->
+            <div class="w-2/3 grid grid-cols-[100px_300px_350px] gap-6 items-start -ml-10">
+                 <!-- Left Column (Feedbacks) -->
+                <div class="flex flex-col pt-[180px]">
+                    <div class="dashed-box text-center relative ml-auto mr-2 text-xs py-1 px-2">
+                        필요시 일정 조정 협의
+                        <div class="absolute top-1/2 -right-2 w-2 border-b border-gray-400"></div>
+                        <div class="absolute -top-[120px] left-1/2 h-[120px] border-l border-gray-400"></div>
+                        <div class="absolute -top-[120px] left-1/2 w-[220px] border-t border-gray-400"></div>
+                    </div>
+                </div>
+
+                <!-- Middle Column (Main Flow) -->
+                <div class="flex flex-col items-center relative">
+                    <div class="absolute top-4 bottom-4 left-1/2 w-[1.5px] bg-gray-400 -z-10 transform -translate-x-1/2"></div>
+                    
+                    <div class="relative w-full mb-8">
+                        <div class="absolute -top-6 left-2"><span class="tag tag-gd bg-white">GD</span></div>
+                        <div class="flow-box w-full">최종 의결 요구사항 개발팀 Review</div>
+                        <div class="text-center text-gray-500 my-0.5 text-xl">↓</div>
+                    </div>
+                    
+                    <div class="relative w-full mb-8">
+                        <div class="absolute -top-6 left-2 bg-white px-1">
+                            <span class="tag tag-dev bg-white">DEV</span><span class="tag tag-pm bg-white">PM</span>
+                        </div>
+                        <div class="flow-box w-full">안건 제작 관련 일정 Fix</div>
+                        <div class="text-center text-gray-500 my-0.5 text-xl">↓</div>
+                    </div>
+
+                    <div class="relative w-full mb-8">
+                        <div class="absolute -top-6 left-2"><span class="tag tag-pm bg-white">PM</span></div>
+                        <div class="flow-box w-full">Jira Issue에 Release Version Tagging</div>
+                        <div class="text-center text-gray-500 my-0.5 text-xl">↓</div>
+                    </div>
+
+                    <div class="relative w-full mb-8">
+                        <div class="absolute -top-6 left-2"><span class="tag tag-pm bg-white">PM</span></div>
+                        <div class="flow-box w-full">Jira Advanced Planning Board 공유</div>
+                        <div class="text-center text-gray-500 my-0.5 text-xl">↓</div>
+                    </div>
+
+                    <div class="relative w-full mb-8">
+                        <div class="absolute -top-6 left-2"><span class="tag tag-dev bg-white">DEV</span></div>
+                        <div class="flow-box w-full">개발 착수</div>
+                        <div class="text-center text-gray-500 my-0.5 text-xl">↓</div>
+                    </div>
+
+                    <div class="relative w-full mb-8">
+                        <div class="absolute -top-6 left-2"><span class="tag tag-pm bg-white">PM</span></div>
+                        <div class="flow-box w-full">개발 상황 Tracking 및 Risk 관리</div>
+                        <div class="text-center text-gray-500 my-0.5 text-xl">↓</div>
+                    </div>
+
+                    <div class="relative w-full">
+                        <div class="absolute -top-6 left-2 bg-[#111827] px-1 rounded">
+                            <span class="tag tag-dev">DEV</span><span class="tag tag-pm">PM</span>
+                        </div>
+                        <div class="flow-box black w-full text-yellow-400 font-bold tracking-wide">Live 배포(Delivery)</div>
+                    </div>
+                </div>
+
+                <!-- Right Column (Details) -->
+                <div class="flex flex-col gap-y-10 pt-2 text-sm">
+                    <div class="dashed-box relative py-4">
+                        <div class="absolute top-1/2 -left-6 w-6 border-b border-dotted border-gray-600"></div>
+                        1. 필요 개발 일정(개발 공수) 확인<br>
+                        2. 예상 Test 배포 일정 확인<br>
+                        3. 검증(QA)을 위한 필요 일정 확인<br>
+                        4. 배포 날짜 최종 Fix
+                    </div>
+                    <div class="dashed-box relative mt-[10px]">
+                        <div class="absolute top-1/2 -left-6 w-6 border-b border-dotted border-gray-600"></div>
+                        1. 정규 배포 일정을 기준으로 vYYYYMMDD 형태로 Tagging
+                    </div>
+                    <div class="dashed-box relative mt-[10px]">
+                        <div class="absolute top-1/2 -left-6 w-6 border-b border-dotted border-gray-600"></div>
+                        1. 예정 배포일 기준 Version으로 Filter 하여 공유<br>
+                        2. 우선순위별 오름차순 정렬<br>
+                        3. 정규배포분/Hotfix분 구분 필수
+                    </div>
+                    <div class="dashed-box relative mt-[10px]">
+                        <div class="absolute top-1/2 -left-6 w-6 border-b border-dotted border-gray-600"></div>
+                        1. Dev Team Board에 이슈 생성 및 연결 to GGPO<br>
+                        2. [기본 개발 Workflow] 로 진행
+                    </div>
+                    <div class="dashed-box relative mt-[10px]">
+                        <div class="absolute top-1/2 -left-6 w-6 border-b border-dotted border-gray-600"></div>
+                        1. On Test 일정 확인.<br>
+                        2. 검증(QA) 최종 일정 확인 - 검증에 필요한 소요 시간<br>
+                        3. Regulated Market 심사 진행
+                    </div>
+                </div>
+            </div>
+        </div>
+    </div>
+
+    <!-- Slide 4: Shape Up Concepts -->
+    <div class="slide-container">
+        <div class="text-sm space-y-2 mb-10 text-center text-gray-700">
+            <p>위 과정을 개념화하여 설명하면 아래 그림으로 이해할 수 있습니다.</p>
+            <p>전략기획팀-제품(PO/PM)의 Shaping 단계와<br>
+            이후 이 요구사항이 제품으로 산출되는 Betting 단계,<br>
+            그리고 ProjectManager - DEV 에서 Sprint 방법론 기반으로 Building 하는 단계로 구성.</p>
+        </div>
+
+        <!-- Drawing 1: Shaping / Betting / Building -->
+        <div class="flex justify-center items-center gap-4 mb-8">
+            <!-- Raw Idea -->
+            <div class="text-center w-32">
+                <div class="handwritten mb-2 uppercase text-sm font-bold tracking-wider">Shaping</div>
+                <svg viewBox="0 0 100 100" class="w-24 h-24 mx-auto stroke-black fill-none" stroke-width="2">
+                    <path d="M 50,10 C 70,5 90,20 95,40 C 98,60 85,85 60,95 C 40,102 15,85 5,65 C -5,45 10,20 30,15 C 38,13 45,12 50,10 Z" stroke-linejoin="round" stroke-linecap="round" />
+                    <text x="50" y="58" font-size="24" text-anchor="middle" stroke="none" fill="black" class="handwritten">?</text>
+                </svg>
+                <div class="handwritten text-xs mt-2 uppercase font-bold text-black leading-tight">Raw Idea<br>Or Request</div>
+            </div>
+            
+            <div class="w-8 flex items-center justify-center">
+                <svg viewBox="0 0 24 24" class="w-6 h-6"><path d="M5 12h14M13 5l7 7-7 7" fill="none" stroke="black" stroke-width="2"/></svg>
+            </div>
+
+            <!-- Shaped Pitch -->
+            <div class="text-center w-32 mt-7">
+                <svg viewBox="0 0 100 100" class="w-24 h-24 mx-auto stroke-black fill-none" stroke-width="2">
+                    <path d="M 40,15 C 70,10 90,30 95,50 C 98,75 75,90 50,95 C 25,98 10,80 5,60 C 0,40 15,20 40,15 Z" stroke-linejoin="round" />
+                </svg>
+                <div class="handwritten text-xs mt-2 uppercase font-bold text-black leading-tight">Shaped<br>Pitch</div>
+            </div>
+
+            <!-- Betting Line -->
+            <div class="text-center w-16 -mt-10 relative">
+                <div class="handwritten mb-1 uppercase text-sm font-bold tracking-wider">Betting</div>
+                <div class="h-24 border-l-2 border-dashed border-black mx-auto"></div>
+                <!-- arrow over dashed line -->
+                <svg viewBox="0 0 24 24" class="w-8 h-8 absolute top-8 left-1/2 transform -translate-x-1/2">
+                    <path d="M4 12c0-4.4 3.6-8 8-8s8 3.6 8 8" fill="none" stroke="black" stroke-width="2"/>
+                    <path d="M15 17l5-5-5-5" fill="none" stroke="black" stroke-width="2"/>
+                </svg>
+            </div>
+
+            <!-- Some scopes mapped -->
+            <div class="text-center w-32">
+                <div class="handwritten mb-2 uppercase text-sm font-bold tracking-wider">Building</div>
+                <svg viewBox="0 0 100 100" class="w-24 h-24 mx-auto stroke-black fill-none" stroke-width="2">
+                    <path d="M 40,15 C 70,10 90,30 95,50 C 98,75 75,90 50,95 C 25,98 10,80 5,60 C 0,40 15,20 40,15 Z" stroke-linejoin="round" />
+                    <!-- internal dashed lines -->
+                    <path d="M 40,15 Q 50,50 50,95" stroke-dasharray="4" />
+                    <path d="M 50,50 Q 80,60 95,50" stroke-dasharray="4" />
+                    <!-- checkmarks -->
+                    <path d="M 25,60 L 35,70 L 55,45" stroke="black" stroke-width="2" />
+                    <path d="M 60,75 L 68,85 L 85,65" stroke="black" stroke-width="2" />
+                </svg>
+                <div class="handwritten text-xs mt-2 uppercase font-bold text-black leading-tight">Some Scopes<br>Mapped, One<br>Finished</div>
+            </div>
+
+            <div class="w-8 flex items-center justify-center mt-7">
+                <svg viewBox="0 0 24 24" class="w-6 h-6"><path d="M5 12h14M13 5l7 7-7 7" fill="none" stroke="black" stroke-width="2"/></svg>
+            </div>
+
+            <!-- Fully Mapped -->
+            <div class="text-center w-32 mt-7">
+                <svg viewBox="0 0 100 100" class="w-24 h-24 mx-auto stroke-black fill-none" stroke-width="2">
+                    <path d="M 40,15 C 70,10 90,30 95,50 C 98,75 75,90 50,95 C 25,98 10,80 5,60 C 0,40 15,20 40,15 Z" stroke-linejoin="round" />
+                    <!-- internal dashed lines complex -->
+                    <path d="M 40,15 Q 50,50 50,95" stroke-dasharray="4" />
+                    <path d="M 50,50 Q 80,60 95,50" stroke-dasharray="4" />
+                    <path d="M 15,35 Q 40,40 50,50" stroke-dasharray="4" />
+                    <path d="M 70,25 Q 70,40 50,50" stroke-dasharray="4" />
+                    <!-- checkmarks -->
+                    <path d="M 25,60 L 32,68 L 45,50" stroke="black" stroke-width="2" />
+                    <path d="M 60,75 L 68,85 L 85,65" stroke="black" stroke-width="2" />
+                    <path d="M 70,30 L 75,35 L 85,25" stroke="black" stroke-width="2" />
+                    <path d="M 25,25 L 30,30 L 40,20" stroke="black" stroke-width="2" />
+                </svg>
+                <div class="handwritten text-xs mt-2 uppercase font-bold text-black leading-tight">Fully Mapped,<br>Most Important<br>Scopes Finished</div>
+            </div>
+        </div>
+
+        <div class="text-center font-serif italic text-lg text-black mt-8 mb-20">
+            "The phases of the work still hold true even if you don't work in cycles<br>
+            or have dedicated people to do the shaping and building"
+        </div>
+
+        <div class="text-sm space-y-1 mb-10 text-center text-gray-700">
+            <p>제품의 산출주기는 우리 제품의 점검주기인 2달 (8-10weeks)를 기준으로 잡고,</p>
+            <p>요구사항이 계속 빌드 Cycle 로 편입되면서 운영됩니다.</p>
+            <p>각각의 요구사항에 대해서 (크건 작건 무관하게) 1개의 문서세트(MRD+PRD)가 작성되고</p>
+            <p>각 요구사항이 JIRA sprint로 지속적으로 산입되면서 산출로 이어집니다.</p>
+            <p>아래 개념도에서 작은 SHAPE과 작은 BET이 계속 반복되는 것으로 가정.</p>
+        </div>
+
+        <!-- Drawing 2: Cycle Timeline -->
+        <div class="flex flex-col items-center mb-8 font-sans">
+            <div class="relative w-[600px] h-[150px]">
+                <!-- Out of cycle labels -->
+                <div class="handwritten text-sm absolute left-0 top-[20px]">OUT OF CYCLE</div>
+                <!-- In cycle label -->
+                <div class="handwritten text-sm absolute left-0 top-[100px]">IN CYCLE</div>
+                
+                <!-- Dashed line separator -->
+                <div class="absolute left-0 right-0 top-[75px] border-b border-dashed border-gray-600"></div>
+
+                <!-- 6 WEEKS, 2 WKS, 6 WEEKS headers -->
+                <div class="handwritten text-sm absolute left-[150px] top-0 text-red-600">6 WEEKS</div>
+                <div class="handwritten text-sm absolute left-[310px] top-0 text-red-600">2 WKS</div>
+                <div class="handwritten text-sm absolute left-[420px] top-0 text-red-600">6 WEEKS</div>
+
+                <!-- Boxes -->
+                <div class="absolute left-[130px] top-[20px] w-[140px] h-[30px] border-2 border-black flex items-center justify-center font-bold">SHAPE</div>
+                <div class="absolute left-[290px] top-[20px] w-[60px] h-[30px] border-2 border-black flex items-center justify-center font-bold">BET</div>
+                <div class="absolute left-[360px] top-[20px] w-[140px] h-[30px] border-2 border-black flex items-center justify-center font-bold">SHAPE</div>
+                
+                <div class="absolute left-[130px] top-[95px] w-[140px] h-[30px] border-2 border-black flex items-center justify-center font-bold">BUILD</div>
+                <div class="handwritten text-xs absolute left-[290px] top-[95px] text-center w-[60px] leading-tight text-black">COOL<br>DOWN</div>
+                <div class="absolute left-[360px] top-[95px] w-[140px] h-[30px] border-2 border-black flex items-center justify-center font-bold">BUILD</div>
+
+                <!-- Arrows -->
+                <!-- Shape -> Bet -->
+                <div class="absolute left-[270px] top-[35px] w-[20px] border-t-2 border-black"></div>
+                <div class="absolute left-[285px] top-[30px] w-3 h-3 border-t-2 border-r-2 border-black transform rotate-45"></div>
+                <!-- Bet -> Shape (Right) -->
+                <div class="absolute left-[350px] top-[35px] w-[10px] border-t-2 border-black"></div>
+                <!-- Bet -> Build (Down) -->
+                <svg class="absolute left-[348px] top-[35px] w-6 h-[75px]" viewBox="0 0 24 75" fill="none" stroke="black" stroke-width="2">
+                    <path d="M 2 0 L 10 0 L 10 60 L 2 60 L 2 75 M -2 68 L 2 75 L 6 68"/>
+                </svg>
+                <!-- Initial Bracket -->
+                <div class="absolute left-[100px] top-[20px] w-[20px] h-[30px] border-l-2 border-t-2 border-b-2 border-black"></div>
+                <div class="absolute left-[90px] top-[35px] w-[10px] border-t-2 border-black"></div>
+                <!-- Middle connection Bracket -->
+                <div class="absolute left-[120px] top-[35px] w-[10px] h-[75px] border-l-2 border-black"></div>
+                <div class="absolute left-[120px] top-[35px] w-[10px] border-t-2 border-black"></div>
+                <div class="absolute left-[120px] top-[110px] w-[10px] border-t-2 border-black"></div>
+                <!-- End bracket -->
+                <div class="absolute left-[500px] top-[20px] w-[20px] h-[30px] border-r-2 border-t-2 border-b-2 border-black"></div>
+                <div class="absolute left-[510px] top-[35px] w-[10px] border-t-2 border-black"></div>
+                <div class="absolute left-[505px] top-[30px] w-3 h-3 border-t-2 border-r-2 border-black transform rotate-45"></div>
+
+            </div>
+        </div>
+
+        <div class="text-center font-serif italic text-lg text-black mt-4">
+            "With more people, shaping and building happen on separate tracks<br>
+            and bets are made to fill six-week cycles"
+        </div>
+    </div>
+
+    <!-- Slide 5: Agile Product Development Process -->
+    <div class="slide-container flex flex-col items-center">
+        <div class="w-full flex items-center mb-12">
+            <svg class="w-8 h-8 mr-3" viewBox="0 0 24 24" fill="none" stroke="black" stroke-width="2"><path d="M21 16V8a2 2 0 0 0-1-1.73l-7-4a2 2 0 0 0-2 0l-7 4A2 2 0 0 0 3 8v8a2 2 0 0 0 1 1.73l7 4a2 2 0 0 0 2 0l7-4A2 2 0 0 0 21 16z"/><circle cx="12" cy="12" r="4"/></svg>
+            <h1 class="text-3xl font-bold text-gray-800">Agile Product Development Process</h1>
+        </div>
+
+        <div class="text-sm text-gray-700 w-full max-w-4xl mb-16 leading-relaxed">
+            순서는 Market(CS/Sales/BIZ/Board)의 정제되지 않은 요구사항을 받아서 전략기획부서가 형상화를 1차로 진행해서 MRD를 산출하고, 제품팀의 인터페이스인 Product Owner/Manager가 MRD를 바탕으로 PRD를 작성하고, MRD와 PRD 간에 back&forth가 진행되면서 형상화를 완료해가는 과정. 그리고 그게 개발팀으로 넘어가면서 제품으로 구현되는 과정을 Project Manager가 JIRA와 2주단위 스프린트 방법론으로 산출하는 것을 목표.
+        </div>
+
+        <!-- Flowchart Grid layout -->
+        <div class="relative w-full max-w-3xl">
+            <h2 class="text-xl font-bold text-gray-700 mb-8 ml-[250px]">Agile Product Development Process</h2>
+
+            <!-- Connecting Vertical Lines -->
+            <div class="absolute left-[360px] top-[100px] h-[70px] w-[1.5px] bg-gray-500"></div>
+            <div class="absolute left-[360px] top-[165px] h-2 w-2 border-b-2 border-r-2 border-gray-500 transform rotate-45 -ml-[3.5px]"></div>
+
+            <div class="absolute left-[360px] top-[240px] h-[50px] w-[1.5px] bg-gray-500"></div>
+            <div class="absolute left-[360px] top-[285px] h-2 w-2 border-b-2 border-r-2 border-gray-500 transform rotate-45 -ml-[3.5px]"></div>
+
+            <div class="absolute left-[360px] top-[360px] h-[50px] w-[1.5px] bg-gray-500"></div>
+            <div class="absolute left-[360px] top-[405px] h-2 w-2 border-b-2 border-r-2 border-gray-500 transform rotate-45 -ml-[3.5px]"></div>
+
+            <div class="absolute left-[360px] top-[480px] h-[50px] w-[1.5px] bg-gray-500"></div>
+            <div class="absolute left-[360px] top-[525px] h-2 w-2 border-b-2 border-r-2 border-gray-500 transform rotate-45 -ml-[3.5px]"></div>
+
+            <div class="absolute left-[445px] top-[480px] h-[40px] w-[1.5px] bg-gray-500"></div>
+            <div class="absolute left-[445px] top-[515px] h-2 w-2 border-b-2 border-r-2 border-gray-500 transform rotate-45 -ml-[3.5px]"></div>
+
+
+            <!-- Step 1: Market -->
+            <div class="flex items-center mb-12">
+                <div class="w-[220px] text-sm text-gray-600">
+                    <p>Market으로 대표되는,</p>
+                    <p>여러 층위에서의 요구사항이 존재</p>
+                </div>
+                <div class="flex-1 ml-8 relative">
+                    <div class="bg-[#f0f4fc] border border-gray-300 rounded-lg p-4 flex items-center w-full shadow-sm">
+                        <svg class="w-6 h-6 mr-4 text-gray-500" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><path d="M17 21v-2a4 4 0 0 0-4-4H5a4 4 0 0 0-4 4v2"/><circle cx="9" cy="7" r="4"/><path d="M23 21v-2a4 4 0 0 0-3-3.87"/><path d="M16 3.13a4 4 0 0 1 0 7.75"/></svg>
+                        <div>
+                            <div class="font-bold text-sm text-gray-800">Market</div>
+                            <div class="text-xs text-gray-600">(Customer/Sales<br>/Biz/Board)</div>
+                        </div>
+                    </div>
+                </div>
+            </div>
+
+            <!-- Step 2: Planning -->
+            <div class="flex items-center mb-12 relative">
+                <div class="w-[220px] text-sm text-gray-600">
+                    <p>전략기획팀에서 요구사항 구체화</p>
+                    <p>요구사항의 맥락과 배경을 확인</p>
+                    <p>요구사항의 Impact 범위</p>
+                    <p>Target Segment/Volume</p>
+                </div>
+                <div class="ml-8 relative z-10">
+                    <div class="bg-[#f0f4fc] border border-gray-300 rounded-lg p-4 flex items-center w-[200px] shadow-sm">
+                        <svg class="w-6 h-6 mr-3 text-gray-500" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><path d="M17 21v-2a4 4 0 0 0-4-4H5a4 4 0 0 0-4 4v2"/><circle cx="9" cy="7" r="4"/><path d="M23 21v-2a4 4 0 0 0-3-3.87"/><path d="M16 3.13a4 4 0 0 1 0 7.75"/></svg>
+                        <div>
+                            <div class="font-bold text-sm text-gray-800">Planning<br>Strategy<br>Team</div>
+                        </div>
+                    </div>
+                </div>
+                
+                <!-- Dotted line to MRD -->
+                <div class="w-16 border-t-2 border-dotted border-gray-500 mx-2"></div>
+                <div class="-ml-2 w-2 h-2 border-t-2 border-r-2 border-gray-500 transform rotate-45"></div>
+
+                <div class="bg-[#f0f4fc] border border-gray-300 rounded-lg p-3 flex items-center shadow-sm z-10 relative">
+                    <svg class="w-5 h-5 mr-2 text-gray-500" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><path d="M14 2H6a2 2 0 0 0-2 2v16a2 2 0 0 0 2 2h12a2 2 0 0 0 2-2V8z"/><polyline points="14 2 14 8 20 8"/><line x1="16" y1="13" x2="8" y2="13"/><line x1="16" y1="17" x2="8" y2="17"/><polyline points="10 9 9 9 8 9"/></svg>
+                    <span class="font-bold text-sm text-gray-800">MRD</span>
+                    <!-- Dotted vertical link from MRD to PRD -->
+                    <div class="absolute left-1/2 -bottom-[65px] h-[65px] border-l-2 border-dashed border-gray-500 transform -translate-x-1/2"></div>
+                    <div class="absolute left-1/2 -bottom-[65px] h-2 w-2 border-b-2 border-r-2 border-gray-500 transform rotate-45 -translate-x-[5px]"></div>
+                     <div class="absolute left-1/2 -top-[10px] h-2 w-2 border-t-2 border-l-2 border-gray-500 transform rotate-45 -translate-x-[5px]"></div>
+                </div>
+            </div>
+
+            <!-- Step 3: Product -->
+            <div class="flex items-center mb-12 relative">
+                <div class="w-[220px] text-sm text-gray-600">
+                    <p>제품단에서 요구사항의 형상화</p>
+                    <p>마켓요구사항과 제품요구사항간</p>
+                    <p>반복을 통해 형상을 고도화</p>
+                </div>
+                <div class="ml-8 relative z-10">
+                    <div class="bg-[#f0f4fc] border border-gray-300 rounded-lg p-4 flex items-center w-[200px] shadow-sm">
+                        <svg class="w-6 h-6 mr-3 text-gray-500" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><path d="M20 21v-2a4 4 0 0 0-4-4H8a4 4 0 0 0-4 4v2"/><circle cx="12" cy="7" r="4"/></svg>
+                        <div>
+                            <div class="font-bold text-sm text-gray-800">Product<br>Owner/Manager</div>
+                        </div>
+                    </div>
+                </div>
+
+                <!-- Dotted line to PRD -->
+                <div class="w-16 border-t-2 border-dashed border-gray-500 mx-2"></div>
+                <div class="-ml-2 w-2 h-2 border-t-2 border-r-2 border-gray-500 transform rotate-45"></div>
+
+                <div class="bg-[#f0f4fc] border border-gray-300 rounded-lg p-3 flex items-center shadow-sm z-10 relative">
+                    <svg class="w-5 h-5 mr-2 text-gray-500" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><path d="M14 2H6a2 2 0 0 0-2 2v16a2 2 0 0 0 2 2h12a2 2 0 0 0 2-2V8z"/><polyline points="14 2 14 8 20 8"/><line x1="16" y1="13" x2="8" y2="13"/><line x1="16" y1="17" x2="8" y2="17"/><polyline points="10 9 9 9 8 9"/></svg>
+                    <span class="font-bold text-sm text-gray-800">PRD</span>
+                </div>
+            </div>
+
+            <!-- Step 4: Project Manager -->
+            <div class="flex items-center mb-12 relative">
+                <div class="w-[220px] text-sm text-gray-600">
+                    <p>제품으로 빌드되는 과정을</p>
+                    <p>Project Manager가 들고</p>
+                    <p>JIRA base / Sprint방법론 적용</p>
+                </div>
+                <div class="ml-8 relative z-10">
+                    <div class="bg-[#f0f4fc] border border-gray-300 rounded-lg p-4 flex items-center w-[200px] shadow-sm">
+                         <svg class="w-6 h-6 mr-3 text-gray-500" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><rect x="3" y="4" width="18" height="18" rx="2" ry="2"/><line x1="16" y1="2" x2="16" y2="6"/><line x1="8" y1="2" x2="8" y2="6"/><line x1="3" y1="10" x2="21" y2="10"/></svg>
+                        <div>
+                            <div class="font-bold text-sm text-gray-800">Project Manager</div>
+                        </div>
+                    </div>
+                </div>
+
+                <!-- Dotted line to JIRA -->
+                <div class="w-16 border-t-2 border-dashed border-gray-500 mx-2"></div>
+                <div class="-ml-2 w-2 h-2 border-t-2 border-r-2 border-gray-500 transform rotate-45"></div>
+
+                <div class="bg-[#f0f4fc] border border-gray-300 rounded-lg p-3 flex items-center shadow-sm z-10 relative">
+                    <svg class="w-5 h-5 mr-2 text-gray-500" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><polygon points="12 2 2 7 12 12 22 7 12 2"/><polyline points="2 17 12 22 22 17"/><polyline points="2 12 12 17 22 12"/></svg>
+                    <span class="font-bold text-sm text-gray-800">JIRA</span>
+                </div>
+            </div>
+
+            <!-- Step 5: 2-Week Sprints -->
+            <div class="flex items-center mb-12">
+                <div class="w-[220px]"></div>
+                <div class="ml-[115px] relative z-10">
+                    <div class="bg-[#f0f4fc] border border-gray-300 rounded-lg p-4 flex items-center w-[200px] shadow-sm">
+                        <svg class="w-6 h-6 mr-3 text-gray-500" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><rect x="3" y="4" width="18" height="18" rx="2" ry="2"/><line x1="16" y1="2" x2="16" y2="6"/><line x1="8" y1="2" x2="8" y2="6"/><line x1="3" y1="10" x2="21" y2="10"/></svg>
+                        <div class="font-bold text-sm text-gray-800">2-Week Sprints</div>
+                    </div>
+                </div>
+            </div>
+
+            <!-- Step 6: Implementation -->
+            <div class="flex items-center">
+                <div class="w-[220px]"></div>
+                <div class="ml-[115px] relative z-10">
+                    <div class="bg-[#e2e8f0] border border-gray-300 rounded-lg p-4 flex items-center w-[200px] shadow-sm">
+                        <svg class="w-6 h-6 mr-3 text-gray-600" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><path d="M12 2v20M17 5H9.5a3.5 3.5 0 0 0 0 7h5a3.5 3.5 0 0 1 0 7H6"/></svg>
+                        <div>
+                            <div class="text-xs text-gray-600 font-bold">Product</div>
+                            <div class="font-bold text-sm text-gray-800">Implementation</div>
+                        </div>
+                    </div>
+                </div>
+            </div>
+
+        </div>
+    </div>
+
+</body>
+</html>
