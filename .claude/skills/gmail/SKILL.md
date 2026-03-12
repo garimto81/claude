@@ -36,18 +36,28 @@ auto_trigger: true
 
 Gmail API 연동 스킬. OAuth 2.0 인증, 이메일 읽기/전송, 라벨 관리 기능 제공.
 
+## 2-Tier Backend Selection
+
+| 조건 | 백엔드 | 이유 |
+|------|--------|------|
+| `gws` CLI 설치됨 | gws subprocess (Tier 1) | JSON 출력, 빠른 실행 |
+| `gws` 미설치 | Python API (Tier 2) | 완전한 fallback |
+| `gws` 호출 실패 | Python API 자동 전환 | 무중단 |
+
+선택 로직: `gws --version` 성공 여부 확인 → gws CLI 우선 → 실패 시 Python 자동 전환
+
 ## Commands
 
-| Command | Description |
-|---------|-------------|
-| `python -m lib.gmail login` | OAuth 인증 (최초 1회) |
-| `python -m lib.gmail status` | 인증 상태 확인 |
-| `python -m lib.gmail inbox` | 받은편지함 보기 |
-| `python -m lib.gmail unread` | 안 읽은 메일 보기 |
-| `python -m lib.gmail read <id>` | 메일 상세 읽기 |
-| `python -m lib.gmail send <to> <subject> <body>` | 메일 전송 |
-| `python -m lib.gmail search <query>` | 메일 검색 |
-| `python -m lib.gmail labels` | 라벨 목록 |
+| 작업 | gws CLI (Tier 1) | Python API (Tier 2) |
+|------|-------------------|---------------------|
+| 인증 | - | `python -m lib.gmail login` |
+| 상태 확인 | - | `python -m lib.gmail status` |
+| 받은편지함 | `gws gmail +triage` | `python -m lib.gmail inbox` |
+| 안 읽은 메일 | `gws gmail users messages list --params '{"userId":"me","labelIds":["INBOX","UNREAD"],"maxResults":10}'` | `python -m lib.gmail unread` |
+| 메일 읽기 | `gws gmail users messages get --params '{"userId":"me","id":"MSG_ID","format":"full"}'` | `python -m lib.gmail read <id>` |
+| 메일 전송 | Python 권장 (Base64 인코딩 필요) | `python -m lib.gmail send <to> <subject> <body>` |
+| 메일 검색 | `gws gmail users messages list --params '{"userId":"me","q":"검색어"}'` | `python -m lib.gmail search <query>` |
+| 라벨 목록 | `gws gmail users labels list --params '{"userId":"me"}'` | `python -m lib.gmail labels` |
 
 ## Claude 강제 실행 규칙 (MANDATORY)
 
@@ -57,14 +67,14 @@ Gmail 키워드 감지 시 반드시 자동 수행:
 - `"valid": true` → Step 2 진행
 - `"authenticated": false` → 사용자에게 `python -m lib.gmail login` 안내
 
-**Step 2**: 요청별 명령 실행 (`--json` 플래그 필수)
+**Step 2**: 요청별 명령 실행 (gws 설치 시 Tier 1 우선, 미설치 시 Tier 2)
 
-| 사용자 요청 | 실행 명령 |
-|-------------|----------|
-| "메일 확인해줘" | `python -m lib.gmail inbox --json` |
-| "안읽은 메일" | `python -m lib.gmail unread --json` |
-| "메일 보내줘" | `python -m lib.gmail send "주소" "제목" "본문"` |
-| "메일 검색" | `python -m lib.gmail search "검색어" --json` |
+| 사용자 요청 | Tier 1 (gws CLI) | Tier 2 (Python, `--json` 필수) |
+|-------------|-------------------|-------------------------------|
+| "메일 확인해줘" | `gws gmail +triage` | `python -m lib.gmail inbox --json` |
+| "안읽은 메일" | `gws gmail users messages list --params '{"userId":"me","labelIds":["INBOX","UNREAD"],"maxResults":10}'` | `python -m lib.gmail unread --json` |
+| "메일 보내줘" | Python 사용 | `python -m lib.gmail send "주소" "제목" "본문"` |
+| "메일 검색" | `gws gmail users messages list --params '{"userId":"me","q":"검색어"}'` | `python -m lib.gmail search "검색어" --json` |
 
 **Step 3**: JSON 결과 파싱 → 사용자에게 읽기 쉬운 형태로 응답
 

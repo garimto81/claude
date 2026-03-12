@@ -77,6 +77,27 @@ Google 서비스 URL (`docs.google.com`, `drive.google.com`, `sheets.google.com`
 | 파일 읽기 | 서비스 계정 또는 OAuth | 둘 다 가능 |
 | 자동화 (읽기만) | 서비스 계정 | `service_account_key.json` |
 
+## gws CLI Integration (2-Tier Hybrid)
+
+### 백엔드 선택 규칙
+
+| 조건 | 백엔드 | 이유 |
+|------|--------|------|
+| `gws` CLI 설치됨 | gws subprocess (Tier 1) | Sheets/Docs 읽기 조회에 빠름 |
+| `gws` 미설치 | Python API (Tier 2) | 완전한 fallback |
+| `gws` 호출 실패 | Python API 자동 전환 | 무중단 |
+| converter.py / table_renderer | Python API 고정 | 120KB Batch API, 복잡 렌더링 |
+
+### gws CLI 명령 예시
+
+| 작업 | gws CLI (Tier 1) |
+|------|-------------------|
+| Sheets 읽기 | `gws sheets spreadsheets values get --params '{"spreadsheetId":"SHEET_ID","range":"Sheet1!A1:Z100"}'` |
+| Sheets 쓰기 | `gws sheets spreadsheets values update --params '{"spreadsheetId":"SHEET_ID","range":"Sheet1!A1","valueInputOption":"USER_ENTERED"}' --body '{"values":[["data1","data2"]]}'` |
+| Docs 읽기 | `gws docs documents get --params '{"documentId":"DOC_ID"}'` |
+
+Markdown→Google Docs 변환(`converter.py`), 테이블 렌더링(`table_renderer`)은 Python API 유지.
+
 ## 핵심 API 사용법
 
 ### Sheets 읽기/쓰기

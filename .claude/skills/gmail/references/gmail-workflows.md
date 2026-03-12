@@ -55,7 +55,36 @@ cd C:\claude && python -m lib.gmail login
 - 권한 승인 후 자동으로 토큰 저장
 - 토큰 저장 위치: `C:\claude\json\token_gmail.json`
 
-## Usage Examples
+## gws CLI Commands (Tier 1 — Primary)
+
+gws CLI가 설치되어 있으면 Python API 대신 gws를 우선 사용합니다.
+
+```powershell
+# 받은편지함 (최근 10개)
+gws gmail users messages list --params '{"userId":"me","q":"in:inbox","maxResults":10}'
+
+# 안 읽은 메일
+gws gmail users messages list --params '{"userId":"me","q":"is:unread","maxResults":10}'
+
+# 메일 검색
+gws gmail users messages list --params '{"userId":"me","q":"from:boss@company.com subject:meeting","maxResults":20}'
+
+# 메일 상세 읽기
+gws gmail users messages get --params '{"userId":"me","id":"18d5f7c8e9a0b123","format":"full"}'
+
+# 프로필 조회
+gws gmail users getProfile --params '{"userId":"me"}'
+
+# 라벨 목록
+gws gmail users labels list --params '{"userId":"me"}'
+
+# 스레드 조회
+gws gmail users threads get --params '{"userId":"me","id":"18d5f7c8e9a0b123"}'
+```
+
+> **참고**: 메일 전송(`send`), 답장(`reply`)은 Base64 인코딩이 필요하므로 Python API만 지원합니다.
+
+## Usage Examples (Tier 2 — Python Fallback)
 
 ### 받은편지함 확인
 

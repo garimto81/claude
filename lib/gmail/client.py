@@ -1,5 +1,8 @@
 """
-Gmail API Client
+Gmail API Client — gws CLI wrapper + Python API fallback
+
+Primary: subprocess → gws gmail (structured JSON output)
+Fallback: Python Gmail API (when gws unavailable)
 
 Usage:
     from lib.gmail import GmailClient
@@ -9,39 +12,106 @@ Usage:
 """
 
 import base64
+import json
+import shutil
+import subprocess
 from email.mime.text import MIMEText
 from email.mime.multipart import MIMEMultipart
 from typing import Optional, List
 
-from googleapiclient.discovery import build
 from googleapiclient.errors import HttpError
 
 from .auth import get_credentials, TOKEN_PATH
 from .models import GmailMessage, GmailLabel, GmailThread, GmailAttachment, SendResult
-from .errors import GmailError, GmailAuthError, GmailAPIError, GmailRateLimitError
+from .errors import (
+    GmailError, GmailAuthError, GmailAPIError,
+    GmailRateLimitError, GmailGwsNotFoundError,
+)
 
 
 class GmailClient:
-    """Gmail API client."""
+    """Gmail API client with gws CLI + Python API fallback."""
 
-    def __init__(self, credentials=None):
+    def __init__(self, credentials=None, prefer_gws: bool = True):
         """
         Initialize Gmail client.
 
         Args:
             credentials: Optional Google Credentials object
+            prefer_gws: If True, try gws CLI first (default: True)
         """
+        self._gws_available = prefer_gws and shutil.which("gws") is not None
+        self._service = None
+
         if credentials is None:
             credentials = get_credentials()
 
-        if credentials is None:
+        if credentials is None and not self._gws_available:
             raise GmailAuthError(
                 f"Not authenticated. Run 'python -m lib.gmail login' first.\n"
                 f"Token file not found: {TOKEN_PATH}"
             )
 
         self.credentials = credentials
-        self.service = build("gmail", "v1", credentials=credentials)
+
+    @property
+    def service(self):
+        """Lazy-init Google Gmail API service."""
+        if self._service is None:
+            from googleapiclient.discovery import build
+            self._service = build("gmail", "v1", credentials=self.credentials)
+        return self._service
+
+    # ── gws CLI helpers ───────────────────────────────────────
+
+    def _gws_call(self, resource: str, method: str, params: dict = None) -> dict:
+        """
+        Call gws CLI and return parsed JSON.
+
+        Args:
+            resource: API resource (e.g., "gmail.users.messages")
+            method: API method (e.g., "list")
+            params: API parameters
+
+        Returns:
+            Parsed JSON response
+
+        Raises:
+            GmailGwsNotFoundError: If gws not found
+            GmailAPIError: If gws call fails
+        """
+        if not self._gws_available:
+            raise GmailGwsNotFoundError("gws CLI not found")
+
+        cmd = ["gws"] + resource.split(".") + [method]
+        if params:
+            cmd.extend(["--params", json.dumps(params)])
+
+        try:
+            result = subprocess.run(
+                cmd,
+                capture_output=True,
+                text=True,
+                timeout=30,
+                encoding="utf-8",
+            )
+
+            if result.returncode != 0:
+                raise GmailAPIError(
+                    f"gws command failed: {result.stderr.strip()}",
+                    status_code=result.returncode,
+                )
+
+            return json.loads(result.stdout)
+        except FileNotFoundError:
+            self._gws_available = False
+            raise GmailGwsNotFoundError("gws CLI not found")
+        except json.JSONDecodeError as e:
+            raise GmailAPIError(f"Failed to parse gws output: {e}")
+        except subprocess.TimeoutExpired:
+            raise GmailAPIError("gws command timed out (30s)")
+
+    # ── Public API ────────────────────────────────────────────
 
     def get_profile(self) -> dict:
         """
@@ -50,6 +120,12 @@ class GmailClient:
         Returns:
             Profile dict with emailAddress, messagesTotal, threadsTotal
         """
+        if self._gws_available:
+            try:
+                return self._gws_call("gmail.users", "getProfile", {"userId": "me"})
+            except GmailGwsNotFoundError:
+                pass
+
         try:
             return self.service.users().getProfile(userId="me").execute()
         except HttpError as e:
@@ -87,17 +163,23 @@ class GmailClient:
         Returns:
             Dict with 'history' list and 'historyId' (latest)
         """
-        try:
-            params = {
-                "userId": "me",
-                "startHistoryId": start_history_id,
-                "maxResults": max_results,
-            }
-            if history_types:
-                params["historyTypes"] = history_types
-            if label_id:
-                params["labelId"] = label_id
+        params = {
+            "userId": "me",
+            "startHistoryId": start_history_id,
+            "maxResults": max_results,
+        }
+        if history_types:
+            params["historyTypes"] = history_types
+        if label_id:
+            params["labelId"] = label_id
 
+        if self._gws_available:
+            try:
+                return self._gws_call("gmail.users.history", "list", params)
+            except GmailGwsNotFoundError:
+                pass
+
+        try:
             return self.service.users().history().list(**params).execute()
         except HttpError as e:
             if e.resp.status == 404:
@@ -114,6 +196,17 @@ class GmailClient:
         Returns:
             Dict with id, threadId, labelIds, snippet, historyId
         """
+        if self._gws_available:
+            try:
+                return self._gws_call("gmail.users.messages", "get", {
+                    "userId": "me",
+                    "id": message_id,
+                    "format": "metadata",
+                    "metadataHeaders": ["From", "To", "Subject", "Date"],
+                })
+            except GmailGwsNotFoundError:
+                pass
+
         try:
             return self.service.users().messages().get(
                 userId="me",
@@ -143,18 +236,25 @@ class GmailClient:
         Returns:
             List of GmailMessage objects
         """
+        params = {
+            "userId": "me",
+            "maxResults": max_results,
+            "includeSpamTrash": include_spam_trash,
+        }
+        if query:
+            params["q"] = query
+        if label_ids:
+            params["labelIds"] = label_ids
+
+        if self._gws_available:
+            try:
+                data = self._gws_call("gmail.users.messages", "list", params)
+                messages = data.get("messages", [])
+                return [self.get_email(msg["id"]) for msg in messages]
+            except GmailGwsNotFoundError:
+                pass
+
         try:
-            params = {
-                "userId": "me",
-                "maxResults": max_results,
-                "includeSpamTrash": include_spam_trash,
-            }
-
-            if query:
-                params["q"] = query
-            if label_ids:
-                params["labelIds"] = label_ids
-
             results = self.service.users().messages().list(**params).execute()
             messages = results.get("messages", [])
 
@@ -172,6 +272,17 @@ class GmailClient:
         Returns:
             GmailMessage object
         """
+        if self._gws_available:
+            try:
+                msg = self._gws_call("gmail.users.messages", "get", {
+                    "userId": "me",
+                    "id": email_id,
+                    "format": "full",
+                })
+                return self._parse_message(msg)
+            except GmailGwsNotFoundError:
+                pass
+
         try:
             msg = self.service.users().messages().get(
                 userId="me",
@@ -193,6 +304,25 @@ class GmailClient:
         Returns:
             GmailThread object
         """
+        if self._gws_available:
+            try:
+                thread = self._gws_call("gmail.users.threads", "get", {
+                    "userId": "me",
+                    "id": thread_id,
+                    "format": "full",
+                })
+                messages = [
+                    self._parse_message(msg)
+                    for msg in thread.get("messages", [])
+                ]
+                return GmailThread(
+                    id=thread["id"],
+                    snippet=thread.get("snippet", ""),
+                    messages=messages,
+                )
+            except GmailGwsNotFoundError:
+                pass
+
         try:
             thread = self.service.users().threads().get(
                 userId="me",
@@ -329,6 +459,23 @@ class GmailClient:
         Returns:
             List of GmailLabel objects
         """
+        if self._gws_available:
+            try:
+                data = self._gws_call("gmail.users.labels", "list", {"userId": "me"})
+                labels = data.get("labels", [])
+                return [
+                    GmailLabel(
+                        id=label["id"],
+                        name=label["name"],
+                        type=label.get("type", "user"),
+                        messages_total=label.get("messagesTotal", 0),
+                        messages_unread=label.get("messagesUnread", 0),
+                    )
+                    for label in labels
+                ]
+            except GmailGwsNotFoundError:
+                pass
+
         try:
             results = self.service.users().labels().list(userId="me").execute()
             labels = results.get("labels", [])

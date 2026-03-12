@@ -125,5 +125,4 @@ event = client.create_event(req)
 | 금지 | 대안 |
 |------|------|
 | WebFetch로 calendar.google.com 접근 | Python API 또는 CLI 사용 |
-| gws mcp 사용 | 사용 금지 (v0.8.0 제거됨) |
 | token_calendar.json 커밋 | .gitignore 확인 |

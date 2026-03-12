@@ -45,6 +45,11 @@ class GmailAPIError(GmailError):
         super().__init__(f"Gmail API error: {error}")
 
 
+class GmailGwsNotFoundError(GmailError):
+    """gws CLI not found."""
+    pass
+
+
 class GmailNetworkError(GmailError):
     """Network-related error."""
     pass
