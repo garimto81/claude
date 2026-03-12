@@ -14,10 +14,11 @@ triggers:
 auto_trigger: true
 ---
 
-# /auto - PDCA Orchestrator (v23.0)
+# /auto - PDCA Orchestrator (v24.0 — Plugin Fusion)
 
 > **핵심**: `/auto "작업"` = Phase 0-4 자동 진행. `/auto` 단독 = 자율 발견 모드. `/work`는 `/auto`로 통합됨.
 > **Agent Teams 단일 패턴**: TeamCreate → Agent(subagent_type+name+description+team_name) → SendMessage → TeamDelete. Skill() 호출 0개.
+> **Plugin Fusion (v24.0)**: 프로젝트 타입 자동 감지 → 플러그인 활성화 → Phase별 스킬 주입. 추가 옵션 불필요.
 > **코드 블록/상세 prompt**: `REFERENCE.md` 참조. 이 파일은 판단 로직과 흐름만 기술.
 
 ---
@@ -30,6 +31,7 @@ auto_trigger: true
   옵션 파싱       PRD 생성         구현 실행           QA 사이클        보고서
   팀 생성         사전 분석         코드 리뷰           E2E 검증         팀 정리
   복잡도 판단     계획+설계 수립    Architect Gate      최종 판정         커밋
+  플러그인 감지
 ```
 
 ---
@@ -82,6 +84,38 @@ auto_trigger: true
 | 4-6 | HEAVY | Planner-Critic, QA 5회, 전체 검증 |
 
 **자동 승격**: LIGHT→STANDARD (빌드 실패 2회 or 영향 파일 5+). STANDARD→HEAVY (QA 3사이클 초과 or 영향 파일 5+).
+
+### Phase 0.4: Plugin Activation Scan
+
+프로젝트 루트 파일 감지 + 복잡도 모드 기반으로 플러그인을 자동 활성화한다. 상세 매핑: `references/plugin-fusion-rules.md`
+
+**Project Type Detection:**
+
+| 감지 파일 | 활성화 플러그인 |
+|-----------|----------------|
+| `package.json` + react dep | frontend-design, code-review, typescript-lsp |
+| `tsconfig.json` | typescript-lsp, code-review |
+| `next.config.*` | frontend-design, code-review |
+| `pyproject.toml` \| `setup.py` | code-review |
+| `.claude/` 존재 | claude-code-setup, superpowers |
+
+**Complexity-Tier Escalation:**
+
+| 모드 | 추가 활성 |
+|------|----------|
+| LIGHT (0-1) | typescript-lsp (TS 프로젝트 시) |
+| STANDARD (2-3) | + code-review, superpowers (Iron Laws 주입) |
+| HEAVY (4-6) | + feature-dev, claude-code-setup |
+
+**Iron Laws (superpowers 흡수, 전 Phase 적용):**
+
+| # | Iron Law | 적용 위치 |
+|:-:|----------|----------|
+| 1 | TDD: 실패 테스트 없이 프로덕션 코드 작성 금지 | Phase 2.1 impl-manager |
+| 2 | Debugging: Root cause 조사 없이 수정 금지 | Phase 3.1 QA FAIL |
+| 3 | Verification: 증거 없이 완료 선언 금지 | Phase 2.3, 3.3 Gate |
+
+> 감지 코드 및 주입 prompt: `REFERENCE.md` Phase 0.4 섹션 참조.
 
 ### 커밋 정책
 
@@ -204,6 +238,11 @@ LIGHT는 스킵. STANDARD/HEAVY: 계획 문서에 **아키텍처 결정 섹션**
 
 구현 완료 후 **즉시** code-reviewer 실행. Vercel BP 규칙 동적 주입 (React/Next.js 시).
 
+**Hybrid Review** (code-review 플러그인 활성 시, STANDARD/HEAVY):
+1. 내부 code-reviewer → APPROVE/REVISE 1차 판정
+2. code-review 플러그인 5-agent 병렬 → 추가 이슈 수집 (CLAUDE.md Compliance, Shallow Bug Scan, Git Blame Context, PR Comment Patterns, Code Comment Compliance)
+3. 두 결과 병합 → 최종 판정
+
 | 판정 | 처리 |
 |------|------|
 | APPROVE | Step 2.3 Architect Gate 진입 |
@@ -244,10 +283,14 @@ Architect APPROVE 후 gap-detector → 7개 항목 정량 비교 (Match Rate >= 
 | 모드 | QA 횟수 | 실패 시 |
 |------|:-------:|---------|
 | LIGHT | 1회 | 보고만 (STANDARD 승격 검토) |
-| STANDARD | max 3회 | Architect 진단 → Domain-Smart Fix → 재실행 |
-| HEAVY | max 5회 | Architect 진단 → Domain-Smart Fix → 재실행 |
+| STANDARD | max 3회 | Systematic Debugging D0-D4 → Domain-Smart Fix → 재실행 |
+| HEAVY | max 5회 | Systematic Debugging D0-D4 → Domain-Smart Fix → 재실행 |
 
 QA Runner (sonnet): 6종 검증 (lint, type, unit, integration, build, security). 상세: `REFERENCE.md`
+
+**QA FAIL 시 Systematic Debugging** (superpowers 흡수, Iron Law #2):
+- D0: 증상 수집 → D1: 가설 수립 → D2: 가설 검증 → D3: Root Cause 확정 → D4: 수정+검증
+- Root cause 조사 없이 수정 금지 (Architect 단순 진단 대체)
 
 **4종 Exit Conditions:**
 
