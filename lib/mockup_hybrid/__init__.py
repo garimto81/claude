@@ -70,7 +70,7 @@ class MockupOptions:
     screens: int = 1
     prd: Optional[str] = None
     flow: bool = False
-    style: str = "wireframe"
+    style: str = "wireframe"  # "wireframe" | "quasar" | "quasar-white"
 
 
 @dataclass

@@ -59,6 +59,7 @@ auto_trigger: true
 | 옵션 | 효과 |
 |------|------|
 | `--mockup [파일]` | 3-Tier 목업 생성. 상세: mockup-hybrid SKILL.md, REFERENCE.md Step 2.0 |
+| `--mockup-q` | Quasar White Tone Minimal 목업 생성. 상세: mockup-hybrid SKILL.md |
 | `--gdocs` | Google Docs PRD 동기화 |
 | `--debate` | 3-AI 병렬 분석 합의 |
 | `--research` | 코드베이스/외부 리서치 |
@@ -72,6 +73,8 @@ auto_trigger: true
 ### 팀 생성 (MANDATORY)
 
 `TeamCreate(team_name="pdca-{feature}")`. 실패 시 `TeamDelete()` → 재시도 1회. 재실패 시 중단.
+
+> 커스텀 에이전트 미인식 시 Fallback 매핑: `REFERENCE.md` 에이전트 Fallback 매핑 섹션 참조.
 
 ### 복잡도 판단 (6점 만점)
 

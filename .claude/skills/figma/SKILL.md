@@ -187,7 +187,7 @@ add_code_connect_map(fileKey, nodeId, source, componentName, label)
 
 **Headless 캡처 (브라우저 창 없음):**
 ```bash
-cd C:\claude && python -c "from lib.figma.headless_capture import figma_headless_capture; figma_headless_capture('http://localhost:{port}/{page}#figmacapture={captureId}&figmaendpoint=https%3A%2F%2Fmcp.figma.com%2Fmcp%2Fcapture%2F{captureId}%2Fsubmit&figmadelay=2000')"
+cd C:\claude && python -c "from lib.mockup_hybrid.export_utils import capture_url; capture_url('http://localhost:{port}/{page}#figmacapture={captureId}&figmaendpoint=https%3A%2F%2Fmcp.figma.com%2Fmcp%2Fcapture%2F{captureId}%2Fsubmit&figmadelay=2000')"
 ```
 
 **외부 URL 캡처 (EXTERNAL):** Playwright MCP 필요. 로컬 script-tag 방식으로 외부 사이트 캡처 불가.

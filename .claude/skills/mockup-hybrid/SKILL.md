@@ -77,6 +77,8 @@ auto_trigger: true
    - `--mockup mermaid` → Mermaid 고정
    - `--mockup html` → HTML 고정
    - `--mockup hifi` → Stitch 고정
+   - `--mockup --quasar` → HTML + Quasar Material Design 스타일
+   - `--mockup-q` → HTML + Quasar White Tone Minimal 스타일
 
 2. **키워드 감지** (자동)
 
@@ -171,6 +173,93 @@ lib/mockup_hybrid/
 STITCH_API_KEY=your-api-key
 STITCH_API_BASE_URL=https://api.stitch.withgoogle.com/v1
 ```
+
+## Quasar Material Design (--quasar 스타일)
+
+`--mockup --quasar` 시 B&W Refined Minimal 대신 Quasar Framework Material Design 적용.
+
+### 동작 방식
+
+```
+/auto "요청" --mockup --quasar
+      │
+      ▼
+  MockupOptions(style="quasar")
+      │
+      ▼
+  HTMLAdapter → mockup-quasar.html 템플릿 선택
+      │
+      ▼
+  designer 에이전트 (Quasar 컴포넌트 어휘로 스타일링)
+      │
+      ▼
+  Playwright PNG 캡처 (networkidle 대기 → CDN 로드 완료)
+```
+
+### Quasar 컴포넌트 매핑
+
+| B&W 요소 | Quasar 대응 |
+|----------|------------|
+| header | `q-toolbar` + `q-toolbar-title` |
+| input | `q-input outlined` |
+| button | `q-btn color="primary"` |
+| card | `q-card` + `q-card-section` |
+| table | `q-table` |
+| sidebar | `q-drawer` |
+
+### UMD 제약
+
+- CDN: Vue 3 + Quasar 2 UMD + Material Icons
+- **self-closing 태그 금지**: `<q-input />` 불가 → `<q-input></q-input>` 필수
+- B&W 팔레트 적용 스킵 (Quasar 자체 Material Design 색상 사용)
+
+## Quasar White Tone Minimal (--mockup-q 스타일)
+
+`--mockup-q` 시 Quasar 컴포넌트 구조를 유지하면서 White Tone Minimal 디자인 적용.
+
+### 동작 방식
+
+```
+/auto "요청" --mockup-q
+      │
+      ▼
+  MockupOptions(style="quasar-white")
+      │
+      ▼
+  HTMLAdapter → mockup-quasar-white.html 템플릿 선택
+      │
+      ▼
+  designer 에이전트 (White Minimal 어휘로 스타일링)
+      │
+      ▼
+  Playwright PNG 캡처 (networkidle 대기 → CDN 로드 완료)
+```
+
+### White Minimal 팔레트
+
+| 용도 | 값 |
+|------|-----|
+| Primary | `#374151` (차콜) |
+| Secondary | `#6b7280` (그레이) |
+| Page BG | `#ffffff` |
+| Card BG | `#ffffff` + border `#e5e7eb` |
+| Text primary | `#111827` |
+| Text secondary | `#6b7280` |
+| Text muted | `#9ca3af` |
+| Border | `#e5e7eb` |
+
+### 컴포넌트 매핑 (vs 기존 Quasar)
+
+| 요소 | Quasar (컬러) | White Minimal |
+|------|--------------|---------------|
+| Header | `bg-primary text-white` | `bg-white text-dark` + border-bottom |
+| Card | default shadow | `flat bordered` |
+| Button | `color="primary"` | `color="grey-8"` |
+| Page BG | `#f5f5f5` | `#ffffff` |
+
+### UMD 제약
+
+기존 Quasar와 동일: self-closing 태그 금지, Vue 3 + Quasar 2 UMD CDN.
 
 ## B&W Refined Minimal (기본 스타일)
 

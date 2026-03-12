@@ -36,6 +36,18 @@
 5. 타임아웃 발생 시 → 전체 재생성 금지, 미완료 섹션만 재시도
 ```
 
+### Mermaid 다이어그램 작성 규칙
+
+**prd-writer, planner, reporter** 에이전트가 저장 파일(.md)에 Mermaid 다이어그램을 포함할 때 prompt에 반드시 포함:
+
+```
+Mermaid 다이어그램 규칙 (MANDATORY):
+1. 한 레벨(같은 깊이) 노드 최대 4개. 5개+ 시 subgraph 또는 2단 재배치로 분할
+2. 노드 레이블 줄바꿈: \n 금지 → <br/> 사용 필수
+3. 노드 6개+ 또는 subgraph 포함 시 단계적 빌드업 (Stage별 1~2개 추가)
+4. 상세: .claude/rules/11-ascii-diagram.md 참조
+```
+
 ### 에이전트 타임아웃 처리 (Phase 1, 2, 4)
 
 문서 생성 에이전트(prd-writer, design-writer, reporter)가 5분+ 무응답 시:
@@ -50,6 +62,55 @@
 3. 새 에이전트를 미완료 섹션만 담당하도록 spawn
 4. Circuit Breaker: 동일 실패 3회 → 사용자 알림 + 수동 판단 요청
 ```
+
+---
+
+## 에이전트 Fallback 매핑 (커스텀 에이전트 미인식 시)
+
+`.claude/agents/` 커스텀 에이전트가 로드되지 않을 때 빌트인 에이전트로 대체한다.
+`Agent type '{name}' not found` 에러 발생 시 아래 매핑으로 즉시 재시도:
+
+### Fallback 적용 흐름
+
+```
+Agent(subagent_type="executor-high", ...) → 에러 발생
+  └─ "Agent type not found" 감지
+  └─ 아래 매핑에서 대체 에이전트 선택
+  └─ Agent(subagent_type="general-purpose", model="opus", ...) 재호출
+  └─ prompt 첫 줄에 역할 명시 추가
+```
+
+### Tier 1: 플러그인 빌트인 대체 (모델 제어 가능)
+
+| 커스텀 에이전트 | Fallback | model 오버라이드 | 비고 |
+|----------------|----------|:----------------:|------|
+| architect | feature-dev:code-architect | — | READ-ONLY prompt 명시 |
+| critic | feature-dev:code-reviewer | — | Adversarial 검토 |
+| code-reviewer | superpowers:code-reviewer | — | 코드 리뷰 |
+| explore | Explore | — | 코드 탐색 |
+| planner | Plan | — | 계획 수립 |
+
+### Tier 2: general-purpose 대체 (model 파라미터 필수)
+
+| 커스텀 에이전트 | model 오버라이드 | prompt 첫 줄 역할 명시 |
+|----------------|:----------------:|----------------------|
+| executor-high | `model="opus"` | `역할: Complex multi-file task executor. 모든 도구 사용 가능.` |
+| executor | `model="sonnet"` | `역할: Focused task executor for implementation work.` |
+| executor-low | `model="haiku"` | `역할: Simple single-file task executor.` |
+| designer | `model="sonnet"` | `역할: UI/UX Designer-Developer. 스타일링 + 코드 생성.` |
+| qa-tester | `model="sonnet"` | `역할: QA Runner. 6종 검증 (lint, type, unit, integration, build, security).` |
+| writer | `model="haiku"` | `역할: Technical documentation writer.` |
+| gap-detector | `model="sonnet"` | `역할: 설계-구현 Gap 정량 분석기. Match Rate 계산.` |
+| build-fixer | `model="sonnet"` | `역할: Build/TypeScript error fixer. 최소 diff로 빌드 수정.` |
+| researcher | `model="sonnet"` | `역할: External documentation & reference researcher.` |
+
+### Fallback 사용 시 필수사항
+
+1. **model 오버라이드 필수** (Tier 2): `Agent(subagent_type="general-purpose", model="opus", ...)` — 원래 에이전트의 모델 티어 유지
+2. **prompt 역할 명시**: prompt 첫 줄에 `역할: {원래 에이전트 설명}` 추가
+3. **READ-ONLY 에이전트**(architect): prompt에 `파일 수정 절대 금지. Read/Grep/Glob만 허용.` 명시
+4. **Phase 4 보고서 기록**: Fallback 사용 에이전트와 원인을 보고서에 기록
+5. **Lead 직접 실행 금지**: Fallback이 있더라도 Lead가 직접 구현하지 않음 (CLAUDE.md 규칙 3)
 
 ---
 
@@ -630,6 +691,8 @@ Agent(subagent_type="planner", name="planner", description="계획 수립", team
      === Intent Analysis (Step 1.0 산출물) ===
              {intent_analysis_result}
              위 분석의 암묵적 요구사항과 범위 경계를 계획에 반영하세요.
+     === Mermaid 다이어그램 규칙 ===
+             한 레벨 노드 최대 4개 (5개+ 시 subgraph 분할). 줄바꿈: <br/> 사용 (\n 금지). 노드 6개+ 시 단계적 빌드업.
      docs/01-plan/{feature}.plan.md 생성.")
 SendMessage(type="message", recipient="planner", content="계획 수립 시작. 완료 후 TaskUpdate로 completed 처리.")
 # 완료 대기 → shutdown_request
@@ -644,6 +707,8 @@ Agent(subagent_type="planner", name="planner", description="계획 수립", team
      === Intent Analysis (Step 1.0 산출물) ===
              {intent_analysis_result}
              위 분석의 암묵적 요구사항과 범위 경계를 계획에 반영하세요.
+     === Mermaid 다이어그램 규칙 ===
+             한 레벨 노드 최대 4개 (5개+ 시 subgraph 분할). 줄바꿈: <br/> 사용 (\n 금지). 노드 6개+ 시 단계적 빌드업.
      docs/01-plan/{feature}.plan.md 생성.")
 SendMessage(type="message", recipient="planner", content="계획 수립 시작. 완료 후 TaskUpdate로 completed 처리.")
 # 완료 대기 → shutdown_request
@@ -671,6 +736,8 @@ Loop (max 5 iterations):
                === Intent Analysis (Step 1.0 산출물) ===
                {intent_analysis_result}
                위 분석의 암묵적 요구사항과 범위 경계를 계획에 반영하세요.
+               === Mermaid 다이어그램 규칙 ===
+               한 레벨 노드 최대 4개 (5개+ 시 subgraph 분할). 줄바꿈: <br/> 사용 (\n 금지). 노드 6개+ 시 단계적 빌드업.
                출력: docs/01-plan/{feature}.plan.md")
   SendMessage(type="message", recipient="planner-{iteration_count}", content="계획 수립 시작.")
   # 결과 수신 대기 → shutdown_request
@@ -943,8 +1010,10 @@ from lib.mockup_hybrid import MockupOptions
 from skills.mockup_hybrid.core.router import MockupRouter
 router = MockupRouter()
 options = MockupOptions(bnw={bnw_flag})
-# --quasar 옵션 시 Quasar Material Design 스타일 적용
-if quasar_flag:
+# --quasar 옵션 시 Quasar Material Design, --mockup-q 시 White Minimal
+if mockup_q_flag:
+    options = MockupOptions(style="quasar-white")
+elif quasar_flag:
     options = MockupOptions(style="quasar")
 result = router.route(prompt="{prompt}", options=options)
 # 산출물: docs/mockups/{name}.html
@@ -965,8 +1034,17 @@ target_doc = options.get("mockup")  # 문서 경로
 **Step 2: designer 스타일링 (HTML 선택 시)**
 ```
 # 조건: backend == HTML
-# --quasar 시 Quasar Material Design 스타일링
-if options.style == "quasar":
+# --mockup-q 시 Quasar White Minimal, --quasar 시 Quasar Material Design
+if options.style == "quasar-white":
+    Agent(subagent_type="designer", name="mockup-designer", description="Quasar White 목업 디자인", team_name="pdca-{feature}",
+         prompt="[Mockup Quasar White] docs/mockups/{name}.html을 Quasar White Tone Minimal로 스타일링.
+                 Quasar UMD 컴포넌트 사용: q-toolbar, q-card flat bordered, q-input outlined, q-btn color='grey-8'.
+                 self-closing 태그 금지 (<q-input /> → <q-input></q-input>).
+                 Roboto 300/400/500/700. --q-primary: #374151, Page BG: #ffffff.
+                 Header: bg-white text-dark + border-bottom. Card: flat bordered.
+                 max-width: 720px, max-height: 1280px.
+                 designer.md의 Quasar White Tone Minimal 섹션 참조.")
+elif options.style == "quasar":
     Agent(subagent_type="designer", name="mockup-designer", description="Quasar 목업 디자인", team_name="pdca-{feature}",
          prompt="[Mockup Quasar] docs/mockups/{name}.html을 Quasar Material Design으로 스타일링.
                  Quasar UMD 컴포넌트 사용: q-toolbar, q-card, q-input outlined, q-btn, q-table.
@@ -1014,6 +1092,12 @@ print(f'CAPTURED: {result}' if result else 'CAPTURE_FAILED')
 - Quasar 컴포넌트: q-toolbar, q-card, q-input outlined, q-btn, q-table, q-drawer
 - B&W 팔레트 적용 스킵 (Quasar 자체 Material Design 색상)
 - self-closing 태그 금지 (`<q-input />` → `<q-input></q-input>`)
+
+**`--mockup-q`** (Quasar White Minimal): `MockupOptions(style="quasar-white")` → Quasar White 템플릿 선택.
+- 팔레트: #374151 (차콜 primary), #ffffff (Page BG), #e5e7eb (border)
+- Header: bg-white text-dark + border-bottom (elevated 제거)
+- Card: flat bordered. Button: color="grey-8"
+- CDN/UMD 제약 동일 (self-closing 금지)
 
 **에러 처리**: Task 실패 시 에러 메시지 출력 + Phase 2 BUILD 중단. 옵션 실패 시: 에러 출력, 절대 조용히 스킵 금지.
 
@@ -1215,7 +1299,7 @@ elif figma_variant == "capture":
     #      - capture-reset.css 링크 확인 (mockups/capture/ 내 파일)
     #   c. HTTP 서버 시작: python -m http.server {port} (npx http-server fallback)
     #   d. Headless 캡처 (브라우저 창 없음):
-    #      cd C:\claude && python -c "from lib.figma.headless_capture import figma_headless_capture; figma_headless_capture('http://localhost:{port}/{page}#figmacapture={captureId}&figmaendpoint=https%3A%2F%2Fmcp.figma.com%2Fmcp%2Fcapture%2F{captureId}%2Fsubmit&figmadelay=2000')"
+    #      cd C:\claude && python -c "from lib.mockup_hybrid.export_utils import capture_url; capture_url('http://localhost:{port}/{page}#figmacapture={captureId}&figmaendpoint=https%3A%2F%2Fmcp.figma.com%2Fmcp%2Fcapture%2F{captureId}%2Fsubmit&figmadelay=2000')"
     #
     # Step 4: 폴링 (5초 간격, max 10회)
     #   sleep 5 → generate_figma_design(captureId="{captureId}")

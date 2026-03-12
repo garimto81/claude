@@ -84,7 +84,14 @@ def capture_screenshot(
 
     # auto_size=True이고 Playwright SDK가 사용 가능하면 SDK 사용
     if auto_size and _PLAYWRIGHT_AVAILABLE:
-        return _capture_with_auto_size(html_path, image_path, selector)
+        result = _capture_with_auto_size(html_path, image_path, selector)
+        if result and not _validate_capture(result):
+            logger.warning("공백 과다 감지, selector='#q-app'으로 재캡처")
+            result = _capture_with_auto_size(html_path, image_path, selector="#q-app")
+        if result and not _validate_capture(result):
+            logger.warning("재캡처도 공백 과다, crop 시도")
+            result = _crop_whitespace(result)
+        return result
 
     # 폴백: CLI 사용
     return _capture_with_cli(
@@ -204,6 +211,79 @@ def _capture_with_auto_size(
     except Exception as e:
         logger.error(f"auto_size 캡처 실패: {e}")
         return None
+
+
+def _validate_capture(image_path: Path, max_whitespace_ratio: float = 0.4) -> bool:
+    """캡처 이미지의 하단 공백 비율 검증
+
+    Args:
+        image_path: 검증할 이미지 경로
+        max_whitespace_ratio: 허용 최대 공백 비율 (기본 0.4)
+
+    Returns:
+        True if valid (공백 비율이 임계값 이하)
+    """
+    try:
+        from PIL import Image
+    except ImportError:
+        return True  # Pillow 없으면 항상 통과 (soft dependency)
+
+    try:
+        img = Image.open(image_path)
+        width, height = img.size
+
+        # 하단 30% 영역 검사
+        check_height = int(height * 0.3)
+        if check_height < 10:
+            return True
+
+        bottom_region = img.crop((0, height - check_height, width, height))
+        pixels = list(bottom_region.getdata())
+
+        if not pixels:
+            return True
+
+        # 가장 많은 색상 = 배경색으로 추정
+        from collections import Counter
+        color_counts = Counter(pixels)
+        most_common_color, most_common_count = color_counts.most_common(1)[0]
+
+        ratio = most_common_count / len(pixels)
+        if ratio > max_whitespace_ratio:
+            logger.warning(f"하단 공백 비율 {ratio:.1%} > {max_whitespace_ratio:.0%}")
+            return False
+        return True
+    except Exception as e:
+        logger.warning(f"캡처 검증 실패 (무시): {e}")
+        return True
+
+
+def _crop_whitespace(image_path: Path) -> Optional[Path]:
+    """이미지 하단 공백을 잘라내는 최후 수단
+
+    Args:
+        image_path: crop 대상 이미지 경로
+
+    Returns:
+        crop된 이미지 경로 (실패 시 원본 경로)
+    """
+    try:
+        from PIL import Image
+    except ImportError:
+        return image_path  # Pillow 없으면 원본 반환
+
+    try:
+        img = Image.open(image_path)
+        # getbbox()로 비어있지 않은 영역 탐지
+        bbox = img.getbbox()
+        if bbox:
+            cropped = img.crop(bbox)
+            cropped.save(image_path)
+            logger.info(f"공백 crop 완료: {img.size} → {cropped.size}")
+        return image_path
+    except Exception as e:
+        logger.warning(f"crop 실패 (원본 유지): {e}")
+        return image_path
 
 
 def _capture_with_cli(
@@ -342,3 +422,50 @@ def get_output_paths(
         image_path = image_dir / f"{filename}.png"
 
     return html_path, image_path
+
+
+def capture_url(url: str, delay_ms: int = 5000,
+                width: int = 720, height: int = 1280) -> bool:
+    """URL 기반 Playwright headless 캡처 (구 figma_headless_capture 대체)
+
+    Args:
+        url: 캡처할 URL (http/https/file)
+        delay_ms: 페이지 로드 후 대기 시간 (ms)
+        width: 뷰포트 너비
+        height: 뷰포트 높이
+
+    Returns:
+        True if 성공
+    """
+    if not url.startswith(("http://", "https://", "file://")):
+        logger.error(f"Invalid URL scheme: {url[:80]}")
+        return False
+
+    if not _PLAYWRIGHT_AVAILABLE:
+        logger.error("Playwright SDK 미설치, capture_url 불가")
+        return False
+
+    try:
+        from playwright.sync_api import sync_playwright
+
+        with sync_playwright() as p:
+            browser = p.chromium.launch(
+                headless=True,
+                args=["--disable-gpu", "--no-sandbox", "--disable-dev-shm-usage"],
+            )
+            try:
+                context = browser.new_context(
+                    viewport={"width": width, "height": height},
+                    device_scale_factor=1,
+                )
+                page = context.new_page()
+                page.goto(url)
+                page.wait_for_load_state("networkidle")
+                page.wait_for_timeout(delay_ms)
+                logger.info(f"URL 캡처 완료: {url[:80]}...")
+                return True
+            finally:
+                browser.close()
+    except Exception as e:
+        logger.error(f"URL 캡처 실패: {e}")
+        return False
