@@ -26,18 +26,17 @@ from slack_sdk.errors import SlackApiError
 
 from .models import SlackToken, SlackTeam, SlackMessage, SlackChannel, SlackUser, SendResult
 from .errors import (
-    SlackError,
     SlackAuthError,
     SlackRateLimitError,
     SlackAPIError,
     SlackChannelNotFoundError,
     SlackTokenRevokedError,
-    SlackNetworkError,
 )
 
 
-# Token file path
-TOKEN_PATH = Path("C:/claude/json/slack_token.json")
+# Token file path — __file__ 기반 상대 경로 (이식성)
+_BASE = Path(__file__).resolve().parent.parent.parent  # → C:/claude/
+TOKEN_PATH = _BASE / "json" / "slack_token.json"
 
 
 class RateLimiter:

@@ -316,7 +316,7 @@ class OCRExtractor:
         """Tesseract 설치 및 언어팩 검증"""
         try:
             version = pytesseract.get_tesseract_version()
-        except Exception as e:
+        except Exception:
             raise TesseractNotFoundError(
                 "Tesseract not installed. "
                 "Install via: scoop install tesseract"

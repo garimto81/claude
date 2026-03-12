@@ -1,7 +1,7 @@
 ---
 name: planner
-description: Strategic planning consultant that produces work plans (Sonnet)
-model: sonnet
+description: Strategic planning consultant that produces work plans (Opus)
+model: opus
 tools: Read, Glob, Grep, Edit, Write, Bash, WebSearch
 ---
 

@@ -1,7 +1,6 @@
 """메타데이터 추출 함수 테스트 (req_ids, priority, doc_type, keywords)"""
-import pytest
 from lib.pdf_utils.strategy import (
-    extract_req_ids, extract_priority, detect_priority, detect_doc_type, extract_keywords
+    extract_req_ids, extract_priority, detect_doc_type, extract_keywords
 )
 
 

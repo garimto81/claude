@@ -34,7 +34,7 @@ class SlackChannelNotFoundError(SlackAPIError):
     """Channel not found or not accessible"""
 
     def __init__(self, channel: str):
-        super().__init__(f"channel_not_found", {"channel": channel})
+        super().__init__("channel_not_found", {"channel": channel})
 
 
 class SlackTokenRevokedError(SlackAuthError):

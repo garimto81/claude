@@ -16,7 +16,7 @@ logger = logging.getLogger(__name__)
 # Playwright Python SDK 사용 가능 여부
 _PLAYWRIGHT_AVAILABLE = False
 try:
-    from playwright.sync_api import sync_playwright
+    from playwright.sync_api import sync_playwright  # noqa: F401
     _PLAYWRIGHT_AVAILABLE = True
 except ImportError:
     pass
@@ -84,7 +84,14 @@ def capture_screenshot(
 
     # auto_size=True이고 Playwright SDK가 사용 가능하면 SDK 사용
     if auto_size and _PLAYWRIGHT_AVAILABLE:
-        return _capture_with_auto_size(html_path, image_path, selector)
+        result = _capture_with_auto_size(html_path, image_path, selector)
+        if result and not _validate_capture(result):
+            logger.warning("공백 과다 감지, selector='#q-app'으로 재캡처")
+            result = _capture_with_auto_size(html_path, image_path, selector="#q-app")
+        if result and not _validate_capture(result):
+            logger.warning("재캡처도 공백 과다, crop 시도")
+            result = _crop_whitespace(result)
+        return result
 
     # 폴백: CLI 사용
     return _capture_with_cli(
@@ -100,75 +107,102 @@ def _capture_with_auto_size(
     """
     Playwright Python SDK로 콘텐츠 크기에 맞춰 자동 캡처
 
-    동작 방식:
-    1. 넓은 viewport로 페이지 로드 (콘텐츠가 잘리지 않도록)
-    2. body의 실제 렌더링된 크기 감지 (getBoundingClientRect)
-    3. viewport를 콘텐츠 크기에 맞게 조정
-    4. 캡처 실행
+    전략 우선순위:
+    1. selector 파라미터 → 해당 요소만 캡처
+    2. body 첫 번째 자식 요소 → element.screenshot() (정확한 콘텐츠 영역)
+    3. 폴백 → body.getBoundingClientRect()로 크기 측정 후 캡처
+
+    NOTE: scrollHeight는 viewport 크기 이상을 반환하므로 사용하지 않는다.
+    element.screenshot()이 요소의 렌더링된 bounding box만 정확히 캡처한다.
     """
     try:
         from playwright.sync_api import sync_playwright
 
         with sync_playwright() as p:
-            browser = p.chromium.launch()
-            # 충분히 큰 viewport로 로드 - CSS max-width/max-height가 실제 렌더링 크기를 제어함
-            page = browser.new_page(viewport={"width": 720, "height": 10000})
+            browser = p.chromium.launch(
+                headless=True,
+                args=["--disable-gpu", "--no-sandbox", "--disable-dev-shm-usage"],
+            )
+            # 초기 viewport: 콘텐츠 로드용 (CSS max-width/max-height가 렌더링 크기 제어)
+            context = browser.new_context(
+                viewport={"width": 720, "height": 800},
+                device_scale_factor=1,
+            )
+            page = context.new_page()
 
             # file:// URL로 변환
             file_url = html_path.resolve().as_uri()
             page.goto(file_url)
             page.wait_for_load_state("networkidle")
 
-            # 실제 렌더링 크기 측정 (CSS 제약 적용 후 값)
-            # CSS max-width: 720px / max-height: 1280px / overflow: hidden 이 이미 적용됨
-            dimensions = page.evaluate("""
-                () => {
-                    const scrollW = Math.max(
-                        document.documentElement.scrollWidth,
-                        document.body.scrollWidth
-                    );
-                    const scrollH = Math.max(
-                        document.documentElement.scrollHeight,
-                        document.body.scrollHeight
-                    );
-                    // 안전 상한선 (CSS가 이미 제어하지만 이중 방어)
-                    return {
-                        width: Math.min(scrollW, 720),
-                        height: Math.min(scrollH, 1280)
-                    };
-                }
-            """)
-
-            content_width = dimensions['width']
-            content_height = dimensions['height']
-
-            logger.info(
-                f"콘텐츠 크기 감지: {content_width}x{content_height}"
-            )
-
-            # 최소 크기 보장 (너무 작으면 잘못 감지된 것)
-            final_width = max(int(content_width), 50)
-            final_height = max(int(content_height), 50)
-
-            # viewport 조정 후 다시 로드
-            page.set_viewport_size({"width": final_width, "height": final_height})
-            page.goto(file_url)
-            page.wait_for_load_state("networkidle")
-
-            # 스크린샷 캡처
+            # === 전략 1: selector 파라미터 사용 ===
             if selector:
                 element = page.query_selector(selector)
                 if element:
                     element.screenshot(path=str(image_path))
-                else:
-                    logger.warning(f"선택자 '{selector}'를 찾을 수 없음, 전체 페이지 캡처")
-                    page.screenshot(path=str(image_path), full_page=False)
-            else:
-                page.screenshot(path=str(image_path), full_page=False)
+                    browser.close()
+                    logger.info(f"스크린샷 캡처 (selector: {selector}): {image_path}")
+                    return image_path
+                logger.warning(f"선택자 '{selector}'를 찾을 수 없음, .container 탐색")
 
+            # === 전략 2: body 첫 번째 자식 요소 캡처 ===
+            # .app, .wrapper 등 최상위 래퍼를 클래스명 무관하게 찾음
+            root_element = page.query_selector("body > *:first-child")
+            if root_element:
+                root_element.screenshot(path=str(image_path))
+                browser.close()
+                logger.info(f"스크린샷 캡처 (root element): {image_path}")
+                return image_path
+
+            # === 전략 3: CSS 제약 해제 후 실제 콘텐츠 크기 측정 ===
+            dimensions = page.evaluate("""
+                () => {
+                    const body = document.body;
+                    const html = document.documentElement;
+
+                    // 원래 스타일 저장
+                    const origBodyMaxH = body.style.maxHeight;
+                    const origBodyOverflow = body.style.overflow;
+                    const origHtmlMaxH = html.style.maxHeight;
+                    const origHtmlOverflow = html.style.overflow;
+
+                    // CSS max-height/overflow 제약 임시 해제
+                    body.style.maxHeight = 'none';
+                    body.style.overflow = 'visible';
+                    html.style.maxHeight = 'none';
+                    html.style.overflow = 'visible';
+
+                    // 실제 콘텐츠 크기 측정
+                    const rect = body.getBoundingClientRect();
+                    const scrollW = Math.max(rect.width, body.scrollWidth);
+                    const scrollH = Math.max(rect.height, body.scrollHeight);
+
+                    // 스타일 복원
+                    body.style.maxHeight = origBodyMaxH;
+                    body.style.overflow = origBodyOverflow;
+                    html.style.maxHeight = origHtmlMaxH;
+                    html.style.overflow = origHtmlOverflow;
+
+                    return {
+                        width: Math.ceil(scrollW),
+                        height: Math.ceil(scrollH)
+                    };
+                }
+            """)
+
+            content_width = max(min(int(dimensions['width']), 720), 50)
+            content_height = max(min(int(dimensions['height']), 1280), 50)
+
+            logger.info(f"콘텐츠 크기 감지 (폴백): {content_width}x{content_height}")
+
+            # viewport를 콘텐츠 크기에 맞게 조정
+            page.set_viewport_size({"width": content_width, "height": content_height})
+            page.wait_for_timeout(100)
+
+            page.screenshot(path=str(image_path), full_page=False)
             browser.close()
 
-            logger.info(f"스크린샷 캡처 (auto_size): {image_path} [{final_width}x{final_height}]")
+            logger.info(f"스크린샷 캡처 (폴백 auto_size): {image_path} [{content_width}x{content_height}]")
             return image_path
 
     except ImportError:
@@ -177,6 +211,79 @@ def _capture_with_auto_size(
     except Exception as e:
         logger.error(f"auto_size 캡처 실패: {e}")
         return None
+
+
+def _validate_capture(image_path: Path, max_whitespace_ratio: float = 0.4) -> bool:
+    """캡처 이미지의 하단 공백 비율 검증
+
+    Args:
+        image_path: 검증할 이미지 경로
+        max_whitespace_ratio: 허용 최대 공백 비율 (기본 0.4)
+
+    Returns:
+        True if valid (공백 비율이 임계값 이하)
+    """
+    try:
+        from PIL import Image
+    except ImportError:
+        return True  # Pillow 없으면 항상 통과 (soft dependency)
+
+    try:
+        img = Image.open(image_path)
+        width, height = img.size
+
+        # 하단 30% 영역 검사
+        check_height = int(height * 0.3)
+        if check_height < 10:
+            return True
+
+        bottom_region = img.crop((0, height - check_height, width, height))
+        pixels = list(bottom_region.getdata())
+
+        if not pixels:
+            return True
+
+        # 가장 많은 색상 = 배경색으로 추정
+        from collections import Counter
+        color_counts = Counter(pixels)
+        most_common_color, most_common_count = color_counts.most_common(1)[0]
+
+        ratio = most_common_count / len(pixels)
+        if ratio > max_whitespace_ratio:
+            logger.warning(f"하단 공백 비율 {ratio:.1%} > {max_whitespace_ratio:.0%}")
+            return False
+        return True
+    except Exception as e:
+        logger.warning(f"캡처 검증 실패 (무시): {e}")
+        return True
+
+
+def _crop_whitespace(image_path: Path) -> Optional[Path]:
+    """이미지 하단 공백을 잘라내는 최후 수단
+
+    Args:
+        image_path: crop 대상 이미지 경로
+
+    Returns:
+        crop된 이미지 경로 (실패 시 원본 경로)
+    """
+    try:
+        from PIL import Image
+    except ImportError:
+        return image_path  # Pillow 없으면 원본 반환
+
+    try:
+        img = Image.open(image_path)
+        # getbbox()로 비어있지 않은 영역 탐지
+        bbox = img.getbbox()
+        if bbox:
+            cropped = img.crop(bbox)
+            cropped.save(image_path)
+            logger.info(f"공백 crop 완료: {img.size} → {cropped.size}")
+        return image_path
+    except Exception as e:
+        logger.warning(f"crop 실패 (원본 유지): {e}")
+        return image_path
 
 
 def _capture_with_cli(
@@ -188,11 +295,16 @@ def _capture_with_cli(
     height: int = 600,
 ) -> Optional[Path]:
     """Playwright CLI로 스크린샷 캡처 (폴백용)"""
+    import platform
+
     # file:// URL로 변환
     file_url = html_path.resolve().as_uri()
 
-    # Playwright 명령어 구성
-    cmd = ["npx", "playwright", "screenshot"]
+    # Playwright 명령어 구성 (Windows: cmd /c npx 패턴 필수)
+    if platform.system() == "Windows":
+        cmd = ["cmd", "/c", "npx", "playwright", "screenshot"]
+    else:
+        cmd = ["npx", "playwright", "screenshot"]
 
     if selector:
         cmd.extend(["--selector", selector])
@@ -292,9 +404,13 @@ def get_output_paths(
     # 파일명 생성 (공백을 하이픈으로)
     safe_name = name.lower().replace(" ", "-").replace("_", "-")
 
-    # 한글 처리 (간단히 유지)
+    # 한글 + 유니코드 보존 (가-힣 명시 추가)
     import re
-    safe_name = re.sub(r'[^\w\-]', '', safe_name, flags=re.UNICODE)
+    safe_name = re.sub(r'[^\w가-힣\-]', '', safe_name, flags=re.UNICODE)
+
+    # 빈 문자열 폴백 (한국어만 포함된 이름이 모두 제거되는 경우 방지)
+    if not safe_name:
+        safe_name = "mockup"
 
     filename = f"{safe_name}{suffix}"
 
@@ -306,3 +422,50 @@ def get_output_paths(
         image_path = image_dir / f"{filename}.png"
 
     return html_path, image_path
+
+
+def capture_url(url: str, delay_ms: int = 5000,
+                width: int = 720, height: int = 1280) -> bool:
+    """URL 기반 Playwright headless 캡처 (구 figma_headless_capture 대체)
+
+    Args:
+        url: 캡처할 URL (http/https/file)
+        delay_ms: 페이지 로드 후 대기 시간 (ms)
+        width: 뷰포트 너비
+        height: 뷰포트 높이
+
+    Returns:
+        True if 성공
+    """
+    if not url.startswith(("http://", "https://", "file://")):
+        logger.error(f"Invalid URL scheme: {url[:80]}")
+        return False
+
+    if not _PLAYWRIGHT_AVAILABLE:
+        logger.error("Playwright SDK 미설치, capture_url 불가")
+        return False
+
+    try:
+        from playwright.sync_api import sync_playwright
+
+        with sync_playwright() as p:
+            browser = p.chromium.launch(
+                headless=True,
+                args=["--disable-gpu", "--no-sandbox", "--disable-dev-shm-usage"],
+            )
+            try:
+                context = browser.new_context(
+                    viewport={"width": width, "height": height},
+                    device_scale_factor=1,
+                )
+                page = context.new_page()
+                page.goto(url)
+                page.wait_for_load_state("networkidle")
+                page.wait_for_timeout(delay_ms)
+                logger.info(f"URL 캡처 완료: {url[:80]}...")
+                return True
+            finally:
+                browser.close()
+    except Exception as e:
+        logger.error(f"URL 캡처 실패: {e}")
+        return False

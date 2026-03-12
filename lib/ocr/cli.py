@@ -1,7 +1,7 @@
 import argparse
 import json
 from pathlib import Path
-from . import OCRExtractor, check_installation, ImagePreprocessor
+from . import OCRExtractor, check_installation
 
 
 def main():

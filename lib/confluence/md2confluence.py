@@ -15,28 +15,44 @@ Environment:
 import os
 import sys
 import re
-import json
 import tempfile
 import subprocess
 import shutil
 import argparse
+from html import unescape as html_unescape
 from pathlib import Path
 
 import requests
+
+# Ensure UTF-8 output on Windows (prevents cp949 UnicodeEncodeError)
+if sys.platform == "win32":
+    for stream in (sys.stdout, sys.stderr):
+        if hasattr(stream, "reconfigure"):
+            stream.reconfigure(encoding="utf-8")
+    os.environ.setdefault("PYTHONIOENCODING", "utf-8")
 
 
 # ---------------------------------------------------------------------------
 # Configuration
 # ---------------------------------------------------------------------------
 
+def _get_win_env(name):
+    """Get Windows User environment variable (fallback when shell env is empty)."""
+    try:
+        import winreg
+        with winreg.OpenKey(winreg.HKEY_CURRENT_USER, "Environment") as key:
+            return winreg.QueryValueEx(key, name)[0]
+    except Exception:
+        return ""
+
+
 def get_config():
     return {
-        "base_url": os.environ.get(
-            "CONFLUENCE_BASE_URL",
-            "https://ggnetwork.atlassian.net/wiki",
-        ),
-        "email": os.environ.get("ATLASSIAN_EMAIL", ""),
-        "token": os.environ.get("ATLASSIAN_API_TOKEN", ""),
+        "base_url": (os.environ.get("CONFLUENCE_BASE_URL", "")
+                     or _get_win_env("CONFLUENCE_BASE_URL")
+                     or "https://ggnetwork.atlassian.net/wiki"),
+        "email": os.environ.get("ATLASSIAN_EMAIL", "") or _get_win_env("ATLASSIAN_EMAIL"),
+        "token": os.environ.get("ATLASSIAN_API_TOKEN", "") or _get_win_env("ATLASSIAN_API_TOKEN"),
     }
 
 
@@ -50,7 +66,7 @@ def get_auth(cfg):
 
 def api_get(cfg, path, params=None):
     url = f"{cfg['base_url']}/rest/api{path}"
-    resp = requests.get(url, auth=get_auth(cfg), params=params)
+    resp = requests.get(url, auth=get_auth(cfg), params=params, timeout=30)
     resp.raise_for_status()
     return resp.json()
 
@@ -60,13 +76,20 @@ def api_put_json(cfg, path, payload):
     resp = requests.put(
         url, auth=get_auth(cfg), json=payload,
         headers={"Content-Type": "application/json"},
+        timeout=30,
     )
     resp.raise_for_status()
     return resp.json()
 
 
 def get_page_info(cfg, page_id):
-    return api_get(cfg, f"/content/{page_id}", {"expand": "version,space"})
+    try:
+        return api_get(cfg, f"/content/{page_id}", {"expand": "version,space"})
+    except requests.HTTPError as e:
+        if e.response.status_code == 404:
+            # Try draft status
+            return api_get(cfg, f"/content/{page_id}", {"expand": "version,space", "status": "draft"})
+        raise
 
 
 def upload_attachment(cfg, page_id, filepath, filename=None):
@@ -78,7 +101,7 @@ def upload_attachment(cfg, page_id, filepath, filename=None):
 
     with open(filepath, "rb") as f:
         files = {"file": (filename, f, "application/octet-stream")}
-        resp = requests.put(url, auth=get_auth(cfg), headers=headers, files=files)
+        resp = requests.put(url, auth=get_auth(cfg), headers=headers, files=files, timeout=60)
 
     if resp.status_code in (200, 201):
         print(f"  [OK] {filename}")
@@ -88,7 +111,7 @@ def upload_attachment(cfg, page_id, filepath, filename=None):
     return None
 
 
-def update_page_content(cfg, page_id, title, html, version, space_key):
+def update_page_content(cfg, page_id, title, html, version, space_key, publish_draft=False):
     payload = {
         "id": page_id,
         "type": "page",
@@ -97,6 +120,8 @@ def update_page_content(cfg, page_id, title, html, version, space_key):
         "version": {"number": version},
         "body": {"storage": {"value": html, "representation": "storage"}},
     }
+    if publish_draft:
+        payload["status"] = "current"
     return api_put_json(cfg, f"/content/{page_id}", payload)
 
 
@@ -119,9 +144,11 @@ def render_mermaid_blocks(md_content, output_dir):
             f.write(code)
 
         is_win = sys.platform == "win32"
+        cmd = (["cmd", "/c", "mmdc", "-i", mmd, "-o", png, "-b", "white", "-w", "1200", "-s", "2"]
+               if is_win else ["mmdc", "-i", mmd, "-o", png, "-b", "white", "-w", "1200", "-s", "2"])
         result = subprocess.run(
-            ["mmdc", "-i", mmd, "-o", png, "-b", "white", "-w", "1200", "-s", "2"],
-            capture_output=True, text=True, timeout=60, shell=is_win,
+            cmd,
+            capture_output=True, text=True, timeout=60,
         )
 
         if result.returncode == 0 and os.path.exists(png):
@@ -144,16 +171,19 @@ def render_mermaid_blocks(md_content, output_dir):
 
 def md_to_html(md_content, resource_path):
     is_win = sys.platform == "win32"
+    base_cmd = [
+        "pandoc",
+        "-f", "markdown+pipe_tables+grid_tables",
+        "-t", "html",
+        f"--resource-path={resource_path}",
+        "--wrap=none",
+        "--no-highlight",
+    ]
+    cmd = ["cmd", "/c"] + base_cmd if is_win else base_cmd
     result = subprocess.run(
-        [
-            "pandoc",
-            "-f", "markdown+pipe_tables+grid_tables",
-            "-t", "html",
-            f"--resource-path={resource_path}",
-            "--wrap=none",
-        ],
+        cmd,
         input=md_content, capture_output=True,
-        text=True, encoding="utf-8", timeout=60, shell=is_win,
+        text=True, encoding="utf-8", timeout=60,
     )
     if result.returncode != 0:
         raise RuntimeError(f"Pandoc failed: {result.stderr}")
@@ -166,6 +196,38 @@ def md_to_html(md_content, resource_path):
 
 def postprocess_html(html):
     """Transform pandoc HTML into Confluence storage format."""
+
+    # 0a) <pre><code> -> Confluence code macro
+    def _code_block_to_macro(match):
+        lang_match = re.search(r'class="(?:sourceCode\s+)?(\w+)"', match.group(0))
+        lang = lang_match.group(1) if lang_match else "none"
+        code_match = re.search(r'<code[^>]*>(.*?)</code>', match.group(0), re.DOTALL)
+        code = re.sub(r'<[^>]+>', '', code_match.group(1))  # strip inner tags
+        code = html_unescape(code)
+        code = code.replace(']]>', ']]]]><![CDATA[>')  # CDATA escape
+        lang_param = (
+            f'<ac:parameter ac:name="language">{lang}</ac:parameter>'
+            if lang != "none" else ''
+        )
+        return (
+            f'<ac:structured-macro ac:name="code">{lang_param}'
+            f'<ac:plain-text-body><![CDATA[{code}]]>'
+            f'</ac:plain-text-body></ac:structured-macro>'
+        )
+
+    html = re.sub(r'<pre[^>]*>\s*<code[^>]*>.*?</code>\s*</pre>', _code_block_to_macro, html, flags=re.DOTALL)
+
+    # 0b) Strip foreign class/id/style attributes (preserve ac:/ri: elements)
+    def _strip_foreign_attrs(match):
+        tag = match.group(0)
+        if '<ac:' in tag or '<ri:' in tag:
+            return tag
+        tag = re.sub(r'\s+class="[^"]*"', '', tag)
+        tag = re.sub(r'\s+id="[^"]*"', '', tag)
+        tag = re.sub(r'\s+style="[^"]*"', '', tag)
+        return tag
+
+    html = re.sub(r'<[a-zA-Z][^>]*>', _strip_foreign_attrs, html)
 
     # 1) <img> -> <ac:image> with attachment reference
     def _img_to_ac(match):
@@ -254,12 +316,22 @@ def convert(md_path, page_id, dry_run=False, base_url=None):
     md_content = md_path.read_text(encoding="utf-8")
 
     print(f"[2/6] Fetching page info ({page_id})...")
+    is_draft = False
     if not dry_run:
         info = get_page_info(cfg, page_id)
         ver = info["version"]["number"]
         title = info["title"]
         space = info["space"]["key"]
-        print(f"  Title: {title} | Version: {ver} | Space: {space}")
+        is_draft = info.get("status") == "draft"
+        if is_draft:
+            print(f"  DRAFT page | Version: {ver} | Space: {space}")
+            # Extract title from MD H1 if draft has no title
+            if not title:
+                h1_match = re.search(r"^#\s+(.+)$", md_content, re.MULTILINE)
+                title = h1_match.group(1).strip() if h1_match else "Untitled"
+                print(f"  Title from MD: {title}")
+        else:
+            print(f"  Title: {title} | Version: {ver} | Space: {space}")
     else:
         ver, title, space = 0, "DRY-RUN", "DRY"
 
@@ -287,14 +359,34 @@ def convert(md_path, page_id, dry_run=False, base_url=None):
             # Don't clean tmp_dir on dry-run so user can inspect
             return {"status": "dry_run", "preview": preview, "tmp_dir": tmp_dir}
 
-        for fname, fpath in images:
-            upload_attachment(cfg, page_id, fpath, fname)
+        if is_draft:
+            # Draft workflow: publish first (minimal body), then attach, then update body
+            print(f"[5a/7] Publishing draft as page '{title}'...")
+            result = update_page_content(
+                cfg, page_id, title, "<p>Publishing...</p>", ver, space, publish_draft=True,
+            )
+            cur_ver = result["version"]["number"]
+            print(f"  Published as v{cur_ver}")
 
-        new_ver = ver + 1
-        print(f"[6/6] Updating page (v{ver} -> v{new_ver})...")
-        result = update_page_content(cfg, page_id, title, html, new_ver, space)
-        final_ver = result["version"]["number"]
-        print(f"  SUCCESS: Page updated to v{final_ver}")
+            print(f"[5b/7] Uploading {len(images)} attachments...")
+            for fname, fpath in images:
+                upload_attachment(cfg, page_id, fpath, fname)
+
+            new_ver = cur_ver + 1
+            print(f"[6/7] Updating page body (v{cur_ver} -> v{new_ver})...")
+            result = update_page_content(cfg, page_id, title, html, new_ver, space)
+            final_ver = result["version"]["number"]
+            print(f"  SUCCESS: Page updated to v{final_ver}")
+        else:
+            for fname, fpath in images:
+                upload_attachment(cfg, page_id, fpath, fname)
+
+            new_ver = ver + 1
+            print(f"[6/6] Updating page (v{ver} -> v{new_ver})...")
+            result = update_page_content(cfg, page_id, title, html, new_ver, space)
+            final_ver = result["version"]["number"]
+            print(f"  SUCCESS: Page updated to v{final_ver}")
+
         return {"status": "success", "version": final_ver}
 
     finally:
@@ -321,6 +413,15 @@ def main():
         help="Confluence base URL (include /wiki for Cloud)",
     )
     args = parser.parse_args()
+
+    cfg = get_config()
+    if not cfg["email"] or not cfg["token"]:
+        print(
+            "ERROR: ATLASSIAN_EMAIL and ATLASSIAN_API_TOKEN required.\n"
+            "Set as environment variables or Windows User environment variables.",
+            file=sys.stderr,
+        )
+        sys.exit(1)
 
     try:
         result = convert(

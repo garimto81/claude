@@ -26,10 +26,11 @@ from .models import SlackCredentials, SlackToken, SlackTeam
 from .errors import SlackAuthError, SlackCredentialsNotFoundError
 
 
-# File paths
-CREDENTIALS_PATH = Path("C:/claude/json/slack_credentials.json")
-TOKEN_PATH = Path("C:/claude/json/slack_token.json")
-USER_TOKEN_PATH = Path("C:/claude/json/slack_user_token.json")
+# File paths — __file__ 기반 상대 경로 (이식성)
+_BASE = Path(__file__).resolve().parent.parent.parent  # → C:/claude/
+CREDENTIALS_PATH = _BASE / "json" / "slack_credentials.json"
+TOKEN_PATH = _BASE / "json" / "slack_token.json"
+USER_TOKEN_PATH = _BASE / "json" / "slack_user_token.json"
 
 # Default OAuth scopes (Bot Token)
 DEFAULT_SCOPES = [
@@ -366,8 +367,9 @@ def get_token() -> Optional[SlackToken]:
     if bot_token:
         try:
             return create_token_from_bot_token(bot_token)
-        except SlackAuthError:
-            pass  # Fall through to check token file
+        except SlackAuthError as e:
+            import sys
+            print(f"[WARN] Bot token validation failed: {e}", file=sys.stderr)
 
     # Priority 2: Check token file
     if not TOKEN_PATH.exists():
@@ -481,7 +483,7 @@ def login(port: int = None, include_user_scopes: bool = False) -> SlackToken:
     user_scopes = USER_SCOPES if include_user_scopes else None
     auth_url = build_auth_url(credentials, port, user_scopes=user_scopes)
 
-    print(f"Opening browser for Slack authorization...")
+    print("Opening browser for Slack authorization...")
     if include_user_scopes:
         print(f"Requesting user scopes: {', '.join(USER_SCOPES)}")
     print(f"If browser doesn't open, visit: {auth_url}")
@@ -540,8 +542,9 @@ def get_user_token() -> Optional[SlackToken]:
     if user_token:
         try:
             return create_token_from_user_token(user_token)
-        except SlackAuthError:
-            pass  # Fall through to check token file
+        except SlackAuthError as e:
+            import sys
+            print(f"[WARN] User token validation failed: {e}", file=sys.stderr)
 
     # Priority 2: Check token file
     if not USER_TOKEN_PATH.exists():

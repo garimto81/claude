@@ -158,6 +158,17 @@ Now review for quality (see Review Checklist below).
 - Magic numbers without explanation
 - Inconsistent formatting
 
+### Vercel Best Practices (CONDITIONAL)
+
+Lead가 prompt에 "Vercel Best Practices" 규칙을 주입한 경우에만 적용.
+주입된 규칙이 없으면 이 섹션 무시.
+
+검증 항목:
+- React 성능: useMemo/useCallback 적정성, key prop, lazy loading
+- Next.js 패턴: App Router, Server Component, Image/Font 최적화
+- 접근성: ARIA, Semantic HTML, 키보드 네비게이션
+- 보안: dangerouslySetInnerHTML, 환경 변수 분리
+
 ## Review Output Format
 
 For each issue:

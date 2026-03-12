@@ -1,7 +1,5 @@
 """MDChunker / MDParser 테스트 — 9개 TC"""
 import time
-import pytest
-from pathlib import Path
 from lib.pdf_utils.md_chunker import MDChunker, MDParser, BlockType
 
 

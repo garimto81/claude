@@ -24,9 +24,10 @@ from .models import GmailCredentials, GmailToken
 from .errors import GmailAuthError, GmailCredentialsNotFoundError
 
 
-# File paths
-CREDENTIALS_PATH = Path("C:/claude/json/desktop_credentials.json")
-TOKEN_PATH = Path("C:/claude/json/token_gmail.json")
+# File paths — __file__ 기반 상대 경로 (이식성)
+_BASE = Path(__file__).resolve().parent.parent.parent  # → C:/claude/
+CREDENTIALS_PATH = _BASE / "json" / "desktop_credentials.json"
+TOKEN_PATH = _BASE / "json" / "token_gmail.json"
 
 # Default OAuth scopes
 DEFAULT_SCOPES = [
@@ -83,7 +84,9 @@ def get_credentials() -> Optional[Credentials]:
         try:
             creds.refresh(Request())
             save_token_from_credentials(creds)
-        except Exception:
+        except Exception as e:
+            import sys
+            print(f"[WARN] Token refresh failed: {e}", file=sys.stderr)
             creds = None
 
     return creds

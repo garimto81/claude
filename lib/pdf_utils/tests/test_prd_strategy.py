@@ -1,7 +1,6 @@
 """auto_select_strategy 테스트 — 6개 TC"""
-import pytest
 from unittest.mock import patch
-from lib.pdf_utils.strategy import auto_select_strategy, detect_prd_structure, estimate_tokens
+from lib.pdf_utils.strategy import auto_select_strategy, detect_prd_structure
 
 
 def _make_text_with_tokens(target_tokens: int, has_prd: bool = False, heavy_table: bool = False) -> str:

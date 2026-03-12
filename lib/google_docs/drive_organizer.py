@@ -4,19 +4,13 @@ Google Drive Organizer
 Drive 파일 정리, 중복 제거, 폴더 구조화를 위한 모듈
 """
 
-import hashlib
-import io
-import json
 import logging
 import re
 from collections import defaultdict
 from dataclasses import dataclass, field
-from datetime import datetime
-from pathlib import Path
 from typing import Optional
 
 from googleapiclient.discovery import build
-from googleapiclient.http import MediaIoBaseDownload
 
 from .auth import get_credentials, DEFAULT_FOLDER_ID
 from .project_registry import get_project_folder_id

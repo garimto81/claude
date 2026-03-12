@@ -1,13 +1,14 @@
 ---
 name: confluence
-description: Markdown to Confluence 변환 및 발행 스킬
+version: 1.0.0
+description: >
+  This skill should be used when the user needs to convert Markdown files to Confluence format and publish them to Confluence pages.
 triggers:
   keywords:
     - "--con"
     - "confluence"
     - "컨플루언스"
     - "confluence upload"
-model: sonnet
 ---
 
 # Confluence 발행 스킬 (`--con`)

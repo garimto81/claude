@@ -4,8 +4,6 @@ lib.ocr.cli 테스트
 CLI 인터페이스 검증 (argparse + 서브커맨드)
 """
 
-import pytest
-from pathlib import Path
 from unittest.mock import patch, MagicMock
 import json
 

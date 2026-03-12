@@ -21,17 +21,17 @@ HTML 와이어프레임과 Google Stitch API를 통합한 하이브리드 목업
 ## 빠른 시작
 
 ```bash
-# 기본 사용 (자동 선택)
-/mockup "로그인 화면" --bnw
+# 기본 사용 (자동 선택, B&W Refined Minimal 기본 적용)
+/mockup "로그인 화면"
 
 # 고품질 목업 (Stitch 자동 선택)
-/mockup "대시보드 - 이해관계자 프레젠테이션" --bnw
+/mockup "대시보드 - 이해관계자 프레젠테이션"
 
 # 강제 HTML
-/mockup "화면" --bnw --force-html
+/mockup "화면" --force-html
 
 # 강제 Stitch
-/mockup "화면" --bnw --force-hifi
+/mockup "화면" --force-hifi
 ```
 
 ---
@@ -41,7 +41,7 @@ HTML 와이어프레임과 Google Stitch API를 통합한 하이브리드 목업
 ### 선택 흐름
 
 ```
-/mockup "프롬프트" --bnw
+/mockup "프롬프트"
       │
       ▼
 ┌─────────────────────────────────────────────────────┐
@@ -109,7 +109,7 @@ HTML 와이어프레임과 Google Stitch API를 통합한 하이브리드 목업
 
 | 옵션 | 설명 | 예시 |
 |------|------|------|
-| `--bnw` | Black & White 모드 (기본) | `/mockup "화면" --bnw` |
+| `--bnw` | (deprecated) B&W Refined Minimal은 기본 스타일 | `/mockup "화면"` |
 | `--force-html` | 강제 HTML 생성 | `/mockup "화면" --force-html` |
 | `--force-hifi` | 강제 Stitch 생성 | `/mockup "화면" --force-hifi` |
 | `--screens=N` | 화면 수 (1-5) | `/mockup "화면" --screens=3` |
@@ -203,8 +203,8 @@ docs/
 ### 기본 사용
 
 ```bash
-# 단순 화면 → HTML 자동 선택
-/mockup "로그인 화면" --bnw
+# 단순 화면 → HTML 자동 선택 (B&W Refined Minimal 기본 적용)
+/mockup "로그인 화면"
 
 # 출력:
 # 📝 선택: HTML Generator (이유: 기본값)
@@ -216,7 +216,7 @@ docs/
 
 ```bash
 # 프레젠테이션용 → Stitch 자동 선택
-/mockup "대시보드 - 이해관계자 프레젠테이션" --bnw
+/mockup "대시보드 - 이해관계자 프레젠테이션"
 
 # 출력:
 # 🤖 선택: Stitch API (이유: 고품질 키워드 감지)
@@ -228,7 +228,7 @@ docs/
 
 ```bash
 # PRD 연결 → Stitch 자동 선택 + PRD 폴더
-/mockup "인증 흐름" --bnw --prd=PRD-0001
+/mockup "인증 흐름" --prd=PRD-0001
 
 # 출력:
 # 🤖 선택: Stitch API (이유: PRD 연결)
@@ -240,7 +240,7 @@ docs/
 
 ```bash
 # 고품질 키워드 있어도 HTML 강제
-/mockup "프레젠테이션 화면" --bnw --force-html
+/mockup "프레젠테이션 화면" --force-html
 
 # 출력:
 # 📝 선택: HTML Generator (이유: 강제 HTML 옵션)
@@ -356,6 +356,11 @@ lib/mockup_hybrid/
 ---
 
 ## 변경 로그
+
+### v1.1.0 (2026-03-10)
+
+- `--bnw` deprecated: B&W Refined Minimal이 HTML 목업 기본 스타일로 전환
+- 예시 명령에서 `--bnw` 제거
 
 ### v1.0.0 (2026-01-23)
 

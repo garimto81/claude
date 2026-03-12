@@ -1,8 +1,5 @@
 """청크에서 메타데이터 추출 통합 테스트"""
-import pytest
-from pathlib import Path
 from lib.pdf_utils.md_chunker import MDChunker
-from lib.pdf_utils.strategy import detect_priority
 
 
 def test_chunk_metadata_extraction(tmp_path):

@@ -140,7 +140,7 @@ Examples:
         "--folder",
         "-f",
         default=DEFAULT_FOLDER_ID,
-        help=f"Google Drive 폴더 ID (기본: 프로젝트 자동 감지)",
+        help="Google Drive 폴더 ID (기본: 프로젝트 자동 감지)",
     )
     convert_parser.add_argument("--toc", action="store_true", help="목차 포함")
     convert_parser.add_argument(

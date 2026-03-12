@@ -4,7 +4,7 @@ Gmail Library Pydantic Models
 
 from datetime import datetime
 from typing import Optional, List
-from pydantic import BaseModel, Field, computed_field
+from pydantic import BaseModel, computed_field
 
 
 class GmailCredentials(BaseModel):
