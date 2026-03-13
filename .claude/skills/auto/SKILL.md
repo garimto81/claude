@@ -61,6 +61,7 @@ auto_trigger: true
 | `--mockup [파일]` | 3-Tier 목업 생성. 상세: mockup-hybrid SKILL.md, REFERENCE.md Step 2.0 |
 | `--mockup-q` | Quasar White Tone Minimal 목업 생성. 상세: mockup-hybrid SKILL.md |
 | `--gdocs` | Google Docs PRD 동기화 |
+| `--critic` | 약점/문제점 분석 → 웹 리서치 → 최선 솔루션 제안 |
 | `--debate` | 3-AI 병렬 분석 합의 |
 | `--research` | 코드베이스/외부 리서치 |
 | `--daily` | 일일 대시보드 (9-Phase Pipeline) |
@@ -199,8 +200,9 @@ LIGHT는 스킵. STANDARD/HEAVY: 계획 문서에 **아키텍처 결정 섹션**
 |------|------|------|------|
 | `--gdocs` | prd-sync | `--slack <채널>` | Slack 분석 |
 | `--mockup [파일]` | 3-Tier 목업 (Step 1-4) | `--gmail` | Gmail 분석 |
-| `--debate` | ultimate-debate | `--daily` | daily |
-| `--research` | research | `--interactive` | Phase별 승인 |
+| `--critic` | 약점 분석 + 웹 솔루션 (3-Phase) | `--daily` | daily |
+| `--debate` | ultimate-debate | `--research` | research |
+| `--interactive` | Phase별 승인 | | |
 | `--con <page_id>` | Confluence 발행 | `--jira <cmd> <target>` | Jira 조회/분석 |
 | `--figma <url>` | Figma 구현 | `--figma connect <url>` | Figma 컴포넌트 매핑 |
 | `--figma capture` | HTML→Figma 캡처 | `--figma auth` | Figma 인증 확인 |

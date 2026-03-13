@@ -13,6 +13,7 @@
 | `/parallel` | Agent Teams (병렬 executor) | dev, test, review, research, check |
 | `/research` | Agent Teams (researcher) | code, web, plan, review |
 | `/commit`, `/issue`, `/pr`, `/verify`, `/mockup-hybrid` | 직접 실행 | 각 고유 서브커맨드 |
+| `--critic` | `/auto` 옵션 (critic→researcher 3-Phase 파이프라인) | — |
 | `--jira` | `/auto` 옵션 (lib/jira/jira_client.py 실행) | epics, project, board, search, issue |
 | `--figma` | `/auto` 옵션 (Figma MCP 플러그인 래퍼, OAuth 인증) | `<url>`, `connect <url>`, `rules`, `capture`, `auth` |
 | `/overlay-fallback` | 직접 실행 (자동 트리거: T-1~T-5 조건) | — |
