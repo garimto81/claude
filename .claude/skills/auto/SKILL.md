@@ -70,6 +70,7 @@ auto_trigger: true
 | `--con <page_id> [파일]` | Confluence 발행. 상세: confluence SKILL.md, REFERENCE.md `--con` 섹션 |
 | `--jira <cmd> <target>` | Jira 조회/분석. 상세: jira SKILL.md, REFERENCE.md `--jira` 섹션 |
 | `--figma <url> [connect\|rules\|capture\|auth]` | Figma 디자인 연동. 상세: figma SKILL.md |
+| `--anno [파일]` | Screenshot→HTML→Annotation 워크플로우. 상세: REFERENCE.md Step 2.0 |
 
 ### 팀 생성 (MANDATORY)
 
@@ -207,6 +208,7 @@ LIGHT는 스킵. STANDARD/HEAVY: 계획 문서에 **아키텍처 결정 섹션**
 | `--figma <url>` | Figma 구현 | `--figma connect <url>` | Figma 컴포넌트 매핑 |
 | `--figma capture` | HTML→Figma 캡처 | `--figma auth` | Figma 인증 확인 |
 | `--figma rules` | 디자인 시스템 규칙 | | |
+| `--anno [파일]` | Anno 워크플로우 (5-Step) | `--anno` (전체) | 6장 일괄 처리 |
 
 옵션 실패 시: 에러 출력, **절대 조용히 스킵 금지**. 상세: `REFERENCE.md`
 
@@ -218,6 +220,16 @@ LIGHT는 스킵. STANDARD/HEAVY: 계획 문서에 **아키텍처 결정 섹션**
 | 2 | HTML 선택 시 → designer(sonnet) 스폰 (B&W Refined Minimal 스타일링) | designer 에이전트 |
 | 3 | Playwright PNG 캡처 | Lead (Bash) |
 | 4 | 문서 임베드 (대상 문서 있을 때만) | Lead (Edit) |
+
+#### `--anno` 서브스텝 (5-Step)
+
+| Step | 내용 | 실행 주체 |
+|------|------|----------|
+| 1 | Vision AI(Claude) 스크린샷 분석 → UI 요소 목록 | Lead (직접) |
+| 2 | designer(sonnet) 스폰 → 구조 중심 HTML 생성 (`data-element-*` 필수) | designer 에이전트 |
+| 3 | Playwright 캡처 → 원본 비교 (시각 검증) | anno_workflow.py |
+| 4 | `querySelectorAll('[data-element-id]')` → bbox JSON | anno_workflow.py |
+| 5 | annotate_screenshot.py → annotated PNG | anno_workflow.py |
 
 ### Step 2.1: 구현
 

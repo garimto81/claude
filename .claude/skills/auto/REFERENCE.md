@@ -1138,6 +1138,64 @@ print(f'CAPTURED: {result}' if result else 'CAPTURE_FAILED')
 
 **에러 처리**: Task 실패 시 에러 메시지 출력 + Phase 2 BUILD 중단. 옵션 실패 시: 에러 출력, 절대 조용히 스킵 금지.
 
+#### `--anno [파일]` — Screenshot→HTML→Annotation 워크플로우 (5-Step)
+
+pywinauto UIA 기반 annotation의 한계(커스텀 컨트롤 30%+ 미검출, DPI drift)를 우회. Vision AI + HTML 재현 방식으로 정확한 bbox 추출.
+
+**대상 스크린샷** (6장):
+```
+gfx1_live.png, gfx2_live.png, gfx3_live.png,
+sources_live.png, outputs_live.png, system_live.png
+경로: C:\claude\ui_overlay\docs\03-analysis\
+```
+
+**Step 1: Vision AI 분석 (Lead 직접)**
+```
+# Claude Vision API로 스크린샷 분석
+# 출력: UI 요소 리스트 (name, group, approximate position, control_type)
+# 그룹핑: 기능적 연관성 기준 (예: "Player Stats", "Board Cards")
+```
+
+**Step 2: designer HTML 생성**
+```python
+Agent(subagent_type="designer", name="anno-designer", description="Anno HTML 생성", team_name="pdca-{feature}",
+     prompt="""[Anno HTML] {tab_name}_live.png 스크린샷을 참조하여 구조 중심 HTML 생성.
+
+     필수 규칙:
+     1. 모든 UI 요소에 data-element-id (고유 정수), data-element-name (영문), data-element-group (소속 그룹) 속성 필수
+     2. viewport = 원본 스크린샷 해상도와 동일 (PIL.Image.open으로 확인)
+     3. CSS absolute positioning 기반 (bbox 정확도 최우선)
+     4. 레이아웃/배치/크기: 원본과 정확히 일치. 색상/폰트: 근사치 허용
+     5. 출력: html_reproductions/{tab_name}_live.html
+
+     Step 1 분석 결과: {vision_analysis}""")
+SendMessage(type="message", recipient="anno-designer", content="HTML 생성 시작.")
+# 완료 대기 → shutdown_request
+```
+
+**Step 3-5: anno_workflow.py 실행 (Lead Bash)**
+```bash
+# 단일 탭
+python C:/claude/ui_overlay/scripts/anno_workflow.py --screenshot C:/claude/ui_overlay/docs/03-analysis/{tab}_live.png
+
+# 전체 6장
+python C:/claude/ui_overlay/scripts/anno_workflow.py --all
+```
+
+내부 동작:
+- Step 3-4: `html_to_elements.py` — Playwright viewport=스크린샷 해상도 → `querySelectorAll('[data-element-id]')` → bbox JSON (`elements/{tab}_live.json`)
+- Step 5: `annotate_screenshot.py` — JSON + 원본 PNG → annotated PNG (overview + detail)
+
+**에러 처리**:
+- `data-element-id` 없는 HTML: exit code 1 + 에러 메시지
+- Playwright 미설치: `playwright install chromium` 안내
+- 스크린샷/HTML 미존재: SKIP 메시지 + 다음 탭 진행
+
+**산출물**:
+- `html_reproductions/{tab}_live.html` — designer 생성 HTML
+- `elements/{tab}_live.json` — element_schema v1.2 호환 (source: `"html_reproduction"`)
+- annotated PNG — overview + detail
+
 #### `--gdocs` — Google Docs PRD 동기화
 
 ```
