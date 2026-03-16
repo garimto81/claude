@@ -50,7 +50,9 @@ auto_trigger: true
 | `--strict` | E2E 1회 실패 즉시 중단 |
 | `--skip-e2e` | E2E 검증 전체 스킵 |
 | `--dry-run` | 판단만 출력 (Phase 0-1까지만 실행) |
-| `--eco` | LIGHT 강제 (전체 sonnet) |
+| `--eco` | 비용 절감: Opus→Sonnet (~30%) |
+| `--eco-2` | 중간 절감: Opus→Sonnet + 비핵심 Sonnet→Haiku (~50%) |
+| `--eco-3` | 최대 절감: Opus→Sonnet + 전체 Sonnet→Haiku (~70%, 프로토타이핑 전용) |
 | `--worktree` | feature worktree에서 작업 |
 | `--interactive` | Phase 전환 시 사용자 확인 |
 

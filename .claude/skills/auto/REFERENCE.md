@@ -112,30 +112,30 @@ Agent(subagent_type="executor-high", ...) → 에러 발생
 | qa-tester-high | `model="sonnet"` | `역할: Comprehensive production-ready QA testing.` |
 | qa-tester | `model="sonnet"` | `역할: QA Runner. 6종 검증 (lint, type, unit, integration, build, security).` |
 | writer | `model="haiku"` | `역할: Technical documentation writer.` |
-| gap-detector | `model="sonnet"` | `역할: 설계-구현 Gap 정량 분석기. Match Rate 계산.` |
+| gap-detector | `model="haiku"` | `역할: 설계-구현 Gap 정량 분석기. Match Rate 계산.` |
 | build-fixer | `model="sonnet"` | `역할: Build/TypeScript error fixer. 최소 diff로 빌드 수정.` |
 | build-fixer-low | `model="haiku"` | `역할: Simple build error fixer. 단순 타입 에러 수정.` |
 | researcher | `model="sonnet"` | `역할: External documentation & reference researcher.` |
 | researcher-low | `model="haiku"` | `역할: Quick documentation lookups.` |
-| analyst | `model="sonnet"` | `역할: Pre-planning consultant for requirements analysis.` |
+| analyst | `model="haiku"` | `역할: Pre-planning consultant for requirements analysis.` |
 | architect-low | `model="haiku"` | `역할: Quick code questions & simple lookups.` |
 | architect-medium | `model="sonnet"` | `역할: Architecture & Debugging Advisor - Medium complexity.` |
 | code-reviewer-low | `model="haiku"` | `역할: Quick code quality checker.` |
 | explore-high | `model="sonnet"` | `역할: Complex architectural search for deep system understanding.` |
-| explore-medium | `model="sonnet"` | `역할: Thorough codebase search with reasoning.` |
-| scientist-high | `model="sonnet"` | `역할: Complex research, hypothesis testing, and ML specialist.` |
+| explore-medium | `model="haiku"` | `역할: Thorough codebase search with reasoning.` |
+| scientist-high | `model="opus"` | `역할: Complex research, hypothesis testing, and ML specialist.` |
 | scientist | `model="sonnet"` | `역할: Data analysis and research execution specialist.` |
 | scientist-low | `model="haiku"` | `역할: Quick data inspection and simple statistics.` |
 | security-reviewer | `model="sonnet"` | `역할: Security vulnerability detection specialist (OWASP Top 10).` |
 | security-reviewer-low | `model="haiku"` | `역할: Quick security scan specialist.` |
 | tdd-guide | `model="sonnet"` | `역할: TDD specialist enforcing Red-Green-Refactor methodology.` |
 | tdd-guide-low | `model="haiku"` | `역할: Quick test suggestion specialist.` |
-| vision | `model="sonnet"` | `역할: Visual/media file analyzer for images, PDFs, and diagrams.` |
+| vision | `model="haiku"` | `역할: Visual/media file analyzer for images, PDFs, and diagrams.` |
 | frontend-dev | `model="sonnet"` | `역할: 프론트엔드 개발 및 UI/UX. React/Next.js 성능 최적화.` |
 | ai-engineer | `model="sonnet"` | `역할: LLM 애플리케이션, RAG 시스템, 프롬프트 엔지니어링 전문가.` |
-| catalog-engineer | `model="sonnet"` | `역할: WSOPTV 카탈로그 및 제목 생성 전문가 (Block F/G).` |
+| catalog-engineer | `model="haiku"` | `역할: WSOPTV 카탈로그 및 제목 생성 전문가 (Block F/G).` |
 | cloud-architect | `model="opus"` | `역할: 클라우드 인프라, 네트워크, 비용 최적화 전문가.` |
-| claude-expert | `model="sonnet"` | `역할: Claude Code, MCP, 에이전트, 프롬프트 엔지니어링 전문가.` |
+| claude-expert | `model="haiku"` | `역할: Claude Code, MCP, 에이전트, 프롬프트 엔지니어링 전문가.` |
 | data-specialist | `model="sonnet"` | `역할: 데이터 분석, 엔지니어링, ML 파이프라인 전문가.` |
 | database-specialist | `model="sonnet"` | `역할: DB 설계, 최적화, Supabase 전문가.` |
 | devops-engineer | `model="sonnet"` | `역할: DevOps 전문가 (CI/CD, K8s, Terraform, 트러블슈팅).` |
@@ -156,9 +156,9 @@ Agent(subagent_type="executor-high", ...) → 에러 발생
 **모든 에이전트 호출은 Agent Teams in-process 방식을 사용합니다. Skill() 호출 0개.**
 
 **모델 결정**: 에이전트 정의 파일(`.claude/agents/*.md`)의 `model:` 필드가 기본 모델을 결정합니다. Agent() 호출 시 선택적으로 `model` 파라미터(`"sonnet"`, `"opus"`, `"haiku"`)를 명시하여 오버라이드 가능합니다. Fallback(general-purpose) 시 `model` 명시 필수.
-- Opus 티어: executor-high, architect, planner, critic (복잡한 구현/판단/계획)
+- Opus 티어: executor-high, architect, planner, critic, scientist-high (복잡한 구현/판단/계획/연구)
 - Sonnet 티어: executor, code-reviewer, qa-tester, designer (반복 실행)
-- Haiku 티어: explore, writer (탐색/간단 문서)
+- Haiku 티어: explore, explore-medium, writer, analyst, vision, gap-detector, catalog-engineer, claude-expert (탐색/간단 문서/체크리스트)
 - 복잡도에 따라 적절한 subagent_type을 선택하여 모델 티어를 제어합니다.
 
 ### 팀 라이프사이클
@@ -1526,10 +1526,28 @@ if "--strict" in options:
     # Phase 3 Step 3.2 e2e-runner prompt에 strict_mode=True 주입
     # 상세: Phase 3 Step 3.2 E2E 백그라운드 섹션 참조
 
-# --eco: 전체 sonnet 강제 (비용 절감)
-if "--eco" in options:
-    # 모든 Agent() 호출의 model 파라미터를 "sonnet"으로 오버라이드
-    # opus 사용 금지. 상세: Agent Teams 운영 규칙 모델 오버라이드 참조
+# --eco 세분화 (v25.0): 3단계 비용 절감
+eco_level = 0
+if "--eco-3" in options:
+    eco_level = 3
+elif "--eco-2" in options:
+    eco_level = 2
+elif "--eco" in options:
+    eco_level = 1
+
+if eco_level >= 1:
+    # Level 1: Opus → Sonnet (architect, planner, critic, executor-high, scientist-high)
+    # 모든 Opus 에이전트의 model을 "sonnet"으로 오버라이드
+
+if eco_level >= 2:
+    # Level 2: 비핵심 Sonnet → Haiku (추가 다운그레이드)
+    # 대상: gap-detector, explore-medium, analyst, vision, catalog-engineer, claude-expert, researcher
+    # 유지: code-reviewer, executor, designer, qa-tester, build-fixer, security-reviewer, tdd-guide
+
+if eco_level >= 3:
+    # Level 3: 전체 Sonnet → Haiku (프로토타이핑 전용)
+    # WARNING: 프로덕션 워크플로우 금지. 코드 리뷰/보안 검토 품질 저하
+    # 모든 Sonnet 에이전트의 model을 "haiku"로 오버라이드
 
 # --worktree: feature worktree 격리
 if "--worktree" in options:

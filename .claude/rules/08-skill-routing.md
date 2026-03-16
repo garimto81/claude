@@ -53,6 +53,16 @@
 | 보통 | MEDIUM (sonnet) | `executor`, `designer`, `qa-tester` |
 | 복잡 | HIGH (opus) | `architect`, `planner`, `executor-high` |
 
+## --eco 모드 라우팅
+
+| 레벨 | Opus→ | Sonnet→ | 절감 | 용도 |
+|------|:-----:|:-------:|:----:|------|
+| `--eco` | Sonnet | 유지 | ~30% | 일반 비용 절감 |
+| `--eco-2` | Sonnet | 비핵심만 Haiku | ~50% | 중간 절감 |
+| `--eco-3` | Sonnet | 전부 Haiku | ~70% | 프로토타이핑 전용 |
+
+> `--eco-3`은 프로토타이핑 전용. 프로덕션 금지.
+
 ## 인과관계 그래프
 
 상세: `.claude/references/skill-causality-graph.md` (이 관계가 무너지면 5계층 Discovery 전체 작동 불가)

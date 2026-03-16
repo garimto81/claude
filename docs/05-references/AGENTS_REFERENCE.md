@@ -7,14 +7,14 @@
 | # | 에이전트 | 모델 | 설명 |
 |:-:|----------|:----:|------|
 | 1 | ai-engineer | sonnet | LLM 애플리케이션, RAG 시스템, 프롬프트 엔지니어링 전문가 |
-| 2 | analyst | sonnet | Pre-planning consultant for requirements analysis |
+| 2 | analyst | haiku | Pre-planning consultant for requirements analysis |
 | 3 | architect | opus | Strategic Architecture & Debugging Advisor (READ-ONLY) |
 | 4 | architect-low | haiku | Quick code questions & simple lookups |
 | 5 | architect-medium | sonnet | Architecture & Debugging Advisor - Medium complexity |
 | 6 | build-fixer | sonnet | Build and TypeScript error resolution specialist |
 | 7 | build-fixer-low | haiku | Simple build error fixer |
-| 8 | catalog-engineer | sonnet | WSOPTV 카탈로그 및 제목 생성 전문가 (Block F/G) |
-| 9 | claude-expert | sonnet | Claude Code, MCP, 에이전트, 프롬프트 엔지니어링 통합 전문가 |
+| 8 | catalog-engineer | haiku | WSOPTV 카탈로그 및 제목 생성 전문가 (Block F/G) |
+| 9 | claude-expert | haiku | Claude Code, MCP, 에이전트, 프롬프트 엔지니어링 통합 전문가 |
 | 10 | cloud-architect | sonnet | 클라우드 인프라, 네트워크, 비용 최적화 통합 전문가 |
 | 11 | code-reviewer | sonnet | Expert code review specialist (quality, security, maintainability) |
 | 12 | code-reviewer-low | haiku | Quick code quality checker |
@@ -30,9 +30,9 @@
 | 22 | executor-low | haiku | Simple single-file task executor |
 | 23 | explore | haiku | Fast codebase search specialist |
 | 24 | explore-high | sonnet | Complex architectural search for deep system understanding |
-| 25 | explore-medium | sonnet | Thorough codebase search with reasoning |
+| 25 | explore-medium | haiku | Thorough codebase search with reasoning |
 | 26 | frontend-dev | sonnet | 프론트엔드 개발 및 UI/UX (React/Next.js 성능 최적화) |
-| 27 | gap-detector | sonnet | 설계 문서와 구현 간 Gap 정량 분석 |
+| 27 | gap-detector | haiku | 설계 문서와 구현 간 Gap 정량 분석 |
 | 28 | github-engineer | haiku | GitHub 및 Git 워크플로우 전문가 |
 | 29 | planner | opus | Strategic planning consultant (work plans) |
 | 30 | qa-tester | sonnet | QA Runner - 6종 QA 실행 및 결과 보고 |
@@ -40,18 +40,18 @@
 | 32 | researcher | sonnet | External Documentation & Reference Researcher |
 | 33 | researcher-low | haiku | Quick documentation lookups |
 | 34 | scientist | sonnet | Data analysis and research execution specialist |
-| 35 | scientist-high | sonnet | Complex research, hypothesis testing, and ML specialist |
+| 35 | scientist-high | opus | Complex research, hypothesis testing, and ML specialist |
 | 36 | scientist-low | haiku | Quick data inspection and simple statistics |
 | 37 | security-reviewer | sonnet | Security vulnerability detection specialist (OWASP Top 10) |
 | 38 | security-reviewer-low | haiku | Quick security scan specialist |
 | 39 | tdd-guide | sonnet | TDD specialist enforcing write-tests-first methodology |
 | 40 | tdd-guide-low | haiku | Quick test suggestion specialist |
-| 41 | vision | sonnet | Visual/media file analyzer for images, PDFs, and diagrams |
+| 41 | vision | haiku | Visual/media file analyzer for images, PDFs, and diagrams |
 | 42 | writer | haiku | Technical documentation writer (README, API docs, comments) |
 
 ## 모델 티어별 분류
 
-### Opus (4개) — 복잡한 설계/구현/검증
+### Opus (5개) — 복잡한 설계/구현/검증
 
 | 에이전트 | 용도 |
 |----------|------|
@@ -59,17 +59,15 @@
 | critic | Adversarial 약점 분석 |
 | executor-high | 복잡한 다중 파일 구현 |
 | planner | 전략적 계획 수립 |
+| scientist-high | 복잡한 연구/ML/가설 검증 |
 
-### Sonnet (25개) — 표준 실행/분석/리뷰
+### Sonnet (19개) — 표준 실행/분석/리뷰
 
 | 에이전트 | 용도 |
 |----------|------|
 | ai-engineer | AI/ML 솔루션 |
-| analyst | 요구사항 분석 |
 | architect-medium | 중간 복잡도 아키텍처 |
 | build-fixer | 빌드 에러 수정 |
-| catalog-engineer | WSOPTV 카탈로그 |
-| claude-expert | Claude Code 설정 |
 | cloud-architect | 클라우드 인프라 |
 | code-reviewer | 코드 리뷰 |
 | data-specialist | 데이터 분석/ETL |
@@ -79,33 +77,35 @@
 | devops-engineer | DevOps/CI/CD |
 | executor | 표준 구현 |
 | explore-high | 심층 코드 탐색 |
-| explore-medium | 중간 코드 탐색 |
 | frontend-dev | 프론트엔드 개발 |
-| gap-detector | 설계-구현 Gap 분석 |
 | qa-tester | QA 실행 |
 | qa-tester-high | 프로덕션 QA |
 | researcher | 외부 문서 리서치 |
 | scientist | 데이터 분석/실험 |
-| scientist-high | 복잡한 연구/ML |
 | security-reviewer | 보안 취약점 탐지 |
 | tdd-guide | TDD 가이드 |
-| vision | 이미지/PDF 분석 |
 
-### Haiku (13개) — 빠른 조회/단순 작업
+### Haiku (18개) — 빠른 조회/단순 작업
 
 | 에이전트 | 용도 |
 |----------|------|
+| analyst | 요구사항 분석 (체크리스트 기반) |
 | architect-low | 빠른 코드 질문 |
 | build-fixer-low | 단순 빌드 에러 |
+| catalog-engineer | WSOPTV 카탈로그/제목 생성 |
+| claude-expert | Claude Code 설정 |
 | code-reviewer-low | 빠른 코드 체크 |
 | designer-low | 단순 스타일링 |
 | executor-low | 단일 파일 실행 |
 | explore | 빠른 파일 탐색 |
+| explore-medium | 중간 코드 탐색 (도구 의존적) |
+| gap-detector | 설계-구현 Gap 분석 |
 | github-engineer | Git 워크플로우 |
 | researcher-low | 빠른 문서 조회 |
 | scientist-low | 빠른 데이터 검사 |
 | security-reviewer-low | 빠른 보안 스캔 |
 | tdd-guide-low | 빠른 테스트 제안 |
+| vision | 이미지/PDF 분석 |
 | writer | 기술 문서 작성 |
 
 ## /auto Phase별 에이전트 배치

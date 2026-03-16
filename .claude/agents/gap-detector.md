@@ -1,6 +1,6 @@
 ---
 name: gap-detector
-model: sonnet
+model: haiku
 description: |
   설계 문서와 실제 구현 간의 Gap을 정량적으로 분석하는 에이전트.
   설계 문서(.design.md 또는 .plan.md)의 요구사항을 파싱하여 구현 파일과 1:1 매핑.
