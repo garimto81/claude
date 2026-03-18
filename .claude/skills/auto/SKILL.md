@@ -2,7 +2,7 @@
 name: auto
 description: >
   This skill should be used when the user requests automated PDCA workflows, autopilot execution, or multi-phase build-verify-close cycles.
-version: 23.0.0
+version: 25.1.0
 triggers:
   keywords:
     - "/auto"
@@ -27,12 +27,14 @@ auto_trigger: true
 ## Phase 0→4 실행 흐름
 
 ```
-  Phase 0        Phase 1           Phase 2            Phase 3          Phase 4
-  INIT    ──→    PLAN       ──→    BUILD       ──→    VERIFY    ──→    CLOSE
-  옵션 파싱       PRD 생성         구현 실행           QA 사이클        보고서
-  팀 생성         사전 분석         코드 리뷰           E2E 검증         팀 정리
-  복잡도 판단     계획+설계 수립    Architect Gate      최종 판정         커밋
-  플러그인 감지
+  Phase 0             Phase 1           Phase 2              Phase 3          Phase 4
+  INIT         ──→    PLAN       ──→    BUILD         ──→    VERIFY    ──→    CLOSE
+  옵션 파싱            PRD 생성         Task Clustering      QA 사이클        보고서+메트릭
+  Socratic Q(0.2)     사전 분석         구현 실행             E2E 검증         팀 정리
+  Adaptive Rt(0.3)    계획+설계 수립    코드 리뷰             최종 판정         커밋
+  팀 생성              |               Architect Gate
+  복잡도 판단          |
+  플러그인 감지        |
 ```
 
 ---
@@ -98,6 +100,33 @@ Phase 간 자료 결합도(1단계)를 보장하기 위해 표준화된 Contract
 | `--figma <url> [connect\|rules\|capture\|auth]` | Figma 디자인 연동. 상세: figma SKILL.md |
 | `--anno [파일]` | Screenshot→HTML→Annotation 워크플로우. 상세: REFERENCE.md Step 2.0 |
 
+### Step 0.2: Socratic Questioning (모호성 >= 0.5 시)
+
+Ambiguity Score >= 0.5 감지 시, 구현 전 5차원 질문을 자동 생성하여 핵심 3개만 AskUserQuestion으로 질문:
+
+| 차원 | 질문 예시 |
+|------|----------|
+| 목적 | "이 기능으로 달성하려는 핵심 결과는?" |
+| 범위 | "영향 범위는 단일 파일? 모듈? 시스템 전체?" |
+| 제약 | "기존 코드/API와의 호환성 제약이 있는가?" |
+| 우선순위 | "여러 요구사항 중 반드시 먼저 해결할 것은?" |
+| 수용 기준 | "완료로 판단할 수 있는 구체적 기준은?" |
+
+> Magic Word (`!quick`, `!just`, `!hotfix`) 시 스킵. 상세 prompt: `REFERENCE.md` Phase 0.2
+
+### Step 0.3: Adaptive Model Routing (Task 분류 → 모델 자동 선택)
+
+Phase 0에서 Task 특성을 자동 분류하여 모델을 선택합니다 (`--eco` 수동 선택과 독립):
+
+| 분류 | 신호 | 기본 모델 |
+|------|------|----------|
+| Trivial | 파일 1개, 포맷/요약/오타 | Haiku 항상 |
+| Standard | 파일 2-5개, 구현/리뷰 | Sonnet (기본) |
+| Complex | 파일 5+개, refactor/debug/design 키워드 | Opus (기본) |
+| Critical | architect/system/migration 키워드 | Opus 항상 |
+
+`--eco` 옵션과 결합: Adaptive 결과에 eco 다운그레이드 적용. 상세: `references/model-routing-guide.md`
+
 ### 팀 생성 (MANDATORY)
 
 `TeamCreate(team_name="pdca-{feature}")`. 실패 시 `TeamDelete()` → 재시도 1회. 재실패 시 중단.
@@ -134,6 +163,7 @@ Phase 간 자료 결합도(1단계)를 보장하기 위해 표준화된 Contract
 | 감지 파일 | 활성화 플러그인 |
 |-----------|----------------|
 | `package.json` + react dep | frontend-design, code-review, typescript-lsp |
+| `package.json` + quasar dep | frontend-design, code-review, typescript-lsp |
 | `tsconfig.json` | typescript-lsp, code-review |
 | `next.config.*` | frontend-design, code-review |
 | `pyproject.toml` \| `setup.py` | code-review |
@@ -286,6 +316,9 @@ LIGHT는 스킵. STANDARD/HEAVY: 계획 문서에 **아키텍처 결정 섹션**
 | 4 | `querySelectorAll('[data-element-id]')` → bbox JSON | anno_workflow.py |
 | 5 | annotate_screenshot.py → annotated PNG | anno_workflow.py |
 
+> Task Clustering: `REFERENCE.md` Step 2.0.5 참조
+> 10줄 초과 코드 변경 → 에이전트 위임 필수 (`REFERENCE.md` Delegation Rules)
+
 ### Step 2.1: 구현
 
 | 모드 | 실행 방식 |
@@ -414,6 +447,18 @@ LIGHT는 건너뛰고 Step 4.1로 직행.
 ### Step 4.1: 보고서 생성
 
 writer teammate → `docs/04-report/{feature}.report.md`. 티어: LIGHT=writer(haiku), STANDARD/HEAVY=executor-high(opus).
+
+**필수 메트릭 (8개)**:
+| # | 메트릭 | 설명 |
+|:-:|--------|------|
+| 1 | 총 변경 파일 수 | `git diff --stat` 기준 |
+| 2 | 테스트 커버리지 | 신규 코드 80%+ |
+| 3 | QA 사이클 수 | 실행된 총 QA 라운드 |
+| 4 | Architect 판정 | APPROVE/REJECT 이력 |
+| 5 | 빌드 상태 | PASS/FAIL |
+| 6 | E2E 상태 | PASS/FAIL/SKIP |
+| 7 | 미해결 이슈 | 남은 이슈 수 |
+| 8 | 소요 Phase 수 | 실제 실행된 Phase 0-4 |
 
 ### Step 4.2: 커밋 + Safe Cleanup
 

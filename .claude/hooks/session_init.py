@@ -483,14 +483,57 @@ def save_session_state(state: dict):
         json.dump(state, f, indent=2, ensure_ascii=False)
 
 
+def verify_agent_loading() -> list[str]:
+    """에이전트 파일 수 검증 (동적 카운트)"""
+    messages = []
+    agents_dir = ROOT_PROJECT_DIR / ".claude" / "agents"
+    if not agents_dir.exists():
+        messages.append("⚠️ 에이전트 디렉토리 없음: .claude/agents/")
+        return messages
+
+    agent_files = list(agents_dir.glob("*.md"))
+    count = len(agent_files)
+
+    if count == 0:
+        messages.append("⚠️ 에이전트 파일 0개. .claude/agents/ 확인 필요")
+    return messages
+
+
 def main():
     try:
+        # Circuit Breaker 상태 초기화 (새 세션이므로 CLOSED로 리셋)
+        cb_state_file = ROOT_PROJECT_DIR / ".claude" / "hooks" / ".circuit_breaker_state.json"
+        if cb_state_file.exists():
+            try:
+                with open(cb_state_file, "w", encoding="utf-8") as f:
+                    json.dump({"state": "CLOSED", "failures": 0, "last_failure": 0, "backoff": 1}, f)
+            except Exception:
+                pass
+
+        # Pre-compact 스냅샷 복구 경고
+        compact_snapshot = ROOT_PROJECT_DIR / ".claude" / "hooks" / ".pre_compact_snapshot.json"
+        if compact_snapshot.exists():
+            try:
+                with open(compact_snapshot, "r", encoding="utf-8") as f:
+                    snapshot = json.load(f)
+                tasks_info = snapshot.get("tasks_summary", {})
+                in_progress = tasks_info.get("in_progress", 0)
+                if in_progress > 0:
+                    import sys as _sys
+                    _sys.stderr.write(
+                        f"⚠️ Pre-compact 스냅샷 발견: {in_progress}개 진행 중 태스크. "
+                        "이전 세션의 compaction 전 상태를 확인하세요.\n"
+                    )
+            except Exception:
+                pass
+
         # Stale 상태 정리 (Stop hook 차단 방지)
         stale_messages = cleanup_stale_omc_states(ttl_hours=2)
         stale_messages.extend(cleanup_stale_global_todos(ttl_hours=2))
         stale_messages.extend(cleanup_orphan_agent_teams())
         stale_messages.extend(check_fatigue_signals(ttl_hours=24))
         stale_messages.extend(check_prd_sync_status())
+        stale_messages.extend(verify_agent_loading())
 
         # Junction 설정
         junction_created, junction_message = setup_commands_junction()
