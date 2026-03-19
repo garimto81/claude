@@ -113,7 +113,7 @@
 
 | ID | 항목 | 요구사항 | 비고 |
 |----|------|---------|------|
-| NFR-001 | STT 지연 | 음성 입력 후 텍스트 표시까지 ≤ 3초 | 체감 실시간성 |
+| NFR-001 | STT 지연 | 음성 입력 후 텍스트 표시까지 ≤ 3초 | CPU INT8 RTF 1.23 (52분 기준). GPU 모드 또는 청크 병렬화 필요 |
 | NFR-002 | 요약 갱신 주기 | 30초 간격 또는 500자 축적 시 (먼저 도달하는 조건) | LLM 호출 빈도 제어 |
 | NFR-003 | 동시 접속 | 모니터 1대 + 스마트폰 5대 이상 동시 지원 | WebSocket 연결 관리 |
 | NFR-004 | 가용성 | 1시간 연속 회의 중 시스템 중단 없음 | 메모리 누수 방지 |
@@ -136,44 +136,33 @@
 | **실시간 통신** | WebSocket (Socket.IO) | 양방향 오디오/텍스트/요약 스트리밍 |
 | **DB** | SQLite | 경량, 단일 서버, 동시성 낮음 |
 
-### STT 후보 비교
+### STT 엔진 최종 선정: faster-whisper + Whisper Large-v3 (CPU INT8)
 
-#### Option 1: WhisperLiveKit (1순위)
+POC 비교 테스트(2026-03-19)를 통해 최종 결정:
 
-- **모델**: Whisper Large-v3 + SimulStreaming
-- **한국어**: Good (Whisper 기반)
-- **실시간**: YES — WebSocket 3종 API 내장 (Deepgram/OpenAI/Custom 호환)
-- **VRAM**: ~3GB (INT8) 또는 CPU 모드 가능
-- **장점**: WebSocket 서버 내장 → 클라이언트 통합 최소 노력
-- **단점**: CPU 모드 시 지연 증가 (~5초)
+#### 비교 테스트 결과 (동일 2분 회의 오디오)
 
-#### Option 2: SenseVoice (2순위 — 권장 조합)
+| 모델 | 디바이스 | 추론(초) | RTF | 세그먼트 | 한국어 품질 | 판정 |
+|------|---------|:-------:|:---:|:-------:|:---------:|:----:|
+| ghost613/faster-whisper-large-v3-turbo-korean | CPU INT8 | 21.2 | 0.18 | 2 | 낮음 (의미 불명) | 탈락 |
+| **openai/whisper-large-v3 (faster-whisper)** | **CPU INT8** | **26.4** | **0.22** | **16** | **우수** | **채택** |
+| SenseVoice-Small (이전 POC) | CPU | 5.7 | 0.05 | - | 매우 낮음 | 탈락 |
 
-- **모델**: Alibaba FunAudioLLM SenseVoice-Small
-- **한국어**: Excellent (CJK 특화 학습)
-- **실시간**: Partial — 배치 추론 기본, 스트리밍 래퍼 필요
-- **VRAM**: CPU 모드 충분 (모델 ~450MB)
-- **장점**: Whisper 대비 15x 빠른 추론, CPU에서도 실시간급
-- **단점**: WebSocket 미지원 → FastAPI 래퍼 직접 구현 필요
+#### 최종 선정 근거
 
-#### Option 3: Vosk (경량 옵션)
+- **whisper-large-v3**: 실제 회의 내용을 정확히 인식 ("돔님도 안오셨어요", "케빈님도 오전 반차", "서머리가 하나 있으면 좋겠어요")
+- **ghost613 turbo-korean**: 속도는 빠르나 한국어 회의 인식 품질 부적격 ("마이크라고 돕우고 좋고 작품들이")
+- **SenseVoice-Small**: 중국어 중심 학습, 한국어 거의 인식 불가
+- **GPU (RTX 5080)**: CTranslate2가 Blackwell(sm_120) 미지원으로 CPU 모드 사용. 향후 CTranslate2 업데이트 시 GPU 전환 가능
 
-- **모델**: vosk-model-ko (50MB)
-- **한국어**: Fair (WER 10-15%)
-- **실시간**: YES — WebSocket 내장
-- **VRAM**: CPU only (50MB 모델)
-- **장점**: 초경량, 설치 1분
-- **단점**: 정확도 낮음, 개발 중단 우려
-
-### 권장 조합
+#### 채택 스택
 
 ```
-SenseVoice (CPU, 한국어 최적) + Ollama/Qwen 3.5 (GPU, AI 요약)
-→ GPU 경합 제로, 한국어 정확도 최상
-→ WebSocket 래퍼만 직접 구현 필요 (FastAPI 1개 엔드포인트)
+faster-whisper + Whisper Large-v3 (CPU INT8) + Ollama/Qwen 3.5 (GPU, AI 요약)
+- STT: CPU 전용 (RTF 0.22, 4.5x 실시간), RAM 1.77GB
+- LLM: GPU 전용 (Qwen 3.5 9B, VRAM 6.6GB)
+- GPU 경합 제로, 한국어 정확도 최상
 ```
-
-**대안**: WhisperLiveKit (WebSocket 내장으로 빠른 프로토타이핑) → 한국어 정확도 검증 후 SenseVoice 전환
 
 ### 로컬 인프라 현황 (`C:\claude\vllm`)
 
@@ -241,7 +230,7 @@ sequenceDiagram
 
 | ID | 리스크 | 영향 | 확률 | 완화 방안 |
 |----|--------|------|------|----------|
-| R-001 | STT 한국어 정확도 부족 | 요약 품질 저하 | 중 | SenseVoice (CJK 특화) 1순위, Whisper 대안 |
+| R-001 | STT 한국어 정확도 부족 | 요약 품질 저하 | 하 | Whisper Large-v3 채택 (POC 검증 완료, 회의 내용 정확 인식) |
 | R-002 | VRAM 경합 (STT + LLM 동시) | 추론 지연/OOM | 하 | STT=CPU 전략으로 GPU 경합 제로 |
 | R-003 | 회의실 소음/반향 | STT 오인식 증가 | 중 | 지향성 마이크 권장, 노이즈 필터 전처리 |
 | R-004 | LLM 요약 지연 (>5초) | 실시간 체감 저하 | 중 | 요약 주기 조절 (30초→60초), 스트리밍 응답 |
@@ -254,13 +243,14 @@ sequenceDiagram
 | 항목 | 상태 | 비고 |
 |------|------|------|
 | PRD 작성 | 완료 | v1.0 |
-| 기술 스택 결정 | 완료 | SenseVoice + Ollama/Qwen 3.5 |
+| 기술 스택 결정 | 완료 | faster-whisper + Whisper Large-v3 (CPU INT8) + Ollama/Qwen 3.5 |
 | Ollama 인프라 | 완료 | `C:\claude\vllm` (port 9000 가동 중) |
-| **POC: SenseVoice STT** | **완료** | RTF 0.05 (21x 실시간), CPU 1.87GB. **한국어 정확도 낮음 → Whisper 비교 필요** |
+| **POC: SenseVoice STT** | **완료** | RTF 0.05 (21x 실시간), CPU 1.87GB. **한국어 정확도 부적격 → 탈락** |
+| **POC: Whisper 비교** | **완료** | large-v3 채택 (RTF 0.22, 4.5x 실시간, 한국어 우수). ghost613 turbo 탈락 |
 | **POC: Qwen 요약** | **완료** | 3 시나리오 성공, 응답 7-21초, TTFT 6-15초 (thinking 모드) |
 | **POC: 통합 파이프라인** | **완료** | 텍스트 모드 E2E 24초, 요약 품질 우수 |
 | **POC: WebSocket 서버** | **구현** | 스크립트 생성, 수동 검증 대기 |
-| STT 엔진 최종 선정 | 진행 중 | SenseVoice 정확도 부족 → WhisperLiveKit 비교 테스트 필요 |
+| **STT 엔진 최종 선정** | **완료** | faster-whisper + Whisper Large-v3 (CPU INT8) |
 | 백엔드 (FastAPI) | 예정 | WebSocket + STT + LLM 통합 |
 | 프론트엔드 (React) | 예정 | 모니터 UI + 스마트폰 컨트롤 |
 | 통합 테스트 | 예정 | 실제 회의실 환경 검증 |
@@ -269,15 +259,18 @@ sequenceDiagram
 
 | POC | 성능 | 한국어 품질 | 판정 |
 |-----|------|:---------:|:----:|
-| SenseVoice-Small (CPU) | RTF 0.05, 1.87GB | 낮음 (WER 추정 30%+) | 재검토 |
+| SenseVoice-Small (CPU) | RTF 0.05, 1.87GB | 매우 낮음 | 탈락 |
+| ghost613 turbo-korean (CPU INT8) | RTF 0.18, 1.07GB | 낮음 (의미 불명) | 탈락 |
+| **Whisper Large-v3 (CPU INT8)** | **2분: RTF 0.22 / 52분: RTF 1.23, 829seg, 17953자** | **우수 (회의 내용 정확 인식)** | **채택** |
 | Qwen 3.5 9B 요약 | 7-21초, Action Item 추출 | 우수 | 채택 |
 | E2E 파이프라인 | 24초 (텍스트 모드) | - | 채택 |
 
-**다음 액션**: WhisperLiveKit(Whisper Large-v3) 비교 POC → STT 엔진 최종 결정
+**다음 액션**: 백엔드 (FastAPI + WebSocket + STT + LLM 통합) 구현
 
 ## Changelog
 
 | 날짜 | 버전 | 변경 내용 | 변경 유형 | 결정 근거 |
 |------|------|-----------|----------|----------|
+| 2026-03-19 | v1.2 | STT 엔진 최종 선정: faster-whisper + Whisper Large-v3 (CPU INT8). ghost613 turbo/SenseVoice 탈락 | TECH | 2분 회의 오디오 3종 비교 POC 결과 |
 | 2026-03-19 | v1.1 | POC 검증 결과 반영 — SenseVoice 정확도 이슈, Qwen 요약 채택 | TECH | 실제 회의 오디오 STT 테스트 결과 |
 | 2026-03-18 | v1.0 | 최초 작성 | - | - |
