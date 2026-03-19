@@ -1,0 +1,138 @@
+{
+  "audio_file": "C:\\claude\\auto_meeting\\poc\\audio_samples\\meeting_2min.wav",
+  "tests": [
+    {
+      "id": "C",
+      "name": "ghost613/faster-whisper-large-v3-turbo-korean (CPU INT8)",
+      "model_id": "ghost613/faster-whisper-large-v3-turbo-korean",
+      "device": "cpu",
+      "compute_type": "int8",
+      "metrics": {
+        "model_load_time_sec": 3.704,
+        "inference_time_sec": 21.166,
+        "audio_duration_sec": 120.002,
+        "rtf": 0.1764,
+        "realtime_ratio": 5.67,
+        "vram_gb": null,
+        "ram_gb": 1.072,
+        "language_probability": 1
+      },
+      "segments_count": 2,
+      "segments": [
+        {
+          "start": 0.0,
+          "end": 36.66,
+          "text": "할 수 있습니다"
+        },
+        {
+          "start": 36.66,
+          "end": 95.44,
+          "text": "그날 때 마이크라고 돕우고 좋고 작품들이 이 월로 연기한다고 작용했을 가능성이 좋겠습니다"
+        }
+      ],
+      "full_text": "할 수 있습니다 그날 때 마이크라고 돕우고 좋고 작품들이 이 월로 연기한다고 작용했을 가능성이 좋겠습니다"
+    },
+    {
+      "id": "D",
+      "name": "openai/whisper-large-v3 (CPU INT8)",
+      "model_id": "large-v3",
+      "device": "cpu",
+      "compute_type": "int8",
+      "metrics": {
+        "model_load_time_sec": 4.95,
+        "inference_time_sec": 26.411,
+        "audio_duration_sec": 120.002,
+        "rtf": 0.2201,
+        "realtime_ratio": 4.54,
+        "vram_gb": null,
+        "ram_gb": 1.774,
+        "language_probability": 1
+      },
+      "segments_count": 16,
+      "segments": [
+        {
+          "start": 0.0,
+          "end": 2.0,
+          "text": "이신데 대답하고 안오신거에요"
+        },
+        {
+          "start": 2.0,
+          "end": 4.54,
+          "text": "ㅎㅎㅎ"
+        },
+        {
+          "start": 6.54,
+          "end": 8.54,
+          "text": "돔님도 안오셨어요"
+        },
+        {
+          "start": 21.81,
+          "end": 24.0,
+          "text": "케빈님도 오전 반차"
+        },
+        {
+          "start": 31.28,
+          "end": 34.66,
+          "text": "반차라고 썼다는거에요"
+        },
+        {
+          "start": 36.66,
+          "end": 38.66,
+          "text": "마이클하고 돔하고 저하고"
+        },
+        {
+          "start": 38.66,
+          "end": 40.66,
+          "text": "잠깐 만나서 얘기하는 내용을 공유해드리면"
+        },
+        {
+          "start": 40.66,
+          "end": 45.15,
+          "text": "휴가"
+        },
+        {
+          "start": 45.15,
+          "end": 47.15,
+          "text": "출장가는 인원이 정해졌습니다"
+        },
+        {
+          "start": 47.15,
+          "end": 58.94,
+          "text": "8명"
+        },
+        {
+          "start": 58.94,
+          "end": 60.94,
+          "text": "중국 딜러들 대응하기 위해서"
+        },
+        {
+          "start": 60.94,
+          "end": 83.1,
+          "text": "주간의 월요일 회의는"
+        },
+        {
+          "start": 83.1,
+          "end": 88.08,
+          "text": "상단에"
+        },
+        {
+          "start": 88.08,
+          "end": 90.21,
+          "text": "서머리가 하나 있으면 좋겠어요"
+        },
+        {
+          "start": 90.21,
+          "end": 92.21,
+          "text": "서머리요?"
+        },
+        {
+          "start": 92.21,
+          "end": 94.5,
+          "text": "이번주에 하기로 한 내용"
+        }
+      ],
+      "full_text": "이신데 대답하고 안오신거에요 ㅎㅎㅎ 돔님도 안오셨어요 케빈님도 오전 반차 반차라고 썼다는거에요 마이클하고 돔하고 저하고 잠깐 만나서 얘기하는 내용을 공유해드리면 휴가 출장가는 인원이 정해졌습니다 8명 중국 딜러들 대응하기 위해서 주간의 월요일 회의는 상단에 서머리가 하나 있으면 좋겠어요 서머리요? 이번주에 하기로 한 내용"
+    }
+  ],
+  "timestamp": "2026-03-19T11:14:13"
+}

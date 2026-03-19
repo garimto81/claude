@@ -1,7 +1,6 @@
 ---
 name: final-check-automation
-description: >
-  FINAL_CHECK 워크플로우 자동화. E2E 테스트, Phase 3-5 자동 진행.
+description: "DEPRECATED: /check로 흡수 통합됨. FINAL_CHECK 워크플로우 자동화 — E2E 테스트, Phase 3-5 자동 진행."
 version: 2.0.0
 
 triggers:

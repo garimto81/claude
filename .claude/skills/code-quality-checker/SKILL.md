@@ -1,7 +1,6 @@
 ---
 name: code-quality-checker
-description: >
-  코드 품질 검사 자동화. 린트, 포맷, 타입 체크, 보안 스캔 통합.
+description: "DEPRECATED: /check로 흡수 통합됨. 코드 품질 검사 자동화 — 린트, 포맷, 타입 체크, 보안 스캔."
 version: 2.0.0
 
 triggers:

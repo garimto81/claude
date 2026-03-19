@@ -150,6 +150,16 @@ Now review for quality (see Review Checklist below).
 - Missing caching
 - N+1 queries
 
+### OOP Design Quality (HIGH)
+- 제어 결합도: 다른 모듈의 동작을 boolean/enum으로 제어하는가
+- 공통 결합도: 전역 변수/싱글톤을 통한 상태 공유
+- 내용 결합도: 다른 모듈의 private/내부 구현에 직접 접근
+- God Object: 클래스/모듈이 3개+ 독립적 책임을 가지는가
+- Fat Interface: 구현체가 미사용 메서드를 강제 구현하는가
+- 순환 의존성: A→B→C→A 패턴
+- DIP 위반: 고수준 모듈이 저수준 모듈에 직접 의존
+- 과도한 상속: 상속 깊이 3+ (Composition over Inheritance)
+
 ### Best Practices (LOW)
 - Untracked task comments (TODO, etc) without tickets
 - Missing JSDoc for public APIs

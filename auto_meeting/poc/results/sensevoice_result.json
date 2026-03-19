@@ -1,0 +1,15 @@
+{
+  "model": "iic/SenseVoiceSmall",
+  "device": "cpu",
+  "audio_file": "C:\\claude\\auto_meeting\\poc\\audio_samples\\meeting_2min.wav",
+  "metrics": {
+    "model_load_time_sec": 2250.902,
+    "inference_time_sec": 5.659,
+    "audio_duration_sec": 120.002,
+    "rtf": 0.0472,
+    "realtime_ratio": 21.2,
+    "memory_gb": 1.868
+  },
+  "recognized_text": "<|ko|><|EMO_UNKNOWN|><|Speech|><|woitn|> 대답답하고 안 운영톱님도 안 하셨어요 오늘 애 운동을 오전정 반도 고네 반하고 일단 어 퇴근요 퇴근할 마이크라고하고 출장 인원이 전해졌습니다 운영5하고 마커 중국딜러 마커 운동 티팅 하는 거 시작할 거 주간의 월요일 회의는머리가 하나으면 좋겠어요에 하기로 오신 거죠습니다",
+  "timestamp": "2026-03-18T19:20:48"
+}

@@ -42,12 +42,25 @@
             "command": "python3 C:/claude/.claude/hooks/tool_validator.py"
           }
         ]
+      },
+      {
+        "matcher": "Agent",
+        "hooks": [
+          {
+            "type": "command",
+            "command": "python3 C:/claude/.claude/hooks/agent_teams_guard.py"
+          }
+        ]
       }
     ],
     "SessionStart": [
       {
         "matcher": "",
         "hooks": [
+          {
+            "type": "command",
+            "command": "python3 C:/claude/.claude/hooks/agent_validator.py"
+          },
           {
             "type": "command",
             "command": "python3 C:/claude/.claude/hooks/session_init.py"
@@ -64,6 +77,59 @@
             "command": "node C:/claude/.claude/hooks/post_edit_check.js"
           }
         ]
+      },
+      {
+        "matcher": "Edit",
+        "hooks": [
+          {
+            "type": "command",
+            "command": "python3 C:/claude/.claude/hooks/recovery/edit_error_recovery.py"
+          }
+        ]
+      },
+      {
+        "matcher": "",
+        "hooks": [
+          {
+            "type": "command",
+            "command": "python3 C:/claude/.claude/hooks/recovery/context_limit_recovery.py"
+          }
+        ]
+      },
+      {
+        "matcher": "Bash|Edit|Write|Agent",
+        "hooks": [
+          {
+            "type": "command",
+            "command": "python3 C:/claude/.claude/hooks/circuit_breaker.py"
+          }
+        ]
+      }
+    ],
+    "PreCompact": [
+      {
+        "matcher": "",
+        "hooks": [
+          {
+            "type": "command",
+            "command": "python3 C:/claude/.claude/hooks/pre_compact_save.py"
+          }
+        ]
+      }
+    ],
+    "Stop": [
+      {
+        "matcher": "",
+        "hooks": [
+          {
+            "type": "command",
+            "command": "python3 C:/claude/.claude/hooks/stop_completion_check.py"
+          },
+          {
+            "type": "command",
+            "command": "python3 C:/claude/.claude/hooks/deploy_gate.py"
+          }
+        ]
       }
     ],
     "SessionEnd": [
@@ -73,6 +139,10 @@
           {
             "type": "command",
             "command": "python3 C:/claude/.claude/hooks/session_cleanup.py"
+          },
+          {
+            "type": "command",
+            "command": "python3 C:/claude/.claude/hooks/recovery/session_error_recovery.py"
           }
         ]
       }
