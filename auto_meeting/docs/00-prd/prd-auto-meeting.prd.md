@@ -237,6 +237,11 @@ sequenceDiagram
 | R-005 | 장시간 회의 메모리 누수 | 시스템 크래시 | 중 | 텍스트 버퍼 슬라이딩 윈도우 (최근 10분만 요약 입력) |
 | R-006 | 스마트폰↔서버 네트워크 끊김 | 음성 데이터 손실 | 하 | 클라이언트 로컬 버퍼링 + 재연결 자동 전송 |
 | R-007 | Ollama Docker 불안정 | LLM API 응답 없음 | 하 | healthcheck + 자동 재시작 (docker-compose) |
+| R-008 | `.gitignore` 화이트리스트로 POC 파일 untracked | 파일 사라짐 | **발생** | `git add -f` 명시적 추적 |
+| R-009 | Windows에 openssl CLI 미설치 | SSL 인증서 생성 실패 | **발생** | cryptography 패키지로 대체 |
+| R-010 | websockets 15.x API 호환성 | process_request 시그니처 변경 | **발생** | aiohttp로 전환 |
+| R-011 | MediaRecorder timeslice 모드 헤더 누락 | WebM 디코딩 실패 | **발생** | stop/start 방식으로 전환 |
+| R-012 | 3초 독립 STT 청크 → 문맥 없는 인식 | 한국어 정확도 매우 낮음 | **발생** | 15초 서버 누적 + Qwen 품질 판정 |
 
 ## 9. 구현 상태
 
@@ -249,7 +254,7 @@ sequenceDiagram
 | **POC: Whisper 비교** | **완료** | large-v3 채택 (RTF 0.22, 4.5x 실시간, 한국어 우수). ghost613 turbo 탈락 |
 | **POC: Qwen 요약** | **완료** | 3 시나리오 성공, 응답 7-21초, TTFT 6-15초 (thinking 모드) |
 | **POC: 통합 파이프라인** | **완료** | 텍스트 모드 E2E 24초, 요약 품질 우수 |
-| **POC: WebSocket 서버** | **구현** | 스크립트 생성, 수동 검증 대기 |
+| **POC: WebSocket 서버** | **수정 완료** | 4건 버그 수정 + STT 누적 전략 + E2E 검증 |
 | **STT 엔진 최종 선정** | **완료** | faster-whisper + Whisper Large-v3 (CPU INT8) |
 | 백엔드 (FastAPI) | 예정 | WebSocket + STT + LLM 통합 |
 | 프론트엔드 (React) | 예정 | 모니터 UI + 스마트폰 컨트롤 |
@@ -271,6 +276,7 @@ sequenceDiagram
 
 | 날짜 | 버전 | 변경 내용 | 변경 유형 | 결정 근거 |
 |------|------|-----------|----------|----------|
+| 2026-03-19 | v1.3 | WebSocket POC 4건 버그 수정 + 15초 누적 STT + Qwen 품질 판정. 리스크 R-008~R-012 추가 | TECH | 실제 스마트폰 테스트에서 발견된 연쇄 버그 해결 |
 | 2026-03-19 | v1.2 | STT 엔진 최종 선정: faster-whisper + Whisper Large-v3 (CPU INT8). ghost613 turbo/SenseVoice 탈락 | TECH | 2분 회의 오디오 3종 비교 POC 결과 |
 | 2026-03-19 | v1.1 | POC 검증 결과 반영 — SenseVoice 정확도 이슈, Qwen 요약 채택 | TECH | 실제 회의 오디오 STT 테스트 결과 |
 | 2026-03-18 | v1.0 | 최초 작성 | - | - |
