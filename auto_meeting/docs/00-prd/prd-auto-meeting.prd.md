@@ -256,13 +256,28 @@ sequenceDiagram
 | PRD 작성 | 완료 | v1.0 |
 | 기술 스택 결정 | 완료 | SenseVoice + Ollama/Qwen 3.5 |
 | Ollama 인프라 | 완료 | `C:\claude\vllm` (port 9000 가동 중) |
-| STT 엔진 설치 | 예정 | SenseVoice 또는 WhisperLiveKit |
+| **POC: SenseVoice STT** | **완료** | RTF 0.05 (21x 실시간), CPU 1.87GB. **한국어 정확도 낮음 → Whisper 비교 필요** |
+| **POC: Qwen 요약** | **완료** | 3 시나리오 성공, 응답 7-21초, TTFT 6-15초 (thinking 모드) |
+| **POC: 통합 파이프라인** | **완료** | 텍스트 모드 E2E 24초, 요약 품질 우수 |
+| **POC: WebSocket 서버** | **구현** | 스크립트 생성, 수동 검증 대기 |
+| STT 엔진 최종 선정 | 진행 중 | SenseVoice 정확도 부족 → WhisperLiveKit 비교 테스트 필요 |
 | 백엔드 (FastAPI) | 예정 | WebSocket + STT + LLM 통합 |
 | 프론트엔드 (React) | 예정 | 모니터 UI + 스마트폰 컨트롤 |
 | 통합 테스트 | 예정 | 실제 회의실 환경 검증 |
+
+### POC 검증 결과 요약 (2026-03-19)
+
+| POC | 성능 | 한국어 품질 | 판정 |
+|-----|------|:---------:|:----:|
+| SenseVoice-Small (CPU) | RTF 0.05, 1.87GB | 낮음 (WER 추정 30%+) | 재검토 |
+| Qwen 3.5 9B 요약 | 7-21초, Action Item 추출 | 우수 | 채택 |
+| E2E 파이프라인 | 24초 (텍스트 모드) | - | 채택 |
+
+**다음 액션**: WhisperLiveKit(Whisper Large-v3) 비교 POC → STT 엔진 최종 결정
 
 ## Changelog
 
 | 날짜 | 버전 | 변경 내용 | 변경 유형 | 결정 근거 |
 |------|------|-----------|----------|----------|
+| 2026-03-19 | v1.1 | POC 검증 결과 반영 — SenseVoice 정확도 이슈, Qwen 요약 채택 | TECH | 실제 회의 오디오 STT 테스트 결과 |
 | 2026-03-18 | v1.0 | 최초 작성 | - | - |
