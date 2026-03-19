@@ -1,8 +1,8 @@
 ---
-name: cc
+name: claude-switch
 version: 1.0.0
 description: >
-  This skill should be used when the user needs to switch between multiple Claude Code accounts or manage authentication profiles.
+  Switch between multiple Claude Code accounts and manage authentication profiles. Triggers on "switch", "계정 전환", "claude login". Use when switching Claude Code organizations or managing multiple auth profiles.
 triggers:
   keywords:
     - cc

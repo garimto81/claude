@@ -2,13 +2,12 @@
 name: audit
 version: 2.0.0
 description: >
-  This skill should be used when the user requests daily configuration audits, improvement suggestions, or trend-based workflow optimization.
+  Daily configuration audit and workflow optimization for Claude Code setup. Triggers on "audit", "점검", "health check", "trend". Use when verifying CLAUDE.md consistency, checking plugin health, reviewing GitHub issues, or running trend-based analysis.
 triggers:
   keywords:
     - "audit"
     - "trend"
     - "워크플로우 개선"
-    - "브리핑 분석"
     - "plugin health"
     - "skill audit"
 ---
@@ -29,8 +28,8 @@ triggers:
 | `fix` | 발견된 문제 자동 수정 |
 | `baseline` | 현재 상태를 기준으로 저장 |
 | `suggest [영역]` | 솔루션 추천 |
-| `trend` | Gmail 브리핑 기반 트렌드 분석 + 워크플로우 갭 분석 + 메일 삭제 |
-| `trend --apply` | 트렌드 분석 + 자동 적용 + 커밋 + 메일 삭제 (완전 자동화) |
+| `trend` | 웹 리서치 기반 워크플로우 개선 분석 + /auto 갭 분석 + 결과 캐싱 |
+| `trend --apply` | 트렌드 분석 + 자동 적용 + 커밋 + 결과 캐싱 |
 
 ## 통합 워크플로우 (기본 동작)
 
@@ -50,21 +49,20 @@ triggers:
     │       ├─ [8/9] Skill TDD Audit (v24.0)
     │       └─ [9/9] Setup Audit (deep/HEAVY만)
     │
-    ├─ [Phase 2] 트렌드 분석 + 자동 적용
-    │       ├─ Gmail 인증 확인
-    │       ├─ 임시보관함 브리핑 메일 수집
-    │       ├─ Analyst 에이전트로 트렌드 추출 + 갭 분석
+    ├─ [Phase 2] 웹 리서치 기반 트렌드 분석
+    │       ├─ 현재 워크플로우 인벤토리 수집
+    │       ├─ researcher 에이전트 웹 리서치 (3-tier 쿼리)
+    │       ├─ analyst 에이전트 갭 분석
     │       ├─ 개선 아이디어 출력
-    │       ├─ LOW/MEDIUM 복잡도 제안 자동 적용 + 커밋
-    │       └─ 브리핑 메일 자동 삭제
+    │       └─ 결과 캐싱 (.claude/research/)
     │
     └─ [Phase 3] 통합 결과 요약
 ```
 
 **핵심 규칙:**
 - Phase 1은 항상 실행 (9/9 중 Setup Audit는 deep/HEAVY 조건부)
-- Phase 2는 Gmail 인증 실패 시 스킵 (설정 점검 결과만 출력)
-- Phase 2는 브리핑 메일 없으면 "메일 없음" 표시 후 Phase 3으로 진행
+- Phase 2는 항상 실행 (WebSearch 실패 시만 스킵)
+- 24시간 이내 캐시 존재 시 재사용 옵션 제공
 - Phase 3에서 설정 점검 + 트렌드 결과 통합 출력
 
 ## v24.0 신규 점검 항목
@@ -93,16 +91,17 @@ claude-code-setup automation-recommender 활용:
 ```
 /audit trend 실행
     │
-    ├─ [1/5] Gmail 인증 확인
-    ├─ [2/5] 임시보관함 브리핑 메일 수집 (in:draft subject:Claude Code)
-    ├─ [3/5] Analyst 에이전트로 트렌드 추출 + 현재 워크플로우 갭 분석
+    ├─ [1/5] 현재 워크플로우 인벤토리 수집
+    ├─ [2/5] 웹 리서치 (researcher 에이전트, 8개 쿼리)
+    ├─ [3/5] 갭 분석 (analyst 에이전트)
     ├─ [4/5] 개선 아이디어 제안 출력
-    └─ [5/5] 사용자 확인 후 브리핑 메일 삭제
+    └─ [5/5] 결과 캐싱
 ```
 
 **핵심 규칙:**
-- 메일 삭제는 반드시 사용자 확인 후 (`--dry-run` 시 삭제 스킵)
-- `--save` 시 `.claude/research/audit-trend-<date>.md` 저장
+- Phase 2는 항상 실행 (WebSearch 타임아웃 시만 스킵)
+- 24시간 이내 캐시 존재 시 재사용 여부 질문
+- `--refresh` 시 캐시 무시, 새로 검색
 - `--apply` 시 Step 4.5(자동 적용 + 커밋) 추가 실행
 
 ## 커맨드 파일 참조

@@ -1,6 +1,6 @@
 ---
 name: agent-teamworks
-description: Multi-Agent Team Workflow - 4개 전문 팀 자율 협업 시스템
+description: "DEPRECATED: /auto Agent Teams로 통합됨. Multi-Agent Team Workflow - 4개 전문 팀 자율 협업 시스템."
 version: 1.0.0
 triggers:
   keywords:
