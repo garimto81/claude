@@ -1,0 +1,46 @@
+{
+  "meta": {
+    "model": "qwen3.5:9b",
+    "base_url": "http://localhost:9000/v1",
+    "temperature": 0.3,
+    "run_at": "2026-03-18T18:02:11.435370"
+  },
+  "scenarios": [
+    {
+      "scenario": "A",
+      "label": "짧은 회의",
+      "input_length": 91,
+      "input_tokens_approx": 45,
+      "response_time_sec": 7.64,
+      "ttft_sec": 6.428,
+      "summary_length": 128,
+      "summary_tokens_approx": 64,
+      "compression_ratio_pct": 142.2,
+      "summary": "**핵심 결정사항:**\n- 이번 분기 매출 달성률 85% 확인\n- 신규 거래처 3 곳 확보 성과 인정\n\n**Action Item:**\n- 잔여 목표 달성 계획서 작성 및 제출\n\n**다음 단계:**\n- 다음 주까지 계획서 제출 완료"
+    },
+    {
+      "scenario": "B",
+      "label": "중간 회의",
+      "input_length": 286,
+      "input_tokens_approx": 143,
+      "response_time_sec": 14.54,
+      "ttft_sec": 9.417,
+      "summary_length": 241,
+      "summary_tokens_approx": 120,
+      "compression_ratio_pct": 83.9,
+      "summary": "**회의 요약**\n\n**📌 핵심 결정사항**\n- 분기 실적: 전년 대비 매출 12% 성장, 영업이익률 8.5% 달성\n- 프로젝트 A: 4 월 1 일 시작, 일정 압박 시 외주 인력 활용 검토\n\n**✅ Action Item**\n- [HR] 3 월 중 채용 공고 게시 및 4 월 둘째 주 면접 진행\n- [팀장] 프로젝트 A 외주 인력 검토 계획 수립\n\n**📅 다음 단계**\n- 다음 회의: 다음 주 화요일 (현재 시간 기준) 같은 시간"
+    },
+    {
+      "scenario": "C",
+      "label": "긴 회의",
+      "input_length": 1191,
+      "input_tokens_approx": 595,
+      "response_time_sec": 21.23,
+      "ttft_sec": 14.584,
+      "summary_length": 709,
+      "summary_tokens_approx": 354,
+      "compression_ratio_pct": 59.5,
+      "summary": "# 회의 요약\n\n**📅 핵심 결정사항**\n*   **신규 프로젝트 A:** 4 월 1 일 시작, 기술 스택 (React, FastAPI 등) 확정. 마일스톤: 5 월 MVP, 9 월 정식 출시.\n*   **예산 배분:** 총 1.8 억 원 (개발 인건비 1.2 억, 인프라/마케팅/예비비 포함) 승인 및 CFO 보고 일정 확정.\n*   **인력 충원:** 채용 공고 3 월 15 일 오픈, 외주 인력 단가 (월 600~800 만 원) 및 계약 조건 검토 완료.\n*   **고객사 A 커스터마이징:** 연간 계약 규모 대비 우선순위 상향 결정, 비용 별도 청구 가능성 검토.\n\n**✅ Action Item**\n| 담당자 | 항목 | 마감일 |\n| :--- | :--- | :--- |\n| 박대리 | 분기 실적 보고서 최종본 제출 | 금주 내 |\n| 이과장 | 기술 스택 아키텍처 및 리스크 플랜 B 작성 | 다음 주 월요일 |\n| 이과장 | 고객사 A 영향 범위 분석서 제출 | 목요일 |\n| 최차장 | 채용 공고 오픈 | 3 월 15 일 |\n| 정과장 | CFO 보고 자료 준비 | 내주 수요일 |\n| 정과장 | 고객사 A 커스터마이징 비용 계약서 검토 | 다음 회의 전 |\n\n**🚀 다음 단계**\n*   **다음 회의:** 다음 주 화요일 오전 10 시 (같은 장소)\n*   **공유 체계:** Notion 및 Jira 연동 대시보드를 통한 실시간 현황 공유 운영."
+    }
+  ]
+}
