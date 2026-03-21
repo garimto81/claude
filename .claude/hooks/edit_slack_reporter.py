@@ -137,7 +137,8 @@ def send_slack(entries: list[dict]):
             [sys.executable, "-c",
              "import sys; sys.path.insert(0, r'C:\\claude'); "
              "from lib.slack.client import SlackClient; "
-             f"SlackClient().send_message('{SLACK_CHANNEL}', sys.stdin.read())"],
+             "SlackClient().send_message(sys.argv[1], sys.stdin.read())",
+             SLACK_CHANNEL],
             input=msg, capture_output=True, text=True, timeout=10,
         )
     except Exception:

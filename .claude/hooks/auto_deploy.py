@@ -13,15 +13,17 @@ PROJECT = "C:/claude/game_kfc"
 FLUTTER_DIR = os.path.join(PROJECT, "game_kfc_flutter")
 WEB_BUILD = os.path.join(PROJECT, "web_build")
 def _get_flag_path():
-    """커밋 SHA 기반 flag 경로. 새 커밋마다 리셋."""
+    """커밋 SHA 기반 flag 경로. 새 커밋마다 리셋. SHA 실패 시 timestamp fallback."""
     try:
         r = subprocess.run(
             "git rev-parse --short HEAD", capture_output=True, text=True,
             cwd=PROJECT, shell=True, timeout=5,
         )
-        sha = r.stdout.strip() if r.returncode == 0 else "unknown"
+        sha = r.stdout.strip() if r.returncode == 0 and r.stdout.strip() else ""
     except Exception:
-        sha = "unknown"
+        sha = ""
+    if not sha:
+        sha = str(int(time.time()))  # timestamp fallback — 재실행마다 리셋
     return os.path.join(PROJECT, f".deploy_verified_{sha}")
 
 

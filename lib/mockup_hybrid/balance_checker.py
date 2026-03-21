@@ -93,12 +93,13 @@ def measure_balance(html_path: Path, config: dict | None = None) -> dict:
             headless=True,
             args=["--disable-gpu", "--no-sandbox", "--disable-dev-shm-usage"],
         )
-        page = browser.new_page(viewport={"width": 1280, "height": 900})
-        page.goto(file_url, wait_until="networkidle")
-        page.wait_for_timeout(500)
-
-        raw = page.evaluate(JS_MEASURE_COLUMNS)
-        browser.close()
+        try:
+            page = browser.new_page(viewport={"width": 1280, "height": 900})
+            page.goto(file_url, wait_until="networkidle")
+            page.wait_for_timeout(500)
+            raw = page.evaluate(JS_MEASURE_COLUMNS)
+        finally:
+            browser.close()
 
     if not raw:
         return {"verdict": "SKIP", "reason": "No multi-column layout detected", "metrics": []}
