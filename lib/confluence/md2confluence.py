@@ -423,7 +423,7 @@ def convert(md_path, page_id, dry_run=False, base_url=None):
             # Draft workflow: publish first (minimal body), then attach, then update body
             print(f"[5a/7] Publishing draft as page '{title}'...")
             result = update_page_content(
-                cfg, page_id, title, "<p>Publishing...</p>", ver + 1, space, publish_draft=True,
+                cfg, page_id, title, "<p>Publishing...</p>", ver, space, publish_draft=True,
             )
             cur_ver = result["version"]["number"]
             print(f"  Published as v{cur_ver}")

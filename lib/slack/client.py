@@ -18,7 +18,7 @@ Usage:
 import json
 import time
 from pathlib import Path
-from typing import Optional
+from typing import Any, Optional
 from datetime import datetime
 
 from slack_sdk import WebClient
@@ -217,13 +217,20 @@ class SlackClient:
                 initial_comment=initial_comment,
             )
 
+            shares = response.data.get("file", {}).get("shares", {})
+            public_shares = shares.get("public", {}).get(channel, [])
+            private_shares = shares.get("private", {}).get(channel, [])
+            share_list = public_shares or private_shares
+            ts = share_list[0].get("ts", "") if share_list else ""
+
             return SendResult(
                 ok=response.data.get("ok", True),
-                ts=response.data.get("file", {}).get("shares", {}).get("public", {}).get(channel, [{}])[0].get("ts", ""),
+                ts=ts,
                 channel=channel,
             )
         except SlackApiError as e:
             self._handle_error(e)
+            raise  # _handle_error always raises, but explicit for type safety
 
     def update_message(
         self,
@@ -478,7 +485,7 @@ class SlackClient:
         name: str,
         description: str = "",
         todo_mode: bool = True,
-        schema: list[dict] = None,
+        schema: Optional[list[dict]] = None,
     ) -> dict:
         """
         Create a new Slack List.
@@ -536,7 +543,7 @@ class SlackClient:
     def add_list_item(
         self,
         list_id: str,
-        fields: dict[str, any],
+        fields: dict[str, Any],
     ) -> dict:
         """
         Add an item to a Slack List.

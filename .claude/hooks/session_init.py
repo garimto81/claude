@@ -386,8 +386,7 @@ def check_fatigue_signals(ttl_hours: int = 24) -> list[str]:
 def check_pending_backlog() -> list[str]:
     """프로젝트 백로그에서 PENDING 항목 표시"""
     warnings = []
-    project_path = Path(PROJECT_DIR)
-    backlog_path = project_path / "docs" / "backlog.md"
+    backlog_path = ROOT_PROJECT_DIR / "docs" / "backlog.md"
 
     if not backlog_path.exists():
         return warnings

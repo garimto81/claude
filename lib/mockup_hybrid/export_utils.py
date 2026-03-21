@@ -254,18 +254,20 @@ def _validate_capture(image_path: Path, max_whitespace_ratio: float = 0.4) -> bo
             return True
 
         def _edge_whitespace_ratio(region) -> float:
-            """영역 내 가장 많은 색상(배경)의 비율 계산. 투명 픽셀도 배경으로 취급."""
+            """영역 내 가장 많은 색상(배경)의 비율 계산.
+            투명 픽셀은 무시하고 불투명 픽셀만으로 단색 비율을 판단한다.
+            (CSS background:transparent 주입 시 투명 영역은 의도된 여백)"""
             pixels = list(region.getdata())
             if not pixels:
                 return 0.0
             from collections import Counter
-            # 투명 픽셀(alpha=0)은 공백으로 카운트
-            bg_count = sum(1 for p in pixels if p[3] == 0)
-            if bg_count / len(pixels) > max_whitespace_ratio:
-                return bg_count / len(pixels)
-            color_counts = Counter(pixels)
+            # 투명 픽셀(alpha=0)은 의도된 여백이므로 제외
+            opaque = [p for p in pixels if p[3] > 0]
+            if not opaque:
+                return 0.0  # 전부 투명이면 유효 컨텐츠 없음 → 통과
+            color_counts = Counter(opaque)
             _, most_common_count = color_counts.most_common(1)[0]
-            return most_common_count / len(pixels)
+            return most_common_count / len(opaque)
 
         # 4방향 가장자리 15% 영역 검사
         margin = 0.15
@@ -453,12 +455,14 @@ def get_output_paths(
     return html_path, image_path
 
 
-def capture_url(url: str, delay_ms: int = 5000,
+def capture_url(url: str, output_path: str | Path = "",
+                delay_ms: int = 5000,
                 width: int = 720, height: int = 1280) -> bool:
     """URL 기반 Playwright headless 캡처 (구 figma_headless_capture 대체)
 
     Args:
         url: 캡처할 URL (http/https/file)
+        output_path: 스크린샷 저장 경로 (.png). 미지정 시 URL 기반 자동 생성.
         delay_ms: 페이지 로드 후 대기 시간 (ms)
         width: 뷰포트 너비
         height: 뷰포트 높이
@@ -491,7 +495,18 @@ def capture_url(url: str, delay_ms: int = 5000,
                 page.goto(url)
                 page.wait_for_load_state("networkidle")
                 page.wait_for_timeout(delay_ms)
-                logger.info(f"URL 캡처 완료: {url[:80]}...")
+
+                # 출력 경로 결정
+                if not output_path:
+                    from urllib.parse import urlparse
+                    parsed = urlparse(url)
+                    safe = re.sub(r'[^\w\-.]', '_', parsed.path.strip('/') or 'capture')
+                    output_path = Path.cwd() / f"{safe}.png"
+                output_path = Path(output_path)
+                output_path.parent.mkdir(parents=True, exist_ok=True)
+
+                page.screenshot(path=str(output_path), full_page=True)
+                logger.info(f"URL 캡처 완료: {url[:80]} -> {output_path}")
                 return True
             finally:
                 browser.close()
