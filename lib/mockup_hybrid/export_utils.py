@@ -498,9 +498,10 @@ def capture_url(url: str, output_path: str | Path = "",
 
                 # 출력 경로 결정
                 if not output_path:
+                    import re as _re
                     from urllib.parse import urlparse
                     parsed = urlparse(url)
-                    safe = re.sub(r'[^\w\-.]', '_', parsed.path.strip('/') or 'capture')
+                    safe = _re.sub(r'[^\w\-.]', '_', parsed.path.strip('/') or 'capture')
                     output_path = Path.cwd() / f"{safe}.png"
                 output_path = Path(output_path)
                 output_path.parent.mkdir(parents=True, exist_ok=True)

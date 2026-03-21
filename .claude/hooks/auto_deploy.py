@@ -12,7 +12,20 @@ import time
 PROJECT = "C:/claude/game_kfc"
 FLUTTER_DIR = os.path.join(PROJECT, "game_kfc_flutter")
 WEB_BUILD = os.path.join(PROJECT, "web_build")
-FLAG = os.path.join(PROJECT, ".deploy_verified")
+def _get_flag_path():
+    """커밋 SHA 기반 flag 경로. 새 커밋마다 리셋."""
+    try:
+        r = subprocess.run(
+            "git rev-parse --short HEAD", capture_output=True, text=True,
+            cwd=PROJECT, shell=True, timeout=5,
+        )
+        sha = r.stdout.strip() if r.returncode == 0 else "unknown"
+    except Exception:
+        sha = "unknown"
+    return os.path.join(PROJECT, f".deploy_verified_{sha}")
+
+
+FLAG = _get_flag_path()
 WATCH_PATHS = ["server/", "game_kfc_flutter/lib/", "src/"]
 
 
