@@ -1,7 +1,7 @@
 ---
 name: parallel
 description: >
-  This skill should be used when the user requests multi-agent parallel execution for dev, test, review, or research tasks.
+  Multi-agent parallel execution for dev, test, review, and research tasks. Triggers on "parallel", "병렬", "동시 실행". Use when facing 2+ independent tasks that can run concurrently across multiple agents.
 version: 2.0.0
 triggers:
   keywords:

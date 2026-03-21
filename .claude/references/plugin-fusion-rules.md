@@ -11,6 +11,8 @@
 | 감지 파일 | 프로젝트 타입 | 활성화 플러그인 |
 |-----------|-------------|----------------|
 | `package.json` + `react` dep | React/Next.js | frontend-design, code-review, typescript-lsp |
+| `package.json` + quasar dep | Quasar/Vue | frontend-design, code-review, typescript-lsp |
+| `quasar.config.*` / `quasar.conf.*` | Quasar | frontend-design, code-review, typescript-lsp |
 | `tsconfig.json` | TypeScript | typescript-lsp, code-review |
 | `next.config.*` | Next.js | frontend-design, code-review, typescript-lsp |
 | `pyproject.toml` \| `setup.py` | Python | code-review |
@@ -128,8 +130,12 @@ if Glob("package.json"):
     pkg = Read("package.json")
     if '"react"' in pkg or '"next"' in pkg:
         activated_plugins.extend(["frontend-design", "code-review"])
+    elif '"quasar"' in pkg or '"@quasar/app-vite"' in pkg or '"@quasar/app-webpack"' in pkg:
+        activated_plugins.extend(["frontend-design", "code-review", "typescript-lsp"])
     else:
         activated_plugins.append("code-review")
+if Glob("quasar.config.*") or Glob("quasar.conf.*"):
+    activated_plugins.extend(["frontend-design", "code-review", "typescript-lsp"])
 if Glob("next.config.*"):
     activated_plugins.append("frontend-design")
 if Glob("pyproject.toml") or Glob("setup.py") or Glob("*.py"):

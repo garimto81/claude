@@ -1,7 +1,7 @@
 ---
 name: karpathy-guidelines
 description: >
-  This skill should be used when applying Andrej Karpathy's 6 development principles during code review, new code writing, refactoring, or debugging.
+  Andrej Karpathy's 6 development principles for code review, writing, refactoring, and debugging. Triggers on "karpathy", "카파시", "개발 원칙". Use when applying principled practices: Read before Write, Fail Loud, Minimal Footprint, Prefer Reversibility, Documents over Documentation, Context Awareness.
 version: 2.0.0
 triggers:
   keywords:

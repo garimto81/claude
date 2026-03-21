@@ -1,6 +1,6 @@
 # 실시간 회의 관리 시스템 (Auto Meeting) PRD
 
-> **Version**: v1.0 | **Date**: 2026-03-18 | **Status**: Draft
+> **Version**: v1.4 | **Date**: 2026-03-20 | **Status**: Draft
 > **Appetite**: Big 6주
 
 ## Market Context
@@ -243,19 +243,82 @@ sequenceDiagram
 | R-011 | MediaRecorder timeslice 모드 헤더 누락 | WebM 디코딩 실패 | **발생** | stop/start 방식으로 전환 |
 | R-012 | 3초 독립 STT 청크 → 문맥 없는 인식 | 한국어 정확도 매우 낮음 | **발생** | 15초 서버 누적 + Qwen 품질 판정 |
 
-## 9. 구현 상태
+## 9. 배포 환경 (Docker 전용)
+
+> **CRITICAL**: 모든 개발/수정/운영은 Docker Compose 환경에서 수행한다. 로컬 직접 실행 금지.
+
+### 실행 방법
+
+```bash
+cd C:\claude\auto_meeting
+docker compose up -d --build     # 최초 실행 (빌드 + 모델 다운로드)
+docker compose logs -f stt-server # 로그 확인
+docker compose down               # 중지
+docker compose up -d --build      # 코드 수정 후 재빌드
+```
+
+### 접속 URL
+
+| 페이지 | URL | 용도 |
+|--------|-----|------|
+| 모니터 | `https://<서버IP>:8765/` | 회의실 대형 모니터 표시 |
+| 레코더 | `https://<서버IP>:8765/recorder` | 진행자 스마트폰 녹음 |
+
+### Docker 서비스 구성
+
+| 서비스 | 이미지 | 역할 | 포트 |
+|--------|--------|------|------|
+| `ollama` | ollama/ollama | Qwen 3.5 요약 엔진 | 11434 |
+| `ollama-init` | ollama/ollama | 모델 자동 설치 (1회) | - |
+| `stt-server` | 자체 빌드 | Whisper STT + aiohttp | 8765 |
+
+### Docker Volume (데이터 영속성)
+
+| Volume | 마운트 | 용도 |
+|--------|--------|------|
+| `auto-meeting-ollama-data` | /root/.ollama | Ollama 모델 캐시 |
+| `auto-meeting-whisper-cache` | /data/whisper-cache | Whisper 모델 캐시 (~3GB) |
+| `auto-meeting-stt-results` | /data/results | 세션 결과 JSON |
+| `auto-meeting-stt-certs` | /data/certs | SSL 인증서 |
+
+### 환경변수 (docker-compose.yml에서 설정)
+
+| 변수 | 기본값 | 설명 |
+|------|--------|------|
+| `OLLAMA_URL` | `http://ollama:11434/v1/chat/completions` | Ollama API |
+| `WHISPER_MODEL` | `large-v3` | Whisper 모델 |
+| `WHISPER_DEVICE` | `cpu` | STT 디바이스 (`cpu`/`cuda`) |
+| `CHUNK_SECONDS` | `15` | STT 누적 단위 (초) |
+
+### 파일 구조
+
+```
+auto_meeting/
+├── Dockerfile           # STT 서버 이미지
+├── docker-compose.yml   # 3개 서비스 오케스트레이션
+├── requirements.txt     # Python 의존성
+├── .dockerignore
+├── poc/
+│   ├── poc_realtime_stt.py       # STT 서버 (Docker에서 실행)
+│   ├── test_e2e_realtime_stt.py  # E2E 테스트 (24건)
+│   └── results/                  # 세션 결과 (로컬은 참조용)
+└── docs/
+    ├── firstlook.md
+    └── 00-prd/prd-auto-meeting.prd.md
+```
+
+> **삭제된 파일**: poc_websocket_server.py, poc_pipeline.py, poc_qwen_summary.py, poc_sensevoice.py, poc_whisper_korean.py — POC 실험 완료 후 혼동 방지를 위해 제거. 결과는 `poc/results/` JSON에 보존.
+
+## 10. 구현 상태
 
 | 항목 | 상태 | 비고 |
 |------|------|------|
-| PRD 작성 | 완료 | v1.0 |
+| PRD 작성 | 완료 | v1.4 |
 | 기술 스택 결정 | 완료 | faster-whisper + Whisper Large-v3 (CPU INT8) + Ollama/Qwen 3.5 |
-| Ollama 인프라 | 완료 | `C:\claude\vllm` (port 9000 가동 중) |
-| **POC: SenseVoice STT** | **완료** | RTF 0.05 (21x 실시간), CPU 1.87GB. **한국어 정확도 부적격 → 탈락** |
-| **POC: Whisper 비교** | **완료** | large-v3 채택 (RTF 0.22, 4.5x 실시간, 한국어 우수). ghost613 turbo 탈락 |
-| **POC: Qwen 요약** | **완료** | 3 시나리오 성공, 응답 7-21초, TTFT 6-15초 (thinking 모드) |
-| **POC: 통합 파이프라인** | **완료** | 텍스트 모드 E2E 24초, 요약 품질 우수 |
-| **POC: WebSocket 서버** | **수정 완료** | 4건 버그 수정 + STT 누적 전략 + E2E 검증 |
-| **STT 엔진 최종 선정** | **완료** | faster-whisper + Whisper Large-v3 (CPU INT8) |
+| Ollama 인프라 | 완료 | Docker Compose 통합 (port 11434) |
+| POC 검증 | 완료 | SenseVoice 탈락, ghost613 탈락, Whisper Large-v3 채택 |
+| **STT 서버 (Docker)** | **완료** | 코드 리뷰 12건 + 4건 추가 수정, E2E 24건 PASS |
+| **Docker 배포** | **완료** | Dockerfile + docker-compose.yml + 자동 재시작 |
 | 백엔드 (FastAPI) | 예정 | WebSocket + STT + LLM 통합 |
 | 프론트엔드 (React) | 예정 | 모니터 UI + 스마트폰 컨트롤 |
 | 통합 테스트 | 예정 | 실제 회의실 환경 검증 |
@@ -276,6 +339,7 @@ sequenceDiagram
 
 | 날짜 | 버전 | 변경 내용 | 변경 유형 | 결정 근거 |
 |------|------|-----------|----------|----------|
+| 2026-03-20 | v1.4 | Docker 전용 운영 전환. POC 실험 파일 6개 삭제, 코드 리뷰 16건 수정, 배포 섹션 추가 | TECH | 로컬/Docker 혼동 방지 + 상시 운영 설계 |
 | 2026-03-19 | v1.3 | WebSocket POC 4건 버그 수정 + 15초 누적 STT + Qwen 품질 판정. 리스크 R-008~R-012 추가 | TECH | 실제 스마트폰 테스트에서 발견된 연쇄 버그 해결 |
 | 2026-03-19 | v1.2 | STT 엔진 최종 선정: faster-whisper + Whisper Large-v3 (CPU INT8). ghost613 turbo/SenseVoice 탈락 | TECH | 2분 회의 오디오 3종 비교 POC 결과 |
 | 2026-03-19 | v1.1 | POC 검증 결과 반영 — SenseVoice 정확도 이슈, Qwen 요약 채택 | TECH | 실제 회의 오디오 STT 테스트 결과 |

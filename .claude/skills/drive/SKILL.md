@@ -1,7 +1,7 @@
 ---
 name: drive
 description: >
-  This skill should be used when the user needs AI-powered Google Drive file organization, deduplication, or folder restructuring.
+  AI-powered Google Drive file organization, deduplication, and folder restructuring. Triggers on "drive 정리", "드라이브", "파일 정리", "폴더 정리", "중복 제거". Use when organizing Drive files, detecting duplicates, auditing folder structure, or archiving old versions.
 version: 2.1.0
 
 triggers:

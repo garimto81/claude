@@ -2,7 +2,7 @@
 name: todo
 version: 1.1.0
 description: >
-  This skill should be used when the user needs to manage project todos with priorities, due dates, and progress tracking.
+  Manage project todos with priorities, due dates, and progress tracking. Triggers on "todo", "할 일", "tasks", "백로그". Use when creating, updating, listing, or completing project tasks with priority and deadline tracking.
 triggers:
   keywords:
     - "todo"

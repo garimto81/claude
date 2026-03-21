@@ -2,7 +2,7 @@
 name: chunk
 version: 1.1.0
 description: >
-  This skill should be used when the user needs to split PDF files using token-based (text) or page-based (layout-preserving) chunking strategies.
+  Split PDF files using token-based (text) or page-based (layout-preserving) chunking. Triggers on "chunk", "PDF 분할", "청킹". Use when processing large PDFs for LLM context, splitting by token count or page ranges.
 triggers:
   keywords:
     - "chunk"

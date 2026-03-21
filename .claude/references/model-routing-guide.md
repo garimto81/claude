@@ -178,10 +178,58 @@ STANDARD와 동일 + 병렬 executor 추가 + QA 5사이클.
 
 ---
 
+## Adaptive Model Routing (v25.1 — Task 자동 분류)
+
+Phase 0에서 Task 특성을 자동 분류하여 에이전트별 최적 모델을 결정합니다.
+
+### 분류 기준
+
+| 분류 | 감지 신호 | 기본 모델 | --eco 적용 시 |
+|------|----------|:---------:|:------------:|
+| **Trivial** | 파일 1개, 포맷/요약/오타/rename 키워드 | Haiku | Haiku |
+| **Standard** | 파일 2-5개, 일반 구현/리뷰 | Sonnet | Sonnet (--eco-2: Haiku) |
+| **Complex** | 파일 5+개, refactor/debug/design 키워드 | Opus | Sonnet |
+| **Critical** | architect/system/migration/breaking 키워드 | Opus | Opus (강제 유지) |
+
+### 감지 우선순위
+
+```
+1. 키워드 매칭 (최우선): Critical > Complex > Standard > Trivial
+2. 파일 수 (보조): 1개 → Trivial, 2-5개 → Standard, 5+개 → Complex
+3. 기본값: Standard (불확실 시)
+```
+
+### --eco 결합 규칙
+
+| Adaptive 결과 | --eco | --eco-2 | --eco-3 |
+|:------------:|:-----:|:-------:|:-------:|
+| Trivial | Haiku | Haiku | Haiku |
+| Standard | Sonnet | Haiku (비핵심) | Haiku |
+| Complex | Sonnet | Sonnet | Haiku |
+| Critical | Opus | Sonnet | Sonnet |
+
+> **Critical + --eco-3**: Sonnet까지만 다운그레이드 (Haiku 금지, 아키텍처 품질 보장).
+
+### InitContract 확장
+
+```json
+{
+  "adaptive_tier": "TRIVIAL | STANDARD | COMPLEX | CRITICAL",
+  "adaptive_signals": {
+    "file_count": 3,
+    "keywords": ["refactor"],
+    "eco_override": null
+  }
+}
+```
+
+---
+
 ## 버전 이력
 
 | 버전 | 변경 |
 |------|------|
+| v25.1 | Adaptive Model Routing — Task 자동 분류 + --eco 결합 규칙 |
 | v25.0 | Opus 5 / Sonnet 19 / Haiku 18 재배치. --eco-2, --eco-3 도입 |
 | v24.4 | Agent 정의 파일 model 필드 + Agent() model 오버라이드 확인 |
 | v24.3 | Opus 기본 모델 전환 |

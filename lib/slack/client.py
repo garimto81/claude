@@ -53,10 +53,12 @@ class RateLimiter:
         self.method_intervals = {
             "chat.postMessage": 3.0,      # Tier 2
             "chat.update": 3.0,           # Tier 2
-            "conversations.history": 1.2,  # Tier 3
+            "conversations.history": 2.0,  # Tier 3 (safe margin)
+            "conversations.replies": 2.0,  # Tier 3 (safe margin)
             "conversations.list": 3.0,     # Tier 2
             "users.info": 0.6,             # Tier 4
             "auth.test": 1.0,              # Default
+            "files.upload": 3.0,           # Tier 2
             "default": 1.0,
         }
         self.last_call: dict[str, float] = {}
@@ -140,7 +142,7 @@ class SlackClient:
         error_code = response.data.get("error", "unknown") if hasattr(response, 'data') else "unknown"
 
         if error_code == "ratelimited":
-            retry_after = int(response.headers.get("Retry-After", 30))
+            retry_after = int(response.headers.get("Retry-After", 10))
             raise SlackRateLimitError(retry_after)
         elif error_code == "channel_not_found":
             raise SlackChannelNotFoundError(error_code)
@@ -182,6 +184,43 @@ class SlackClient:
                 ts=response.data["ts"],
                 channel=response.data["channel"],
                 message=response.data.get("message"),
+            )
+        except SlackApiError as e:
+            self._handle_error(e)
+
+    def upload_file(
+        self,
+        channel: str,
+        file_path: str,
+        title: str = "",
+        initial_comment: str = "",
+    ) -> SendResult:
+        """
+        Upload a file to a channel.
+
+        Args:
+            channel: Channel ID (C...) or name
+            file_path: Local file path to upload
+            title: File title (optional)
+            initial_comment: Message text alongside the file (optional)
+
+        Returns:
+            SendResult
+        """
+        self._rate_limiter.wait_if_needed("files.upload")
+
+        try:
+            response = self._client.files_upload_v2(
+                channel=channel,
+                file=file_path,
+                title=title or Path(file_path).name,
+                initial_comment=initial_comment,
+            )
+
+            return SendResult(
+                ok=response.data.get("ok", True),
+                ts=response.data.get("file", {}).get("shares", {}).get("public", {}).get(channel, [{}])[0].get("ts", ""),
+                channel=channel,
             )
         except SlackApiError as e:
             self._handle_error(e)
@@ -262,6 +301,7 @@ class SlackClient:
                     channel=channel,
                     user=msg.get("user"),
                     thread_ts=msg.get("thread_ts"),
+                    reply_count=msg.get("reply_count", 0),
                     timestamp=datetime.fromtimestamp(float(msg["ts"])) if msg.get("ts") else None,
                 ))
 
@@ -306,6 +346,7 @@ class SlackClient:
                     channel=channel,
                     user=msg.get("user"),
                     thread_ts=msg.get("thread_ts"),
+                    reply_count=msg.get("reply_count", 0),
                     timestamp=datetime.fromtimestamp(float(msg["ts"])) if msg.get("ts") else None,
                     files=msg.get("files", []),
                 ))
@@ -331,28 +372,39 @@ class SlackClient:
         Returns:
             List of SlackChannel objects
         """
-        self._rate_limiter.wait_if_needed("conversations.list")
-
         types = "public_channel,private_channel" if include_private else "public_channel"
+        channels = []
+        cursor = None
 
         try:
-            response = self._client.conversations_list(
-                types=types,
-                exclude_archived=exclude_archived,
-            )
+            while True:
+                self._rate_limiter.wait_if_needed("conversations.list")
 
-            channels = []
-            for ch in response.data.get("channels", []):
-                channels.append(SlackChannel(
-                    id=ch["id"],
-                    name=ch["name"],
-                    is_private=ch.get("is_private", False),
-                    is_archived=ch.get("is_archived", False),
-                    is_member=ch.get("is_member", True),
-                    num_members=ch.get("num_members"),
-                    topic=ch.get("topic", {}).get("value") if isinstance(ch.get("topic"), dict) else None,
-                    purpose=ch.get("purpose", {}).get("value") if isinstance(ch.get("purpose"), dict) else None,
-                ))
+                params = {
+                    "types": types,
+                    "exclude_archived": exclude_archived,
+                    "limit": 200,
+                }
+                if cursor:
+                    params["cursor"] = cursor
+
+                response = self._client.conversations_list(**params)
+
+                for ch in response.data.get("channels", []):
+                    channels.append(SlackChannel(
+                        id=ch["id"],
+                        name=ch["name"],
+                        is_private=ch.get("is_private", False),
+                        is_archived=ch.get("is_archived", False),
+                        is_member=ch.get("is_member", False),
+                        num_members=ch.get("num_members"),
+                        topic=ch.get("topic", {}).get("value") if isinstance(ch.get("topic"), dict) else None,
+                        purpose=ch.get("purpose", {}).get("value") if isinstance(ch.get("purpose"), dict) else None,
+                    ))
+
+                cursor = response.data.get("response_metadata", {}).get("next_cursor")
+                if not cursor:
+                    break
 
             return channels
         except SlackApiError as e:

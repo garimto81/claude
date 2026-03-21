@@ -1,7 +1,7 @@
 ---
 name: overlay-fallback
 description: >
-  This skill should be used when image analysis or overlay element detection fails, guiding users to coord_picker.html manual annotation tool.
+  Fallback guide when image analysis or overlay element detection fails. Triggers on overlay detection failure (T-1 through T-5). Guides users to coord_picker.html manual annotation tool for precise UI element coordinate mapping.
 version: 1.0.0
 triggers:
   keywords:

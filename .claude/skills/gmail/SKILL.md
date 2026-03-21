@@ -1,7 +1,7 @@
 ---
 name: gmail
 description: >
-  This skill should be used when the user requests Gmail operations like reading inbox, sending emails, searching messages, or managing labels via OAuth 2.0.
+  Gmail operations — read inbox, send emails, search messages, manage labels via OAuth 2.0. Triggers on "gmail", "메일", "이메일", "inbox". Use when reading, sending, searching Gmail messages, or managing email labels and drafts.
 version: 1.0.0
 triggers:
   keywords:
