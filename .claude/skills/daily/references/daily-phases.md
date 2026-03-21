@@ -1,107 +1,161 @@
-# Daily 9-Phase Pipeline (상세 참조)
+# Daily 4-Phase Pipeline (상세 참조)
 
-> 이 문서는 `daily` 스킬의 9-Phase Pipeline 상세 가이드입니다.
+> 이 문서는 `daily` 스킬 v4.0의 4-Phase Pipeline 상세 가이드입니다.
 
-## Phase 0: Config Bootstrap
+## Phase 0: Snapshot Check
 
-`.project-sync.yaml` 탐색. 없으면 자동 생성:
-1. CLAUDE.md/README.md/디렉토리명으로 프로젝트 식별
-2. Gmail/Slack/GitHub 인증 상태 확인
-3. 프로젝트 타입 자동 분류 (vendor_management / development / infrastructure / research / content)
+스냅샷 DB 존재 여부 확인 → 없으면 자동 생성.
 
-Write `.project-sync.yaml` v2.0:
-```yaml
-version: "2.0"
-project_name: "{auto-detected}"
-meta:
-  auto_generated: true
-  confidence: 0.0-1.0
-daily:
-  sources:
-    gmail: { enabled: true/false }
-    slack: { enabled: true/false, channel_id: "{fuzzy-matched}" }
-    github: { enabled: true/false, repo: "{from git remote}" }
-  project_type: "{auto-classified}"
+```bash
+# 1. JSON 출력으로 스냅샷 확인
+cd C:\claude\secretary
+python -m scripts.work_tracker summary --json --date {today}
+# → snapshots 배열이 비어있으면 스냅샷 생성 필요
+
+# 2. 스냅샷 생성 (최초 1회, 이후 주 1회 권장)
+python -m scripts.work_tracker snapshot
+# → 전체 레포 스캔 + GitHub 수집 → DB 저장
+# → 출력: 프로젝트별 진행률, PRD 건수, 문서 건수
+
+# 3. 특정 프로젝트만 갱신
+python -m scripts.work_tracker snapshot --project EBS
 ```
 
-## Phase 1: Expert Context Loading
+스냅샷 데이터 구조:
+- `project`: 프로젝트명 (EBS, WSOPTV, Secretary 등)
+- `repos`: 관련 레포 목록
+- `github_open_issues`: 오픈 이슈 목록
+- `github_open_prs`: 오픈 PR 목록
+- `github_attention`: 주의 필요 항목
+- `prd_status`: PRD 파일별 완료/진행 중/예정 현황
+- `estimated_progress`: PRD 기반 진행률 (0-100%)
+- `active_branches`: 활성 브랜치 목록
+
+갱신 주기:
+- 7일+ 경과 시 "스냅샷 갱신 권장" 알림
+- 자동 갱신은 하지 않음 (수동 `snapshot` 명령)
+
+## Phase 1: Delta Collection
+
+당일 커밋만 증분 수집.
+
+```bash
+# 당일 커밋 수집 → DB 저장
+python -m scripts.work_tracker collect --date {today}
+# → stdout: "{N}건 수집, {M}건 신규"
+# → Stream 자동 감지 포함
+```
+
+수집 데이터:
+- `daily_commits`: 당일 커밋 (repo, hash, type, scope, message, author, timestamp, stats)
+- `work_streams`: 감지된 Work Stream (branch/scope/path 기반)
+
+## Phase 2: Claude Analysis
+
+Claude Code가 스냅샷 + 당일 delta를 직접 분석합니다.
+
+```bash
+# JSON 데이터 로드 (Claude Code가 읽을 데이터)
+python -m scripts.work_tracker summary --json --date {today}
+```
+
+JSON 출력 구조:
+```json
+{
+  "summary": {
+    "date": "2026-03-18",
+    "total_commits": 5,
+    "total_insertions": 200,
+    "total_deletions": 50,
+    "project_distribution": {"EBS": 60, "WSOPTV": 40},
+    "progress_by_project": {"EBS": 75, "WSOPTV": 40}
+  },
+  "commits": [...],
+  "streams": [...],
+  "snapshots": [
+    {
+      "project": "EBS",
+      "estimated_progress": 75,
+      "prd_status": [...],
+      "github_open_issues": [...],
+      "github_open_prs": [...],
+      "active_branches": [...]
+    }
+  ]
+}
+```
+
+### Claude Code 분석 항목
+
+| # | 항목 | 소스 | 개수 |
+|---|------|------|------|
+| 1 | 하이라이트 | 당일 커밋 기반 주요 성과 | 3개 |
+| 2 | 프로젝트별 진행률 | 스냅샷 baseline + 당일 delta | 프로젝트 수 |
+| 3 | 다음 주 예측 | 활성 브랜치 + 최근 패턴 | 3개 |
+| 4 | 다음 할 일 | 오픈 이슈 + 미완료 스트림 | 3개 |
+| 5 | GitHub 주의 항목 | attention 배열 | 최대 5개 |
+
+### 분석 결과 저장
+
+```bash
+# 프로젝트별 분석 결과를 DB에 저장
+python -m scripts.work_tracker update-analysis \
+  --project EBS \
+  --progress 80 \
+  --summary "PRD 4/5 완료, Flutter 앱 포팅 진행 중"
+```
+
+## Phase 3: Report + State Update
+
+Slack 포맷 생성 + 전송 + 수집 커서 갱신.
+
+```bash
+# 미리보기 (dry-run, 기본)
+python -m scripts.work_tracker post
+
+# 실제 Slack 전송
+python -m scripts.work_tracker post --confirm
+
+# 주간 롤업
+python -m scripts.work_tracker post --weekly --confirm
+```
+
+### 출력 형식
 
 ```
-Tier 1 Identity (500t): CLAUDE.md + .project-sync.yaml -> 프로젝트명, 목표, 기술 스택
-Tier 2 Operational (2000t): .claude/context/daily-state/<project>/knowledge/snapshots/latest.json
-Tier 3 Deep (3000t): docs/ 핵심 문서 (README, PRD, 아키텍처)
-```
+:memo: *일일 업무 현황* — 2026-03-18 (화)
 
-## Phase 2: Incremental Data Collection
+*:chart_with_upwards_trend: 오늘의 성과*
+• 커밋: 12건 (EBS 8 / WSOPTV 3 / Secretary 1)
+• 변경: +342 / -128 lines
+• 문서 비율: 45%
 
-**인증 확인** -> 실패 소스 skip, 활성 0개면 중단
+*:briefcase: EBS*
+• `ui_overlay` — overlay 분석 파이프라인 개선 (3 commits)
+• `ebs` — GFX 탭 UI 컴포넌트 정리 (5 commits)
 
-| 소스 | 초회 | 증분 |
-|------|------|------|
-| Gmail | 7일 lookback + historyId 시딩 | History API (404 -> list fallback) |
-| Slack | 7일 lookback | last_ts 이후 |
-| GitHub | `gh issue/pr list` | `--since "{last_check}"` |
+*:bar_chart: 프로젝트 진행률*
+• EBS: ████████░░ 80%
+• WSOPTV: ████░░░░░░ 40%
 
-## Phase 3: Attachment Analysis
+*:sparkles: 하이라이트*
+• EBS UI overlay 분석 파이프라인 리팩토링 완료
+• WSOPTV OTT Phase 3 네비게이션 구조 설계
+• Secretary Work Tracker Snapshot+Delta 전환
 
-대상: PDF, Excel, 이미지. SHA256 캐시로 재분석 방지.
+*:dart: 활성 Work Stream*
+• ui_overlay 분석 (20일째, 진행 중)
+• OTT 기획서 (전 기간, 진행 중)
 
-| 타입 | 방법 |
-|------|------|
-| PDF 20p 이하 | Claude Read tool 직접 분석 |
-| PDF 20p 초과 | `lib/pdf_utils` 청크 분할 |
-| Excel/CSV | 구조 요약 (행/열, 헤더, 샘플 5행) |
-| 이미지 | Claude Vision 분석 |
+*:calendar: 다음 할 일*
+• ui_overlay overlay-samples.html 재작성
+• OTT Phase 3 스트리밍 인프라 설계
+• Work Tracker E2E 테스트 작성
 
-분석 관점: vendor -> 견적서/금액/조건, dev -> API 스펙/변경점
+*:crystal_ball: 다음 주 예측*
+• EBS Flutter 앱 포팅 완료 예상
+• WSOPTV Academy 홈페이지 1차 배포
+• Secretary daily v4.0 안정화
 
-## Phase 4: AI Cross-Source Analysis
-
-1. 소스별 독립 분석 (Gmail 긴급도, Slack 의사결정, GitHub PR/이슈)
-2. 크로스소스 연결 (동일 주제, 액션 연결, 상태 불일치, 타임라인)
-3. 이전 이벤트 컨텍스트 주입 (snapshots/latest.json)
-
-## Phase 5: Action Recommendation
-
-| 액션 유형 | 생성 조건 |
-|----------|----------|
-| 이메일 회신 초안 | 미응답 48h+, 견적 수신 |
-| Slack 메시지 초안 | 미응답 질문, follow-up |
-| GitHub 액션 | PR 리뷰 대기 3일+, 이슈 미응답 |
-
-톤 캘리브레이션: `communication_style` 참조. 최대 10건, URGENT->HIGH->MEDIUM 정렬.
-
-## Phase 6: Project-Specific Operations
-
-**vendor_management**: Slack Lists 갱신, 업체 상태 전이, 견적 비교표
-**development**: CI/CD 상태, 브랜치 상태, 마일스톤 진행률
-
-## Phase 7: Gmail Housekeeping
-
-라벨 자동 적용 (`gmail_label_auto: true`) + INBOX 정리 (`auto`/`confirm`/`skip`)
-
-## Phase 8: State Update & Knowledge Layer
-
-**8A**: 커서 갱신 (Gmail historyId, Slack last_ts, GitHub last_check)
-**8B**: Knowledge 갱신 (Entity/Relationship/Pattern/Event)
-**8C**: Snapshot (latest.json ~1300t) + 일별 Snapshot (7일 보존) + Eviction (6개월 초과)
-
-상세: `docs/01-plan/knowledge-layer.plan.md`
-
-## 출력 형식
-
-```
-================================================================================
-                   Daily Dashboard v3.0 (YYYY-MM-DD Day)
-                   프로젝트: {project_identity}
-================================================================================
-
-[소스 현황] Gmail: {N}건 / Slack: {N}건 / GitHub: 이슈 {N}, PR {N}
-[크로스 소스 인사이트] {topic}: {insight} (소스: Gmail+Slack)
-[액션 아이템] URGENT ({N}건) / HIGH ({N}건) - 각 초안+소요시간
-[소스별 상세] Gmail / Slack / GitHub 각 상세
-[첨부파일 분석] {filename}: {summary}
-
-총 액션: {total}건 | 예상 소요: 약 {total_time}분
-================================================================================
+총 커밋: 12건 | 프로젝트: 3개 | 활성 스트림: 5개
 ```

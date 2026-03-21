@@ -1,7 +1,7 @@
 ---
 name: check
 description: >
-  This skill should be used when the user requests code quality checks, security audits, lint, type checks, or QA cycles.
+  Comprehensive code quality and security checks — lint, type checks, security scans, QA cycles. Triggers on "check", "lint", "검사", "품질", "security", "QA". Use when running code quality analysis, fixing lint errors, performing security audits, or executing multi-level QA passes.
 version: 2.0.0
 triggers:
   keywords:

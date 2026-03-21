@@ -1,7 +1,7 @@
 ---
 name: debug
 description: >
-  This skill should be used when the user needs hypothesis-verification based debugging with structured Phase Gate D0-D4.
+  Hypothesis-verification debugging with structured Phase Gate D0-D4. Triggers on "debug", "디버그", "버그", "오류 추적", "에러 원인". Use when encountering bugs, test failures, or unexpected behavior needing systematic root cause analysis.
 version: 2.0.0
 triggers:
   keywords:

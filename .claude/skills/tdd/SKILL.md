@@ -1,7 +1,7 @@
 ---
 name: tdd
 description: >
-  This skill should be used when the user requests Test-Driven Development guidance with Red-Green-Refactor discipline.
+  Test-Driven Development guidance with Red-Green-Refactor discipline. Triggers on "tdd", "TDD", "테스트 먼저", "Red Green Refactor". Use when implementing features with test-first methodology, ensuring 80%+ coverage through disciplined TDD cycles.
 version: 2.0.0
 triggers:
   keywords:

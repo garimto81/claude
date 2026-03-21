@@ -1,7 +1,7 @@
 ---
 name: mockup-hybrid
 description: >
-  This skill should be used when the user needs UI mockups via 3-Tier hybrid system: Mermaid diagrams, HTML wireframes, or Google Stitch AI.
+  UI mockups via 3-Tier hybrid system — Mermaid diagrams, HTML wireframes, or Google Stitch AI. Triggers on "mockup", "목업", "wireframe", "와이어프레임", "UI 설계". Use when creating UI mockups, wireframes, or visual prototypes with automatic tier routing.
 version: 2.0.0
 
 triggers:
@@ -88,9 +88,13 @@ auto_trigger: true
 | HTML | 화면, UI, 레이아웃, 페이지, 대시보드, 폼, 카드, 사이드바, 와이어프레임 | `.html` + `.png` |
 | Stitch | 프레젠테이션, 고품질, 최종, 데모, 발표, 리뷰용, 이해관계자 | `.html` + `.png` (HiFi) |
 
-3. **컨텍스트** — `--prd=PRD-NNNN` → Stitch, `--screens=3+` → HTML
-4. **환경** — Stitch API 불가 → HTML
-5. **기본값** → HTML
+3. **프로젝트 타입 감지** (자동)
+   - Quasar 프로젝트 감지 시 (`package.json` quasar dep 또는 `quasar.config.*`) → `style="quasar"` 자동 적용 (명시적 `--quasar` 불필요)
+   - React/Next.js 프로젝트 감지 시 → 기존 HTML B&W Refined Minimal (향후 React 스타일 확장 가능)
+
+4. **컨텍스트** — `--prd=PRD-NNNN` → Stitch, `--screens=3+` → HTML
+5. **환경** — Stitch API 불가 → HTML
+6. **기본값** → HTML
 
 ## Mermaid 다이어그램 타입
 

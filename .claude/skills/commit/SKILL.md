@@ -1,7 +1,7 @@
 ---
 name: commit
 description: >
-  This skill should be used when the user requests git commits in Conventional Commit format with optional push.
+  Create git commits in Conventional Commit format with optional push. Triggers on "commit", "커밋", "git commit", "push". Use when the user wants to save work, create a commit message, or push changes to remote.
 version: 2.0.0
 triggers:
   keywords:

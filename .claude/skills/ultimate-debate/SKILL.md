@@ -1,7 +1,7 @@
 ---
 name: ultimate-debate
 description: >
-  This skill should be used when the user requests 3-AI parallel analysis and consensus judgment for complex decisions.
+  3-AI parallel analysis and consensus judgment for complex decisions. Triggers on "debate", "토론", "의사결정", "합의". Use when facing complex architectural or strategic decisions that benefit from multiple AI perspectives.
 version: 2.0.0
 triggers:
   keywords:

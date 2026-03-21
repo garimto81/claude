@@ -1,7 +1,7 @@
 ---
 name: supabase-integration
 description: >
-  This skill should be used when the user needs Supabase project setup, database design, RLS policies, Edge Functions, or auth integration.
+  Supabase project setup, database design, RLS policies, Edge Functions, auth. Triggers on "supabase", "수파베이스", "RLS", "Edge Function", "database". Use when designing schemas, configuring RLS, creating Edge Functions, or integrating auth.
 version: 2.0.0
 
 triggers:

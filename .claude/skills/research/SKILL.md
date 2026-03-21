@@ -1,7 +1,7 @@
 ---
 name: research
 description: >
-  This skill should be used when the user requests codebase analysis, external research, or AI-powered code review (RPI Phase 1).
+  Codebase analysis, external web research, and AI-powered code review (RPI Phase 1). Triggers on "research", "리서치", "조사", "분석". Use when analyzing codebase patterns, searching external docs, reviewing code architecture, or planning implementations.
 version: 2.0.0
 triggers:
   keywords:

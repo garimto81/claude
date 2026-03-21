@@ -70,13 +70,22 @@ JSON 결과에 `snapshots` 배열 확인:
 
 ### Phase 1: Delta Collection
 
+**Step 1.1**: git log 수집 (기존)
 ```bash
 python -m scripts.work_tracker collect --date {today}
 ```
 
 stdout에서 수집 결과 확인:
-- `{N}건 수집, {M}건 신규` → Phase 2로
-- `커밋 없음` → 스냅샷 기반 현황만 보고
+- `{N}건 수집, {M}건 신규` → Step 1.2로
+- `커밋 없음` → Step 1.2로 (fs 변경만으로도 활동 감지 가능)
+
+**Step 1.2**: 파일시스템 변경 감지 (신규)
+```bash
+python -m scripts.work_tracker changes --days 1
+```
+
+git 없는 디렉토리(ebs_ui, figma 등)도 파일 크기/수정시간 변화로 활동 감지.
+결과를 Phase 2 분석에 포함하여 **전체 프로젝트 활동** 파악.
 
 ### Phase 2: Claude 분석 — 3시제 점검
 

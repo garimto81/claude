@@ -1,7 +1,7 @@
 ---
 name: create
 description: >
-  This skill should be used when the user requests creation of PRDs, pull requests, or documentation artifacts.
+  Create PRDs, pull requests, or documentation artifacts. Triggers on "create prd", "create pr", "문서 생성", "PRD 작성". Use when generating new PRD documents, creating GitHub pull requests, or scaffolding documentation.
 version: 1.1.0
 triggers:
   keywords:

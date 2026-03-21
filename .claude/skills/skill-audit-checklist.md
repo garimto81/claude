@@ -6,7 +6,7 @@
 
 | # | 기준 | 설명 |
 |:-:|------|------|
-| Q1 | API 정합성 | `Agent()` 호출 (Task 금지), `model=` 파라미터 없음, `description` 필수 |
+| Q1 | API 정합성 | `Agent()` 호출 (Task 금지), `description` 필수, `model=` 선택적 오버라이드 허용 |
 | Q2 | 실행 가능성 | SKILL.md만으로 실행 가능한 지시 포함 ("참조하세요"만 금지) |
 | Q3 | Description 품질 | 영문 description이 트리거 정확도에 기여하는지 |
 | Q4 | Trigger 키워드 | 한글/영문 키워드 충분, 오탐/미탐 최소화 |

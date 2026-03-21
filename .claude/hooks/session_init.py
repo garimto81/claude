@@ -383,6 +383,45 @@ def check_fatigue_signals(ttl_hours: int = 24) -> list[str]:
     return warnings
 
 
+def check_pending_backlog() -> list[str]:
+    """프로젝트 백로그에서 PENDING 항목 표시"""
+    warnings = []
+    backlog_path = ROOT_PROJECT_DIR / "docs" / "backlog.md"
+
+    if not backlog_path.exists():
+        return warnings
+
+    try:
+        content = backlog_path.read_text(encoding="utf-8")
+
+        # ## PENDING 섹션 추출 (## IN_PROGRESS 또는 ## DONE 전까지)
+        pending_start = content.find("## PENDING")
+        if pending_start == -1:
+            return warnings
+
+        pending_end = len(content)
+        for marker in ["## IN_PROGRESS", "## DONE"]:
+            idx = content.find(marker, pending_start + 10)
+            if idx != -1 and idx < pending_end:
+                pending_end = idx
+
+        pending_section = content[pending_start + len("## PENDING"):pending_end].strip()
+
+        if pending_section and "미처리 요구사항 없음" not in pending_section:
+            # ### [B-NNN] 형식의 항목 수 카운트
+            items = [line for line in pending_section.split("\n") if line.startswith("### [B-")]
+            if items:
+                warnings.append(f"📋 미처리 백로그 {len(items)}건:")
+                for item in items[:5]:
+                    warnings.append(f"   {item.lstrip('#').strip()}")
+                if len(items) > 5:
+                    warnings.append(f"   ... 외 {len(items) - 5}건")
+    except Exception:
+        pass
+
+    return warnings
+
+
 def check_prd_sync_status() -> list[str]:
     """최근 구현 커밋에 대한 PRD 업데이트 여부 감지
 
@@ -532,6 +571,7 @@ def main():
         stale_messages.extend(cleanup_stale_global_todos(ttl_hours=2))
         stale_messages.extend(cleanup_orphan_agent_teams())
         stale_messages.extend(check_fatigue_signals(ttl_hours=24))
+        stale_messages.extend(check_pending_backlog())
         stale_messages.extend(check_prd_sync_status())
         stale_messages.extend(verify_agent_loading())
 

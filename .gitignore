@@ -53,6 +53,7 @@
 .claude/settings.local.json
 .claude/session_state.json
 .claude/auto-logs/
+.claude/hooks/.*.json
 .claude/logs/
 .claude/worktrees/
 .claude/ralph-loop.local.md

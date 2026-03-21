@@ -22,6 +22,38 @@ except ImportError:
     pass
 
 
+# CSS 정규화: 캡처 직전 주입하여 viewport/콘텐츠 크기 불일치 원천 차단
+CAPTURE_CSS = """
+html, body {
+    margin: 0 !important;
+    padding: 0 !important;
+    height: auto !important;
+    min-height: 0 !important;
+    max-height: none !important;
+    overflow: visible !important;
+    background: transparent !important;
+}
+/* Quasar 레이아웃 min-height 무력화 */
+.q-layout, .q-page-container, .q-page,
+.q-layout__section--marginal {
+    min-height: 0 !important;
+    height: auto !important;
+}
+/* container max-height 해제 */
+.container, #q-app, [class*="wrapper"], [class*="app"] {
+    max-height: none !important;
+    height: auto !important;
+    min-height: 0 !important;
+}
+"""
+
+
+def _inject_capture_css(page) -> None:
+    """캡처 직전 CSS 정규화 주입 — margin/padding/min-height/배경색 강제 초기화"""
+    page.add_style_tag(content=CAPTURE_CSS)
+    page.wait_for_timeout(100)  # reflow 대기
+
+
 def save_html(
     content: str,
     output_path: Path,
@@ -107,13 +139,8 @@ def _capture_with_auto_size(
     """
     Playwright Python SDK로 콘텐츠 크기에 맞춰 자동 캡처
 
-    전략 우선순위:
-    1. selector 파라미터 → 해당 요소만 캡처
-    2. body 첫 번째 자식 요소 → element.screenshot() (정확한 콘텐츠 영역)
-    3. 폴백 → body.getBoundingClientRect()로 크기 측정 후 캡처
-
-    NOTE: scrollHeight는 viewport 크기 이상을 반환하므로 사용하지 않는다.
-    element.screenshot()이 요소의 렌더링된 bounding box만 정확히 캡처한다.
+    전략: CSS 정규화 주입 → 래퍼 요소 탐지 → element.screenshot()
+    사전 정규화로 viewport/콘텐츠 불일치를 원천 차단한다.
     """
     try:
         from playwright.sync_api import sync_playwright
@@ -123,19 +150,20 @@ def _capture_with_auto_size(
                 headless=True,
                 args=["--disable-gpu", "--no-sandbox", "--disable-dev-shm-usage"],
             )
-            # 초기 viewport: 콘텐츠 로드용 (CSS max-width/max-height가 렌더링 크기 제어)
             context = browser.new_context(
                 viewport={"width": 720, "height": 800},
                 device_scale_factor=1,
             )
             page = context.new_page()
 
-            # file:// URL로 변환
             file_url = html_path.resolve().as_uri()
             page.goto(file_url)
             page.wait_for_load_state("networkidle")
 
-            # === 전략 1: selector 파라미터 사용 ===
+            # CSS 정규화 주입 — min-height/배경색/overflow 강제 초기화
+            _inject_capture_css(page)
+
+            # === selector 지정 시: 해당 요소 직접 캡처 ===
             if selector:
                 element = page.query_selector(selector)
                 if element:
@@ -143,49 +171,39 @@ def _capture_with_auto_size(
                     browser.close()
                     logger.info(f"스크린샷 캡처 (selector: {selector}): {image_path}")
                     return image_path
-                logger.warning(f"선택자 '{selector}'를 찾을 수 없음, .container 탐색")
+                logger.warning(f"선택자 '{selector}'를 찾을 수 없음, 래퍼 탐색")
 
-            # === 전략 2: body 첫 번째 자식 요소 캡처 ===
-            # .app, .wrapper 등 최상위 래퍼를 클래스명 무관하게 찾음
-            root_element = page.query_selector("body > *:first-child")
-            if root_element:
-                root_element.screenshot(path=str(image_path))
+            # === 래퍼 요소 자동 탐지 → element.screenshot() ===
+            target = page.query_selector("#q-app") or page.query_selector("body > *:first-child")
+            if target:
+                dimensions = page.evaluate("""
+                    (el) => {
+                        const rect = el.getBoundingClientRect();
+                        return {
+                            width: Math.ceil(rect.width),
+                            height: Math.ceil(rect.height),
+                            outerWidth: Math.ceil(el.offsetWidth),
+                            outerHeight: Math.ceil(el.offsetHeight)
+                        };
+                    }
+                """, target)
+                logger.info(
+                    f"래퍼 크기: {dimensions.get('outerWidth', '?')}x{dimensions.get('outerHeight', '?')}"
+                )
+                target.screenshot(path=str(image_path))
                 browser.close()
-                logger.info(f"스크린샷 캡처 (root element): {image_path}")
+                logger.info(f"스크린샷 캡처 (래퍼 element): {image_path}")
                 return image_path
 
-            # === 전략 3: CSS 제약 해제 후 실제 콘텐츠 크기 측정 ===
+            # === 최후 수단: page.screenshot() (element가 없는 경우만) ===
             dimensions = page.evaluate("""
                 () => {
-                    const body = document.body;
-                    const html = document.documentElement;
-
-                    // 원래 스타일 저장
-                    const origBodyMaxH = body.style.maxHeight;
-                    const origBodyOverflow = body.style.overflow;
-                    const origHtmlMaxH = html.style.maxHeight;
-                    const origHtmlOverflow = html.style.overflow;
-
-                    // CSS max-height/overflow 제약 임시 해제
-                    body.style.maxHeight = 'none';
-                    body.style.overflow = 'visible';
-                    html.style.maxHeight = 'none';
-                    html.style.overflow = 'visible';
-
-                    // 실제 콘텐츠 크기 측정
-                    const rect = body.getBoundingClientRect();
-                    const scrollW = Math.max(rect.width, body.scrollWidth);
-                    const scrollH = Math.max(rect.height, body.scrollHeight);
-
-                    // 스타일 복원
-                    body.style.maxHeight = origBodyMaxH;
-                    body.style.overflow = origBodyOverflow;
-                    html.style.maxHeight = origHtmlMaxH;
-                    html.style.overflow = origHtmlOverflow;
-
+                    const wrapper = document.body.firstElementChild;
+                    if (!wrapper) return { width: 720, height: 600 };
+                    const rect = wrapper.getBoundingClientRect();
                     return {
-                        width: Math.ceil(scrollW),
-                        height: Math.ceil(scrollH)
+                        width: Math.ceil(rect.width),
+                        height: Math.ceil(rect.height)
                     };
                 }
             """)
@@ -193,16 +211,13 @@ def _capture_with_auto_size(
             content_width = max(min(int(dimensions['width']), 720), 50)
             content_height = max(min(int(dimensions['height']), 1280), 50)
 
-            logger.info(f"콘텐츠 크기 감지 (폴백): {content_width}x{content_height}")
-
-            # viewport를 콘텐츠 크기에 맞게 조정
             page.set_viewport_size({"width": content_width, "height": content_height})
             page.wait_for_timeout(100)
 
             page.screenshot(path=str(image_path), full_page=False)
             browser.close()
 
-            logger.info(f"스크린샷 캡처 (폴백 auto_size): {image_path} [{content_width}x{content_height}]")
+            logger.info(f"스크린샷 캡처 (page fallback): {image_path} [{content_width}x{content_height}]")
             return image_path
 
     except ImportError:
@@ -214,7 +229,10 @@ def _capture_with_auto_size(
 
 
 def _validate_capture(image_path: Path, max_whitespace_ratio: float = 0.4) -> bool:
-    """캡처 이미지의 하단 공백 비율 검증
+    """캡처 이미지의 4방향 여백 비율 검증
+
+    상하좌우 가장자리 영역에서 단일 색상(배경) 비율이 임계값을 초과하면 공백 과다로 판정.
+    background: transparent 주입 후에는 투명 픽셀도 공백으로 인식한다.
 
     Args:
         image_path: 검증할 이미지 경로
@@ -226,32 +244,45 @@ def _validate_capture(image_path: Path, max_whitespace_ratio: float = 0.4) -> bo
     try:
         from PIL import Image
     except ImportError:
-        return True  # Pillow 없으면 항상 통과 (soft dependency)
+        return True
 
     try:
-        img = Image.open(image_path)
+        img = Image.open(image_path).convert("RGBA")
         width, height = img.size
 
-        # 하단 30% 영역 검사
-        check_height = int(height * 0.3)
-        if check_height < 10:
+        if width < 20 or height < 20:
             return True
 
-        bottom_region = img.crop((0, height - check_height, width, height))
-        pixels = list(bottom_region.getdata())
+        def _edge_whitespace_ratio(region) -> float:
+            """영역 내 가장 많은 색상(배경)의 비율 계산.
+            투명 픽셀은 무시하고 불투명 픽셀만으로 단색 비율을 판단한다.
+            (CSS background:transparent 주입 시 투명 영역은 의도된 여백)"""
+            pixels = list(region.getdata())
+            if not pixels:
+                return 0.0
+            from collections import Counter
+            # 투명 픽셀(alpha=0)은 의도된 여백이므로 제외
+            opaque = [p for p in pixels if p[3] > 0]
+            if not opaque:
+                return 0.0  # 전부 투명이면 유효 컨텐츠 없음 → 통과
+            color_counts = Counter(opaque)
+            _, most_common_count = color_counts.most_common(1)[0]
+            return most_common_count / len(opaque)
 
-        if not pixels:
-            return True
+        # 4방향 가장자리 15% 영역 검사
+        margin = 0.15
+        edges = {
+            "top": img.crop((0, 0, width, int(height * margin))),
+            "bottom": img.crop((0, height - int(height * margin), width, height)),
+            "left": img.crop((0, 0, int(width * margin), height)),
+            "right": img.crop((width - int(width * margin), 0, width, height)),
+        }
 
-        # 가장 많은 색상 = 배경색으로 추정
-        from collections import Counter
-        color_counts = Counter(pixels)
-        most_common_color, most_common_count = color_counts.most_common(1)[0]
-
-        ratio = most_common_count / len(pixels)
-        if ratio > max_whitespace_ratio:
-            logger.warning(f"하단 공백 비율 {ratio:.1%} > {max_whitespace_ratio:.0%}")
-            return False
+        for direction, region in edges.items():
+            ratio = _edge_whitespace_ratio(region)
+            if ratio > max_whitespace_ratio:
+                logger.warning(f"{direction} 공백 비율 {ratio:.1%} > {max_whitespace_ratio:.0%}")
+                return False
         return True
     except Exception as e:
         logger.warning(f"캡처 검증 실패 (무시): {e}")
@@ -424,12 +455,14 @@ def get_output_paths(
     return html_path, image_path
 
 
-def capture_url(url: str, delay_ms: int = 5000,
+def capture_url(url: str, output_path: str | Path = "",
+                delay_ms: int = 5000,
                 width: int = 720, height: int = 1280) -> bool:
     """URL 기반 Playwright headless 캡처 (구 figma_headless_capture 대체)
 
     Args:
         url: 캡처할 URL (http/https/file)
+        output_path: 스크린샷 저장 경로 (.png). 미지정 시 URL 기반 자동 생성.
         delay_ms: 페이지 로드 후 대기 시간 (ms)
         width: 뷰포트 너비
         height: 뷰포트 높이
@@ -462,7 +495,19 @@ def capture_url(url: str, delay_ms: int = 5000,
                 page.goto(url)
                 page.wait_for_load_state("networkidle")
                 page.wait_for_timeout(delay_ms)
-                logger.info(f"URL 캡처 완료: {url[:80]}...")
+
+                # 출력 경로 결정
+                if not output_path:
+                    import re as _re
+                    from urllib.parse import urlparse
+                    parsed = urlparse(url)
+                    safe = _re.sub(r'[^\w\-.]', '_', parsed.path.strip('/') or 'capture')
+                    output_path = Path.cwd() / f"{safe}.png"
+                output_path = Path(output_path)
+                output_path.parent.mkdir(parents=True, exist_ok=True)
+
+                page.screenshot(path=str(output_path), full_page=True)
+                logger.info(f"URL 캡처 완료: {url[:80]} -> {output_path}")
                 return True
             finally:
                 browser.close()

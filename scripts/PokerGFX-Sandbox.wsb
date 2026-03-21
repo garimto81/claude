@@ -1,0 +1,20 @@
+<Configuration>
+  <MappedFolders>
+    <MappedFolder>
+      <HostFolder>C:\Users\AidenKim\Downloads</HostFolder>
+      <SandboxFolder>C:\Users\WDAGUtilityAccount\Downloads</SandboxFolder>
+      <ReadOnly>true</ReadOnly>
+    </MappedFolder>
+    <MappedFolder>
+      <HostFolder>C:\Program Files\PokerGFX</HostFolder>
+      <SandboxFolder>C:\PokerGFX</SandboxFolder>
+      <ReadOnly>true</ReadOnly>
+    </MappedFolder>
+  </MappedFolders>
+  <LogonCommand>
+    <Command>C:\Users\WDAGUtilityAccount\Downloads\PokerGFX-Server-3.2.985.exe</Command>
+  </LogonCommand>
+  <MemoryInMB>8192</MemoryInMB>
+  <vGPU>Enable</vGPU>
+  <Networking>Enable</Networking>
+</Configuration>

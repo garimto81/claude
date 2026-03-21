@@ -64,6 +64,16 @@ Mermaid/PNG/SVG 금지. 상세: `.claude/rules/11-ascii-diagram.md`
 
 ---
 
+# ASCII-First UI Workflow (프로젝트 조건부)
+
+프로젝트 CLAUDE.md에 "UI Design Workflow" + "ASCII 목업" 규칙이 있으면:
+1. HTML 목업 코드 작성 전, 터미널에 ASCII 레이아웃 출력
+2. ASCII는 65자 폭, 실제 비율 근사 반영
+3. 사용자 승인 후 HTML 구현 진행
+4. 승인 없이 HTML 구현 진입 금지
+
+---
+
 # B&W Refined Minimal (HTML 목업 기본 스타일)
 
 HTML 목업 생성 시 항상 적용. `--bnw` 플래그는 deprecated (하위 호환용).

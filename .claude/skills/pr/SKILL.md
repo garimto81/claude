@@ -1,7 +1,7 @@
 ---
 name: pr
 description: >
-  This skill should be used when the user requests PR review, improvement suggestions, or auto-merge workflow management.
+  PR review, improvement suggestions, and auto-merge workflow management. Triggers on "pr", "pull request", "PR 리뷰", "코드 리뷰", "merge". Use when reviewing PRs, suggesting improvements, or managing auto-merge workflows.
 version: 1.1.0
 triggers:
   keywords:

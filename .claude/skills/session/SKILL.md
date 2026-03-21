@@ -1,7 +1,7 @@
 ---
 name: session
 description: >
-  This skill should be used when the user needs session management operations like compact, journey, changelog, resume, save, or search.
+  Session management — compact, journey, changelog, resume, save, search. Triggers on "session", "세션", "compact", "journey", "resume". Use when compacting context, saving session state, viewing history, or resuming previous work.
 version: 1.0.0
 triggers:
   keywords:

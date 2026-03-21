@@ -1,7 +1,7 @@
 ---
 name: shorts-generator
 description: >
-  This skill should be used when the user needs to generate short-form videos using Claude Vision image analysis, captions, TTS, and FFmpeg composition.
+  Generate short-form videos using Claude Vision image analysis, captions, TTS, and FFmpeg. Triggers on "shorts", "쇼츠", "영상 생성", "short video". Use when creating short-form video content from photos with automated captioning and audio.
 version: 2.0.0
 
 triggers:

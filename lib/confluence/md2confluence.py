@@ -21,6 +21,7 @@ import shutil
 import argparse
 from html import unescape as html_unescape
 from pathlib import Path
+from urllib.parse import unquote as url_unquote
 
 import requests
 
@@ -78,6 +79,8 @@ def api_put_json(cfg, path, payload):
         headers={"Content-Type": "application/json"},
         timeout=30,
     )
+    if not resp.ok:
+        print(f"  API Error {resp.status_code}: {resp.text[:500]}", file=sys.stderr)
     resp.raise_for_status()
     return resp.json()
 
@@ -194,8 +197,13 @@ def md_to_html(md_content, resource_path):
 # HTML post-processing for Confluence Storage Format
 # ---------------------------------------------------------------------------
 
-def postprocess_html(html):
+MAX_IMAGE_WIDTH = 720
+
+
+def postprocess_html(html, image_widths=None):
     """Transform pandoc HTML into Confluence storage format."""
+    if image_widths is None:
+        image_widths = {}
 
     # 0a) <pre><code> -> Confluence code macro
     def _code_block_to_macro(match):
@@ -229,22 +237,39 @@ def postprocess_html(html):
 
     html = re.sub(r'<[a-zA-Z][^>]*>', _strip_foreign_attrs, html)
 
-    # 1) <img> -> <ac:image> with attachment reference
+    # 1) <img> -> <ac:image> with attachment reference (width-limited)
     def _img_to_ac(match):
         attrs = match.group(1)
         src_m = re.search(r'src="([^"]*)"', attrs)
         alt_m = re.search(r'alt="([^"]*)"', attrs)
         if not src_m:
             return match.group(0)
-        filename = os.path.basename(src_m.group(1))
+        filename = url_unquote(os.path.basename(src_m.group(1)))
         alt = alt_m.group(1) if alt_m else filename
+        width_attr = ""
+        if filename in image_widths and image_widths[filename] > MAX_IMAGE_WIDTH:
+            width_attr = f' ac:width="{MAX_IMAGE_WIDTH}"'
         return (
-            f'<ac:image ac:alt="{alt}" ac:title="{alt}">'
+            f'<ac:image ac:alt="{alt}" ac:title="{alt}"{width_attr}>'
             f'<ri:attachment ri:filename="{filename}" />'
             f"</ac:image>"
         )
 
     html = re.sub(r"<img\s+([^>]*)\/?>", _img_to_ac, html)
+
+    # 1.5) Image captions → split into image + styled caption <p>
+    # Case A: image and caption text in same <p> (no blank line in MD)
+    html = re.sub(
+        r'(<ac:image\b[^>]*>.*?</ac:image>)\s+([^<]+)</p>',
+        r'\1</p>\n<p style="text-align: center; color: #626F86; font-size: 12px;"><em>\2</em></p>',
+        html, flags=re.DOTALL,
+    )
+    # Case B: image and caption in separate <p> (blank line in MD)
+    html = re.sub(
+        r'(</ac:image>\s*</p>)\s*\n?\s*<p>([^<\n]+)</p>',
+        r'\1\n<p style="text-align: center; color: #626F86; font-size: 12px;"><em>\2</em></p>',
+        html,
+    )
 
     # 2) Table styling - auto-width via data-layout
     html = html.replace("<table>", '<table data-layout="default">')
@@ -275,27 +300,61 @@ def postprocess_html(html):
 # Collect image references
 # ---------------------------------------------------------------------------
 
+def _resolve_image(src, base_dir, tmp_dir, images, seen):
+    """Resolve image path and add to collection if it exists on disk."""
+    filename = os.path.basename(src)
+    if filename in seen:
+        return
+    seen.add(filename)
+
+    if src.startswith("mermaid-"):
+        full = os.path.join(tmp_dir, src)
+    else:
+        full = os.path.join(base_dir, src)
+
+    if os.path.exists(full):
+        images.append((filename, full))
+    else:
+        # Try URL-decoded path (handles %EC%8A%A4... Korean filenames)
+        decoded_src = url_unquote(src)
+        decoded_full = os.path.join(base_dir, decoded_src)
+        decoded_filename = os.path.basename(decoded_src)
+        if os.path.exists(decoded_full):
+            images.append((decoded_filename, decoded_full))
+        else:
+            print(f"  [MISSING] {src} (resolved: {full})")
+
+
+def _build_width_map(images):
+    """Build {filename: pixel_width} map using PIL for width-limiting."""
+    widths = {}
+    try:
+        from PIL import Image
+    except ImportError:
+        return widths
+    for fname, fpath in images:
+        try:
+            with Image.open(fpath) as img:
+                widths[fname] = img.width
+        except Exception:
+            pass
+    return widths
+
+
 def collect_images(md_content, base_dir, tmp_dir):
     """Return list of (filename, absolute_path) for all images."""
-    pattern = re.compile(r"!\[([^\]]*)\]\(([^)]+)\)")
     images = []
     seen = set()
 
-    for _alt, src in pattern.findall(md_content):
-        filename = os.path.basename(src)
-        if filename in seen:
-            continue
-        seen.add(filename)
+    # Pattern 1: Markdown image syntax ![alt](src)
+    md_pattern = re.compile(r"!\[([^\]]*)\]\(([^)]+)\)")
+    for _alt, src in md_pattern.findall(md_content):
+        _resolve_image(src, base_dir, tmp_dir, images, seen)
 
-        if src.startswith("mermaid-"):
-            full = os.path.join(tmp_dir, src)
-        else:
-            full = os.path.join(base_dir, src)
-
-        if os.path.exists(full):
-            images.append((filename, full))
-        else:
-            print(f"  [MISSING] {src} (resolved: {full})")
+    # Pattern 2: HTML <img src="..."> tags
+    img_pattern = re.compile(r'<img\s+[^>]*src="([^"]*)"[^>]*/?>',)
+    for src in img_pattern.findall(md_content):
+        _resolve_image(src, base_dir, tmp_dir, images, seen)
 
     return images
 
@@ -344,9 +403,10 @@ def convert(md_path, page_id, dry_run=False, base_url=None):
 
         print("[4/6] Converting MD -> Confluence HTML...")
         html = md_to_html(modified_md, base_dir)
-        html = postprocess_html(html)
 
         images = collect_images(modified_md, base_dir, tmp_dir)
+        image_widths = _build_width_map(images)
+        html = postprocess_html(html, image_widths)
         print(f"[5/6] Uploading {len(images)} attachments...")
 
         if dry_run:

@@ -60,6 +60,7 @@ class SlackMessage(BaseModel):
     channel: str
     user: Optional[str] = None
     thread_ts: Optional[str] = None
+    reply_count: int = 0
     timestamp: Optional[datetime] = None  # Parsed timestamp
     files: list[dict] = Field(default_factory=list)  # File attachments
 

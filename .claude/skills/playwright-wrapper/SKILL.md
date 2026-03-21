@@ -1,7 +1,7 @@
 ---
 name: playwright-wrapper
 description: >
-  This skill should be used when the user needs Playwright browser automation via CLI or Python SDK for E2E testing, screenshots, Docker-based testing, or web automation.
+  Playwright browser automation via CLI or Python SDK — E2E testing, screenshots, Docker-based testing. Triggers on "playwright", "E2E", "브라우저 테스트", "스크린샷". Use when running E2E tests, capturing screenshots, or automating web interactions.
 version: 1.0.0
 
 triggers:

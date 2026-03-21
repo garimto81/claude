@@ -1,7 +1,7 @@
 ---
 name: vercel-deployment
 description: >
-  This skill should be used when the user needs Vercel deployment, Preview/Production environment management, Edge Functions, or CI/CD pipeline integration.
+  Vercel deployment, Preview/Production environments, Edge Functions, CI/CD pipelines. Triggers on "vercel", "deploy", "배포", "serverless". Use when deploying to Vercel, managing environments, configuring Edge Functions, or setting up pipelines.
 version: 2.0.0
 
 triggers:
