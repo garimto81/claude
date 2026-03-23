@@ -49,6 +49,12 @@ triggers:
     │       ├─ [8/9] Skill TDD Audit (v24.0)
     │       └─ [9/9] Setup Audit (deep/HEAVY만)
     │
+    ├─ [Phase 1.7] Prompt Intelligence (자동, config/quick 시 스킵)
+    │       ├─ Step 1: python .claude/lib/prompt_analyzer.py --stats --json (증분 분석)
+    │       ├─ Step 2: python .claude/lib/prompt_analyzer.py --new-prompts 50 (신규 프롬프트)
+    │       ├─ Step 3: analyst 에이전트 Tier 2 패턴 분석 (클러스터링 + 스킬 제안)
+    │       └─ Step 4: 결과 출력 + 캐싱 (.claude/research/audit-prompt-<date>.md)
+    │
     ├─ [Phase 2] 웹 리서치 기반 트렌드 분석
     │       ├─ 현재 워크플로우 인벤토리 수집
     │       ├─ researcher 에이전트 웹 리서치 (3-tier 쿼리)
@@ -61,6 +67,7 @@ triggers:
 
 **핵심 규칙:**
 - Phase 1은 항상 실행 (9/9 중 Setup Audit는 deep/HEAVY 조건부)
+- Phase 1.7은 `/audit` 통합 실행 시만 자동 포함. `config`, `quick` 시 스킵. 증분 분석 (Snapshot+Delta)
 - Phase 2는 항상 실행 (WebSearch 실패 시만 스킵)
 - 24시간 이내 캐시 존재 시 재사용 옵션 제공
 - Phase 3에서 설정 점검 + 트렌드 결과 통합 출력
