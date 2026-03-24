@@ -1,6 +1,6 @@
 # Command Reference
 
-> 자동 생성: `/audit` 기준. 커맨드 22개.
+> 자동 생성: `/audit` 기준. 커맨드 21개.
 
 ## 커맨드 목록
 
@@ -14,20 +14,19 @@
 | 6 | `/commit` | Create git commits using conventional commit format with emojis | `.claude/commands/commit.md` |
 | 7 | `/create` | Create PRD, PR, or documentation (prd, pr, docs) | `.claude/commands/create.md` |
 | 8 | `/debug` | Hypothesis-verification based debugging (Phase Gate D0-D4) | `.claude/commands/debug.md` |
-| 9 | `/deploy` | Version update and Docker rebuild workflow | `.claude/commands/deploy.md` |
-| 10 | `/gmail` | Gmail 메일 관리 커맨드 | `.claude/commands/gmail.md` |
-| 11 | `/issue` | GitHub issue lifecycle management (list, create, fix, failed) | `.claude/commands/issue.md` |
-| 12 | `/mockup` | HTML 와이어프레임 + Google Stitch 하이브리드 목업 생성 | `.claude/commands/mockup.md` |
-| 13 | `/parallel` | Multi-agent parallel execution (dev, test, review, research) | `.claude/commands/parallel.md` |
-| 14 | `/pr` | PR review, improvement suggestions, and auto-merge workflow | `.claude/commands/pr.md` |
-| 15 | `/prd-sync` | PRD 동기화 (Google Docs -> 로컬) | `.claude/commands/prd-sync.md` |
-| 16 | `/prd-update` | 로컬 PRD 업데이트 (브랜치 기반 자동 탐지) | `.claude/commands/prd-update.md` |
-| 17 | `/research` | RPI Phase 1 - 코드베이스 분석, 리서치, AI 리뷰 | `.claude/commands/research.md` |
-| 18 | `/session` | 세션 관리 통합 (compact, journey, changelog, resume) | `.claude/commands/session.md` |
-| 19 | `/shorts` | PocketBase 사진으로 쇼츠 영상 생성 (Claude Vision 이미지 분석) | `.claude/commands/shorts.md` |
-| 20 | `/tdd` | Guide Test-Driven Development with Red-Green-Refactor discipline | `.claude/commands/tdd.md` |
-| 21 | `/todo` | Manage project todos with priorities, due dates, and tracking | `.claude/commands/todo.md` |
-| 22 | `/work` | `/auto`로 통합됨 (v19.0). 리다이렉트 stub. | `.claude/commands/work.md` |
+| 9 | `/gmail` | Gmail 메일 관리 커맨드 | `.claude/commands/gmail.md` |
+| 10 | `/issue` | GitHub issue lifecycle management (list, create, fix, failed) | `.claude/commands/issue.md` |
+| 11 | `/mockup` | HTML 와이어프레임 + Google Stitch 하이브리드 목업 생성 | `.claude/commands/mockup.md` |
+| 12 | `/parallel` | Multi-agent parallel execution (dev, test, review, research) | `.claude/commands/parallel.md` |
+| 13 | `/pr` | PR review, improvement suggestions, and auto-merge workflow | `.claude/commands/pr.md` |
+| 14 | `/prd-sync` | PRD 동기화 (Google Docs -> 로컬) | `.claude/commands/prd-sync.md` |
+| 15 | `/prd-update` | 로컬 PRD 업데이트 (브랜치 기반 자동 탐지) | `.claude/commands/prd-update.md` |
+| 16 | `/research` | RPI Phase 1 - 코드베이스 분석, 리서치, AI 리뷰 | `.claude/commands/research.md` |
+| 17 | `/session` | 세션 관리 통합 (compact, journey, changelog, resume) | `.claude/commands/session.md` |
+| 18 | `/shorts` | PocketBase 사진으로 쇼츠 영상 생성 (Claude Vision 이미지 분석) | `.claude/commands/shorts.md` |
+| 19 | `/tdd` | Guide Test-Driven Development with Red-Green-Refactor discipline | `.claude/commands/tdd.md` |
+| 20 | `/todo` | Manage project todos with priorities, due dates, and tracking | `.claude/commands/todo.md` |
+| 21 | `/work` | `/auto`로 통합됨 (v19.0). 리다이렉트 stub. | `.claude/commands/work.md` |
 
 ## 카테고리별 분류
 
@@ -65,7 +64,6 @@
 | 커맨드 | 용도 |
 |--------|------|
 | `/auth` | AI 서비스 인증 |
-| `/deploy` | 버전/Docker 배포 |
 | `/gmail` | Gmail 관리 |
 | `/session` | 세션 관리 |
 | `/chunk` | PDF 청킹 |
@@ -76,4 +74,5 @@
 
 | 커맨드 | 리다이렉트 |
 |--------|-----------|
+| `/deploy` | 삭제 (v25.1 auto_deploy hook 대체) |
 | `/work` | `/auto` (v19.0 통합) |
