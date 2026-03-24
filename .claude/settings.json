@@ -11,11 +11,13 @@
         "hooks": [
           {
             "type": "command",
-            "command": "python3 C:/claude/.claude/hooks/checklist_updater.py"
+            "command": "python3 C:/claude/.claude/hooks/checklist_updater.py",
+            "async": true
           },
           {
             "type": "command",
-            "command": "python3 C:/claude/.claude/hooks/tmpclaude_cleanup.py"
+            "command": "python3 C:/claude/.claude/hooks/tmpclaude_cleanup.py",
+            "async": true
           },
           {
             "type": "command",
@@ -30,7 +32,8 @@
         "hooks": [
           {
             "type": "command",
-            "command": "python3 C:/claude/.claude/hooks/branch_guard.py"
+            "command": "python3 C:/claude/.claude/hooks/branch_guard.py",
+            "statusMessage": "branch guard 검증 중..."
           }
         ]
       },
@@ -39,7 +42,8 @@
         "hooks": [
           {
             "type": "command",
-            "command": "python3 C:/claude/.claude/hooks/tool_validator.py"
+            "command": "python3 C:/claude/.claude/hooks/tool_validator.py",
+            "statusMessage": "도구 안전성 검증 중..."
           }
         ]
       },
@@ -48,7 +52,8 @@
         "hooks": [
           {
             "type": "command",
-            "command": "python3 C:/claude/.claude/hooks/agent_teams_guard.py"
+            "command": "python3 C:/claude/.claude/hooks/agent_teams_guard.py",
+            "statusMessage": "Agent Teams 프로토콜 검증 중..."
           }
         ]
       }
@@ -78,11 +83,13 @@
           },
           {
             "type": "command",
-            "command": "python3 C:/claude/.claude/hooks/daily_sample_sender.py"
+            "command": "python3 C:/claude/.claude/hooks/daily_sample_sender.py",
+            "async": true
           },
           {
             "type": "command",
-            "command": "python3 C:/claude/.claude/hooks/edit_slack_reporter.py"
+            "command": "python3 C:/claude/.claude/hooks/edit_slack_reporter.py",
+            "async": true
           }
         ]
       },
@@ -109,7 +116,8 @@
         "hooks": [
           {
             "type": "command",
-            "command": "python3 C:/claude/.claude/hooks/circuit_breaker.py"
+            "command": "python3 C:/claude/.claude/hooks/circuit_breaker.py",
+            "statusMessage": "circuit breaker 점검 중..."
           }
         ]
       }
