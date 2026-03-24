@@ -126,6 +126,24 @@ def main():
         alerts_path = Path.home() / ".claude" / "zombie-alerts.jsonl"
         append_alert(alerts_path, record)
 
+        # 에이전트 실행 이력 기록 (Persistent Memory)
+        try:
+            history_dir = Path.home() / ".claude" / "logs"
+            history_dir.mkdir(parents=True, exist_ok=True)
+            history_path = history_dir / "agent_history.jsonl"
+            history_record = {
+                "ts": get_unix_ms(),
+                "agent_type": data.get("agent_type", "unknown"),
+                "name": teammate_name,
+                "team": team_name,
+                "exit_code": exit_code,
+                "status": "success" if exit_code == 0 else "failure",
+            }
+            with open(history_path, "a", encoding="utf-8") as f:
+                f.write(json.dumps(history_record) + "\n")
+        except Exception:
+            pass
+
         # stderr 경고 출력 (F-04)
         print(
             f"[ZOMBIE-ALERT] teammate '{teammate_name}' in team '{team_name}' "

@@ -1,7 +1,7 @@
 ---
 name: issue
 description: >
-  This skill should be used when the user requests GitHub issue management including listing, creating, fixing, or triaging issues.
+  GitHub issue lifecycle management — list, create, fix, triage issues. Triggers on "issue", "이슈", "bug report", "GitHub issue". Use when listing open issues, creating new ones, fixing bugs, or triaging issue backlogs.
 version: 1.1.0
 triggers:
   keywords:

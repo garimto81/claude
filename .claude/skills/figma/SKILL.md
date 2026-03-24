@@ -2,7 +2,7 @@
 name: figma
 version: 1.0.0
 description: >
-  This skill should be used when the user needs Figma design-to-code conversion, component mapping, design system rules, HTML-to-Figma capture, or authentication via Figma MCP.
+  Figma design-to-code conversion, component mapping, design system rules, and HTML-to-Figma capture via MCP. Triggers on "figma", "피그마", Figma URLs, "design to code". Use when implementing UI from Figma, connecting code to Figma components, or capturing HTML to Figma.
 triggers:
   keywords:
     - "--figma"

@@ -1,7 +1,7 @@
 ---
 name: update-slack-list
 description: >
-  This skill should be used when the user needs to update Slack Lists vendor management system including add/modify/delete vendors and status changes.
+  Update Slack Lists vendor management — add/modify/delete vendors and status changes. Triggers on "slack list", "vendor", "업체 관리", "벤더". Use when managing vendor entries in Slack Lists or tracking procurement records.
 version: 2.0.0
 triggers:
   keywords:

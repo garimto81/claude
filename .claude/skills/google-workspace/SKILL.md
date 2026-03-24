@@ -1,7 +1,7 @@
 ---
 name: google-workspace
 description: >
-  This skill should be used when the user needs Google Workspace API integration for Docs, Sheets, Drive, or Calendar with OAuth 2.0 authentication.
+  Google Workspace API integration for Docs, Sheets, Drive, Calendar with OAuth 2.0. Triggers on "google docs", "google sheets", "구글 문서", "스프레드시트", "workspace". Use when reading/writing Google Docs or Sheets, managing Drive files, or integrating GWS services.
 version: 2.8.0
 
 triggers:

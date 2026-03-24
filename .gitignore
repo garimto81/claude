@@ -53,9 +53,11 @@
 .claude/settings.local.json
 .claude/session_state.json
 .claude/auto-logs/
+.claude/hooks/.*.json
 .claude/logs/
 .claude/worktrees/
 .claude/ralph-loop.local.md
+.claude/data/
 
 # 5) 공통 제외 패턴
 __pycache__/

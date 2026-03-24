@@ -1,7 +1,7 @@
 ---
 name: slack
 description: >
-  This skill should be used when the user requests Slack operations like sending/receiving messages, channel management, or browser OAuth authentication.
+  Slack operations — send/receive messages, channel management, browser OAuth. Triggers on "slack", "슬랙", "채널", "메시지 전송". Use when sending Slack messages, reading channels, managing workspaces, or setting up Slack OAuth.
 version: 1.0.0
 triggers:
   keywords:

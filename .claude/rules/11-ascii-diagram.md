@@ -317,14 +317,14 @@ flowchart TD
 
 ### 노드 강조 방법 (Mermaid)
 
-- 현재 Stage 신규 노드: 굵은 테두리 또는 다른 스타일 클래스
-- 이전 Stage 노드: 기본 스타일 (흐리게)
+- 현재 Stage 신규 노드: `%% NEW` 주석 + 대괄호 표기 `["[NEW] 노드명"]`
+- 이전 Stage 노드: 기본 표기
+- **`classDef`, `:::class` 스타일 사용 금지** — 기본형만 허용
 
 ```mermaid
 %% Stage 2 예시: H가 신규 노드
 flowchart LR
-    K["[K] 스코어"] --> H["[H] 경기 시청"]:::new
-    classDef new stroke-width:3px,stroke:#000
+    K["[K] 스코어"] --> H["[NEW] 경기 시청"]
 ```
 
 ### 금지
@@ -344,4 +344,5 @@ flowchart LR
 - **Mermaid 다이어그램**에서 한 층(같은 깊이) 5개 이상 노드 배치 금지 — subgraph 또는 2단 재배치로 분할
 - **리프 노드 총합 7개 이상** 단일 다이어그램 금지 — Overview + Detail 분할 또는 LR 전환
 - **`%%{init}%%`** 설정으로 GitHub 가독성 문제 해결 시도 금지 (GitHub에서 무시됨)
+- **`classDef`, `:::class`** 스타일 사용 금지 — 기본형 노드만 허용
 - **노드 레이블 3줄 이상** 금지 — 약어 사용

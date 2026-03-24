@@ -1,7 +1,7 @@
 ---
 name: drive
 description: >
-  This skill should be used when the user needs AI-powered Google Drive file organization, deduplication, or folder restructuring.
+  AI-powered Google Drive file organization, deduplication, and folder restructuring. Triggers on "drive 정리", "드라이브", "파일 정리", "폴더 정리", "중복 제거". Use when organizing Drive files, detecting duplicates, auditing folder structure, or archiving old versions.
 version: 2.1.0
 
 triggers:
@@ -122,5 +122,34 @@ Google Drive를 **AI 맥락 분석** 기반으로 정리하는 스킬입니다.
 | 수동 폴더 구조 정의 | **프로젝트 분석 후 자동 제안** |
 
 ---
+
+## Examples
+
+```bash
+# 예시 1: 전체 Drive 정리
+사용자: "드라이브 정리해줘"
+→ Step 1: Drive API로 파일 목록 수집 (200개 파일)
+→ Step 2: AI 분석 — WSOPTV 42개, EBS 35개, 미분류 23개, 중복 8쌍
+→ Step 3: "전체 실행 (권장)" 선택
+→ Step 4: 프로젝트별 폴더 생성 + 파일 이동 + 중복 아카이브
+→ Step 5: "정리 완료: 3개 폴더 생성, 100개 이동, 8개 중복 아카이브"
+
+# 예시 2: 특정 프로젝트만 정리
+사용자: "/drive --project WSOPTV"
+→ WSOPTV 관련 파일만 필터 → 분류 → 정리
+
+# 예시 3: 구조 감사
+사용자: "/drive --audit"
+→ 현재 폴더 구조 vs 권장 구조 비교 → 드리프트 감지 보고서 출력
+```
+
+## Actionability Checklist
+
+각 Step에서 반드시 수행할 행동:
+1. **Step 1**: `gws drive files list` 또는 Python API로 파일 목록 수집 (pageSize=50)
+2. **Step 2**: 파일명/메타데이터 기반 프로젝트 분류 + 중복 탐지
+3. **Step 3**: AskUserQuestion으로 실행 범위 확인 (전체/부분/분석만/취소)
+4. **Step 4**: 승인된 범위만 실행 (폴더 생성 → 파일 이동 → 아카이브)
+5. **Step 5**: 변경 요약 + Drive 링크 제공
 
 상세 워크플로우, 코드 예시, AI 분석 로직, 구조 감사: `REFERENCE.md`

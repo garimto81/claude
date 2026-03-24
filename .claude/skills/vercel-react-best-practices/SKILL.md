@@ -1,7 +1,7 @@
 ---
 name: vercel-react-best-practices
 description: >
-  This skill should be used when the user needs Vercel Engineering's React/Next.js performance optimization with 47 rules across 8 categories.
+  Vercel Engineering's React/Next.js performance optimization with 47 rules across 8 categories. Triggers on "react 성능", "Next.js 최적화", "Vercel BP". Use when optimizing React/Next.js performance, applying Vercel patterns, or reviewing frontend quality.
 version: 1.0.0
 
 triggers:

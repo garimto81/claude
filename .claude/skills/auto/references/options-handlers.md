@@ -3,6 +3,8 @@
 > 이 파일은 `--mockup`, `--anno`, `--critic` 등 옵션 사용 시 로딩됩니다.
 > 원본: REFERENCE.md v25.0에서 분리 (v25.2 Progressive Disclosure)
 
+> **GUARD**: 이 파일이 로딩되지 않은 상태에서 실행 옵션(--con, --mockup 등)을 처리하면 hallucination이 발생합니다. SKILL.md Step 0.1에서 반드시 Read 완료 후 처리할 것.
+
 ---
 
 ## Step 2.0: 옵션 처리 개요

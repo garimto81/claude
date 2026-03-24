@@ -348,7 +348,6 @@ def check_fatigue_signals(ttl_hours: int = 24) -> list[str]:
         return warnings
 
     try:
-        import json
         now = datetime.now(timezone.utc)
         cutoff = now - timedelta(hours=ttl_hours)
         cutoff_ts = cutoff.timestamp() * 1000  # ms
@@ -377,6 +376,95 @@ def check_fatigue_signals(ttl_hours: int = 24) -> list[str]:
             warnings.append(
                 f"📊 편집 집중 패턴: {burst_count}회 (파일: {len(burst_files)}개)"
             )
+    except Exception:
+        pass
+
+    return warnings
+
+
+def check_agent_history(ttl_days: int = 7) -> list[str]:
+    """에이전트 실행 이력 분석 — 최근 N일간 실패율 높은 에이전트 경고"""
+    warnings = []
+    history_path = Path.home() / ".claude" / "logs" / "agent_history.jsonl"
+    if not history_path.exists():
+        return warnings
+    try:
+        now = datetime.now(timezone.utc)
+        cutoff_ts = int((now - timedelta(days=ttl_days)).timestamp() * 1000)
+        content = history_path.read_text(encoding="utf-8")
+        lines = [l.strip() for l in content.strip().split("\n") if l.strip()]
+        # 30일 초과 항목 자동 정리
+        fresh_lines = []
+        cutoff_30d = int((now - timedelta(days=30)).timestamp() * 1000)
+        for line in lines:
+            try:
+                entry = json.loads(line)
+                if entry.get("ts", 0) >= cutoff_30d:
+                    fresh_lines.append(line)
+            except Exception:
+                continue
+        if fresh_lines and len(fresh_lines) < len(lines):
+            history_path.write_text("\n".join(fresh_lines) + "\n", encoding="utf-8")
+        # 최근 7일 분석
+        agent_stats: dict[str, dict[str, int]] = {}
+        for line in fresh_lines:
+            try:
+                entry = json.loads(line)
+                if entry.get("ts", 0) < cutoff_ts:
+                    continue
+                agent = entry.get("agent_type", "unknown")
+                if agent not in agent_stats:
+                    agent_stats[agent] = {"total": 0, "failures": 0}
+                agent_stats[agent]["total"] += 1
+                if entry.get("status") == "failure":
+                    agent_stats[agent]["failures"] += 1
+            except Exception:
+                continue
+        for agent, stats in agent_stats.items():
+            if stats["total"] >= 3 and stats["failures"] / stats["total"] > 0.3:
+                rate = int(stats["failures"] / stats["total"] * 100)
+                warnings.append(
+                    f"agent failure rate warning: {agent} — {rate}% "
+                    f"(last {ttl_days}d, {stats['failures']}/{stats['total']})"
+                )
+    except Exception:
+        pass
+    return warnings
+
+
+def check_pending_backlog() -> list[str]:
+    """프로젝트 백로그에서 PENDING 항목 표시"""
+    warnings = []
+    backlog_path = ROOT_PROJECT_DIR / "docs" / "backlog.md"
+
+    if not backlog_path.exists():
+        return warnings
+
+    try:
+        content = backlog_path.read_text(encoding="utf-8")
+
+        # ## PENDING 섹션 추출 (## IN_PROGRESS 또는 ## DONE 전까지)
+        pending_start = content.find("## PENDING")
+        if pending_start == -1:
+            return warnings
+
+        pending_end = len(content)
+        for marker in ["## IN_PROGRESS", "## DONE"]:
+            idx = content.find(marker, pending_start + 10)
+            if idx != -1 and idx < pending_end:
+                pending_end = idx
+
+        pending_section = content[pending_start + len("## PENDING"):pending_end].strip()
+
+        if pending_section and "미처리 요구사항 없음" not in pending_section:
+            # ### [B-NNN] 형식의 항목 수 카운트
+            items = [line for line in pending_section.split("\n") if line.startswith("### [B-")]
+            if items:
+                warnings.append(f"📋 미처리 백로그 {len(items)}건:")
+                for item in items[:5]:
+                    warnings.append(f"   {item.lstrip('#').strip()}")
+                if len(items) > 5:
+                    warnings.append(f"   ... 외 {len(items) - 5}건")
     except Exception:
         pass
 
@@ -483,6 +571,27 @@ def save_session_state(state: dict):
         json.dump(state, f, indent=2, ensure_ascii=False)
 
 
+def cleanup_mcp_archives(ttl_days: int = 7) -> list[str]:
+    """MCP 프로파일 아카이브 파일 TTL 정리 (7일 초과 삭제)"""
+    messages = []
+    logs_dir = ROOT_PROJECT_DIR / ".claude" / "logs"
+    if not logs_dir.exists():
+        return messages
+    try:
+        now = datetime.now(timezone.utc)
+        deleted = 0
+        for f in logs_dir.glob("mcp_profile.*.jsonl"):
+            mtime = datetime.fromtimestamp(f.stat().st_mtime, tz=timezone.utc)
+            if (now - mtime).days > ttl_days:
+                f.unlink()
+                deleted += 1
+        if deleted:
+            messages.append(f"🗑️ MCP 아카이브 {deleted}개 정리 (TTL {ttl_days}d 초과)")
+    except Exception:
+        pass
+    return messages
+
+
 def verify_agent_loading() -> list[str]:
     """에이전트 파일 수 검증 (동적 카운트)"""
     messages = []
@@ -532,6 +641,9 @@ def main():
         stale_messages.extend(cleanup_stale_global_todos(ttl_hours=2))
         stale_messages.extend(cleanup_orphan_agent_teams())
         stale_messages.extend(check_fatigue_signals(ttl_hours=24))
+        stale_messages.extend(check_agent_history(ttl_days=7))
+        stale_messages.extend(cleanup_mcp_archives(ttl_days=7))
+        stale_messages.extend(check_pending_backlog())
         stale_messages.extend(check_prd_sync_status())
         stale_messages.extend(verify_agent_loading())
 

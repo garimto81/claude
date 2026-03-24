@@ -2,7 +2,7 @@
 name: confluence
 version: 1.0.0
 description: >
-  This skill should be used when the user needs to convert Markdown files to Confluence format and publish them to Confluence pages.
+  Convert Markdown to Confluence format and publish to Confluence pages. Triggers on "confluence", "컨플루언스", "wiki 발행", "문서 발행". Use when publishing docs to Confluence or converting .md files to wiki markup.
 triggers:
   keywords:
     - "--con"
@@ -52,8 +52,12 @@ Mermaid 블록 추출 → mmdc → PNG 렌더링
 pandoc MD→HTML 변환
      |
      v
+이미지 수집 + 너비 측정 (PIL)
+     |
+     v
 HTML 후처리:
   - <img> → <ac:image> 매크로 (ri:attachment)
+  - 720px 초과 이미지 → ac:width="720" 속성 추가
   - <table> → data-layout="default" (auto-width)
   - <th>/<td> 내용 → <p> 래핑
      |
@@ -71,6 +75,7 @@ HTML 후처리:
 | `pandoc` | MD→HTML 변환 | `scoop install pandoc` |
 | `mmdc` | Mermaid→PNG 렌더링 | `npm i -g @mermaid-js/mermaid-cli` |
 | `requests` | Confluence REST API | `pip install requests` |
+| `Pillow` | 이미지 너비 측정 (720px 제한) | `pip install Pillow` |
 
 ## 환경변수
 

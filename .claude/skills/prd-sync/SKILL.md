@@ -2,7 +2,7 @@
 name: prd-sync
 version: 1.0.0
 description: >
-  This skill should be used when the user needs to synchronize PRD documents between Google Docs and local repository.
+  Synchronize PRD documents between Google Docs and local repository. Triggers on "prd-sync", "PRD 동기화", "Google Docs 동기화". Use when pulling PRD updates from Google Docs master to local docs/00-prd/ cache.
 triggers:
   keywords:
     - "/prd-sync"

@@ -127,6 +127,42 @@ def cleanup_stale_agent_teams(ttl_hours: float = 10 / 60) -> dict:  # 기본값:
     return result
 
 
+def generate_mcp_report() -> list[str]:
+    """MCP 프로파일링 로그에서 세션 요약 리포트 생성"""
+    messages = []
+    mcp_log = Path(PROJECT_DIR) / ".claude" / "logs" / "mcp_profile.jsonl"
+    if not mcp_log.exists():
+        return messages
+    try:
+        lines = mcp_log.read_text(encoding="utf-8").strip().split("\n")
+        entries = []
+        for line in lines:
+            if line.strip():
+                try:
+                    entries.append(json.loads(line))
+                except Exception:
+                    continue
+        if not entries:
+            return messages
+        # 도구별 호출 수
+        tool_counts: dict[str, int] = {}
+        for e in entries:
+            tool = e.get("tool", "unknown")
+            tool_counts[tool] = tool_counts.get(tool, 0) + 1
+        total = len(entries)
+        top_tools = sorted(tool_counts.items(), key=lambda x: -x[1])[:3]
+        top_str = ", ".join(f"{t}({c})" for t, c in top_tools)
+        messages.append(f"MCP profile: {total} calls. Top: {top_str}")
+        # 로그 파일 아카이브 (새 세션을 위해 비우기)
+        archive_path = mcp_log.with_suffix(
+            f".{datetime.now(timezone.utc).strftime('%Y%m%d_%H%M%S')}.jsonl"
+        )
+        mcp_log.rename(archive_path)
+    except Exception:
+        pass
+    return messages
+
+
 def main():
     try:
         # 현재 세션 상태 로드
@@ -159,6 +195,9 @@ def main():
         if temp_files:
             cleaned = cleanup_temp_files(temp_files)
             session_info.append(f"🗑️ 임시 파일: {cleaned}개 삭제 완료")
+
+        # MCP 프로파일링 리포트
+        session_info.extend(generate_mcp_report())
 
         # 세션 상태 저장
         save_session_state(

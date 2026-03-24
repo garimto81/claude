@@ -1,8 +1,7 @@
 ---
 name: calendar
 description: >
-  This skill should be used when the user needs Google Calendar event management
-  including listing, creating, deleting events, and checking today/week schedule.
+  Google Calendar event management — list, create, delete events and check schedules. Triggers on "calendar", "캘린더", "일정", "schedule", "meeting", "회의". Use when checking today/week agenda, creating events, finding free time, or managing Google Calendar via OAuth 2.0.
 version: 1.0.0
 
 triggers:

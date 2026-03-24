@@ -2,7 +2,7 @@
 name: jira
 version: 1.0.0
 description: >
-  This skill should be used when the user needs Jira project, board, Epic, or issue queries and structured analysis via Atlassian REST API.
+  Jira project, board, Epic, and issue queries via Atlassian REST API. Triggers on "jira", "지라", "epic", "sprint", "board". Use when querying Jira projects, viewing boards, analyzing Epics, or generating Jira analysis reports.
 triggers:
   keywords:
     - "--jira"

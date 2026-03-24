@@ -44,6 +44,7 @@
 | `final-check-automation` | `/check` |
 | `code-quality-checker` | `/check` (흡수 통합) |
 | `webapp-testing` | `playwright-wrapper` (흡수 통합) |
+| `/deploy` | 삭제 (v25.1 auto_deploy hook으로 대체) |
 
 ## 에이전트 티어 라우팅
 

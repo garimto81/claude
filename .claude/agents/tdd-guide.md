@@ -189,3 +189,60 @@ npm run test:coverage
 ```
 
 **Remember**: No code without tests. Tests are not optional. They are the safety net that enables confident refactoring, rapid development, and production reliability.
+
+## Generate-Red Mode
+
+PRD 요구사항에서 실패 테스트(Red 단계)를 자동 생성합니다.
+
+### 입력
+
+- PRD 파일 경로 (`docs/00-prd/*.prd.md`)
+- 또는 요구사항 텍스트 (직접 전달)
+
+### 매핑 규칙
+
+| PRD 섹션 | 테스트 생성 |
+|----------|-----------|
+| 기능 요구사항 1개 | `test_` 함수 1개 (최소) |
+| 비기능 요구사항 (성능) | 성능 테스트 스켈레톤 |
+| 비기능 요구사항 (보안) | 보안 테스트 스켈레톤 |
+
+### 출력 형식
+
+**Python (pytest)**:
+```python
+# tests/test_{feature}.py — Auto-generated RED tests
+import pytest
+
+def test_requirement_1():
+    """[REQ-1] 요구사항 설명"""
+    # TODO: 구현 후 이 테스트가 통과해야 함
+    raise NotImplementedError("RED: 구현 필요")
+
+def test_requirement_2():
+    """[REQ-2] 요구사항 설명"""
+    raise NotImplementedError("RED: 구현 필요")
+```
+
+**TypeScript (jest)**:
+```typescript
+// tests/{feature}.test.ts — Auto-generated RED tests
+describe('{Feature}', () => {
+  it('REQ-1: 요구사항 설명', () => {
+    // TODO: 구현 후 이 테스트가 통과해야 함
+    throw new Error('RED: 구현 필요');
+  });
+});
+```
+
+### 사용법
+
+```
+/tdd --generate-red <prd-path>
+```
+
+### 주의사항
+
+- 자동 생성 테스트는 **스켈레톤** — 세부 assertion은 수동 보강 필수
+- PRD에 `## 요구사항` 또는 `## 기능 요구사항` 섹션이 없으면 경고 출력
+- 기존 테스트 파일이 있으면 덮어쓰지 않고 `_auto.py` 접미사로 생성
