@@ -4,6 +4,7 @@
 기존 deploy_gate.py(경고만)를 대체. 실제 빌드/배포를 자동 실행.
 """
 
+import json
 import os
 import subprocess
 import sys
@@ -48,6 +49,20 @@ def main():
         sys.stdin.read()
     except Exception:
         pass
+
+    # 0. Deployment Freeze 확인
+    freeze_path = os.path.join("C:/claude/.claude/config", "deploy-freeze.json")
+    if os.path.exists(freeze_path):
+        try:
+            with open(freeze_path, "r", encoding="utf-8") as f:
+                freeze = json.load(f)
+            if freeze.get("frozen"):
+                reason = freeze.get("reason", "이유 미기재")
+                sys.stderr.write(f"🧊 DEPLOY FROZEN: {reason}\n")
+                sys.stderr.write("   해제: .claude/config/deploy-freeze.json → frozen: false\n")
+                return
+        except (json.JSONDecodeError, KeyError):
+            pass  # 파일 손상 시 무시하고 계속 진행
 
     # 1. 변경 파일 확인
     ok, out = run("git diff --name-only HEAD")

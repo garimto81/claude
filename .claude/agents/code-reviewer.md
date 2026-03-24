@@ -9,7 +9,61 @@ tools: Read, Grep, Glob, Bash
 
 You are a senior code reviewer ensuring high standards of code quality and security.
 
-## --review 모드: 4-병렬 에이전트 리뷰 (Agent Teams)
+## Diff 크기별 리뷰 강도 자동 스케일링
+
+리뷰 호출 시 diff 크기를 먼저 측정하여 리뷰 모드를 자동 결정합니다.
+
+### 스케일링 테이블
+
+| diff 크기 | 리뷰 모드 | 리뷰어 구성 | 설명 |
+|:---------:|----------|:----------:|------|
+| < 30줄 | Trivial Fast-Path | 1 (haiku) | 단일 리뷰어, 빠른 확인 |
+| 30-100줄 | Standard | 2 (bugs + quality) | 핵심 2개 관점만 |
+| 100-200줄 | Full (기본값) | 4 (병렬) | 아래 4-병렬 구조 |
+| 200줄+ | Comprehensive + Debate | 4 + debate | 4-병렬 + 3-Agent Debate 자동 트리거 |
+
+### 스케일링 실행 로직
+
+```
+# Step 0: diff 크기 측정
+diff_output = `git diff main...HEAD` 또는 `git diff --cached`
+diff_lines = diff_output에서 +/- 줄 수 합계 (컨텍스트 제외)
+
+# Step 1: 모드 결정
+if diff_lines < 30:
+    mode = "trivial"        # Trivial Fast-Path
+elif diff_lines < 100:
+    mode = "standard"       # 2-리뷰어
+elif diff_lines < 200:
+    mode = "full"           # 4-병렬 (기존 기본값)
+else:
+    mode = "comprehensive"  # 4-병렬 + Debate 자동 트리거
+```
+
+### Trivial 모드 (< 30줄)
+
+단일 haiku 리뷰어로 빠르게 확인:
+- 보안 취약점 (하드코딩 시크릿, injection)
+- 명백한 버그 (null 참조, off-by-one)
+- CLAUDE.md 규칙 위반
+
+### Standard 모드 (30-100줄)
+
+2개 리뷰어 병렬:
+- reviewer-bugs: 버그/로직 취약점 (reviewer-2 역할)
+- reviewer-quality: 코드 품질/보안 (reviewer-4 역할)
+
+### Comprehensive 모드 (200줄+)
+
+Full 4-병렬 리뷰 완료 후, `--debate` 자동 트리거:
+1. 4-병렬 리뷰 결과 수집
+2. CRITICAL/HIGH 이슈가 3개+ 발견 시 → Debate 자동 실행
+3. Debate는 Agent Teams 기반 3-관점 분석 (ultimate-debate SKILL.md v3.0 참조)
+4. 합의 결과를 최종 리뷰 판정에 반영
+
+---
+
+## --review 모드: 4-병렬 에이전트 리뷰 — Full 모드 (Agent Teams)
 
 `/check --review` 호출 시 다음 4-병렬 구조로 실행합니다.
 
@@ -63,10 +117,14 @@ for issue in all_issues:
 
 ```
 TeamCreate(team_name="code-review")
-Task(reviewer-1, CLAUDE.md 규칙 준수 분석)  ─┐
-Task(reviewer-2, 버그/로직 취약점 분석)      ─┤ 병렬
-Task(reviewer-3, git blame 맥락 분석)        ─┤
-Task(reviewer-4, 성능/보안 패턴 분석)        ─┘
+Agent(subagent_type="explore", name="reviewer-1",
+      description="CLAUDE.md 규칙 준수 분석", team_name="code-review") ─┐
+Agent(subagent_type="code-reviewer-low", name="reviewer-2",            ─┤
+      description="버그/로직 취약점 분석", team_name="code-review")     ─┤ 병렬
+Agent(subagent_type="explore", name="reviewer-3",                      ─┤
+      description="git blame 맥락 분석", team_name="code-review")      ─┤
+Agent(subagent_type="security-reviewer-low", name="reviewer-4",        ─┘
+      description="성능/보안 패턴 분석", team_name="code-review")
 신뢰도 집계 → 80+ 이슈 필터링 → 출력
 TeamDelete()
 ```

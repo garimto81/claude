@@ -278,20 +278,44 @@ SendMessage(type="message", recipient="solution-researcher", content="웹 리서
 
 ---
 
-## `--debate` — 3-AI 병렬 분석 합의 판정
+## `--debate` — 3-Agent 병렬 분석 합의 판정 (Agent Teams)
+
+> **v3.0**: Python 스크립트 의존 제거. Agent Teams 패턴으로 3개 Claude 에이전트가 병렬 분석.
 
 ```
-Agent(subagent_type="executor-high", name="debate-runner", description="토론 실행", team_name="pdca-{feature}",
-     prompt="[Debate] ultimate-debate 스킬 실행.
-             주제: {사용자 요청 내용}
-             실행: python .claude/skills/ultimate-debate/scripts/main.py --task '{주제}'
-             결과: .claude/debates/{task_id}/FINAL.md에 저장.
-             최종 합의안 요약 보고.")
-SendMessage(type="message", recipient="debate-runner", content="토론 시작.")
-# 합의 결과를 Phase 1 계획에 반영
+# Phase 1: 3-Agent 병렬 분석
+TeamCreate(team_name="debate-{topic}")
+
+Agent(subagent_type="architect", name="perspective-structure",
+      description="구조적 관점 분석", team_name="debate-{topic}",
+      prompt="[관점: 아키텍처/구조] {사용자 요청 내용}을 구조적 관점에서 분석.
+              분석: 아키텍처 적합성, 확장성, 의존성 리스크, 유지보수 비용.
+              출력: ## 구조적 분석 → 결론/근거/리스크/추천 형식.")
+
+Agent(subagent_type="code-reviewer", name="perspective-quality",
+      description="품질/보안 관점 분석", team_name="debate-{topic}",
+      prompt="[관점: 품질/보안] {사용자 요청 내용}을 품질 관점에서 분석.
+              분석: 코드 품질 영향, 보안 리스크, 에러 핸들링, 기술 부채.
+              출력: ## 품질/보안 분석 → 결론/근거/리스크/추천 형식.")
+
+Agent(subagent_type="researcher", name="perspective-external",
+      description="외부 사례/패턴 분석", team_name="debate-{topic}",
+      prompt="[관점: 외부 사례] {사용자 요청 내용}을 외부 관점에서 분석.
+              분석: 베스트 프랙티스, 오픈소스 접근 방식, 대안 비교.
+              출력: ## 외부 사례 분석 → 결론/근거/대안/추천 형식.")
+
+# Phase 2: Lead 합의 판정 (3개 결과 수집 후)
+# 공통 결론 추출 (agreed) + 불일치 항목 식별 (disputed)
+# 합의율 = agreed / (agreed + disputed) × 100
+# 80%+ → 최종 판정 / 미달 → 재토론 (SendMessage, max 2회)
+
+# Phase 5: 최종 판정
+# Write(".claude/debates/{topic}/FINAL.md", final_report)
+TeamDelete()
 ```
 
-> **전제조건**: `cd C:\claude\packages\ultimate-debate && pip install -e .` 필수. 미설치 시 mock 모드 폴백.
+> **전제조건 없음**: 외부 API 키/패키지 설치 불필요. Agent Teams만으로 동작.
+> **상세 워크플로우**: `.claude/skills/ultimate-debate/SKILL.md` v3.0 참조.
 
 ---
 
