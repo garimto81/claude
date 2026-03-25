@@ -608,6 +608,58 @@ def verify_agent_loading() -> list[str]:
     return messages
 
 
+def load_project_context() -> list[str]:
+    """프로젝트별 자동 컨텍스트 로드 (.claude/project-context.json)
+
+    반복 프롬프트 분석(2026-03-25)에서 식별: 동일 지시문을 매 세션 반복 입력하는 패턴 해소.
+    """
+    messages = []
+    ctx_path = Path(PROJECT_DIR) / ".claude" / "project-context.json"
+    if not ctx_path.exists():
+        return messages
+    try:
+        with open(ctx_path, "r", encoding="utf-8") as f:
+            ctx = json.load(f)
+        instructions = ctx.get("auto_instructions", [])
+        if instructions:
+            messages.append("📌 프로젝트 자동 컨텍스트:")
+            for inst in instructions[:5]:
+                messages.append(f"   → {inst}")
+    except Exception:
+        pass
+    return messages
+
+
+def detect_server_network_binding() -> list[str]:
+    """서버 프로젝트에서 localhost 바인딩 감지 → 네트워크 접근 안내
+
+    반복 프롬프트 분석(2026-03-25)에서 식별: '동일 네트워크에서 접근 가능하게' 3회 반복.
+    """
+    messages = []
+    project_path = Path(PROJECT_DIR)
+    compose_file = project_path / "docker-compose.yml"
+    compose_yaml = project_path / "docker-compose.yaml"
+    server_dir = project_path / "server"
+
+    if not (compose_file.exists() or compose_yaml.exists() or server_dir.exists()):
+        return messages
+
+    # docker-compose에서 localhost 바인딩 감지
+    for cf in [compose_file, compose_yaml]:
+        if cf.exists():
+            try:
+                content = cf.read_text(encoding="utf-8")
+                if "127.0.0.1:" in content or "localhost:" in content:
+                    messages.append(
+                        "🌐 서버가 localhost에 바인딩됨. "
+                        "네트워크 접근 필요 시 0.0.0.0으로 변경하세요"
+                    )
+                    break
+            except Exception:
+                pass
+    return messages
+
+
 def main():
     try:
         # Circuit Breaker 상태 초기화 (새 세션이므로 CLOSED로 리셋)
@@ -646,6 +698,8 @@ def main():
         stale_messages.extend(check_pending_backlog())
         stale_messages.extend(check_prd_sync_status())
         stale_messages.extend(verify_agent_loading())
+        stale_messages.extend(load_project_context())
+        stale_messages.extend(detect_server_network_binding())
 
         # Junction 설정
         junction_created, junction_message = setup_commands_junction()

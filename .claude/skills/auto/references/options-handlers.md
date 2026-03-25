@@ -176,6 +176,32 @@ Agent(subagent_type="designer", name="anno-designer", description="Anno HTML 생
 SendMessage(type="message", recipient="anno-designer", content="HTML 생성 시작.")
 ```
 
+### Step 2.5: 배치 모드 자동 감지 (NEW — 반복 프롬프트 분석 2026-03-25)
+
+```python
+# --anno 인자가 디렉토리인 경우 → 해당 디렉토리 내 *.png 전수 처리
+# --anno 인자 없음 → docs/mockups/ 또는 docs/03-analysis/ 자동 탐색
+# --anno 인자가 파일인 경우 → 기존 단일 파일 처리
+
+import os
+anno_arg = options.get("anno", "")
+if os.path.isdir(anno_arg):
+    screenshots = [os.path.join(anno_arg, f) for f in os.listdir(anno_arg) if f.endswith(".png")]
+elif not anno_arg:
+    # 프로젝트 내 docs/mockups/ 자동 탐색
+    for candidate in ["docs/mockups/", "docs/03-analysis/"]:
+        if os.path.isdir(candidate):
+            screenshots = [os.path.join(candidate, f) for f in os.listdir(candidate) if f.endswith(".png")]
+            break
+else:
+    screenshots = [anno_arg]  # 단일 파일
+
+# 각 스크린샷에 대해 Step 1-5 반복 실행
+for screenshot in screenshots:
+    # Step 1: Vision AI 분석 → Step 2: designer HTML → Step 3-5: anno_workflow.py
+    pass
+```
+
 ### Step 3-5: anno_workflow.py 실행 (Lead Bash)
 
 ```bash
@@ -573,6 +599,30 @@ SendMessage(type="message", recipient="gmail-analyst", content="Gmail 분석 요
 ---
 
 ## `--con` 옵션 워크플로우
+
+### Step 0: 인증 사전 체크 (NEW — 반복 프롬프트 분석 2026-03-25)
+
+`--con` 실행 전 Confluence 인증 상태를 자동 확인합니다. "인증처리되어 있다고" 반복 3회 해소.
+
+```python
+# --con 감지 시 즉시 실행 (발행 로직 전)
+import subprocess
+auth_result = subprocess.run(
+    ["python", "C:/claude/lib/gws/gws_auth.py", "status"],
+    capture_output=True, text=True, timeout=10
+)
+if "expired" in auth_result.stdout.lower() or auth_result.returncode != 0:
+    # 자동 갱신 시도
+    refresh = subprocess.run(
+        ["python", "C:/claude/lib/gws/gws_auth.py", "refresh"],
+        capture_output=True, text=True, timeout=15
+    )
+    if refresh.returncode != 0:
+        # 갱신 실패 → 사용자 안내 후 중단
+        AskUserQuestion("Confluence 인증이 만료되었습니다. `/auth google` 로 재인증 후 다시 시도하세요.")
+        return  # --con 처리 중단
+# 인증 유효 → 아래 발행 로직 진행
+```
 
 Markdown 파일을 Confluence Storage Format으로 변환하여 지정 페이지에 발행합니다.
 
