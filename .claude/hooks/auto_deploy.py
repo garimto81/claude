@@ -64,7 +64,7 @@ def _get_flag_path(project_dir):
     return os.path.join(project_dir, f".deploy_verified_{sha}")
 
 
-def run(cmd, cwd=PROJECT, timeout=300):
+def run(cmd, cwd=None, timeout=300):
     """명령 실행. Windows에서 shell=True로 .bat/.cmd 명령 지원."""
     try:
         r = subprocess.run(
