@@ -136,8 +136,8 @@ gh pr list --search "review-requested:@me"
 
 | 단계 | 에이전트 | 역할 |
 |------|---------|------|
-| 코드 리뷰 | `Agent(subagent_type="code-reviewer", description="PR 코드 리뷰")` | 병렬 검사 실행 |
-| 보안 검사 | `Agent(subagent_type="qa-tester", description="보안/테스트 검증")` | 취약점 탐지 |
+| 코드 리뷰 | `Agent(subagent_type="code-reviewer", name="pr-reviewer", description="PR 코드 리뷰", team_name="pr-{number}")` | 병렬 검사 실행 |
+| 보안 검사 | `Agent(subagent_type="qa-tester", name="security-checker", description="보안/테스트 검증", team_name="pr-{number}")` | 취약점 탐지 |
 
 ---
 
