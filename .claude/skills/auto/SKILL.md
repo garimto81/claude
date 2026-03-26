@@ -2,7 +2,7 @@
 name: auto
 description: >
   PDCA Orchestrator — automated multi-phase build-verify-close cycles with Agent Teams. Triggers on "auto", "/auto", "autopilot", "PDCA", "자동 실행". Use when the user requests automated workflows, multi-phase execution (Plan→Build→Verify→Close), or structured PDCA orchestration.
-version: 25.2.0
+version: 25.3.0
 triggers:
   keywords:
     - "/auto"
@@ -14,7 +14,7 @@ triggers:
 auto_trigger: true
 ---
 
-# /auto - PDCA Orchestrator (v25.2 — Progressive Disclosure)
+# /auto - PDCA Orchestrator (v25.3 — Progressive Disclosure)
 
 > **핵심**: `/auto "작업"` = Phase 0-4 자동 진행. `/auto` 단독 = 자율 발견 모드.
 > **Agent Teams 단일 패턴**: TeamCreate → Agent(subagent_type+name+description+team_name) → SendMessage → TeamDelete.
@@ -35,6 +35,18 @@ auto_trigger: true
   복잡도 판단          |
   플러그인 감지        |
 ```
+
+### v25.3 변경사항 (2026-03-26 Audit Trend)
+
+| # | 개선 | Phase | 참조 |
+|:-:|------|:-----:|------|
+| 1 | HEAVY 병렬에 Worktree 격리 | 2 | `phase-2-build.md` |
+| 2 | /loop 스케줄 통합 | 4 | `phase-4-close.md` |
+| 3 | TaskCompleted Hook | 전체 | `settings.json` |
+| 4 | Pre-Build Context Check | 2 | `phase-2-build.md` |
+| 5 | agent_type 좀비 필터링 | 전체 | `zombie_detector.py` |
+| 6 | HEAVY Plan Approval Gate | 1 | `phase-1-plan.md` |
+| 7 | Builder-Validator 쌍 패턴 | 2 | `phase-2-build.md` |
 
 ---
 

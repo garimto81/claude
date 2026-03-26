@@ -120,6 +120,16 @@
             "statusMessage": "circuit breaker 점검 중..."
           }
         ]
+      },
+      {
+        "matcher": "TaskUpdate",
+        "hooks": [
+          {
+            "type": "command",
+            "command": "python3 C:/claude/.claude/hooks/task_completed_trigger.py",
+            "async": true
+          }
+        ]
       }
     ],
     "PreCompact": [

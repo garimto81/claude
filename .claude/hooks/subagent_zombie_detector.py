@@ -65,6 +65,7 @@ def check_all_stopped(config, stopped_session_id):
     """
     팀 전원 종료 여부 판정
     현재 이벤트가 마지막 teammate인지 확인
+    Note: agent_type으로 teammate/subagent 구분 가능 (v25.3)
     """
     lead_id = config.get("leadSessionId", "")
     members = config.get("members", [])
@@ -100,6 +101,7 @@ def main():
 
         session_id = data.get("session_id", "")
         exit_code = int(data.get("exit_code", 0))
+        agent_type = data.get("agent_type", "unknown")
 
         if not session_id:
             return
@@ -121,6 +123,7 @@ def main():
             "teammate": teammate_name,
             "exit_code": exit_code,
             "type": alert_type,
+            "agent_type": agent_type,
             "session_id": session_id,
         }
         alerts_path = Path.home() / ".claude" / "zombie-alerts.jsonl"
@@ -146,7 +149,7 @@ def main():
 
         # stderr 경고 출력 (F-04)
         print(
-            f"[ZOMBIE-ALERT] teammate '{teammate_name}' in team '{team_name}' "
+            f"[ZOMBIE-ALERT] {agent_type} '{teammate_name}' in team '{team_name}' "
             f"has exited (code={exit_code})",
             file=sys.stderr,
         )
