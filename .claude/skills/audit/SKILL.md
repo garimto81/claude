@@ -26,6 +26,9 @@ triggers:
 | `suggest [영역]` | 솔루션 추천 |
 | `trend` | Gmail 브리핑 기반 트렌드 분석 + 워크플로우 갭 분석 + 메일 삭제 |
 | `trend --apply` | 트렌드 분석 + 자동 적용 + 커밋 + 메일 삭제 (완전 자동화) |
+| `--auto-implement` | **통합 점검 + 자동 구현 (Phase 0-5, Self-Improving Loop)** |
+| `ledger` | 개선 이력 조회 (improvement-ledger.json) |
+| `ledger stats` | 개선 통계 요약 (총 제안/적용/PR/백로그/revert) |
 
 ## 통합 워크플로우 (기본 동작)
 
