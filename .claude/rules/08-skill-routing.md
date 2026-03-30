@@ -16,6 +16,7 @@
 | `--critic` | `/auto` 옵션 (critic→researcher 3-Phase 파이프라인) | — |
 | `--jira` | `/auto` 옵션 (lib/jira/jira_client.py 실행) | epics, project, board, search, issue |
 | `--figma` | `/auto` 옵션 (Figma MCP 플러그인 래퍼, OAuth 인증) | `<url>`, `connect <url>`, `rules`, `capture`, `auth` |
+| `--con` | `/auto` 옵션 (`lib/confluence/md2confluence.py` 실행) | `<page_id>`, `<file>`, `--dry-run` |
 | `/overlay-fallback` | 직접 실행 (자동 트리거: T-1~T-5 조건) | — |
 | `calendar` | 스킬 (lib/calendar CLI wrapper, gws 하이브리드) | today, week, list, create, delete |
 

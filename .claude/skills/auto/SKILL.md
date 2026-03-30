@@ -1,7 +1,7 @@
 ---
 name: auto
-description: 하이브리드 자율 워크플로우 - OMC+BKIT 통합 (Ralph + Ultrawork + PDCA 필수)
-version: 17.0.0
+description: PDCA Orchestrator - Agent Teams + PDCA 통합 워크플로우
+version: 18.0.0
 triggers:
   keywords:
     - "/auto"
@@ -12,64 +12,54 @@ triggers:
     - "ralph"
 model_preference: opus
 auto_trigger: true
-omc_delegate: oh-my-claudecode:autopilot
-omc_agents:
+team_pattern: true
+agents:
   - executor
   - executor-high
   - architect
   - planner
   - critic
-bkit_agents:
-  - gap-detector
-  - pdca-iterator
-  - code-analyzer
-  - report-generator
+  - writer
+  - qa-tester
+  - researcher
+  - analyst
 ---
 
-# /auto - 하이브리드 자율 워크플로우 (v16.0 - OMC+BKIT 통합)
+# /auto - PDCA Orchestrator (v18.0 - Agent Teams 통합)
 
 > **핵심**: `/auto "작업"` = **PDCA 문서화(필수)** + Ralph 루프 + Ultrawork 병렬 + **이중 검증**
+> **실행 패턴**: 모든 에이전트 호출은 Agent Teams 라이프사이클을 따릅니다.
 
-## OMC + BKIT Integration
+## Agent Teams 기본 패턴
 
-이 스킬은 OMC와 BKIT의 기능을 통합합니다.
+모든 에이전트 호출은 아래 라이프사이클을 따릅니다:
 
-### 사용되는 에이전트 (43개)
-
-**OMC 에이전트** (실행력):
-- `oh-my-claudecode:executor`: 기능 구현
-- `oh-my-claudecode:architect`: 분석 및 검증
-- `oh-my-claudecode:planner`: 계획 수립
-- `oh-my-claudecode:critic`: 계획 검토
-- `oh-my-claudecode:code-reviewer`: 코드 리뷰
-
-**BKIT 에이전트** (체계성):
-- `bkit:gap-detector`: 설계-구현 갭 분석 (90% 검증)
-- `bkit:pdca-iterator`: Check-Act 반복 개선
-- `bkit:code-analyzer`: 코드 품질 분석
-- `bkit:report-generator`: 완료 보고서 생성
-
-**Skill() 호출 형식**:
 ```
-Skill(skill="oh-my-claudecode:autopilot", args="작업 설명")
+TeamCreate(team_name="auto-{feature}")
+  → Agent(subagent_type="...", name="...", description="...", team_name="auto-{feature}", ...)
+  → SendMessage(to="...", message={type: "shutdown_request"})
+  → TeamDelete()
 ```
 
-**omc_delegate 필드**:
-- YAML frontmatter의 `omc_delegate: oh-my-claudecode:autopilot`는 자동 위임 대상을 지정합니다.
-- 호출 시 OMC 시스템이 자동으로 해당 스킬로 라우팅합니다.
+### 사용되는 에이전트
 
-**사용되는 OMC 에이전트**:
-- `executor`: 일반 구현 작업
-- `executor-high`: 복잡한 구현 작업
-- `architect`: 분석 및 검증
-- `planner`: 계획 수립
-- `critic`: 계획 검토
+| 에이전트 | 모델 | 용도 |
+|----------|------|------|
+| `executor` | sonnet | 기능 구현 |
+| `executor-high` | opus | 복잡한 구현 |
+| `architect` | opus | 분석 및 검증 |
+| `planner` | opus | 계획 수립 |
+| `critic` | opus | 계획 검토 |
+| `writer` | haiku | 문서/보고서 생성 |
+| `qa-tester` | sonnet | 테스트 실행 |
+| `researcher` | sonnet | 리서치 |
+| `analyst` | opus | 데이터 분석 |
 
 ## ⚠️ 필수 실행 규칙 (CRITICAL)
 
 **이 스킬이 활성화되면 반드시 아래 워크플로우를 실행하세요!**
 
-### Phase 0: PDCA 문서화 (필수 - BKIT 워크플로우)
+### Phase 0: PDCA 문서화 (필수)
 
 **모든 작업은 PDCA 사이클을 따릅니다:**
 
@@ -84,8 +74,8 @@ Skill(skill="oh-my-claudecode:autopilot", args="작업 설명")
 │                              │                              │
 │                    ┌────────┴────────┐                     │
 │                    │    병렬 검증     │                     │
-│                    │ OMC Architect   │                     │
-│                    │ BKIT gap-detector│                     │
+│                    │  Architect      │                     │
+│                    │  gap-check      │                     │
 │                    └─────────────────┘                     │
 └─────────────────────────────────────────────────────────────┘
 ```
@@ -120,18 +110,65 @@ Skill(skill="oh-my-claudecode:autopilot", args="작업 설명")
 ═══════════════════
 ```
 
-**score >= 3: Ralplan 실행**
+**score >= 3: Ralplan 실행 (Agent Teams)**
 
 ```
-# Step A: Ralplan 실행 (Planner → Architect → Critic 합의)
-# Critic은 반드시 기존 Plan 문서(docs/01-plan/)와의 범위 중복을 확인해야 합니다
-Skill(skill="oh-my-claudecode:ralplan", args="작업 설명. Critic 추가 검증: docs/01-plan/ 내 기존 Plan과 범위 겹침 여부 확인 필수")
+# Step A: Ralplan 팀 생성 (Planner → Architect → Critic 합의)
+TeamCreate(team_name="ralplan-{feature}")
+
+Agent(
+  subagent_type="planner",
+  name="planner",
+  description="계획 수립",
+  team_name="ralplan-{feature}",
+  model="opus",
+  prompt="작업에 대한 구현 계획을 수립하세요: {작업 설명}
+  docs/01-plan/ 내 기존 Plan과 범위 겹침 여부 확인 필수.
+  포함: 구현 범위, 영향 파일, 위험 요소, 아키텍처 결정"
+)
+
+Agent(
+  subagent_type="architect",
+  name="arch-reviewer",
+  description="계획 검증",
+  team_name="ralplan-{feature}",
+  model="opus",
+  prompt="planner가 수립한 계획을 아키텍처 관점에서 검증하세요.
+  기존 코드베이스와의 일관성, 기술적 타당성 평가."
+)
+
+Agent(
+  subagent_type="critic",
+  name="critic",
+  description="계획 비판",
+  team_name="ralplan-{feature}",
+  model="opus",
+  prompt="planner+architect 결과를 비판적으로 검토하세요.
+  누락된 엣지 케이스, 과도한 복잡성, 더 나은 대안 제시."
+)
+
+# Planner에게 시작 지시
+SendMessage(to="planner", summary="계획 수립 시작", message="작업 설명: {작업}")
+# 결과 수신 후 Architect에게 전달
+SendMessage(to="arch-reviewer", summary="계획 검증 요청", message="planner 결과: {결과}")
+# Critic 검토
+SendMessage(to="critic", summary="계획 비판 요청", message="planner+architect 결과: {결과}")
+
+# 합의 후 정리
+SendMessage(to="planner", message={type: "shutdown_request"})
+SendMessage(to="arch-reviewer", message={type: "shutdown_request"})
+SendMessage(to="critic", message={type: "shutdown_request"})
+TeamDelete()
 
 # Step B: 합의 결과를 PDCA Plan 문서로 기록
-Task(
-  subagent_type="oh-my-claudecode:executor",
-  model="sonnet",
+TeamCreate(team_name="auto-{feature}")
+
+Agent(
+  subagent_type="executor",
+  name="plan-writer",
   description="[PDCA Plan] Ralplan 결과 문서화",
+  team_name="auto-{feature}",
+  model="sonnet",
   prompt="Ralplan 합의 결과를 docs/01-plan/{feature}.plan.md에 기록하세요.
 
   포함 항목:
@@ -144,17 +181,26 @@ Task(
   - 관련 PRD: {PRD-NNNN 또는 '없음'}
   - 기존 Plan 중복 확인: {중복 없음 또는 겹치는 Plan 파일명}"
 )
+
+SendMessage(to="plan-writer", message={type: "shutdown_request"})
+# TeamDelete()는 auto-{feature} 팀이 Phase 끝까지 유지되므로 여기서 호출하지 않음
 ```
 → `docs/01-plan/{feature}.plan.md` 생성 (Ralplan 합의 결과 포함)
 
 **score < 3: Planner 단독 실행**
 ```
-Task(
-  subagent_type="oh-my-claudecode:planner",
-  model="opus",
+TeamCreate(team_name="auto-{feature}")
+
+Agent(
+  subagent_type="planner",
+  name="solo-planner",
   description="[PDCA Plan] 기능 계획",
-  prompt="... (복잡도 점수: {score}/5, 판단 근거 포함)"
+  team_name="auto-{feature}",
+  model="opus",
+  prompt="기능 계획을 수립하세요. (복잡도 점수: {score}/5, 판단 근거 포함)"
 )
+
+SendMessage(to="solo-planner", message={type: "shutdown_request"})
 ```
 → `docs/01-plan/{feature}.plan.md` 생성 (단독 Planner 결과)
 
@@ -177,13 +223,17 @@ plan_path = "docs/01-plan/{feature}.plan.md"
 # Read plan_path → 4개 필수 섹션 존재 확인
 # 누락 시 → executor로 Plan 보완 후 진행
 
-Task(
-  subagent_type="oh-my-claudecode:architect",
-  model="opus",
+Agent(
+  subagent_type="architect",
+  name="designer",
   description="[PDCA Design] 기능 설계",
+  team_name="auto-{feature}",
+  model="opus",
   prompt="docs/01-plan/{feature}.plan.md를 참조하여 설계 문서를 작성하세요.
   Plan Reference 필드에 Plan 문서 경로를 명시하세요."
 )
+
+SendMessage(to="designer", message={type: "shutdown_request"})
 ```
 → `docs/02-design/{feature}.design.md` 생성
 
@@ -192,12 +242,31 @@ Task(
 
 **Step 0.4: Check (이중 검증 - 병렬)**
 ```
-# OMC + BKIT 병렬 검증
-Task(subagent_type="oh-my-claudecode:architect", model="opus", ...)
-Task(subagent_type="bkit:gap-detector", model="opus", ...)
+# 동일 auto-{feature} 팀 내에서 병렬 검증
+Agent(
+  subagent_type="architect",
+  name="check-architect",
+  description="기능 완성도 검증",
+  team_name="auto-{feature}",
+  model="opus",
+  prompt="구현 완료 검증: 기능 동작, 테스트 통과, 코드 품질 확인"
+)
+
+Agent(
+  subagent_type="architect",
+  name="gap-checker",
+  description="설계-구현 갭 검증 (90% 일치 목표)",
+  team_name="auto-{feature}",
+  model="opus",
+  prompt="docs/02-design/{feature}.design.md와 실제 구현의 일치도를 검증하세요.
+  gap 점수(0-100%)를 산출하고, 90% 미만이면 불일치 항목을 나열하세요."
+)
+
+SendMessage(to="check-architect", message={type: "shutdown_request"})
+SendMessage(to="gap-checker", message={type: "shutdown_request"})
 ```
-- Architect: 기능 완성도 검증
-- gap-detector: 설계-구현 90% 일치 검증
+- check-architect: 기능 완성도 검증
+- gap-checker: 설계-구현 90% 일치 검증
 
 **Step 0.5: Act (자동 실행 - CRITICAL)**
 
@@ -209,9 +278,9 @@ Task(subagent_type="bkit:gap-detector", model="opus", ...)
 │                                                             │
 │   Check 결과                      자동 실행                  │
 │   ─────────────────────────────────────────────────────────  │
-│   gap < 90%         →  bkit:pdca-iterator (최대 5회 반복)    │
-│   gap >= 90%        →  bkit:report-generator (자동 호출)     │
-│   Architect REJECT  →  oh-my-claudecode:executor (수정)     │
+│   gap < 90%         →  executor (최대 5회 반복 개선)         │
+│   gap >= 90%        →  writer (완료 보고서 자동 생성)        │
+│   Architect REJECT  →  executor (피드백 반영 수정)           │
 │   모든 조건 충족     →  완료 보고서 자동 생성                  │
 │                                                             │
 │   ⚠️ "Recommended: ..." 출력 후 종료 = 금지                  │
@@ -221,41 +290,53 @@ Task(subagent_type="bkit:gap-detector", model="opus", ...)
 
 **Case 1: gap < 90%**
 ```
-Task(
-  subagent_type="bkit:pdca-iterator",
-  model="sonnet",
+Agent(
+  subagent_type="executor",
+  name="gap-fixer",
   description="[PDCA Act] 갭 자동 개선",
+  team_name="auto-{feature}",
+  model="sonnet",
   prompt="설계-구현 갭을 90% 이상으로 개선하세요. 최대 5회 반복."
 )
+
+SendMessage(to="gap-fixer", message={type: "shutdown_request"})
 ```
 
 **Case 2: gap >= 90%**
 ```
-Task(
-  subagent_type="bkit:report-generator",
-  model="haiku",
+Agent(
+  subagent_type="writer",
+  name="report-writer",
   description="[PDCA Report] 완료 보고서 생성",
+  team_name="auto-{feature}",
+  model="haiku",
   prompt="PDCA 사이클 완료 보고서를 생성하세요.
 
   포함 항목:
   - Plan 요약: docs/01-plan/{feature}.plan.md
   - Design 요약: docs/02-design/{feature}.design.md
   - 구현 결과 및 변경 파일 목록
-  - Check 결과 (gap-detector 점수, Architect 판정)
+  - Check 결과 (gap 점수, Architect 판정)
   - 교훈 및 개선 사항
 
   출력 위치: docs/04-report/{feature}.report.md"
 )
+
+SendMessage(to="report-writer", message={type: "shutdown_request"})
 ```
 
 **Case 3: Architect REJECT**
 ```
-Task(
-  subagent_type="oh-my-claudecode:executor",
-  model="sonnet",
+Agent(
+  subagent_type="executor",
+  name="feedback-applier",
   description="[PDCA Act] Architect 피드백 반영",
+  team_name="auto-{feature}",
+  model="sonnet",
   prompt="Architect 거부 사유를 해결하세요: {rejection_reason}"
 )
+
+SendMessage(to="feedback-applier", message={type: "shutdown_request"})
 # 해결 후 Check Phase 재실행
 ```
 
@@ -265,7 +346,7 @@ Task(
  ✅ PDCA 사이클 완료
 ═══════════════════════════════════════════════════
  Check 결과: gap 94% (≥90% 통과)
- Act 실행: report-generator → docs/04-report/{feature}.report.md
+ Act 실행: report-writer → docs/04-report/{feature}.report.md
 
  📄 보고서 생성 완료
 ═══════════════════════════════════════════════════
@@ -278,6 +359,12 @@ Task(
 ```
 
 → Recommended가 있으면 **즉시 자동 실행** 후 결과 출력
+
+**PDCA 완료 후 팀 정리:**
+```
+# 모든 Phase 완료 후 auto 팀 삭제
+TeamDelete()
+```
 
 ### Phase 1: 옵션 라우팅 (있을 경우)
 
@@ -292,6 +379,7 @@ Task(
 | `--daily` | `Skill(skill="daily")` | daily v3.0 9-Phase Pipeline (Config Bootstrap 내장) |
 | `--daily --slack` | `Skill(skill="daily")` | 동일 Pipeline + Phase 6 Slack Lists 갱신 |
 | `--interactive` | 각 Phase 전환 시 사용자 승인 요청 | 단계적 승인 모드 |
+| `--con <page_id> [file]` | `lib/confluence/md2confluence.py` 실행 | Confluence 페이지 발행 |
 
 **옵션 체인 예시:**
 ```
@@ -309,6 +397,11 @@ Task(
 → Step 2: 안 읽은 메일 또는 검색 결과 수집
 → Step 3: 메일 분석 및 컨텍스트 생성
 → Step 4: 컨텍스트 기반 메인 워크플로우 실행
+
+/auto --con 123456 "PRD 발행"
+→ Step 1: 발행 대상 파일 결정 (PRD/Plan 자동 탐지 또는 명시 경로)
+→ Step 2: python lib/confluence/md2confluence.py <file> <page_id>
+→ Step 3: 결과 보고 (성공/실패 + 페이지 버전)
 ```
 
 **옵션 실패 시**: 에러 메시지 출력하고 **절대 조용히 스킵하지 않음**
@@ -330,10 +423,15 @@ python -m lib.slack history "<채널ID>" --limit 100 --json
 - 메시지 100개 단위로 수집
 - 필요 시 페이지네이션 (oldest 파라미터)
 
-**Step 3: 메시지 분석 (Analyst Agent)**
+**Step 3: 메시지 분석 (Agent Teams)**
 ```
-Task(
-  subagent_type="oh-my-claudecode:analyst",
+TeamCreate(team_name="auto-slack")
+
+Agent(
+  subagent_type="analyst",
+  name="slack-analyst",
+  description="Slack 채널 메시지 분석",
+  team_name="auto-slack",
   model="opus",
   prompt="SLACK CHANNEL ANALYSIS
 
@@ -350,6 +448,9 @@ Task(
 
 출력: 구조화된 컨텍스트 문서"
 )
+
+SendMessage(to="slack-analyst", message={type: "shutdown_request"})
+TeamDelete()
 ```
 
 **Step 4: 컨텍스트 파일 생성**
@@ -423,10 +524,15 @@ cd C:\claude && python -m lib.gmail status --json
 | 안 읽음 | `is:unread` |
 | 라벨 | `label:work` |
 
-**Step 3: 메일 분석 (Analyst Agent)**
+**Step 3: 메일 분석 (Agent Teams)**
 ```
-Task(
-  subagent_type="oh-my-claudecode:analyst",
+TeamCreate(team_name="auto-gmail")
+
+Agent(
+  subagent_type="analyst",
+  name="gmail-analyst",
+  description="Gmail 메일 분석",
+  team_name="auto-gmail",
   model="opus",
   prompt="GMAIL ANALYSIS
 
@@ -444,6 +550,9 @@ Task(
 
 출력: 구조화된 이메일 분석 문서 (마크다운)"
 )
+
+SendMessage(to="gmail-analyst", message={type: "shutdown_request"})
+TeamDelete()
 ```
 
 **Step 4: 컨텍스트 파일 생성**
@@ -452,21 +561,21 @@ Task(
 ```markdown
 # Gmail Context: <날짜>
 
-## 📊 요약
+## 요약
 - 총 메일: N개
 - 긴급 회신 필요: N개
 - 할일 추출: N개
 
-## 🔴 긴급 (회신 필요)
+## 긴급 (회신 필요)
 | 발신자 | 제목 | 날짜 | 요청사항 |
 |--------|------|------|----------|
 | ... | ... | ... | ... |
 
-## 📋 할일 추출
+## 할일 추출
 - [ ] 항목 1 (발신자, 제목, 기한)
 - [ ] 항목 2
 
-## 📬 메일 목록 (우선순위순)
+## 메일 목록 (우선순위순)
 ### 높음
 - **제목** from 발신자 (날짜)
   > 스니펫...
@@ -474,10 +583,10 @@ Task(
 ### 보통
 - ...
 
-## 📎 첨부파일
+## 첨부파일
 - filename.pdf (발신자, 제목)
 
-## 🔗 관련 링크
+## 관련 링크
 - [링크명](URL)
 ```
 
@@ -497,7 +606,7 @@ Task(
 
 → Step 1: 인증 확인 ✓
 → Step 2: python -m lib.gmail search "from:client newer_than:3d" --limit 20 --json
-→ Step 3: Analyst 에이전트가 메일 분석
+→ Step 3: Agent Teams analyst가 메일 분석
 → Step 4: .omc/gmail-context/2026-02-02.md 생성
 → Step 5: 각 메일별 응답 초안 생성
 → 결과 출력
@@ -568,6 +677,41 @@ Task(
 
 **--interactive 미사용 시** (기본 동작): 모든 Phase를 자동으로 진행합니다.
 
+### `--con` 옵션 워크플로우
+
+Markdown 문서를 Confluence Storage Format으로 변환하여 지정 페이지에 발행한다.
+Mermaid 다이어그램은 3-Stage Fallback (mermaid.ink → mmdc → Playwright)으로 PNG 변환 후 첨부파일로 업로드.
+
+**사용 형식:**
+```bash
+/auto "작업" --con <page_id>              # PRD/Plan 자동 탐지 발행
+/auto "작업" --con <page_id> <file.md>    # 지정 파일 발행
+/auto "작업" --con <page_id> --dry-run    # 업로드 없이 미리보기
+```
+
+**실행 흐름:**
+
+1. 환경변수 확인 (`ATLASSIAN_EMAIL`, `ATLASSIAN_API_TOKEN`)
+2. 발행 대상 파일 결정:
+   - 명시적 파일 경로 → 해당 파일
+   - 미지정 → `docs/00-prd/{feature}.prd.md` 또는 `docs/01-plan/{feature}.plan.md` 자동 탐지
+3. 실행:
+   ```bash
+   cd C:\claude && python lib/confluence/md2confluence.py <file> <page_id>
+   ```
+4. 결과 보고 (성공: 페이지 버전 + URL / 실패: 에러 메시지)
+
+**에러 처리:**
+
+| 에러 | 처리 |
+|------|------|
+| 인증 실패 (401) | 환경변수 확인 안내 + 중단 |
+| 페이지 미존재 (404) | page_id 확인 안내 + 중단 |
+| Mermaid 렌더링 실패 | 3-Stage Fallback 후에도 실패 시 에러 보고 + 중단 |
+| pandoc 미설치 | 설치 안내 (`scoop install pandoc`) + 중단 |
+
+**상세**: `secretary/.claude/skills/confluence/SKILL.md` 참조
+
 ## Ralph 루프 워크플로우 (CRITICAL)
 
 **autopilot = Ralplan + Ultrawork + Ralph 루프**
@@ -622,53 +766,89 @@ Step 0.1의 5점 만점 복잡도 점수를 10점으로 확장합니다:
 
 1. **Ralplan 호출** (score >= 3인 경우):
    ```
-   Skill(skill="oh-my-claudecode:ralplan", args="작업내용")
+   TeamCreate(team_name="ralplan-{feature}")
+
+   Agent(subagent_type="planner", name="planner", description="계획 수립",
+         team_name="ralplan-{feature}", model="opus", prompt="작업내용")
+   Agent(subagent_type="architect", name="arch-reviewer", description="계획 검증",
+         team_name="ralplan-{feature}", model="opus", prompt="...")
+   Agent(subagent_type="critic", name="critic", description="계획 비판",
+         team_name="ralplan-{feature}", model="opus", prompt="...")
+
+   # Planner → Architect → Critic 합의 도달까지 반복
+   SendMessage(to="planner", summary="시작", message="...")
+   # ... 합의 후 정리
+   SendMessage(to="planner", message={type: "shutdown_request"})
+   SendMessage(to="arch-reviewer", message={type: "shutdown_request"})
+   SendMessage(to="critic", message={type: "shutdown_request"})
+   TeamDelete()
    ```
-   - Planner → Architect → Critic 합의 도달까지 반복
 
 2. **Ultrawork 모드 활성화**:
    - 모든 독립적 작업은 **병렬 실행**
-   - Task tool에 `run_in_background: true` 사용
+   - Agent Teams 패턴으로 여러 Agent 동시 스폰
    - 10+ 동시 에이전트 허용
 
 3. **에이전트 라우팅**:
 
    | 작업 유형 | 에이전트 | 모델 |
    |----------|----------|------|
-   | 간단한 조회 | `oh-my-claudecode:explore` | haiku |
-   | 기능 구현 | `oh-my-claudecode:executor` | sonnet |
-   | 복잡한 분석 | `oh-my-claudecode:architect` | opus |
-   | UI 작업 | `oh-my-claudecode:designer` | sonnet |
-   | 테스트 | `oh-my-claudecode:qa-tester` | sonnet |
-   | 빌드 에러 | `oh-my-claudecode:build-fixer` | sonnet |
+   | 간단한 조회 | `Explore` (면제 타입) | haiku |
+   | 기능 구현 | `executor` | sonnet |
+   | 복잡한 분석 | `architect` | opus |
+   | UI 작업 | `designer` | sonnet |
+   | 테스트 | `qa-tester` | sonnet |
+   | 빌드 에러 | `build-fixer` | sonnet |
 
-**score >= 4 (Team Coordinator):**
+**score >= 4 (Team Coordinator — Agent Teams):**
 
-```python
-from src.agents.teams import Coordinator
-
-coordinator = Coordinator()
-result = coordinator.run("작업 설명")
 ```
+TeamCreate(team_name="teamwork-{feature}")
 
-또는 OMC 에이전트로 위임:
-```
-Task(
-  subagent_type="oh-my-claudecode:executor-high",
-  model="opus",
-  prompt="Team Coordinator를 통해 멀티팀 워크플로우를 실행하세요.
-  프로젝트: {작업 설명}
-  복잡도: {score}/10
-  투입 팀: {teams}"
-)
+# 복잡도에 따라 팀 배치
+# score 4-5: Dev만
+Agent(subagent_type="architect", name="dev-lead", description="Dev Team Lead",
+      team_name="teamwork-{feature}", model="opus",
+      prompt="Team Coordinator를 통해 멀티팀 워크플로우를 실행하세요.
+      프로젝트: {작업 설명}
+      복잡도: {score}/10
+      투입 팀: Dev")
+
+# score 6-7: + Quality 추가
+Agent(subagent_type="qa-tester", name="quality-lead", description="Quality Team Lead",
+      team_name="teamwork-{feature}", model="sonnet",
+      prompt="Quality Team으로 품질 검증을 수행하세요.")
+
+# score 8-9: + Research 추가
+Agent(subagent_type="researcher", name="research-lead", description="Research Team Lead",
+      team_name="teamwork-{feature}", model="sonnet",
+      prompt="Research Team으로 리서치를 수행하세요.")
+
+# 팀 간 조율
+SendMessage(to="dev-lead", summary="리서치 결과 전달", message="...")
+SendMessage(to="quality-lead", summary="구현 결과 검증", message="...")
+
+# 완료 후 정리
+SendMessage(to="dev-lead", message={type: "shutdown_request"})
+SendMessage(to="quality-lead", message={type: "shutdown_request"})
+SendMessage(to="research-lead", message={type: "shutdown_request"})
+TeamDelete()
 ```
 
 **인과관계 보존**: Team Coordinator는 Tier 3 WORK의 하위에서 동작합니다. 기존 Tier 0-5 Discovery는 그대로 유지.
 
 4. **Architect 검증** (완료 전 필수):
    ```
-   Task(subagent_type="oh-my-claudecode:architect", model="opus",
-        prompt="구현 완료 검증: [작업 설명]")
+   Agent(
+     subagent_type="architect",
+     name="final-verifier",
+     description="구현 완료 검증",
+     team_name="auto-{feature}",
+     model="opus",
+     prompt="구현 완료 검증: [작업 설명]"
+   )
+
+   SendMessage(to="final-verifier", message={type: "shutdown_request"})
    ```
 
 5. **완료 조건**:
@@ -727,6 +907,8 @@ Task(
 - ❌ Architect 검증 없이 완료 선언
 - ❌ 증거 없이 "완료됨" 주장
 - ❌ 테스트 삭제로 문제 해결
+- ❌ team_name 없이 실행형 Agent 호출
+- ❌ Task() 또는 Skill(oh-my-claudecode:...) 사용
 
 ## 상세 워크플로우
 
@@ -734,29 +916,26 @@ Task(
 
 ## 변경 이력
 
-### v18.0.0 (daily v3.0 - 9-Phase Pipeline)
+### v18.0.0 (Agent Teams 전환)
+
+| 기능 | 설명 | 활성화 |
+|------|------|:------:|
+| **Agent Teams 전면 전환** | 모든 Task()/Skill(OMC) 호출을 TeamCreate/Agent/SendMessage 패턴으로 교체 | ✅ |
+| **OMC 의존 제거** | omc_delegate, omc_agents, bkit_agents YAML 제거 | ✅ |
+| **로컬 에이전트 매핑** | oh-my-claudecode:* → 로컬 에이전트 타입으로 전환 | ✅ |
+| **팀 라이프사이클 명시** | TeamCreate → Agent → SendMessage(shutdown) → TeamDelete | ✅ |
+
+### v17.0.0 (daily v3.0 - 9-Phase Pipeline)
 
 | 기능 | 설명 | 활성화 |
 |------|------|:------:|
 | **daily v3.0 통합** | 9-Phase Pipeline으로 --daily 전면 재설계 | ✅ |
 | **Secretary 의존 제거** | Gmail/Slack/GitHub 직접 수집으로 교체 | ✅ |
 | **Project Context Discovery 내부화** | Config Bootstrap이 daily v3.0 Phase 0으로 이전 | ✅ |
-| **daily-sync deprecated** | daily v3.0에 기능 흡수, redirect 설정 | ✅ |
-| **--daily 섹션 간소화** | 상세 로직을 daily/SKILL.md로 이전 | ✅ |
 
 ### v16.2.0 (Act Phase 자동 실행)
 
 | 기능 | 설명 | 활성화 |
 |------|------|:------:|
 | **Act 자동 실행** | "Recommended" 출력 금지, 즉시 자동 실행 | ✅ 필수 |
-| **bkit Hook 연동** | session-start.js Auto-Execute 규칙 | ✅ 필수 |
-| **완료 보고서 자동** | gap >= 90% 시 report-generator 자동 호출 | ✅ 기본 |
-
-### v16.0 (OMC + BKIT 통합)
-
-| 기능 | 설명 | 활성화 |
-|------|------|:------:|
-| **PDCA 문서화** | Plan→Design→Do→Check→Act 자동 | ✅ 필수 |
-| **이중 검증** | OMC Architect + BKIT gap-detector 병렬 | ✅ 기본 |
-| **43 에이전트** | OMC 32개 + BKIT 11개 통합 | ✅ |
-| **병렬 비교** | 동일 도메인 OMC/BKIT 결과 비교 | ✅ |
+| **완료 보고서 자동** | gap >= 90% 시 writer 자동 호출 | ✅ 기본 |

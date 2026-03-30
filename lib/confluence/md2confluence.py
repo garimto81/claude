@@ -169,39 +169,79 @@ def update_page_content(cfg, page_id, title, html, version, space_key, publish_d
 # Mermaid rendering
 # ---------------------------------------------------------------------------
 
+def _render_single_mermaid(code, output_dir, idx):
+    """Render a single Mermaid diagram with 3-stage fallback.
+
+    Fallback order: mermaid.ink API → mmdc CLI → Playwright.
+    Reuses the hybrid renderer from lib/google_docs/mermaid_renderer.py.
+    """
+    png = os.path.join(output_dir, f"mermaid-{idx}.png")
+
+    # Try importing the shared hybrid renderer
+    try:
+        project_root = str(Path(__file__).resolve().parent.parent.parent)
+        if project_root not in sys.path:
+            sys.path.insert(0, project_root)
+        from lib.google_docs.mermaid_renderer import render_mermaid
+        result_path = render_mermaid(code)
+        if result_path:
+            shutil.copy2(result_path, png)
+            os.unlink(result_path)
+            print(f"  [OK] mermaid-{idx}.png rendered (hybrid fallback)")
+            return png
+    except ImportError:
+        pass  # Fall through to local mmdc attempt
+
+    # Direct mmdc fallback (if hybrid renderer unavailable)
+    mmd = os.path.join(output_dir, f"mermaid-{idx}.mmd")
+    with open(mmd, "w", encoding="utf-8") as f:
+        f.write(code)
+
+    is_win = sys.platform == "win32"
+    cmd = (["cmd", "/c", "mmdc", "-i", mmd, "-o", png, "-b", "white", "-w", "1200", "-s", "2"]
+           if is_win else ["mmdc", "-i", mmd, "-o", png, "-b", "white", "-w", "1200", "-s", "2"])
+    try:
+        result = subprocess.run(cmd, capture_output=True, text=True, timeout=60)
+        if result.returncode == 0 and os.path.exists(png):
+            print(f"  [OK] mermaid-{idx}.png rendered (mmdc)")
+            return png
+    except (subprocess.TimeoutExpired, FileNotFoundError):
+        pass
+
+    return None
+
+
 def render_mermaid_blocks(md_content, output_dir):
-    """Replace ```mermaid blocks with rendered PNG references."""
+    """Replace ```mermaid blocks with rendered PNG references.
+
+    Uses 3-stage fallback: mermaid.ink API → mmdc CLI → Playwright.
+    Fails loudly if all strategies fail (no silent code-block passthrough).
+    """
     pattern = re.compile(r"```mermaid\s*\n(.*?)\n```", re.DOTALL)
     images = []
+    failed = []
 
     def _replace(match):
         idx = len(images)
         code = match.group(1)
-        mmd = os.path.join(output_dir, f"mermaid-{idx}.mmd")
-        png = os.path.join(output_dir, f"mermaid-{idx}.png")
 
-        with open(mmd, "w", encoding="utf-8") as f:
-            f.write(code)
-
-        is_win = sys.platform == "win32"
-        cmd = (["cmd", "/c", "mmdc", "-i", mmd, "-o", png, "-b", "white", "-w", "1200", "-s", "2"]
-               if is_win else ["mmdc", "-i", mmd, "-o", png, "-b", "white", "-w", "1200", "-s", "2"])
-        result = subprocess.run(
-            cmd,
-            capture_output=True, text=True, timeout=60,
-        )
-
-        if result.returncode == 0 and os.path.exists(png):
-            images.append(png)
-            print(f"  [OK] mermaid-{idx}.png rendered")
+        png_path = _render_single_mermaid(code, output_dir, idx)
+        if png_path:
+            images.append(png_path)
             return f"![mermaid-diagram-{idx}](mermaid-{idx}.png)"
         else:
-            err = result.stderr[:300] if result.stderr else "unknown"
-            print(f"  [WARN] mermaid-{idx} failed: {err}")
+            print(f"  [ERROR] mermaid-{idx} 렌더링 실패 (모든 전략 실패)")
+            failed.append(idx)
             images.append(None)
             return match.group(0)
 
     modified = pattern.sub(_replace, md_content)
+
+    if failed:
+        print(f"\n  ⚠️  {len(failed)}개 Mermaid 다이어그램 렌더링 실패: {failed}")
+        print("  → Confluence에 코드 블록으로 표시됩니다.")
+        print("  → 해결: npm i -g @mermaid-js/mermaid-cli (mmdc 설치)")
+
     return modified, images
 
 
