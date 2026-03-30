@@ -712,6 +712,29 @@ class SlackClient:
         except SlackApiError as e:
             self._handle_error(e)
 
+    def get_reactions(self, channel: str, ts: str) -> list[dict]:
+        """
+        Get reactions on a specific message.
+
+        Args:
+            channel: Channel ID
+            ts: Message timestamp
+
+        Returns:
+            List of reaction dicts [{"name": "ok", "count": 1, "users": [...]}]
+        """
+        self._rate_limiter.wait_if_needed("reactions.get")
+
+        try:
+            response = self._client.reactions_get(channel=channel, timestamp=ts)
+            msg = response.data.get("message", {})
+            return msg.get("reactions", [])
+        except SlackApiError as e:
+            if e.response.data.get("error") == "no_item_found":
+                return []
+            self._handle_error(e)
+            return []
+
 
 class SlackUserClient(SlackClient):
     """

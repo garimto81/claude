@@ -1,6 +1,7 @@
 ---
 name: final-check-automation
-description: "DEPRECATED: /check로 흡수 통합됨. FINAL_CHECK 워크플로우 자동화 — E2E 테스트, Phase 3-5 자동 진행."
+description: >
+  FINAL_CHECK 워크플로우 자동화. E2E 테스트, Phase 3-5 자동 진행.
 version: 2.0.0
 
 triggers:
@@ -29,8 +30,8 @@ model_preference: sonnet
 phase: [5]
 auto_trigger: true
 dependencies:
-  - qa-tester
-  - security-reviewer
+  - test-engineer
+  - security-auditor
 token_budget: 2000
 ---
 
@@ -228,23 +229,18 @@ pytest --benchmark-only
 
 | 단계 | 에이전트 |
 |------|----------|
-| E2E 테스트 | `qa-tester` |
-| 보안 스캔 | `security-reviewer` |
+| E2E 테스트 | `playwright-engineer` |
+| 보안 스캔 | `security-auditor` |
 | 코드 리뷰 | `code-reviewer` |
-| 성능 체크 | `code-reviewer` |
+| 성능 체크 | `performance-engineer` |
 
 ### 병렬 실행
 
 ```python
-# Phase 5 병렬 검증 (Agent Teams)
-TeamCreate(team_name="final-check-session")
-Task(subagent_type="qa-tester", name="e2e-tester",
-     team_name="final-check-session", model="sonnet", prompt="E2E 최종 검증")
-Task(subagent_type="security-reviewer", name="security-auditor",
-     team_name="final-check-session", model="sonnet", prompt="보안 점검")
-Task(subagent_type="qa-tester", name="perf-tester",
-     team_name="final-check-session", model="sonnet", prompt="성능 테스트")
-# 완료 대기 → 각 teammate shutdown_request → TeamDelete()
+# Phase 5 병렬 검증
+Task(subagent_type="playwright-engineer", prompt="E2E 최종 검증")
+Task(subagent_type="security-auditor", prompt="보안 점검")
+Task(subagent_type="performance-engineer", prompt="성능 테스트")
 ```
 
 ## 관련 도구

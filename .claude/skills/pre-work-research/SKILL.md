@@ -1,6 +1,8 @@
 ---
 name: pre-work-research
-description: "DEPRECATED: /research로 통합됨. 신규 기능 구현 전 PRE_WORK 워크플로우 자동화 — 오픈소스 검색, 중복 확인, Make vs Buy 분석."
+description: >
+  신규 기능 구현 전 PRE_WORK 워크플로우 자동화.
+  오픈소스 검색, 중복 확인, Make vs Buy 분석 수행.
 version: 2.0.0
 
 triggers:

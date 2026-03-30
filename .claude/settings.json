@@ -11,17 +11,17 @@
         "hooks": [
           {
             "type": "command",
-            "command": "python3 /home/user/claude/.claude/hooks/checklist_updater.py",
+            "command": "python3 C:/claude/.claude/hooks/checklist_updater.py",
             "async": true
           },
           {
             "type": "command",
-            "command": "python3 /home/user/claude/.claude/hooks/tmpclaude_cleanup.py",
+            "command": "python3 C:/claude/.claude/hooks/tmpclaude_cleanup.py",
             "async": true
           },
           {
             "type": "command",
-            "command": "python3 /home/user/claude/.claude/hooks/subagent_zombie_detector.py"
+            "command": "python3 C:/claude/.claude/hooks/subagent_zombie_detector.py"
           }
         ]
       }
@@ -32,7 +32,7 @@
         "hooks": [
           {
             "type": "command",
-            "command": "python3 /home/user/claude/.claude/hooks/branch_guard.py",
+            "command": "python3 C:/claude/.claude/hooks/branch_guard.py",
             "statusMessage": "branch guard 검증 중..."
           }
         ]
@@ -42,7 +42,7 @@
         "hooks": [
           {
             "type": "command",
-            "command": "python3 /home/user/claude/.claude/hooks/tool_validator.py",
+            "command": "python3 C:/claude/.claude/hooks/tool_validator.py",
             "statusMessage": "도구 안전성 검증 중..."
           }
         ]
@@ -52,7 +52,7 @@
         "hooks": [
           {
             "type": "command",
-            "command": "python3 /home/user/claude/.claude/hooks/agent_teams_guard.py",
+            "command": "python3 C:/claude/.claude/hooks/agent_teams_guard.py",
             "statusMessage": "Agent Teams 프로토콜 검증 중..."
           }
         ]
@@ -64,11 +64,11 @@
         "hooks": [
           {
             "type": "command",
-            "command": "python3 /home/user/claude/.claude/hooks/agent_validator.py"
+            "command": "python3 C:/claude/.claude/hooks/agent_validator.py"
           },
           {
             "type": "command",
-            "command": "python3 /home/user/claude/.claude/hooks/session_init.py"
+            "command": "python3 C:/claude/.claude/hooks/session_init.py"
           }
         ]
       }
@@ -79,16 +79,16 @@
         "hooks": [
           {
             "type": "command",
-            "command": "node /home/user/claude/.claude/hooks/post_edit_check.js"
+            "command": "node C:/claude/.claude/hooks/post_edit_check.js"
           },
           {
             "type": "command",
-            "command": "python3 /home/user/claude/.claude/hooks/daily_sample_sender.py",
+            "command": "python3 C:/claude/.claude/hooks/daily_sample_sender.py",
             "async": true
           },
           {
             "type": "command",
-            "command": "python3 /home/user/claude/.claude/hooks/edit_slack_reporter.py",
+            "command": "python3 C:/claude/.claude/hooks/edit_slack_reporter.py",
             "async": true
           }
         ]
@@ -98,7 +98,7 @@
         "hooks": [
           {
             "type": "command",
-            "command": "python3 /home/user/claude/.claude/hooks/recovery/edit_error_recovery.py"
+            "command": "python3 C:/claude/.claude/hooks/recovery/edit_error_recovery.py"
           }
         ]
       },
@@ -107,7 +107,7 @@
         "hooks": [
           {
             "type": "command",
-            "command": "python3 /home/user/claude/.claude/hooks/recovery/context_limit_recovery.py"
+            "command": "python3 C:/claude/.claude/hooks/recovery/context_limit_recovery.py"
           }
         ]
       },
@@ -116,7 +116,7 @@
         "hooks": [
           {
             "type": "command",
-            "command": "python3 /home/user/claude/.claude/hooks/circuit_breaker.py",
+            "command": "python3 C:/claude/.claude/hooks/circuit_breaker.py",
             "statusMessage": "circuit breaker 점검 중..."
           }
         ]
@@ -126,7 +126,7 @@
         "hooks": [
           {
             "type": "command",
-            "command": "python3 /home/user/claude/.claude/hooks/task_completed_trigger.py",
+            "command": "python3 C:/claude/.claude/hooks/task_completed_trigger.py",
             "async": true
           }
         ]
@@ -138,7 +138,7 @@
         "hooks": [
           {
             "type": "command",
-            "command": "python3 /home/user/claude/.claude/hooks/pre_compact_save.py"
+            "command": "python3 C:/claude/.claude/hooks/pre_compact_save.py"
           }
         ]
       }
@@ -149,11 +149,15 @@
         "hooks": [
           {
             "type": "command",
-            "command": "python3 /home/user/claude/.claude/hooks/stop_completion_check.py"
+            "command": "python3 C:/claude/.claude/hooks/stop_completion_check.py"
           },
           {
             "type": "command",
-            "command": "python3 /home/user/claude/.claude/hooks/auto_deploy.py"
+            "command": "python3 C:/claude/.claude/hooks/auto_deploy.py"
+          },
+          {
+            "type": "command",
+            "command": "python3 C:/claude/.claude/hooks/post_commit_quality.py"
           }
         ]
       }
@@ -164,11 +168,20 @@
         "hooks": [
           {
             "type": "command",
-            "command": "python3 /home/user/claude/.claude/hooks/session_cleanup.py"
+            "command": "python3 C:/claude/.claude/hooks/session_cleanup.py"
           },
           {
             "type": "command",
-            "command": "python3 /home/user/claude/.claude/hooks/recovery/session_error_recovery.py"
+            "command": "python3 C:/claude/.claude/hooks/session_snapshot.py",
+            "async": true
+          },
+          {
+            "type": "command",
+            "command": "python3 C:/claude/.claude/hooks/memory_sync.py"
+          },
+          {
+            "type": "command",
+            "command": "python3 C:/claude/.claude/hooks/recovery/session_error_recovery.py"
           }
         ]
       }
