@@ -1,8 +1,7 @@
 ---
-name: claude-switch
+name: cc
 version: 1.0.0
-description: >
-  Switch between multiple Claude Code accounts and manage authentication profiles. Triggers on "switch", "계정 전환", "claude login". Use when switching Claude Code organizations or managing multiple auth profiles.
+description: Claude Code 다중 계정 전환 관리
 triggers:
   keywords:
     - cc

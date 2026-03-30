@@ -1,0 +1,52 @@
+{
+  "captured_at": "2026-03-27T05:29:06.295603+00:00",
+  "branch": "feat/github-workflows-triage-docsync",
+  "project_dir": "C:\\claude",
+  "changed_files": [
+    ".claude/agents/quality-gate.md",
+    ".claude/hooks/memory_sync.py",
+    ".claude/hooks/omc_update_detector.py",
+    ".claude/hooks/session_snapshot.py",
+    ".claude/research/audit-trend-2026-03-27.md",
+    ".claude/research/session-snapshots/snapshot-20260327_035522.json",
+    ".claude/settings.json",
+    ".claude/skills/auto/SKILL.md",
+    ".claude/skills/auto/references/common.md",
+    ".claude/skills/auto/references/phase-2-build.md",
+    ".claude/skills/auto/references/phase-3-verify.md",
+    ".github/workflows/agent-triage.yml",
+    ".github/workflows/doc-sync-check.yml",
+    "CLAUDE.md",
+    "docs/05-references/AGENTS_REFERENCE.md",
+    "lib/slack/client.py"
+  ],
+  "recent_commits": [
+    {
+      "hash": "10bd3172",
+      "subject": "fix(skills): pr/SKILL.md bare Agent() → Agent Teams 패턴 수정 🐛",
+      "date": "2026-03-26 18:48:32"
+    },
+    {
+      "hash": "5a689462",
+      "subject": "feat(workflow): /auto v25.3 — audit trend 7건 개선 통합",
+      "date": "2026-03-26 12:07:29"
+    },
+    {
+      "hash": "5f823ab9",
+      "subject": "chore(audit): CLAUDE.md 규칙 개수 6→7 수정 (16-auto-default.md 반영)",
+      "date": "2026-03-26 10:57:43"
+    },
+    {
+      "hash": "5a5c4648",
+      "subject": "feat(workflow): /auto 자동 실행 규칙 추가 + auto_deploy NameError 수정 ✨",
+      "date": "2026-03-25 16:37:16"
+    },
+    {
+      "hash": "a1884185",
+      "subject": "feat(hooks): 프롬프트 반복 7건 자동화 — 기존 워크플로우 투명 통합 ✨",
+      "date": "2026-03-25 12:29:56"
+    }
+  ],
+  "session_start": "2026-03-27T10:51:29.448747",
+  "pending_tasks": []
+}

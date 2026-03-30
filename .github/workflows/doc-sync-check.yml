@@ -1,0 +1,47 @@
+name: Doc Sync Check
+on:
+  pull_request:
+    paths:
+      - '.claude/commands/**'
+      - '.claude/agents/**'
+      - '.claude/skills/**'
+
+jobs:
+  check-sync:
+    runs-on: ubuntu-latest
+    steps:
+      - uses: actions/checkout@v4
+      - name: Count commands
+        run: |
+          CMD_COUNT=$(ls -1 .claude/commands/*.md 2>/dev/null | wc -l)
+          AGENT_COUNT=$(ls -1 .claude/agents/*.md 2>/dev/null | wc -l)
+          SKILL_COUNT=$(ls -1d .claude/skills/*/SKILL.md 2>/dev/null | wc -l)
+
+          echo "Commands: $CMD_COUNT"
+          echo "Agents: $AGENT_COUNT"
+          echo "Skills: $SKILL_COUNT"
+
+          # CLAUDE.md에서 기재된 개수 추출
+          STATED_CMD=$(grep -oP '커맨드 \K\d+' CLAUDE.md || echo 0)
+          STATED_AGENT=$(grep -oP '에이전트 \K\d+' CLAUDE.md || echo 0)
+          STATED_SKILL=$(grep -oP '스킬 \K\d+' CLAUDE.md || echo 0)
+
+          ERRORS=0
+          if [ "$CMD_COUNT" != "$STATED_CMD" ]; then
+            echo "::warning::커맨드 불일치: 실제 $CMD_COUNT vs CLAUDE.md $STATED_CMD"
+            ERRORS=$((ERRORS+1))
+          fi
+          if [ "$AGENT_COUNT" != "$STATED_AGENT" ]; then
+            echo "::warning::에이전트 불일치: 실제 $AGENT_COUNT vs CLAUDE.md $STATED_AGENT"
+            ERRORS=$((ERRORS+1))
+          fi
+          if [ "$SKILL_COUNT" != "$STATED_SKILL" ]; then
+            echo "::warning::스킬 불일치: 실제 $SKILL_COUNT vs CLAUDE.md $STATED_SKILL"
+            ERRORS=$((ERRORS+1))
+          fi
+
+          if [ $ERRORS -gt 0 ]; then
+            echo "::error::문서 동기화 불일치 $ERRORS건 발견. /audit fix 실행 필요."
+            exit 1
+          fi
+          echo "✅ 문서 동기화 정상"

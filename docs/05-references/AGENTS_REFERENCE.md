@@ -1,6 +1,6 @@
 # Agents Reference
 
-> 자동 생성: `/audit` 기준. 에이전트 42개.
+> 자동 생성: `/audit` 기준. 에이전트 43개.
 
 ## 에이전트 목록
 
@@ -35,19 +35,20 @@
 | 27 | gap-detector | haiku | 설계 문서와 구현 간 Gap 정량 분석 |
 | 28 | github-engineer | haiku | GitHub 및 Git 워크플로우 전문가 |
 | 29 | planner | opus | Strategic planning consultant (work plans) |
-| 30 | qa-tester | sonnet | QA Runner - 6종 QA 실행 및 결과 보고 |
-| 31 | qa-tester-high | sonnet | Comprehensive production-ready QA testing |
-| 32 | researcher | sonnet | External Documentation & Reference Researcher |
-| 33 | researcher-low | haiku | Quick documentation lookups |
-| 34 | scientist | sonnet | Data analysis and research execution specialist |
-| 35 | scientist-high | opus | Complex research, hypothesis testing, and ML specialist |
-| 36 | scientist-low | haiku | Quick data inspection and simple statistics |
-| 37 | security-reviewer | sonnet | Security vulnerability detection specialist (OWASP Top 10) |
-| 38 | security-reviewer-low | haiku | Quick security scan specialist |
-| 39 | tdd-guide | sonnet | TDD specialist enforcing write-tests-first methodology |
-| 40 | tdd-guide-low | haiku | Quick test suggestion specialist |
-| 41 | vision | haiku | Visual/media file analyzer for images, PDFs, and diagrams |
-| 42 | writer | haiku | Technical documentation writer (README, API docs, comments) |
+| 30 | quality-gate | sonnet | 자동 품질 게이트 (lint+complexity+coverage+security) |
+| 31 | qa-tester | sonnet | QA Runner - 6종 QA 실행 및 결과 보고 |
+| 32 | qa-tester-high | sonnet | Comprehensive production-ready QA testing |
+| 33 | researcher | sonnet | External Documentation & Reference Researcher |
+| 34 | researcher-low | haiku | Quick documentation lookups |
+| 35 | scientist | sonnet | Data analysis and research execution specialist |
+| 36 | scientist-high | opus | Complex research, hypothesis testing, and ML specialist |
+| 37 | scientist-low | haiku | Quick data inspection and simple statistics |
+| 38 | security-reviewer | sonnet | Security vulnerability detection specialist (OWASP Top 10) |
+| 39 | security-reviewer-low | haiku | Quick security scan specialist |
+| 40 | tdd-guide | sonnet | TDD specialist enforcing write-tests-first methodology |
+| 41 | tdd-guide-low | haiku | Quick test suggestion specialist |
+| 42 | vision | haiku | Visual/media file analyzer for images, PDFs, and diagrams |
+| 43 | writer | haiku | Technical documentation writer (README, API docs, comments) |
 
 ## 모델 티어별 분류
 
@@ -61,7 +62,7 @@
 | planner | 전략적 계획 수립 |
 | scientist-high | 복잡한 연구/ML/가설 검증 |
 
-### Sonnet (19개) — 표준 실행/분석/리뷰
+### Sonnet (20개) — 표준 실행/분석/리뷰
 
 | 에이전트 | 용도 |
 |----------|------|
@@ -78,6 +79,7 @@
 | executor | 표준 구현 |
 | explore-high | 심층 코드 탐색 |
 | frontend-dev | 프론트엔드 개발 |
+| quality-gate | 자동 품질 게이트 (lint+complexity+coverage+security) |
 | qa-tester | QA 실행 |
 | qa-tester-high | 프로덕션 QA |
 | researcher | 외부 문서 리서치 |
@@ -115,5 +117,5 @@
 | 0 INIT | explore | 사전 탐색 |
 | 1 PLAN | planner, critic, analyst | 계획 수립, 약점 분석, 요구사항 분석 |
 | 2 BUILD | executor-high, code-reviewer, architect, gap-detector | 구현, 리뷰, 검증, Gap 분석 |
-| 3 VERIFY | qa-tester, architect | QA 실행, 최종 검증 |
+| 3 VERIFY | quality-gate, qa-tester, architect | 품질 게이트, QA 실행, 최종 검증 |
 | 4 CLOSE | writer, executor-high | 보고서 작성, 정리 |

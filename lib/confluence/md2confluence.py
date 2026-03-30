@@ -19,6 +19,8 @@ import tempfile
 import subprocess
 import shutil
 import argparse
+import mimetypes
+import time
 from html import unescape as html_unescape
 from pathlib import Path
 from urllib.parse import unquote as url_unquote
@@ -95,23 +97,58 @@ def get_page_info(cfg, page_id):
         raise
 
 
-def upload_attachment(cfg, page_id, filepath, filename=None):
+def _guess_mime(filename):
+    """Guess MIME type from filename. Defaults to application/octet-stream."""
+    mime, _ = mimetypes.guess_type(filename)
+    return mime or "application/octet-stream"
+
+
+def upload_attachment(cfg, page_id, filepath, filename=None, max_retries=2):
     if filename is None:
         filename = os.path.basename(filepath)
 
     url = f"{cfg['base_url']}/rest/api/content/{page_id}/child/attachment"
     headers = {"X-Atlassian-Token": "nocheck"}
+    mime_type = _guess_mime(filename)
 
-    with open(filepath, "rb") as f:
-        files = {"file": (filename, f, "application/octet-stream")}
-        resp = requests.put(url, auth=get_auth(cfg), headers=headers, files=files, timeout=60)
+    for attempt in range(1, max_retries + 1):
+        with open(filepath, "rb") as f:
+            files = {"file": (filename, f, mime_type)}
+            resp = requests.put(url, auth=get_auth(cfg), headers=headers, files=files, timeout=60)
 
-    if resp.status_code in (200, 201):
-        print(f"  [OK] {filename}")
-        return resp.json()
+        if resp.status_code in (200, 201):
+            print(f"  [OK] {filename} ({mime_type})")
+            return resp.json()
 
-    print(f"  [FAIL] {filename}: {resp.status_code} {resp.text[:200]}")
+        if attempt < max_retries:
+            print(f"  [RETRY {attempt}/{max_retries}] {filename}: {resp.status_code}")
+            time.sleep(2)
+        else:
+            print(f"  [FAIL] {filename}: {resp.status_code} {resp.text[:200]}")
+
     return None
+
+
+def _upload_all(cfg, page_id, images):
+    """Upload all images and return list of failed filenames."""
+    failed = []
+    for fname, fpath in images:
+        result = upload_attachment(cfg, page_id, fpath, fname)
+        if result is None:
+            failed.append(fname)
+    if images and not failed:
+        # Brief pause to let Confluence process attachments before page update
+        time.sleep(1)
+    return failed
+
+
+def _report_upload_result(final_ver, failed):
+    if failed:
+        print(f"  WARNING: Page updated to v{final_ver}, but {len(failed)} attachment(s) failed:")
+        for f in failed:
+            print(f"    - {f}")
+    else:
+        print(f"  SUCCESS: Page updated to v{final_ver}")
 
 
 def update_page_content(cfg, page_id, title, html, version, space_key, publish_draft=False):
@@ -429,23 +466,21 @@ def convert(md_path, page_id, dry_run=False, base_url=None):
             print(f"  Published as v{cur_ver}")
 
             print(f"[5b/7] Uploading {len(images)} attachments...")
-            for fname, fpath in images:
-                upload_attachment(cfg, page_id, fpath, fname)
+            failed = _upload_all(cfg, page_id, images)
 
             new_ver = cur_ver + 1
             print(f"[6/7] Updating page body (v{cur_ver} -> v{new_ver})...")
             result = update_page_content(cfg, page_id, title, html, new_ver, space)
             final_ver = result["version"]["number"]
-            print(f"  SUCCESS: Page updated to v{final_ver}")
+            _report_upload_result(final_ver, failed)
         else:
-            for fname, fpath in images:
-                upload_attachment(cfg, page_id, fpath, fname)
+            failed = _upload_all(cfg, page_id, images)
 
             new_ver = ver + 1
             print(f"[6/6] Updating page (v{ver} -> v{new_ver})...")
             result = update_page_content(cfg, page_id, title, html, new_ver, space)
             final_ver = result["version"]["number"]
-            print(f"  SUCCESS: Page updated to v{final_ver}")
+            _report_upload_result(final_ver, failed)
 
         return {"status": "success", "version": final_ver}
 

@@ -154,6 +154,10 @@
           {
             "type": "command",
             "command": "python3 C:/claude/.claude/hooks/auto_deploy.py"
+          },
+          {
+            "type": "command",
+            "command": "python3 C:/claude/.claude/hooks/post_commit_quality.py"
           }
         ]
       }
@@ -165,6 +169,15 @@
           {
             "type": "command",
             "command": "python3 C:/claude/.claude/hooks/session_cleanup.py"
+          },
+          {
+            "type": "command",
+            "command": "python3 C:/claude/.claude/hooks/session_snapshot.py",
+            "async": true
+          },
+          {
+            "type": "command",
+            "command": "python3 C:/claude/.claude/hooks/memory_sync.py"
           },
           {
             "type": "command",
