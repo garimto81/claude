@@ -1,6 +1,6 @@
 # CLAUDE.md
 
-Root: `C:\claude` | GitHub: `garimto81/claude` | v1.0.0
+Root: `/home/user/claude` | GitHub: `garimto81/claude` | v1.0.0
 
 커맨드 21 | 에이전트 42 | 스킬 41 | 규칙 7
 
@@ -11,8 +11,8 @@ Root: `C:\claude` | GitHub: `garimto81/claude` | v1.0.0
 | Rule | Detail |
 |------|--------|
 | **API key prohibited** | Browser OAuth only. API key 절대 금지 |
-| **Process kill prohibited** | `taskkill /F /IM node.exe` 등 전체 종료 절대 금지 |
-| **Absolute paths only** | `C:\claude\...` 형식만 허용, 상대 경로 금지 |
+| **Process kill prohibited** | `kill -9 <pid>` 등 전체 종료 절대 금지 |
+| **Absolute paths only** | `/home/user/claude/...` 형식만 허용, 상대 경로 금지 |
 | **Conflict resolution** | 사용자에게 질문. 임의 판단 금지 |
 
 ## Language
