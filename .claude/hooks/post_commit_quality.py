@@ -12,6 +12,10 @@ import sys
 import json
 from pathlib import Path
 
+# Windows cp949 인코딩 에러 방지
+sys.stdout.reconfigure(encoding='utf-8', errors='replace')
+sys.stderr.reconfigure(encoding='utf-8', errors='replace')
+
 
 CONVENTIONAL_COMMIT_PATTERN = re.compile(
     r'^(feat|fix|docs|style|refactor|perf|test|chore|ci|build|revert)'

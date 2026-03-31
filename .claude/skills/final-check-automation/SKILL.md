@@ -234,13 +234,45 @@ pytest --benchmark-only
 | 코드 리뷰 | `code-reviewer` |
 | 성능 체크 | `performance-engineer` |
 
-### 병렬 실행
+### 병렬 실행 (Agent Teams 패턴)
 
-```python
-# Phase 5 병렬 검증
-Task(subagent_type="playwright-engineer", prompt="E2E 최종 검증")
-Task(subagent_type="security-auditor", prompt="보안 점검")
-Task(subagent_type="performance-engineer", prompt="성능 테스트")
+```
+# Step 1: 팀 생성
+TeamCreate(team_name="final-check")
+
+# Step 2: 병렬 검증 에이전트 스폰
+Agent(
+  subagent_type="qa-tester",
+  name="e2e-checker",
+  description="E2E 최종 검증",
+  team_name="final-check",
+  model="sonnet",
+  prompt="E2E 최종 검증을 실행하세요: npx playwright test"
+)
+
+Agent(
+  subagent_type="security-reviewer",
+  name="security-checker",
+  description="보안 점검",
+  team_name="final-check",
+  model="sonnet",
+  prompt="보안 점검을 실행하세요: pip-audit, npm audit, trufflehog"
+)
+
+Agent(
+  subagent_type="architect",
+  name="perf-checker",
+  description="성능 테스트",
+  team_name="final-check",
+  model="sonnet",
+  prompt="성능 테스트를 실행하세요: Lighthouse, pytest --benchmark-only"
+)
+
+# Step 3: 완료 후 정리
+SendMessage(to="e2e-checker", message={type: "shutdown_request"})
+SendMessage(to="security-checker", message={type: "shutdown_request"})
+SendMessage(to="perf-checker", message={type: "shutdown_request"})
+TeamDelete()
 ```
 
 ## 관련 도구
