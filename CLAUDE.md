@@ -2,7 +2,7 @@
 
 Root: `/home/user/claude` | GitHub: `garimto81/claude` | v1.0.0
 
-커맨드 21 | 에이전트 43 | 스킬 41 | 규칙 7
+커맨드 19 | 에이전트 43 | 스킬 35 | 규칙 7
 
 ---
 
