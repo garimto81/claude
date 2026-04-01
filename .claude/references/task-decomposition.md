@@ -91,14 +91,16 @@ TeamCreate(team_name="feature-session")
 TaskCreate(subject="목업 생성", description="...")
 TaskCreate(subject="스크린샷 캡처", description="...")
 TaskUpdate(taskId="2", addBlockedBy=["1"])
-Task(subagent_type="designer", name="designer",
-     team_name="feature-session", model="sonnet", prompt="...")
-SendMessage(type="message", recipient="designer", content="Task #1 할당.")
+Agent(subagent_type="designer", name="designer", description="목업 생성",
+      team_name="feature-session", model="sonnet", prompt="...")
+SendMessage(to="designer", summary="Task #1 할당", message="Task #1 할당.")
 # designer 완료 후 →
-Task(subagent_type="qa-tester", name="tester",
-     team_name="feature-session", model="sonnet", prompt="...")
-SendMessage(type="message", recipient="tester", content="Task #2 할당.")
-# 완료 → TeamDelete()
+Agent(subagent_type="qa-tester", name="tester", description="스크린샷 캡처",
+      team_name="feature-session", model="sonnet", prompt="...")
+SendMessage(to="tester", summary="Task #2 할당", message="Task #2 할당.")
+# 완료 → SendMessage(to="designer", message={type: "shutdown_request"})
+#       → SendMessage(to="tester", message={type: "shutdown_request"})
+#       → TeamDelete()
 ```
 
 ## 금지 사항

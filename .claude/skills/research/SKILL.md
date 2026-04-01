@@ -1,9 +1,9 @@
 ---
 name: research
 description: RPI Phase 1 - 코드베이스 분석, 리서치, AI 리뷰
-version: 2.0.0
-omc_delegate: oh-my-claudecode:research
-omc_agents:
+version: 3.0.0
+team_pattern: true
+agents:
   - researcher
   - researcher-low
   - scientist
@@ -18,21 +18,38 @@ triggers:
 
 # /research - 통합 리서치 커맨드
 
-## OMC Integration
+## Agent Teams 실행
 
-이 스킬은 OMC `research` 스킬에 위임합니다.
+이 스킬은 Agent Teams 패턴으로 리서치를 실행합니다.
 
 ### 실행 방법
 
-```python
-Skill(skill="oh-my-claudecode:research", args="리서치 주제")
+```
+# Step 1: 팀 생성
+TeamCreate(team_name="research-{topic}")
 
-# 또는 직접 에이전트 호출
-Task(subagent_type="oh-my-claudecode:researcher", model="sonnet",
-     prompt="리서치: [주제]")
+# Step 2: 리서치 에이전트 스폰
+Agent(
+  subagent_type="researcher",
+  name="researcher",
+  description="리서치 실행: {주제}",
+  team_name="research-{topic}",
+  model="sonnet",
+  prompt="리서치를 수행하세요: {주제}
+
+  분석 항목:
+  1. 관련 코드/문서 탐색
+  2. 오픈소스 대안 조사
+  3. 구현 방안 비교
+  4. 결과 보고서 작성"
+)
+
+# Step 3: 완료 후 정리
+SendMessage(to="researcher", message={type: "shutdown_request"})
+TeamDelete()
 ```
 
-### OMC 에이전트
+### 에이전트
 
 | 에이전트 | 모델 | 용도 |
 |----------|------|------|
@@ -52,7 +69,7 @@ Task(subagent_type="oh-my-claudecode:researcher", model="sonnet",
     └── /research plan (구현 계획 수립)
 ```
 
-**이 인과관계는 OMC 위임과 무관하게 그대로 유지됩니다.**
+**이 인과관계는 Agent Teams 전환과 무관하게 그대로 유지됩니다.**
 
 ## 서브커맨드 (100% 보존)
 
