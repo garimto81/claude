@@ -1,0 +1,35 @@
+{
+  "captured_at": "2026-04-02T23:14:18.529807+00:00",
+  "branch": "main",
+  "project_dir": "/home/user/claude",
+  "changed_files": [],
+  "recent_commits": [
+    {
+      "hash": "7dfb5e6c",
+      "subject": "fix(hooks): Windows → Linux 경로 수정 (C:/claude → /home/user/claude)",
+      "date": "2026-03-30 10:59:21"
+    },
+    {
+      "hash": "d9e5cd64",
+      "subject": "Merge pull request #147 from garimto81/feat/github-workflows-triage-docsync",
+      "date": "2026-03-30 10:45:16"
+    },
+    {
+      "hash": "e4b4cc96",
+      "subject": "merge: resolve settings.json conflict (keep C:/claude/ paths)",
+      "date": "2026-03-30 10:44:39"
+    },
+    {
+      "hash": "da5c8025",
+      "subject": "chore(audit): daily audit 2026-03-30",
+      "date": "2026-03-30 10:33:14"
+    },
+    {
+      "hash": "615c7e41",
+      "subject": "feat(workflow): GitHub Actions triage + doc-sync + 대규모 스킬/에이전트 정리",
+      "date": "2026-03-30 10:27:04"
+    }
+  ],
+  "session_start": "2026-04-02T23:14:18.445392",
+  "pending_tasks": []
+}
