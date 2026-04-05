@@ -1,11 +1,11 @@
 {
   "description": "Daily audit improvement tracking ledger",
   "stats": {
-    "total_items": 9,
+    "total_items": 15,
     "implemented": 2,
-    "pending": 4,
-    "backlog": 3,
-    "verified": 0,
+    "pending": 7,
+    "backlog": 6,
+    "verified": 2,
     "reverted": 0
   },
   "entries": [
@@ -18,7 +18,7 @@
       "status": "implemented",
       "files_changed": ["/home/user/claude/CLAUDE.md"],
       "description": "CLAUDE.md 상단의 커맨드/에이전트/스킬 수가 실제 파일 수와 불일치. 수정 적용.",
-      "impact_result": null
+      "impact_result": "verified"
     },
     {
       "date": "2026-04-02",
@@ -29,7 +29,7 @@
       "status": "implemented",
       "files_changed": ["/home/user/claude/.claude/audit/backlog.md"],
       "description": "15-backlog-capture.md 규칙에서 backlog.md 요구하나 파일 없음. 생성.",
-      "impact_result": null
+      "impact_result": "verified"
     },
     {
       "date": "2026-04-02",
@@ -84,6 +84,50 @@
       "status": "backlog",
       "files_changed": [],
       "description": "08-skill-routing.md에 figma, frontend-design 플러그인 참조. 실제 skills/figma/SKILL.md 없음.",
+      "impact_result": null
+    },
+    {
+      "date": "2026-04-05",
+      "id": "T2-003",
+      "tier": "T2",
+      "type": "note",
+      "title": "hooks 성능 측정 기준 문서화 필요",
+      "status": "noted",
+      "files_changed": [],
+      "description": "PreToolUse 500ms SLA 기준 존재하나 현재 훅별 실행시간 측정 문서 없음. 가이드 문서 작성 필요.",
+      "impact_result": null
+    },
+    {
+      "date": "2026-04-05",
+      "id": "T3-004",
+      "tier": "T3",
+      "type": "backlog",
+      "title": "MCP Tool Search 지연 로딩 설정 추가",
+      "status": "backlog",
+      "files_changed": [],
+      "description": "Claude Code v2.1.89+ MCP Tool Search 기능으로 컨텍스트 95% 절감 가능. settings.json 또는 mcp 설정 추가 필요.",
+      "impact_result": null
+    },
+    {
+      "date": "2026-04-05",
+      "id": "T3-005",
+      "tier": "T3",
+      "type": "backlog",
+      "title": "PermissionDenied hook 구현",
+      "status": "backlog",
+      "files_changed": [],
+      "description": "Claude Code v2.1.89+에서 PermissionDenied hook 지원. 권한 거부 이벤트 감사/로깅에 활용 가능.",
+      "impact_result": null
+    },
+    {
+      "date": "2026-04-05",
+      "id": "T3-006",
+      "tier": "T3",
+      "type": "backlog",
+      "title": "Agent Teams 공식 기능 통합 검토",
+      "status": "backlog",
+      "files_changed": [],
+      "description": "Claude Code 공식 Agent Teams 기능(실험적) — 팀원 간 직접 메시지, 공유 태스크 큐. 현재 OMC 의존 구조 대체 또는 보완 검토 필요.",
       "impact_result": null
     }
   ]

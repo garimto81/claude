@@ -31,6 +31,21 @@
 - **설명**: 라우팅 규칙에 figma 참조되나 skills/figma/SKILL.md 없음
 - **수락 기준**: 스킬 파일 생성 또는 참조 제거
 
+### [B-006] MCP Tool Search 지연 로딩 설정 추가
+- **날짜**: 2026-04-05
+- **설명**: Claude Code v2.1.89+ MCP Tool Search 기능으로 컨텍스트 95% 절감 가능. settings.json 또는 mcp 설정 추가 필요.
+- **수락 기준**: 지연 로딩 활성화 설정 적용 및 컨텍스트 사용량 감소 확인
+
+### [B-007] PermissionDenied hook 구현
+- **날짜**: 2026-04-05
+- **설명**: Claude Code v2.1.89+에서 PermissionDenied hook 지원. 권한 거부 이벤트 감사/로깅에 활용 가능.
+- **수락 기준**: permission_denied_logger.py 훅 구현 및 settings.json 등록
+
+### [B-008] Agent Teams 공식 기능 통합 검토
+- **날짜**: 2026-04-05
+- **설명**: Claude Code 공식 Agent Teams 기능(실험적) — 팀원 간 직접 메시지, 공유 태스크 큐. 현재 OMC 의존 구조 대체 또는 보완 검토 필요.
+- **수락 기준**: 기능 평가 보고서 작성 또는 통합 구현
+
 ---
 
 ## IN_PROGRESS
